@@ -11,6 +11,7 @@
     "paths": {
       "@atomicfinance/*": ["packages/*/lib"]
     },
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "declaration": true
   }
 }
