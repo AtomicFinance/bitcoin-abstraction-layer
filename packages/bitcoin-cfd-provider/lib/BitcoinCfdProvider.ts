@@ -84,6 +84,10 @@ export default class BitcoinCfdProvider extends Provider {
 
     CfdHelper.initialized(() => {
       this._cfdJs = CfdHelper.getCfdjs();
+
+      const { CreateAddress, CreateKeyPair } = CfdHelper.getCfdjs()
+      console.log('CreateKeyPair', CreateKeyPair)
+      console.log('CreateAddress', CreateAddress)
     })
   }
 

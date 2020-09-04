@@ -6,6 +6,7 @@
     "@liquality/utils": "^0.6.8",
     "@types/chai": "^4.2.12",
     "@types/mocha": "^8.0.3",
+    "@types/uuid": "^8.3.0",
     "bip39": "^3.0.2",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
