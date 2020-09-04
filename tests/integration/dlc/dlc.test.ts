@@ -18,9 +18,9 @@ function testDLC (chain: any) {
 
     console.log('(new Date()).getTime()', (new Date()).getTime())
 
-    const keyPairRequest: CreateKeyPairRequest = { wif: false }
-    let keyPair: CreateKeyPairResponse = await chain.client.finance.cfd.CreateKeyPair(keyPairRequest);
-    console.log('keyPair', keyPair)
+    // const keyPairRequest: CreateKeyPairRequest = { wif: false }
+    // let keyPair: CreateKeyPairResponse = await chain.client.finance.cfd.CreateKeyPair(keyPairRequest);
+    // console.log('keyPair', keyPair)
 
     // const inputDetails: InputDetails = {
     //   localCollateral,

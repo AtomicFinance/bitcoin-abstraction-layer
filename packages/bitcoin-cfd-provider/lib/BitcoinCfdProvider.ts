@@ -90,7 +90,6 @@ export default class BitcoinCfdProvider extends Provider {
   async CfdLoaded () {
     console.log('test10')
     while (!this._cfdJs) {
-      console.log('test11')
       await sleep(1)
     }
     console.log('test12')
@@ -216,6 +215,9 @@ export default class BitcoinCfdProvider extends Provider {
     await this.CfdLoaded()
     console.log('test9')
     console.log('jsonObject', jsonObject)
+
+    console.log('this._cfdJs', this._cfdJs)
+
     return this._cfdJs.CreateKeyPair(jsonObject)
   }
 

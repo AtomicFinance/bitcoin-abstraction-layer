@@ -3,6 +3,7 @@
   "private": true,
   "devDependencies": {
     "@liquality/bundle": "^0.6.3",
+    "@liquality/utils": "^0.6.8",
     "@types/chai": "^4.2.12",
     "@types/mocha": "^8.0.3",
     "bip39": "^3.0.2",
@@ -16,6 +17,7 @@
     "ts-loader": "^8.0.3",
     "ts-mocha": "^7.0.0",
     "ts-node": "^9.0.0",
+    "tslib": "^2.0.1",
     "typescript": "^4.0.2",
     "wasm-loader": "^1.3.0",
     "webpack": "^4.44.1",

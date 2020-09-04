@@ -12,6 +12,8 @@ import config from './config'
 
 // chai.use(chaiAsPromised)
 
+import { sleep } from '@liquality/utils'
+
 const CONSTANTS = {
   BITCOIN_FEE_PER_BYTE: 3,
   BITCOIN_ADDRESS_DEFAULT_BALANCE: 50 * 1e8
@@ -33,6 +35,20 @@ bitcoinWithEsplora.addProvider(new providers.bitcoin.BitcoinJsWalletProvider(bit
 
 bitcoinWithEsplora.finance.addProvider(new financeProviders.bitcoin.BitcoinCfdProvider(bitcoinNetwork))
 bitcoinWithEsplora.finance.addProvider(new financeProviders.bitcoin.BitcoinDlcProvider(bitcoinNetwork))
+
+
+sleep(1).then(async () => {
+  const keyPair = await bitcoinWithEsplora.finance.cfd.CreateKeyPair({ wif: false })
+
+  console.log('Generated oracle keypair', keyPair);
+
+  const rValue = await bitcoinWithEsplora.finance.dlc.GetSchnorrPublicNonce({ kValue: keyPair.privkey })
+
+  console.log('Schnoor Public Nonce', rValue);
+
+  console.log('Fully initialized');
+})
+
 
 const chains = {
   bitcoinWithEsplora: { id: 'Bitcoin Esplora', name: 'bitcoin', client: bitcoinWithEsplora }

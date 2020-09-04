@@ -18,7 +18,6 @@
   },
   "dependencies": {
     "@atomicfinance/provider": "^0.1.0",
-    "@atomicfinance/dlc-types": "^0.1.0",
     "@liquality/provider": "^0.6.2",
     "@liquality/utils": "^0.6.2",
     "cfd-dlc-js-wasm": "github:matthewjablack/cfd-dlc-js-wasm",
