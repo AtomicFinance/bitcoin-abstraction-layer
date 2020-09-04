@@ -155,6 +155,8 @@ export default class Cfd {
   }
 
   async CreateKeyPair(jsonObject: CreateKeyPairRequest): Promise<CreateKeyPairResponse> {
+    console.log('test6')
+
     return this.client.getMethod('CreateKeyPair')(jsonObject)
   }
 

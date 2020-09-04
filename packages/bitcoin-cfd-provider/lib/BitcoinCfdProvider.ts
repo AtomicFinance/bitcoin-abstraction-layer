@@ -88,9 +88,12 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CfdLoaded () {
+    console.log('test10')
     while (!this._cfdJs) {
+      console.log('test11')
       await sleep(1)
     }
+    console.log('test12')
   }
 
   async AddMultisigSign (jsonObject: AddMultisigSignRequest): Promise<AddMultisigSignResponse> {
@@ -208,8 +211,11 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CreateKeyPair(jsonObject: CreateKeyPairRequest): Promise<CreateKeyPairResponse> {
+    console.log('test8')
+    console.log('jsonObject', jsonObject)
     await this.CfdLoaded()
-    
+    console.log('test9')
+    console.log('jsonObject', jsonObject)
     return this._cfdJs.CreateKeyPair(jsonObject)
   }
 

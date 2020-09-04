@@ -27,12 +27,12 @@ const bitcoinNetwork = bitcoinNetworks[config.bitcoin.network]
 const bitcoinWithEsplora = new Client()
 const bitcoinWithEsploraFinance = new FinanceClient(bitcoinWithEsplora)
 
-// bitcoinWithEsplora.finance = bitcoinWithEsploraFinance
+bitcoinWithEsplora.finance = bitcoinWithEsploraFinance
 bitcoinWithEsplora.addProvider(new providers.bitcoin.BitcoinEsploraApiProvider('https://blockstream.info/testnet/api'))
 bitcoinWithEsplora.addProvider(new providers.bitcoin.BitcoinJsWalletProvider(bitcoinNetwork, generateMnemonic(256), 'bech32'))
 
-// bitcoinWithEsplora.finance.addProvider(new financeProviders.bitcoin.BitcoinCfdProvider(bitcoinNetwork))
-// bitcoinWithEsplora.finance.addProvider(new financeProviders.bitcoin.BitcoinDlcProvider(bitcoinNetwork))
+bitcoinWithEsplora.finance.addProvider(new financeProviders.bitcoin.BitcoinCfdProvider(bitcoinNetwork))
+bitcoinWithEsplora.finance.addProvider(new financeProviders.bitcoin.BitcoinDlcProvider(bitcoinNetwork))
 
 const chains = {
   bitcoinWithEsplora: { id: 'Bitcoin Esplora', name: 'bitcoin', client: bitcoinWithEsplora }

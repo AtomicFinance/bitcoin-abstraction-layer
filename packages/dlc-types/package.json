@@ -1,6 +1,6 @@
 {
-  "name": "@atomicfinance/bitcoin-dlc-provider",
-  "umdName": "BitcoinDlcProvider",
+  "name": "@atomicfinance/dlc-types",
+  "umdName": "DlcTypes",
   "version": "0.1.0",
   "description": "> TODO: description",
   "author": "Matthew Black <mblackmblackmblack@gmail.com>",
@@ -17,13 +17,8 @@
     "build": "webpack --config ../../webpack/webpack.config.js"
   },
   "dependencies": {
-    "@atomicfinance/provider": "^0.1.0",
-    "@atomicfinance/dlc-types": "^0.1.0",
-    "@liquality/provider": "^0.6.2",
-    "@liquality/utils": "^0.6.2",
-    "cfd-dlc-js-wasm": "github:matthewjablack/cfd-dlc-js-wasm",
-    "lodash": "^4.17.20",
-    "uuid": "^8.3.0"
+    "@atomicfinance/client": "^0.1.0",
+    "lodash": "^4.17.20"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.160"

@@ -30,7 +30,9 @@ import {
 } from 'cfd-dlc-js-wasm'
 import DlcParty from './models/DlcParty'
 import Contract from './models/Contract'
-import Oracle from './models/Oracle'
+
+import InputDetails from './models/InputDetails'
+import OutcomeDetails from './models/OutcomeDetails'
 import OracleInfo from './models/OracleInfo'
 import Amount from './models/Amount'
 import Outcome from './models/Outcome'
@@ -72,15 +74,11 @@ export default class BitcoinDlcProvider extends Provider {
     return this._party.InitiateContract(contract)
   }
 
-  getOracleForTesting (): Oracle {
-    return new Oracle(this, 'Olivia')
-  }
-
   private setInitialInputs (contract: Contract, input: InputDetails) {
     contract.localCollateral = input.localCollateral
     contract.remoteCollateral = input.remoteCollateral
     contract.feeRate = input.feeRate
-    contract.maturityTime = new Date(input.maturityTime)
+    contract.maturityTime = input.maturityTime
     contract.refundLockTime = input.refundLockTime
     contract.cetCsvDelay = input.cetCsvDelay
   }
@@ -258,19 +256,4 @@ export default class BitcoinDlcProvider extends Provider {
 
     return this._cfdDlcJs.VerifyRefundTxSignature(jsonObject)
   }
-}
-
-export interface InputDetails {
-  localCollateral: Amount;
-  remoteCollateral: Amount;
-  feeRate: number;
-  maturityTime: number;
-  refundLockTime: number;
-  cetCsvDelay: number;
-}
-
-export interface OutcomeDetails {
-  localAmount: Amount;
-  remoteAmount: Amount;
-  message: string;
 }
