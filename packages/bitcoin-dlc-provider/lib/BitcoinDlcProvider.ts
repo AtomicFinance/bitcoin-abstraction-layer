@@ -28,15 +28,25 @@ import {
   VerifyMutualClosingTxSignatureRequest, VerifyMutualClosingTxSignatureResponse,
   VerifyRefundTxSignatureRequest, VerifyRefundTxSignatureResponse
 } from 'cfd-dlc-js-wasm'
+import DlcParty from './models/DlcParty'
+import Contract from './models/Contract'
+import Oracle from './models/Oracle'
+import OracleInfo from './models/OracleInfo'
+import Amount from './models/Amount'
+import Outcome from './models/Outcome'
+import OfferMessage from './models/OfferMessage'
+import { v4 as uuidv4 } from "uuid";
 
-export default class BitcoinCfdDlcProvider extends Provider {
+export default class BitcoinDlcProvider extends Provider {
   _network: any;
   _cfdDlcJs: any;
+  _party: DlcParty;
 
   constructor(network: any) {
-    super('BitcoinCfdDlcProvider')
+    super('BitcoinDlcProvider')
 
     this._network = network
+    this._party = new DlcParty(this)
 
     CfddlcHelper.initialized(() => {
       this._cfdDlcJs = CfddlcHelper.getCfddlcjs();
@@ -48,6 +58,56 @@ export default class BitcoinCfdDlcProvider extends Provider {
       await sleep(10)
     }
   }
+
+  async initializeContractAndOffer (input: InputDetails, outcomes: Array<OutcomeDetails>, oracleInfo: OracleInfo): Promise<OfferMessage> {
+    const contract = new Contract()
+
+    contract.id = uuidv4()
+    contract.oracleInfo = oracleInfo
+
+    this.setInitialInputs(contract, input)
+
+    this.setOutcomes(contract, outcomes)
+
+    return this._party.InitiateContract(contract)
+  }
+
+  getOracleForTesting (): Oracle {
+    return new Oracle(this, 'Olivia')
+  }
+
+  private setInitialInputs (contract: Contract, input: InputDetails) {
+    contract.localCollateral = input.localCollateral
+    contract.remoteCollateral = input.remoteCollateral
+    contract.feeRate = input.feeRate
+    contract.maturityTime = new Date(input.maturityTime)
+    contract.refundLockTime = input.refundLockTime
+    contract.cetCsvDelay = input.cetCsvDelay
+  }
+
+  private setOutcomes (contract: Contract, outcomes: Array<OutcomeDetails>) {
+    outcomes.forEach((outcome) => {
+      const { message, localAmount, remoteAmount } = outcome
+      const newOutcome = new Outcome(message, localAmount, remoteAmount)
+      contract.outcomes.push(newOutcome)
+    })
+  }
+
+  amountFromBitcoin (bitcoin: number): Amount {
+    return Amount.FromBitcoin(bitcoin)
+  }
+
+  amountFromSatoshis (satoshis: number): Amount {
+    return Amount.FromSatoshis(satoshis)
+  }
+
+  async initializedAndOfferContract (contract: Contract): Promise<OfferMessage> { //Offer Message
+    return this._party.InitiateContract(contract)
+  }
+
+  // getContractFromOffer (offerMessage: OfferMessage) {
+  //   return this._party.OnOfferMessage(offerMessage)
+  // }
 
   async AddSignatureToFundTransaction(jsonObject: AddSignatureToFundTransactionRequest): Promise<AddSignatureToFundTransactionResponse> {
     await this.CfdLoaded()
@@ -198,4 +258,19 @@ export default class BitcoinCfdDlcProvider extends Provider {
 
     return this._cfdDlcJs.VerifyRefundTxSignature(jsonObject)
   }
+}
+
+export interface InputDetails {
+  localCollateral: Amount;
+  remoteCollateral: Amount;
+  feeRate: number;
+  maturityTime: number;
+  refundLockTime: number;
+  cetCsvDelay: number;
+}
+
+export interface OutcomeDetails {
+  localAmount: Amount;
+  remoteAmount: Amount;
+  message: string;
 }

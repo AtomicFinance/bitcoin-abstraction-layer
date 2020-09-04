@@ -27,11 +27,17 @@ import {
   VerifyRefundTxSignatureRequest, VerifyRefundTxSignatureResponse
 } from 'cfd-dlc-js-wasm'
 
+import { InputDetails, OutcomeDetails } from '@atomicfinance/bitcoin-dlc-provider'
+
 export default class Dlc {
   client: Client;
 
   constructor (client?: Client) {
     this.client = client
+  }
+
+  async initializeContractAndOffer (input: InputDetails, outcomes: Array<OutcomeDetails>, oracleInfo: OracleInfo): Promise<OfferMessage> {
+    return this.client.getMethod('initializeContractAndOffer')(input, outcomes, oracleInfo)
   }
 
   async AddSignatureToFundTransaction(jsonObject: AddSignatureToFundTransactionRequest): Promise<AddSignatureToFundTransactionResponse> {

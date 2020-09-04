@@ -3,16 +3,9 @@
 import { expect } from 'chai';
 import { chains } from '../common'
 import config from '../config'
-// import 'mocha';
-
-// describe('DLC Flow', () => {
-//   it('should return true', () => {
-//     expect(true).to.equal(true);
-//   });
-// });
 
 function testDLC (chain: any) {
-  it('should allow locking and refunding using secretB1', async () => {
+  it('should', async () => {
     expect(1).to.equal(1)
     // const { lockTxHash, colParams } = await lockCollateral(chain)
 

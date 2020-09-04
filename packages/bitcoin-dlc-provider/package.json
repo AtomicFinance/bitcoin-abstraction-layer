@@ -21,7 +21,8 @@
     "@liquality/provider": "^0.6.2",
     "@liquality/utils": "^0.6.2",
     "cfd-dlc-js-wasm": "github:matthewjablack/cfd-dlc-js-wasm",
-    "lodash": "^4.17.20"
+    "lodash": "^4.17.20",
+    "uuid": "^8.3.0"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.160"

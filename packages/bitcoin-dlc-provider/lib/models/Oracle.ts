@@ -1,7 +1,6 @@
-import * as Utils from "../utils/Utils";
-import bitcoin from '../services/chainClient'
 import { SchnorrSignRequest } from 'cfd-dlc-js-wasm'
 import OracleInfo from "./OracleInfo";
+import BitcoinDlcProvider from '../BitcoinDlcProvider'
 
 export default class Oracle {
   readonly name: string;
@@ -9,15 +8,17 @@ export default class Oracle {
   readonly rValue: string;
   readonly publicKey: string;
   readonly privateKey: string;
+  readonly client: BitcoinDlcProvider;
 
-  constructor(name: string) {
+  constructor(client: BitcoinDlcProvider, name: string) {
+    this.client = client;
     this.name = name;
-    let keyPair = Utils.CreateKeyPair();
+    let keyPair = this.client.getMethod('CreateKeyPair')({ wif: false });
     this.privateKey = keyPair.privkey;
     this.publicKey = keyPair.pubkey;
-    keyPair = Utils.CreateKeyPair();
+    keyPair = this.client.getMethod('CreateKeyPair')({ wif: false });
     this.kValue = keyPair.privkey;
-    this.rValue = bitcoin.finance.dlc.GetSchnorrPublicNonce({ kValue: this.kValue }).hex;
+    this.rValue = this.client.getMethod('GetSchnorrPublicNonce')({ kValue: this.kValue }).hex;
   }
 
   // Returns the public information for the Oracle.
@@ -33,6 +34,6 @@ export default class Oracle {
       message,
     };
 
-    return bitcoin.finance.dlc.SchnorrSign(signRequest).hex;
+    return this.client.getMethod('SchnorrSign')(signRequest).hex;
   }
 }
