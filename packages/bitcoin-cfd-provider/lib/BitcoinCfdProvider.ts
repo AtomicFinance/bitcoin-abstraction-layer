@@ -73,6 +73,8 @@ import {
   VerifySignatureRequest, VerifySignatureResponse
 } from 'cfd-js-wasm'
 
+import { getCfd, addInitializedListener } from 'cfd-js-wasm'
+
 export default class BitcoinCfdProvider extends Provider {
   _network: any;
   _cfdJs: any;
@@ -82,13 +84,26 @@ export default class BitcoinCfdProvider extends Provider {
 
     this._network = network
 
-    CfdHelper.initialized(() => {
+    addInitializedListener(this.load)
+
+    CfdHelper.initialized((result: any) => {
+      console.log('result', result)
       this._cfdJs = CfdHelper.getCfdjs();
 
       const { CreateAddress, CreateKeyPair } = CfdHelper.getCfdjs()
       console.log('CreateKeyPair', CreateKeyPair)
       console.log('CreateAddress', CreateAddress)
+
+      CreateKeyPair({ wif: false}).then((result) => {
+        console.log('result', result)
+      })
     })
+  }
+
+  async load() {
+    console.log('load other:')
+    let cfdJs = getCfd()
+    console.log('cfdJs other: ', cfdJs)
   }
 
   async CfdLoaded () {
