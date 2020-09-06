@@ -73,8 +73,6 @@ import {
   VerifySignatureRequest, VerifySignatureResponse
 } from 'cfd-js-wasm'
 
-import { getCfd, addInitializedListener } from 'cfd-js-wasm'
-
 export default class BitcoinCfdProvider extends Provider {
   _network: any;
   _cfdJs: any;
@@ -84,34 +82,15 @@ export default class BitcoinCfdProvider extends Provider {
 
     this._network = network
 
-    addInitializedListener(this.load)
-
     CfdHelper.initialized((result: any) => {
-      console.log('result', result)
       this._cfdJs = CfdHelper.getCfdjs();
-
-      const { CreateAddress, CreateKeyPair } = CfdHelper.getCfdjs()
-      console.log('CreateKeyPair', CreateKeyPair)
-      console.log('CreateAddress', CreateAddress)
-
-      CreateKeyPair({ wif: false}).then((result) => {
-        console.log('result', result)
-      })
     })
   }
 
-  async load() {
-    console.log('load other:')
-    let cfdJs = getCfd()
-    console.log('cfdJs other: ', cfdJs)
-  }
-
   async CfdLoaded () {
-    console.log('test10')
     while (!this._cfdJs) {
       await sleep(1)
     }
-    console.log('test12')
   }
 
   async AddMultisigSign (jsonObject: AddMultisigSignRequest): Promise<AddMultisigSignResponse> {
@@ -229,13 +208,11 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CreateKeyPair(jsonObject: CreateKeyPairRequest): Promise<CreateKeyPairResponse> {
-    console.log('test8')
-    console.log('jsonObject', jsonObject)
-    await this.CfdLoaded()
-    console.log('test9')
-    console.log('jsonObject', jsonObject)
+    console.log('createkeypair')
 
-    console.log('this._cfdJs', this._cfdJs)
+    await this.CfdLoaded()
+
+    console.log('loaded')
 
     return this._cfdJs.CreateKeyPair(jsonObject)
   }

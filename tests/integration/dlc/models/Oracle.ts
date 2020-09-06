@@ -19,11 +19,9 @@ export default class Oracle {
 
   public static async build(client: any, name: string): Promise<Oracle> {
     const oracle = new Oracle(client, name)
-    console.log('test4')
     
     const keyPairRequest: CreateKeyPairRequest = { wif: false }
     let keyPair: CreateKeyPairResponse = await oracle.client.finance.getMethod('CreateKeyPair')(keyPairRequest);
-    console.log('keyPair', keyPair)
     // oracle.privateKey = keyPair.privkey;
     // oracle.publicKey = keyPair.pubkey;
     // keyPair = await oracle.client.finance.getMethod('CreateKeyPair')({ wif: false});

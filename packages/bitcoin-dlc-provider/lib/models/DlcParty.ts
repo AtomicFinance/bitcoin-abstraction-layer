@@ -69,22 +69,21 @@ export default class DlcParty {
 
     console.log('fundPublicKey', fundPublicKey)
 
-    // const utxos = await this.GetUtxosForAmount(
-    //   collateral
-    // );
+    const utxos = await this.GetUtxosForAmount(
+      collateral
+    );
+    console.log('utxos', utxos)
 
-    // const inputs = new PartyInputs(
-    //   fundPublicKey,
-    //   sweepPublicKey,
-    //   changeAddress,
-    //   finalAddress,
-    //   utxos
-    // );
+    const inputs = new PartyInputs(
+      fundPublicKey,
+      sweepPublicKey,
+      changeAddress,
+      finalAddress,
+      utxos
+    );
 
-    // this.inputPrivateKeys = await Promise.all(
-    //   inputs.utxos.map(async (input) => await this.DumpPrivHex(input.address))
-    // );
-    // this.partyInputs = inputs;
+    this.inputPrivateKeys = await this.GetPrivKeysForUtxos(inputs.utxos)
+    this.partyInputs = inputs;
   }
 
   // private async GetNewPrivateKey() {
@@ -97,107 +96,130 @@ export default class DlcParty {
   //   return Utils.GetPrivkeyFromWif(wif);
   // }
 
-  // private async GetUtxosForAmount(amount: Amount) {
-  //   const unspent = await this.walletClient.listUnspent(1);
-  //   const utxoSet: Utxo[] = [];
-  //   let total = Amount.FromBitcoin(0);
-  //   for (let i = 0; i < unspent.length; i++) {
-  //     const utxo = unspent[i];
-  //     total = total.AddBitcoins(utxo.amount);
-  //     i++;
-  //     utxoSet.push({
-  //       txid: utxo.txid,
-  //       vout: utxo.vout,
-  //       amount: Amount.FromBitcoin(utxo.amount),
-  //       address: utxo.address,
-  //     });
-  //     if (total.CompareWith(amount) >= 0) break;
-  //   }
+  private async GetUtxosForAmount (amount: Amount) {
+    const outputs = [{ to: BurnAddress, value: amount.GetSatoshiAmount() }]
+    const feePerByte = await this.client.getMethod('getFeePerByte')()
+    const inputsForAmount = await this.client.getMethod('getInputsForAmount')(outputs, feePerByte)
+    const { inputs: utxos } = inputsForAmount
+    console.log('utxos', utxos)
 
-  //   if (total.CompareWith(amount) < 0) throw new Error("Not enough funds");
+    const utxoSet: Utxo[] = [];
+    for (let i = 0; i < utxos.length; i++) {
+      const utxo = utxos[i]
 
-  //   return utxoSet;
-  // }
+      utxoSet.push({
+        txid: utxo.txid,
+        vout: utxo.vout,
+        amount: Amount.FromSatoshis(utxo.value),
+        address: utxo.address,
+        derivationPath: utxo.derivationPath
+      })
+    }
 
-  // private CreateDlcTransactions() {
-  //   const dlcTxRequest: CreateDlcTransactionsRequest = {
-  //     outcomes: this.contract.outcomes.map((outcome) => {
-  //       return {
-  //         messages: [outcome.message],
-  //         local: outcome.local.GetSatoshiAmount(),
-  //         remote: outcome.remote.GetSatoshiAmount(),
-  //       };
-  //     }),
-  //     oracleRPoints: [this.contract.oracleInfo.rValue],
-  //     oraclePubkey: this.contract.oracleInfo.publicKey,
-  //     localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
-  //     localSweepPubkey: this.contract.localPartyInputs.sweepPublicKey,
-  //     localFinalAddress: this.contract.localPartyInputs.finalAddress,
-  //     remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
-  //     remoteSweepPubkey: this.contract.remotePartyInputs.sweepPublicKey,
-  //     remoteFinalAddress: this.contract.remotePartyInputs.finalAddress,
-  //     localInputAmount: this.contract.localPartyInputs.GetTotalInputAmount(),
-  //     localCollateralAmount: this.contract.localCollateral.GetSatoshiAmount(),
-  //     remoteInputAmount: this.contract.remotePartyInputs.GetTotalInputAmount(),
-  //     remoteCollateralAmount: this.contract.remoteCollateral.GetSatoshiAmount(),
-  //     csvDelay: this.contract.cetCsvDelay,
-  //     refundLocktime: this.contract.refundLockTime,
-  //     localInputs: this.contract.localPartyInputs.utxos,
-  //     remoteInputs: this.contract.remotePartyInputs.utxos,
-  //     localChangeAddress: this.contract.localPartyInputs.changeAddress,
-  //     remoteChangeAddress: this.contract.remotePartyInputs.changeAddress,
-  //     feeRate: this.contract.feeRate,
-  //     maturityTime: Math.floor(this.contract.maturityTime.getTime() / 1000)
-  //   };
+    return utxoSet;
+  }
 
-  //   console.log('dlcTxRequest', dlcTxRequest)
-  //   const dlcTransactions = bitcoin.finance.dlc.CreateDlcTransactions(dlcTxRequest);
-  //   this.contract.fundTxHex = dlcTransactions.fundTxHex;
-  //   const fundTransaction = Utils.DecodeRawTransaction(this.contract.fundTxHex);
-  //   this.contract.fundTxId = fundTransaction.txid;
-  //   this.contract.fundTxOutAmount = Amount.FromSatoshis(
-  //     Number(fundTransaction.vout[0].value)
-  //   );
-  //   this.contract.refundTransaction = dlcTransactions.refundTxHex;
-  //   this.contract.localCetsHex = dlcTransactions.localCetsHex;
-  //   this.contract.remoteCetsHex = dlcTransactions.remoteCetsHex;
-  // }
+  private async GetPrivKeysForUtxos (utxoSet: Utxo[]): Promise<string[]> {
+    const privKeys: string[] = []
 
-  // public async OnOfferMessage(offerMessage: OfferMessage) {
-  //   this.contract = Contract.FromOfferMessage(offerMessage);
-  //   await this.Initialize(offerMessage.remoteCollateral);
-  //   this.contract.remotePartyInputs = this.partyInputs;
-  //   this.CreateDlcTransactions();
-  //   const cetSignRequest: GetRawCetSignaturesRequest = {
-  //     cetsHex: this.contract.localCetsHex,
-  //     privkey: this.fundPrivateKey,
-  //     fundTxId: this.contract.fundTxId,
-  //     localFundPubkey: offerMessage.localPartyInputs.fundPublicKey,
-  //     remoteFundPubkey: this.partyInputs.fundPublicKey,
-  //     fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
-  //   };
+    for (let i = 0; i < utxoSet.length; i++) {
+      const utxo = utxoSet[i]
+      const keyPair = await this.client.getMethod('keyPair')(utxo.derivationPath)
+      const privKey = Buffer.from(keyPair.__D).toString('hex')
+      privKeys.push(privKey)
+    }
 
-  //   const cetSignatures = bitcoin.finance.dlc.GetRawCetSignatures(cetSignRequest);
+    return privKeys
+  }
 
-  //   const refundSignRequest: GetRawRefundTxSignatureRequest = {
-  //     refundTxHex: this.contract.refundTransaction,
-  //     privkey: this.fundPrivateKey,
-  //     fundTxId: this.contract.fundTxId,
-  //     localFundPubkey: offerMessage.localPartyInputs.fundPublicKey,
-  //     remoteFundPubkey: this.partyInputs.fundPublicKey,
-  //     fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
-  //   };
+  private async CreateDlcTransactions() {
+    const dlcTxRequest: CreateDlcTransactionsRequest = {
+      outcomes: this.contract.outcomes.map((outcome) => {
+        return {
+          messages: [outcome.message],
+          local: outcome.local.GetSatoshiAmount(),
+          remote: outcome.remote.GetSatoshiAmount(),
+        };
+      }),
+      oracleRPoints: [this.contract.oracleInfo.rValue],
+      oraclePubkey: this.contract.oracleInfo.publicKey,
+      localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
+      localSweepPubkey: this.contract.localPartyInputs.sweepPublicKey,
+      localFinalAddress: this.contract.localPartyInputs.finalAddress,
+      remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
+      remoteSweepPubkey: this.contract.remotePartyInputs.sweepPublicKey,
+      remoteFinalAddress: this.contract.remotePartyInputs.finalAddress,
+      localInputAmount: this.contract.localPartyInputs.GetTotalInputAmount(),
+      localCollateralAmount: this.contract.localCollateral.GetSatoshiAmount(),
+      remoteInputAmount: this.contract.remotePartyInputs.GetTotalInputAmount(),
+      remoteCollateralAmount: this.contract.remoteCollateral.GetSatoshiAmount(),
+      csvDelay: this.contract.cetCsvDelay,
+      refundLocktime: this.contract.refundLockTime,
+      localInputs: this.contract.localPartyInputs.utxos,
+      remoteInputs: this.contract.remotePartyInputs.utxos,
+      localChangeAddress: this.contract.localPartyInputs.changeAddress,
+      remoteChangeAddress: this.contract.remotePartyInputs.changeAddress,
+      feeRate: this.contract.feeRate,
+      maturityTime: Math.floor(this.contract.maturityTime.getTime() / 1000)
+    };
 
-  //   const refundSignature = bitcoin.finance.dlc.GetRawRefundTxSignature(refundSignRequest);
+    console.log('createdlc test1')
+    const dlcTransactions = await this.client.CreateDlcTransactions(dlcTxRequest);
+    this.contract.fundTxHex = dlcTransactions.fundTxHex;
+    console.log('createdlc test2')
+    const fundTransaction = await this.client.getMethod('DecodeRawTransaction')({ hex: this.contract.fundTxHex });
+    this.contract.fundTxId = fundTransaction.txid;
+    console.log('createdlc test3')
+    this.contract.fundTxOutAmount = Amount.FromSatoshis(
+      Number(fundTransaction.vout[0].value)
+    );
+    this.contract.refundTransaction = dlcTransactions.refundTxHex;
+    this.contract.localCetsHex = dlcTransactions.localCetsHex;
+    this.contract.remoteCetsHex = dlcTransactions.remoteCetsHex;
+  }
 
-  //   const acceptMessage = new AcceptMessage(
-  //     this.partyInputs,
-  //     cetSignatures.hex,
-  //     refundSignature.hex
-  //   );
+  public async OnOfferMessage(offerMessage: OfferMessage): Promise<AcceptMessage> {
+    this.contract = Contract.FromOfferMessage(offerMessage);
+    console.log('test-3')
+    await this.Initialize(offerMessage.remoteCollateral);
+    console.log('test-2')
+    this.contract.remotePartyInputs = this.partyInputs;
+    console.log('test-1')
+    await this.CreateDlcTransactions();
+    console.log('test0')
+    const cetSignRequest: GetRawCetSignaturesRequest = {
+      cetsHex: this.contract.localCetsHex,
+      privkey: this.fundPrivateKey,
+      fundTxId: this.contract.fundTxId,
+      localFundPubkey: offerMessage.localPartyInputs.fundPublicKey,
+      remoteFundPubkey: this.partyInputs.fundPublicKey,
+      fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
+    };
 
-  //   return acceptMessage;
-  // }
+    console.log('test1')
+    const cetSignatures = await this.client.getMethod('GetRawCetSignatures')(cetSignRequest);
+
+    const refundSignRequest: GetRawRefundTxSignatureRequest = {
+      refundTxHex: this.contract.refundTransaction,
+      privkey: this.fundPrivateKey,
+      fundTxId: this.contract.fundTxId,
+      localFundPubkey: offerMessage.localPartyInputs.fundPublicKey,
+      remoteFundPubkey: this.partyInputs.fundPublicKey,
+      fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
+    };
+    console.log('test2')
+
+    const refundSignature = await this.client.getMethod('GetRawRefundTxSignature')(refundSignRequest);
+    console.log('test3')
+
+    const acceptMessage = new AcceptMessage(
+      this.partyInputs,
+      cetSignatures.hex,
+      refundSignature.hex
+    );
+
+    return acceptMessage;
+  }
 
   // public OnAcceptMessage(acceptMessage: AcceptMessage) {
   //   this.contract.ApplyAcceptMessage(acceptMessage);

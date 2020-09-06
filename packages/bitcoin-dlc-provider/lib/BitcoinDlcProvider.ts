@@ -34,9 +34,9 @@ import Contract from './models/Contract'
 import InputDetails from './models/InputDetails'
 import OutcomeDetails from './models/OutcomeDetails'
 import OracleInfo from './models/OracleInfo'
-import Amount from './models/Amount'
 import Outcome from './models/Outcome'
 import OfferMessage from './models/OfferMessage'
+import AcceptMessage from './models/AcceptMessage'
 import { v4 as uuidv4 } from "uuid";
 
 export default class BitcoinDlcProvider extends Provider {
@@ -52,6 +52,7 @@ export default class BitcoinDlcProvider extends Provider {
 
     CfddlcHelper.initialized(() => {
       this._cfdDlcJs = CfddlcHelper.getCfddlcjs();
+      console.log('this._cfdDlcJs', this._cfdDlcJs)
     }) 
   }
 
@@ -91,21 +92,10 @@ export default class BitcoinDlcProvider extends Provider {
     })
   }
 
-  amountFromBitcoin (bitcoin: number): Amount {
-    return Amount.FromBitcoin(bitcoin)
+  async confirmContractOffer (offerMessage: OfferMessage): Promise<AcceptMessage> {
+    console.log('confirmContractOffer')
+    return this._party.OnOfferMessage(offerMessage)
   }
-
-  amountFromSatoshis (satoshis: number): Amount {
-    return Amount.FromSatoshis(satoshis)
-  }
-
-  async initializedAndOfferContract (contract: Contract): Promise<OfferMessage> { //Offer Message
-    return this._party.InitiateContract(contract)
-  }
-
-  // getContractFromOffer (offerMessage: OfferMessage) {
-  //   return this._party.OnOfferMessage(offerMessage)
-  // }
 
   async AddSignatureToFundTransaction(jsonObject: AddSignatureToFundTransactionRequest): Promise<AddSignatureToFundTransactionResponse> {
     await this.CfdLoaded()
