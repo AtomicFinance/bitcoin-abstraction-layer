@@ -27,7 +27,7 @@ import {
   VerifyRefundTxSignatureRequest, VerifyRefundTxSignatureResponse
 } from 'cfd-dlc-js-wasm'
 
-import { InputDetails, OutcomeDetails, OracleInfo, OfferMessage, AcceptMessage } from '@atomicfinance/bitcoin-dlc-provider'
+import { InputDetails, OutcomeDetails, OracleInfo, OfferMessage, AcceptMessage, SignMessage } from '@atomicfinance/bitcoin-dlc-provider'
 
 export default class Dlc {
   client: Client;
@@ -42,6 +42,14 @@ export default class Dlc {
 
   async confirmContractOffer (offerMessage: OfferMessage): Promise<AcceptMessage> {
     return this.client.getMethod('confirmContractOffer')(offerMessage)
+  }
+
+  async signContract (acceptMessage: AcceptMessage): Promise<SignMessage> {
+    return this.client.getMethod('signContract')(acceptMessage)
+  }
+
+  async finalizeContract (signMessage: SignMessage): Promise<string> {
+    return this.client.getMethod('finalizeContract')(signMessage)
   }
 
   async AddSignatureToFundTransaction(jsonObject: AddSignatureToFundTransactionRequest): Promise<AddSignatureToFundTransactionResponse> {
@@ -93,6 +101,7 @@ export default class Dlc {
   }
 
   async GetRawCetSignatures(jsonObject: GetRawCetSignaturesRequest): Promise<GetRawCetSignaturesResponse> {
+    console.log('getrawcetsigsinitial')
     return this.client.getMethod('GetRawCetSignatures')(jsonObject)
   }
 

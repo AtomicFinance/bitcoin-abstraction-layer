@@ -124,6 +124,8 @@ export default class Client extends Dlc {
   getMethod (method: any, requestor?: any) : any {
     try {
       const provider = this.getProviderForMethod(method, requestor)
+      console.log('method', method)
+      console.log('provider', provider)
       return (provider as any)[method].bind(provider)
     } catch(e) {
       try {

@@ -37,6 +37,7 @@ import OracleInfo from './models/OracleInfo'
 import Outcome from './models/Outcome'
 import OfferMessage from './models/OfferMessage'
 import AcceptMessage from './models/AcceptMessage'
+import SignMessage from './models/SignMessage'
 import { v4 as uuidv4 } from "uuid";
 
 export default class BitcoinDlcProvider extends Provider {
@@ -97,6 +98,14 @@ export default class BitcoinDlcProvider extends Provider {
     return this._party.OnOfferMessage(offerMessage)
   }
 
+  async signContract (acceptMessage: AcceptMessage): Promise<SignMessage> {
+    return this._party.OnAcceptMessage(acceptMessage)
+  }
+
+  async finalizeContract (signMessage: SignMessage): Promise<string> {
+    return this._party.OnSignMessage(signMessage)
+  }
+
   async AddSignatureToFundTransaction(jsonObject: AddSignatureToFundTransactionRequest): Promise<AddSignatureToFundTransactionResponse> {
     await this.CfdLoaded()
 
@@ -134,7 +143,11 @@ export default class BitcoinDlcProvider extends Provider {
   }
 
   async CreateDlcTransactions(jsonObject: CreateDlcTransactionsRequest): Promise<CreateDlcTransactionsResponse> {
+    console.log('createdlctransactions')
+
     await this.CfdLoaded()
+
+    console.log('cfdloaded')
 
     return this._cfdDlcJs.CreateDlcTransactions(jsonObject)
   }
@@ -170,6 +183,7 @@ export default class BitcoinDlcProvider extends Provider {
   }
 
   async GetRawCetSignatures(jsonObject: GetRawCetSignaturesRequest): Promise<GetRawCetSignaturesResponse> {
+    console.log('getrawcetsignatures')
     await this.CfdLoaded()
 
     return this._cfdDlcJs.GetRawCetSignatures(jsonObject)

@@ -64,15 +64,22 @@ export default class DlcParty {
     // const fundPublicKey = Utils.GetPubkeyFromPrivkey(this.fundPrivateKey);
     // const sweepPublicKey = Utils.GetPubkeyFromPrivkey(this.sweepPrivateKey);
 
+    const fundPrivateKeyPair = await this.client.getMethod('keyPair')(addresses[1].derivationPath)
+    const sweepPrivateKeyPair = await this.client.getMethod('keyPair')(changeAddresses[1].derivationPath)
+
+    this.fundPrivateKey = Buffer.from(fundPrivateKeyPair.__D).toString('hex')
+    this.sweepPrivateKey = Buffer.from(sweepPrivateKeyPair.__D).toString('hex')
+
     const fundPublicKey = addresses[1].publicKey.toString('hex')
     const sweepPublicKey = changeAddresses[1].publicKey.toString('hex')
-
-    console.log('fundPublicKey', fundPublicKey)
 
     const utxos = await this.GetUtxosForAmount(
       collateral
     );
     console.log('utxos', utxos)
+
+    const address = (await this.client.getMethod('getAddresses')())[0].address
+    console.log('address', address)
 
     const inputs = new PartyInputs(
       fundPublicKey,
@@ -163,13 +170,10 @@ export default class DlcParty {
       maturityTime: Math.floor(this.contract.maturityTime.getTime() / 1000)
     };
 
-    console.log('createdlc test1')
     const dlcTransactions = await this.client.CreateDlcTransactions(dlcTxRequest);
     this.contract.fundTxHex = dlcTransactions.fundTxHex;
-    console.log('createdlc test2')
     const fundTransaction = await this.client.getMethod('DecodeRawTransaction')({ hex: this.contract.fundTxHex });
     this.contract.fundTxId = fundTransaction.txid;
-    console.log('createdlc test3')
     this.contract.fundTxOutAmount = Amount.FromSatoshis(
       Number(fundTransaction.vout[0].value)
     );
@@ -180,13 +184,9 @@ export default class DlcParty {
 
   public async OnOfferMessage(offerMessage: OfferMessage): Promise<AcceptMessage> {
     this.contract = Contract.FromOfferMessage(offerMessage);
-    console.log('test-3')
     await this.Initialize(offerMessage.remoteCollateral);
-    console.log('test-2')
     this.contract.remotePartyInputs = this.partyInputs;
-    console.log('test-1')
     await this.CreateDlcTransactions();
-    console.log('test0')
     const cetSignRequest: GetRawCetSignaturesRequest = {
       cetsHex: this.contract.localCetsHex,
       privkey: this.fundPrivateKey,
@@ -196,8 +196,7 @@ export default class DlcParty {
       fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
     };
 
-    console.log('test1')
-    const cetSignatures = await this.client.getMethod('GetRawCetSignatures')(cetSignRequest);
+    const cetSignatures = await this.client.GetRawCetSignatures(cetSignRequest);
 
     const refundSignRequest: GetRawRefundTxSignatureRequest = {
       refundTxHex: this.contract.refundTransaction,
@@ -207,10 +206,8 @@ export default class DlcParty {
       remoteFundPubkey: this.partyInputs.fundPublicKey,
       fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
     };
-    console.log('test2')
 
-    const refundSignature = await this.client.getMethod('GetRawRefundTxSignature')(refundSignRequest);
-    console.log('test3')
+    const refundSignature = await this.client.GetRawRefundTxSignature(refundSignRequest);
 
     const acceptMessage = new AcceptMessage(
       this.partyInputs,
@@ -221,152 +218,174 @@ export default class DlcParty {
     return acceptMessage;
   }
 
-  // public OnAcceptMessage(acceptMessage: AcceptMessage) {
-  //   this.contract.ApplyAcceptMessage(acceptMessage);
-  //   this.CreateDlcTransactions();
+  public async OnAcceptMessage(acceptMessage: AcceptMessage): Promise<SignMessage> {
+    this.contract.ApplyAcceptMessage(acceptMessage);
+    this.CreateDlcTransactions();
 
-  //   const verifyCetSignaturesRequest: VerifyCetSignaturesRequest = {
-  //     cetsHex: this.contract.localCetsHex,
-  //     signatures: acceptMessage.cetSignatures,
-  //     localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
-  //     remoteFundPubkey: acceptMessage.remotePartyInputs.fundPublicKey,
-  //     fundTxId: this.contract.fundTxId,
-  //     fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
-  //     verifyRemote: true,
-  //   };
+    const verifyCetSignaturesRequest: VerifyCetSignaturesRequest = {
+      cetsHex: this.contract.localCetsHex,
+      signatures: acceptMessage.cetSignatures,
+      localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
+      remoteFundPubkey: acceptMessage.remotePartyInputs.fundPublicKey,
+      fundTxId: this.contract.fundTxId,
+      fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
+      verifyRemote: true,
+    };
 
-  //   let areSigsValid = bitcoin.finance.dlc.VerifyCetSignatures(verifyCetSignaturesRequest)
-  //     .valid;
+    let areSigsValid = (await this.client.VerifyCetSignatures(verifyCetSignaturesRequest)).valid;
 
-  //   const verifyRefundSigRequest: VerifyRefundTxSignatureRequest = {
-  //     refundTxHex: this.contract.refundTransaction,
-  //     signature: acceptMessage.refundSignature,
-  //     localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
-  //     remoteFundPubkey: acceptMessage.remotePartyInputs.fundPublicKey,
-  //     fundTxId: this.contract.fundTxId,
-  //     fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
-  //     verifyRemote: true,
-  //   };
+    const verifyRefundSigRequest: VerifyRefundTxSignatureRequest = {
+      refundTxHex: this.contract.refundTransaction,
+      signature: acceptMessage.refundSignature,
+      localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
+      remoteFundPubkey: acceptMessage.remotePartyInputs.fundPublicKey,
+      fundTxId: this.contract.fundTxId,
+      fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
+      verifyRemote: true,
+    };
 
-  //   areSigsValid =
-  //     areSigsValid &&
-  //     bitcoin.finance.dlc.VerifyRefundTxSignature(verifyRefundSigRequest).valid;
+    areSigsValid =
+      areSigsValid &&
+      (await this.client.VerifyRefundTxSignature(verifyRefundSigRequest)).valid;
 
-  //   if (!areSigsValid) {
-  //     throw new Error("Invalid signatures received");
-  //   }
+    if (!areSigsValid) {
+      throw new Error("Invalid signatures received");
+    }
 
-  //   const cetSignRequest: GetRawCetSignaturesRequest = {
-  //     cetsHex: this.contract.remoteCetsHex,
-  //     privkey: this.fundPrivateKey,
-  //     fundTxId: this.contract.fundTxId,
-  //     localFundPubkey: this.partyInputs.fundPublicKey,
-  //     remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
-  //     fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
-  //   };
+    const cetSignRequest: GetRawCetSignaturesRequest = {
+      cetsHex: this.contract.remoteCetsHex,
+      privkey: this.fundPrivateKey,
+      fundTxId: this.contract.fundTxId,
+      localFundPubkey: this.partyInputs.fundPublicKey,
+      remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
+      fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
+    };
 
-  //   const cetSignatures = bitcoin.finance.dlc.GetRawCetSignatures(cetSignRequest).hex;
+    const cetSignatures = (await this.client.GetRawCetSignatures(cetSignRequest)).hex;
 
-  //   const refundSignRequest: GetRawRefundTxSignatureRequest = {
-  //     refundTxHex: this.contract.refundTransaction,
-  //     privkey: this.fundPrivateKey,
-  //     fundTxId: this.contract.fundTxId,
-  //     localFundPubkey: this.partyInputs.fundPublicKey,
-  //     remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
-  //     fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
-  //   };
+    const refundSignRequest: GetRawRefundTxSignatureRequest = {
+      refundTxHex: this.contract.refundTransaction,
+      privkey: this.fundPrivateKey,
+      fundTxId: this.contract.fundTxId,
+      localFundPubkey: this.partyInputs.fundPublicKey,
+      remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
+      fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
+    };
 
-  //   const refundSignature = bitcoin.finance.dlc.GetRawRefundTxSignature(refundSignRequest)
-  //     .hex;
+    const refundSignature = (await this.client.GetRawRefundTxSignature(refundSignRequest)).hex;
 
-  //   const fundTxSigs = this.partyInputs.utxos.map((input, index) => {
-  //     const fundTxSignRequest: GetRawFundTxSignatureRequest = {
-  //       fundTxHex: this.contract.fundTxHex,
-  //       privkey: this.inputPrivateKeys[index],
-  //       prevTxId: input.txid,
-  //       prevVout: input.vout,
-  //       amount: input.amount.GetSatoshiAmount(),
-  //     };
+    const fundTxSigs = await Promise.all(this.partyInputs.utxos.map(async (input, index) => {
+      const fundTxSignRequest: GetRawFundTxSignatureRequest = {
+        fundTxHex: this.contract.fundTxHex,
+        privkey: this.inputPrivateKeys[index],
+        prevTxId: input.txid,
+        prevVout: input.vout,
+        amount: input.amount.GetSatoshiAmount(),
+      };
 
-  //     return bitcoin.finance.dlc.GetRawFundTxSignature(fundTxSignRequest).hex;
-  //   });
+      return (await this.client.GetRawFundTxSignature(fundTxSignRequest)).hex;
+    }));
 
-  //   this.contract.refundLocalSignature = refundSignature;
+    this.contract.refundLocalSignature = refundSignature;
 
-  //   const inputPubKeys = this.inputPrivateKeys.map(Utils.GetPubkeyFromPrivkey);
+    // const inputPubKeys = this.inputPrivateKeys.map(Utils.GetPubkeyFromPrivkey);
 
-  //   return new SignMessage(
-  //     fundTxSigs,
-  //     cetSignatures,
-  //     refundSignature,
-  //     inputPubKeys
-  //   );
-  // }
+    const inputPubKeys = await Promise.all(this.inputPrivateKeys.map(async (privkey) => {
+      console.log('privKey inputPubKeys:', privkey)
+      const reqPrivKey = {
+        privkey,
+        isCompressed: true,
+      };
 
-  // public async OnSignMessage(signMessage: SignMessage) {
-  //   this.contract.ApplySignMessage(signMessage);
+      return (await this.client.getMethod('GetPubkeyFromPrivkey')(reqPrivKey)).pubkey
+    }))
 
-  //   const verifyCetSignaturesRequest: VerifyCetSignaturesRequest = {
-  //     cetsHex: this.contract.remoteCetsHex,
-  //     signatures: this.contract.cetSignatures,
-  //     localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
-  //     remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
-  //     fundTxId: this.contract.fundTxId,
-  //     fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
-  //     verifyRemote: false,
-  //   };
+    console.log('inputPubKeys', inputPubKeys)
 
-  //   let areSigsValid = bitcoin.finance.dlc.VerifyCetSignatures(verifyCetSignaturesRequest)
-  //     .valid;
+    return new SignMessage(
+      fundTxSigs,
+      cetSignatures,
+      refundSignature,
+      inputPubKeys
+    );
+  }
 
-  //   const verifyRefundSigRequest: VerifyRefundTxSignatureRequest = {
-  //     refundTxHex: this.contract.refundTransaction,
-  //     signature: this.contract.refundLocalSignature,
-  //     localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
-  //     remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
-  //     fundTxId: this.contract.fundTxId,
-  //     fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
-  //     verifyRemote: false,
-  //   };
+  public async OnSignMessage(signMessage: SignMessage): Promise<string> {
+    this.contract.ApplySignMessage(signMessage);
 
-  //   areSigsValid =
-  //     areSigsValid &&
-  //     bitcoin.finance.dlc.VerifyRefundTxSignature(verifyRefundSigRequest).valid;
+    console.log('test1')
 
-  //   if (!areSigsValid) {
-  //     throw new Error("Invalid signatures received");
-  //   }
+    const verifyCetSignaturesRequest: VerifyCetSignaturesRequest = {
+      cetsHex: this.contract.remoteCetsHex,
+      signatures: this.contract.cetSignatures,
+      localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
+      remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
+      fundTxId: this.contract.fundTxId,
+      fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
+      verifyRemote: false,
+    };
 
-  //   let fundTxHex = this.contract.fundTxHex;
+    console.log('test2')
 
-  //   this.partyInputs.utxos.forEach((input, i) => {
-  //     const fundSignRequest: SignFundTransactionRequest = {
-  //       fundTxHex,
-  //       privkey: this.inputPrivateKeys[i],
-  //       prevTxId: input.txid,
-  //       prevVout: input.vout,
-  //       amount: input.amount.GetSatoshiAmount(),
-  //     };
+    let areSigsValid = (await this.client.VerifyCetSignatures(verifyCetSignaturesRequest)).valid;
 
-  //     fundTxHex = bitcoin.finance.dlc.SignFundTransaction(fundSignRequest).hex;
-  //   });
+    const verifyRefundSigRequest: VerifyRefundTxSignatureRequest = {
+      refundTxHex: this.contract.refundTransaction,
+      signature: this.contract.refundLocalSignature,
+      localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
+      remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
+      fundTxId: this.contract.fundTxId,
+      fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
+      verifyRemote: false,
+    };
 
-  //   signMessage.fundTxSignatures.forEach((signature, index) => {
-  //     const addSignRequest: AddSignatureToFundTransactionRequest = {
-  //       fundTxHex,
-  //       signature,
-  //       prevTxId: this.contract.localPartyInputs.utxos[index].txid,
-  //       prevVout: this.contract.localPartyInputs.utxos[index].vout,
-  //       pubkey: signMessage.utxoPublicKeys[index],
-  //     };
-  //     fundTxHex = bitcoin.finance.dlc.AddSignatureToFundTransaction(addSignRequest).hex;
-  //   });
-  //   console.log('fundtxHex', fundTxHex)
+    console.log('test3')
 
-  //   await this.walletClient.sendRawTransaction(fundTxHex);
+    areSigsValid =
+      areSigsValid &&
+      (await this.client.VerifyRefundTxSignature(verifyRefundSigRequest)).valid;
 
-  //   await this.GenerateBlocks(1);
-  // }
+    if (!areSigsValid) {
+      throw new Error("Invalid signatures received");
+    }
+
+    console.log('test4')
+
+    let fundTxHex = this.contract.fundTxHex;
+
+    this.partyInputs.utxos.forEach(async (input, i) => {
+      const fundSignRequest: SignFundTransactionRequest = {
+        fundTxHex,
+        privkey: this.inputPrivateKeys[i],
+        prevTxId: input.txid,
+        prevVout: input.vout,
+        amount: input.amount.GetSatoshiAmount(),
+      };
+
+      fundTxHex = (await this.client.SignFundTransaction(fundSignRequest)).hex;
+    });
+
+    console.log('test5')
+
+    signMessage.fundTxSignatures.forEach(async (signature, index) => {
+      const addSignRequest: AddSignatureToFundTransactionRequest = {
+        fundTxHex,
+        signature,
+        prevTxId: this.contract.localPartyInputs.utxos[index].txid,
+        prevVout: this.contract.localPartyInputs.utxos[index].vout,
+        pubkey: signMessage.utxoPublicKeys[index],
+      };
+      console.log('addSignRequest', addSignRequest)
+      fundTxHex = (await this.client.AddSignatureToFundTransaction(addSignRequest)).hex;
+    });
+    console.log('fundtxHex', fundTxHex)
+
+    const fundTx = await this.client.getMethod('sendRawTransaction')(fundTxHex);
+
+    return fundTx
+
+    // await this.GenerateBlocks(1);
+  }
 
   // public CreateMutualClosingMessage(outcome: Outcome) {
   //   const mutualClosingRequest = {
