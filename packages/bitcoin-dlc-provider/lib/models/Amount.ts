@@ -51,4 +51,25 @@ export default class Amount {
   public CompareWith(amount: Amount) {
     return this._satoshis - amount._satoshis;
   }
+
+  toJSON(): AmountJSON {
+    return Object.assign({}, this, {
+      _satoshis: this._satoshis
+    });
+  }
+
+  static fromJSON(json: AmountJSON): Amount {
+    let amount = Object.create(Amount.prototype);
+    return Object.assign(amount, json, {
+      _satoshis: json._satoshis
+    });
+  }
+
+  static reviver(key: string, value: any): any {
+    return key === "" ? Amount.fromJSON(value) : value;
+  }
+}
+
+export interface AmountJSON {
+  _satoshis: number;
 }

@@ -38,18 +38,18 @@ export default class DlcParty {
     this.client = client;
   }
 
-  public async InitiateContract(initialContract: Contract) {
+  public async InitiateContract(initialContract: Contract, startingIndex: number) {
     this.contract = initialContract;
-    await this.Initialize(this.contract.localCollateral);
+    await this.Initialize(this.contract.localCollateral, startingIndex);
     this.contract.localPartyInputs = this.partyInputs;
     return this.contract.GetOfferMessage();
   }
 
-  private async Initialize(collateral: Amount) {
+  private async Initialize(collateral: Amount, startingIndex: number) {
     // await this.walletClient.walletPassphrase(this.passphrase, 10);
 
-    const addresses = await this.client.getMethod('getAddresses')(0, 2, false)
-    const changeAddresses = await this.client.getMethod('getAddresses')(0, 2, true)
+    const addresses = await this.client.getMethod('getAddresses')(startingIndex, 2, false)
+    const changeAddresses = await this.client.getMethod('getAddresses')(startingIndex, 2, true)
 
     const changeAddress = changeAddresses[0].address
     const finalAddress = addresses[0].address
@@ -119,7 +119,8 @@ export default class DlcParty {
         vout: utxo.vout,
         amount: Amount.FromSatoshis(utxo.value),
         address: utxo.address,
-        derivationPath: utxo.derivationPath
+        derivationPath: utxo.derivationPath,
+        toJSON: Utxo.prototype.toJSON
       })
     }
 
@@ -140,6 +141,11 @@ export default class DlcParty {
   }
 
   private async CreateDlcTransactions() {
+    console.log('this.contract.localPartyInputs', this.contract.localPartyInputs)
+    if (this.contract.localPartyInputs instanceof PartyInputs) {
+      console.log('instanceof partyinputs')
+    }
+
     const dlcTxRequest: CreateDlcTransactionsRequest = {
       outcomes: this.contract.outcomes.map((outcome) => {
         return {
@@ -182,9 +188,9 @@ export default class DlcParty {
     this.contract.remoteCetsHex = dlcTransactions.remoteCetsHex;
   }
 
-  public async OnOfferMessage(offerMessage: OfferMessage): Promise<AcceptMessage> {
+  public async OnOfferMessage(offerMessage: OfferMessage, startingIndex: number): Promise<AcceptMessage> {
     this.contract = Contract.FromOfferMessage(offerMessage);
-    await this.Initialize(offerMessage.remoteCollateral);
+    await this.Initialize(offerMessage.remoteCollateral, startingIndex);
     this.contract.remotePartyInputs = this.partyInputs;
     await this.CreateDlcTransactions();
     const cetSignRequest: GetRawCetSignaturesRequest = {

@@ -63,6 +63,7 @@ export default class Contract {
       feeRate: this.feeRate,
       cetCsvDelay: this.cetCsvDelay,
       refundLockTime: this.refundLockTime,
+      toJSON: OfferMessage.prototype.toJSON
     };
   }
 

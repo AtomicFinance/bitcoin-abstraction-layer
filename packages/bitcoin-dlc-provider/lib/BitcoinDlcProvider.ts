@@ -63,7 +63,7 @@ export default class BitcoinDlcProvider extends Provider {
     }
   }
 
-  async initializeContractAndOffer (input: InputDetails, outcomes: Array<OutcomeDetails>, oracleInfo: OracleInfo): Promise<OfferMessage> {
+  async initializeContractAndOffer (input: InputDetails, outcomes: Array<OutcomeDetails>, oracleInfo: OracleInfo, startingIndex: number = 0): Promise<OfferMessage> {
     const contract = new Contract()
 
     contract.id = uuidv4()
@@ -73,7 +73,7 @@ export default class BitcoinDlcProvider extends Provider {
 
     this.setOutcomes(contract, outcomes)
 
-    return this._party.InitiateContract(contract)
+    return this._party.InitiateContract(contract, startingIndex)
   }
 
   private setInitialInputs (contract: Contract, input: InputDetails) {
@@ -93,9 +93,9 @@ export default class BitcoinDlcProvider extends Provider {
     })
   }
 
-  async confirmContractOffer (offerMessage: OfferMessage): Promise<AcceptMessage> {
+  async confirmContractOffer (offerMessage: OfferMessage, startingIndex: number = 0): Promise<AcceptMessage> {
     console.log('confirmContractOffer')
-    return this._party.OnOfferMessage(offerMessage)
+    return this._party.OnOfferMessage(offerMessage, startingIndex)
   }
 
   async signContract (acceptMessage: AcceptMessage): Promise<SignMessage> {
