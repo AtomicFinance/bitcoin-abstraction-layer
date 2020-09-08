@@ -94,7 +94,6 @@ export default class BitcoinDlcProvider extends Provider {
   }
 
   async confirmContractOffer (offerMessage: OfferMessage, startingIndex: number = 0): Promise<AcceptMessage> {
-    console.log('confirmContractOffer')
     return this._party.OnOfferMessage(offerMessage, startingIndex)
   }
 
