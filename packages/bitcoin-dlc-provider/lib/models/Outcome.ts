@@ -8,9 +8,7 @@ export default class Outcome {
   ) {}
 
   toJSON(): OutcomeJSON {
-    // copy all fields from `this` to an empty object and return in
     return Object.assign({}, this, {
-      // convert fields that need converting
       message: this.message,
       local: this.local.toJSON(),
       remote: this.remote.toJSON()

@@ -53,12 +53,6 @@ export default class Amount {
     return this._satoshis - amount._satoshis;
   }
 
-  public static toJSON(amount: Amount): AmountJSON {
-    return Object.assign({}, this, {
-      _satoshis: amount._satoshis
-    });
-  }
-
   toJSON(): AmountJSON {
     return Object.assign({}, this, {
       _satoshis: this._satoshis

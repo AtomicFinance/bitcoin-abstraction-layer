@@ -10,10 +10,7 @@ export default class Utxo {
   ) {}
 
   toJSON(): UtxoJSON {
-    console.log('this.amount',)
-    // copy all fields from `this` to an empty object and return in
     return Object.assign({}, this, {
-      // convert fields that need converting
       txid: this.txid,
       vout: this.vout,
       amount: this.amount.toJSON(),

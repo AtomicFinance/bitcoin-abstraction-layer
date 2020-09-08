@@ -1,5 +1,5 @@
 import Outcome, { OutcomeJSON } from "./Outcome";
-import OracleInfo, { OracleInfoJSON } from "./OracleInfo";
+import OracleInfo from "./OracleInfo";
 import PartyInputs, { PartyInputsJSON } from "./PartyInputs";
 import Amount, { AmountJSON } from "./Amount";
 
@@ -23,7 +23,6 @@ export default class OfferMessage {
       const outcome = this.outcomes[i].toJSON()
       outcomesJSON.push(outcome)
     }
-    console.log('outcomesJSON', outcomesJSON)
 
     return Object.assign({}, this, {
       contractId: this.contractId,
@@ -31,7 +30,7 @@ export default class OfferMessage {
       remoteCollateral: this.remoteCollateral.toJSON(),
       maturityTime: this.maturityTime.toString(),
       outcomes: outcomesJSON,
-      oracleInfo: this.oracleInfo.toJSON(),
+      oracleInfo: this.oracleInfo,
       localPartyInputs: this.localPartyInputs.toJSON(),
       feeRate: this.feeRate,
       cetCsvDelay: this.cetCsvDelay,
@@ -55,7 +54,7 @@ export default class OfferMessage {
       remoteCollateral: Amount.fromJSON(json.remoteCollateral),
       maturityTime: new Date(json.maturityTime),
       outcomes,
-      oracleInfo: OracleInfo.fromJSON(json.oracleInfo),
+      oracleInfo: json.oracleInfo,
       localPartyInputs: PartyInputs.fromJSON(json.localPartyInputs),
       feeRate: json.feeRate,
       cetCsvDelay: json.cetCsvDelay,
@@ -74,7 +73,7 @@ interface OfferMessageJSON {
   remoteCollateral: AmountJSON,
   maturityTime: string,
   outcomes: OutcomeJSON[],
-  oracleInfo: OracleInfoJSON,
+  oracleInfo: OracleInfo,
   localPartyInputs: PartyInputsJSON,
   feeRate: number,
   cetCsvDelay: number,

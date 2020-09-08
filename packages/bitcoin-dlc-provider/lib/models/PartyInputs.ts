@@ -19,7 +19,6 @@ export default class PartyInputs {
   toJSON(): PartyInputsJSON {
     const utxosJSON: UtxoJSON[] = []
     for (let i = 0; i < this.utxos.length; i++) {
-      console.log('this.utxos[i].toJSON()', this.utxos[i].toJSON())
       const utxo = this.utxos[i].toJSON()
       utxosJSON.push(utxo)
     }
