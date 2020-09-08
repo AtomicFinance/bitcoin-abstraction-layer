@@ -33,7 +33,7 @@ export default class PartyInputs {
   }
 
   static fromJSON(json: PartyInputsJSON): PartyInputs {
-    let oracleInfo = Object.create(PartyInputs.prototype);
+    let partyInputs = Object.create(PartyInputs.prototype);
 
     const utxos: Utxo[] = []
 
@@ -42,7 +42,7 @@ export default class PartyInputs {
       utxos.push(utxo)
     }
 
-    return Object.assign(oracleInfo, json, {
+    return Object.assign(partyInputs, json, {
       fundPublicKey: json.fundPublicKey,
       sweepPublicKey: json.sweepPublicKey,
       changeAddress: json.changeAddress,

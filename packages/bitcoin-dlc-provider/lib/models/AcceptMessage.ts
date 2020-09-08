@@ -18,7 +18,7 @@ export default class AcceptMessage {
   static fromJSON(json: AcceptMessageJSON): AcceptMessage {
     let outcome = Object.create(PartyInputs.prototype);
     return Object.assign(outcome, json, {
-      message: PartyInputs.fromJSON(json.remotePartyInputs),
+      remotePartyInputs: PartyInputs.fromJSON(json.remotePartyInputs),
       cetSignatures: json.cetSignatures,
       refundSignature: json.refundSignature
     });

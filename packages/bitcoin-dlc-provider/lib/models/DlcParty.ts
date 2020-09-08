@@ -136,6 +136,8 @@ export default class DlcParty {
       console.log('instanceof partyinputs')
     }
 
+    console.log('this.contract.remotePartyInputs', this.contract.remotePartyInputs)
+
     const dlcTxRequest: CreateDlcTransactionsRequest = {
       outcomes: this.contract.outcomes.map((outcome) => {
         return {
