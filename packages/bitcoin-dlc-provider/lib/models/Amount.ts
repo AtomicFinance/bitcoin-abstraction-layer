@@ -7,6 +7,7 @@ export default class Amount {
 
   private constructor(satoshis: number) {
     this._satoshis = satoshis;
+    this.toJSON = Amount.prototype.toJSON;
   }
 
   // Create an Amount object using bitcoin unit.
@@ -50,6 +51,12 @@ export default class Amount {
   // the amount of satoshi of the given object.
   public CompareWith(amount: Amount) {
     return this._satoshis - amount._satoshis;
+  }
+
+  public static toJSON(amount: Amount): AmountJSON {
+    return Object.assign({}, this, {
+      _satoshis: amount._satoshis
+    });
   }
 
   toJSON(): AmountJSON {
