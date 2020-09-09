@@ -208,11 +208,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CreateKeyPair(jsonObject: CreateKeyPairRequest): Promise<CreateKeyPairResponse> {
-    console.log('createkeypair')
-
     await this.CfdLoaded()
-
-    console.log('loaded')
 
     return this._cfdJs.CreateKeyPair(jsonObject)
   }

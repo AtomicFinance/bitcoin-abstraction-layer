@@ -10,7 +10,6 @@ export default class PartyInputs {
   ) {}
 
   public GetTotalInputAmount() {
-    console.log('this.utxos', this.utxos)
     return this.utxos.reduce<number>(
       (prev, cur) => prev + cur.amount.GetSatoshiAmount(),
       0

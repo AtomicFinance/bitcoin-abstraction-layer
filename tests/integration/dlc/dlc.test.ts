@@ -16,8 +16,6 @@ function testDLC (chain: any) {
     const localCollateral: Amount = Amount.FromSatoshis(1000000)
     const remoteCollateral: Amount = Amount.FromSatoshis(1000000)
 
-    console.log('(new Date()).getTime()', (new Date()).getTime())
-
     // const keyPairRequest: CreateKeyPairRequest = { wif: false }
     // let keyPair: CreateKeyPairResponse = await chain.client.finance.cfd.CreateKeyPair(keyPairRequest);
     // console.log('keyPair', keyPair)

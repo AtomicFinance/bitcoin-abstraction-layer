@@ -26,7 +26,6 @@ export default class Provider {
    *  in the stack.
    */
   getMethod (method?: any) {
-    console.log('getMethod provider: ', method)
     return this.client.getMethod(method, this).bind(this)
   }
 

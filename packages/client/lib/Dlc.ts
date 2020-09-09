@@ -52,6 +52,10 @@ export default class Dlc {
     return this.client.getMethod('finalizeContract')(signMessage)
   }
 
+  async unilateralClose (oracleSignature: string, outcomeIndex: number): Promise<string[]> {
+    return this.client.getMethod('unilateralClose')(oracleSignature, outcomeIndex)
+  }
+
   async AddSignatureToFundTransaction(jsonObject: AddSignatureToFundTransactionRequest): Promise<AddSignatureToFundTransactionResponse> {
     return this.client.getMethod('AddSignatureToFundTransaction')(jsonObject)
   }
@@ -101,7 +105,6 @@ export default class Dlc {
   }
 
   async GetRawCetSignatures(jsonObject: GetRawCetSignaturesRequest): Promise<GetRawCetSignaturesResponse> {
-    console.log('getrawcetsigsinitial')
     return this.client.getMethod('GetRawCetSignatures')(jsonObject)
   }
 

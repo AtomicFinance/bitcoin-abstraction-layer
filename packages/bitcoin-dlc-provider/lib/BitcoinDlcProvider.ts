@@ -53,7 +53,6 @@ export default class BitcoinDlcProvider extends Provider {
 
     CfddlcHelper.initialized(() => {
       this._cfdDlcJs = CfddlcHelper.getCfddlcjs();
-      console.log('this._cfdDlcJs', this._cfdDlcJs)
     }) 
   }
 
@@ -105,6 +104,10 @@ export default class BitcoinDlcProvider extends Provider {
     return this._party.OnSignMessage(signMessage)
   }
 
+  async unilateralClose (oracleSignature: string, outcomeIndex: number): Promise<string[]> {
+    return this._party.ExecuteUnilateralClose(oracleSignature, outcomeIndex)
+  }
+
   async AddSignatureToFundTransaction(jsonObject: AddSignatureToFundTransactionRequest): Promise<AddSignatureToFundTransactionResponse> {
     await this.CfdLoaded()
 
@@ -142,11 +145,7 @@ export default class BitcoinDlcProvider extends Provider {
   }
 
   async CreateDlcTransactions(jsonObject: CreateDlcTransactionsRequest): Promise<CreateDlcTransactionsResponse> {
-    console.log('createdlctransactions')
-
     await this.CfdLoaded()
-
-    console.log('cfdloaded')
 
     return this._cfdDlcJs.CreateDlcTransactions(jsonObject)
   }
@@ -182,7 +181,6 @@ export default class BitcoinDlcProvider extends Provider {
   }
 
   async GetRawCetSignatures(jsonObject: GetRawCetSignaturesRequest): Promise<GetRawCetSignaturesResponse> {
-    console.log('getrawcetsignatures')
     await this.CfdLoaded()
 
     return this._cfdDlcJs.GetRawCetSignatures(jsonObject)
