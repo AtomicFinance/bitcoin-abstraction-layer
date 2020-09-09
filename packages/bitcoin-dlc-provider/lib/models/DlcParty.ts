@@ -314,6 +314,7 @@ export default class DlcParty {
     }
 
     let fundTxHex = this.contract.fundTxHex;
+    console.log('fundTxHex #1', fundTxHex)
 
     await asyncForEach(this.partyInputs.utxos, async (input: any, i: number) => {
       const fundSignRequest: SignFundTransactionRequest = {
@@ -325,6 +326,7 @@ export default class DlcParty {
       };
 
       fundTxHex = (await this.client.SignFundTransaction(fundSignRequest)).hex;
+      console.log('fundTxHex #2', fundTxHex)
     })
 
     await asyncForEach(signMessage.fundTxSignatures, async (signature: any, index: number) => {
@@ -336,6 +338,7 @@ export default class DlcParty {
         pubkey: signMessage.utxoPublicKeys[index],
       };
       fundTxHex = (await this.client.AddSignatureToFundTransaction(addSignRequest)).hex;
+      console.log('fundTxHex #3', fundTxHex)
     })
 
     const fundTxHash = await this.client.getMethod('sendRawTransaction')(fundTxHex);
