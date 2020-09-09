@@ -1,4 +1,4 @@
-import * as cfdjsModule from 'cfd-js-wasm'
+import { getCfd, addInitializedListener } from 'cfd-js-wasm'
 
 class Helper {
   getResponse(result: any) {
@@ -6,11 +6,11 @@ class Helper {
   }
 
   getCfdjs() {
-    return cfdjsModule.getCfd();
+    return getCfd();
   }
 
   initialized(func: any) {
-    return cfdjsModule.addInitializedListener(func);
+    return addInitializedListener(func);
   }
 }
 

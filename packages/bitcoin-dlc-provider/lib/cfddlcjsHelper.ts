@@ -1,4 +1,4 @@
-import * as cfddlcjsModule from 'cfd-dlc-js-wasm'
+import { getCfddlc, addInitializedListener } from 'cfd-dlc-js-wasm'
 
 class Helper {
   getResponse(result: any) {
@@ -6,11 +6,11 @@ class Helper {
   }
 
   getCfddlcjs() {
-    return cfddlcjsModule.getCfddlc();
+    return getCfddlc();
   }
 
   initialized(func: any) {
-    return cfddlcjsModule.addInitializedListener(func);
+    return addInitializedListener(func);
   }
 }
 
