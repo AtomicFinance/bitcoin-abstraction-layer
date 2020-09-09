@@ -82,7 +82,7 @@ export default class BitcoinCfdProvider extends Provider {
 
     this._network = network
 
-    CfdHelper.initialized(() => {
+    CfdHelper.initialized((result: any) => {
       this._cfdJs = CfdHelper.getCfdjs();
     })
   }
@@ -209,7 +209,7 @@ export default class BitcoinCfdProvider extends Provider {
 
   async CreateKeyPair(jsonObject: CreateKeyPairRequest): Promise<CreateKeyPairResponse> {
     await this.CfdLoaded()
-    
+
     return this._cfdJs.CreateKeyPair(jsonObject)
   }
 

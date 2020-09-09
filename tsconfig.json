@@ -12,6 +12,7 @@
       "@atomicfinance/*": ["packages/*/lib"]
     },
     "moduleResolution": "node",
-    "declaration": true
+    "declaration": true,
+    "experimentalDecorators": true
   }
 }

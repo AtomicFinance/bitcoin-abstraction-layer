@@ -28,15 +28,28 @@ import {
   VerifyMutualClosingTxSignatureRequest, VerifyMutualClosingTxSignatureResponse,
   VerifyRefundTxSignatureRequest, VerifyRefundTxSignatureResponse
 } from 'cfd-dlc-js-wasm'
+import DlcParty from './models/DlcParty'
+import Contract from './models/Contract'
 
-export default class BitcoinCfdDlcProvider extends Provider {
+import InputDetails from './models/InputDetails'
+import OutcomeDetails from './models/OutcomeDetails'
+import OracleInfo from './models/OracleInfo'
+import Outcome from './models/Outcome'
+import OfferMessage from './models/OfferMessage'
+import AcceptMessage from './models/AcceptMessage'
+import SignMessage from './models/SignMessage'
+import { v4 as uuidv4 } from "uuid";
+
+export default class BitcoinDlcProvider extends Provider {
   _network: any;
   _cfdDlcJs: any;
+  _party: DlcParty;
 
   constructor(network: any) {
-    super('BitcoinCfdDlcProvider')
+    super('BitcoinDlcProvider')
 
     this._network = network
+    this._party = new DlcParty(this)
 
     CfddlcHelper.initialized(() => {
       this._cfdDlcJs = CfddlcHelper.getCfddlcjs();
@@ -47,6 +60,52 @@ export default class BitcoinCfdDlcProvider extends Provider {
     while (!this._cfdDlcJs) {
       await sleep(10)
     }
+  }
+
+  async initializeContractAndOffer (input: InputDetails, outcomes: Array<OutcomeDetails>, oracleInfo: OracleInfo, startingIndex: number = 0): Promise<OfferMessage> {
+    const contract = new Contract()
+
+    contract.id = uuidv4()
+    contract.oracleInfo = oracleInfo
+
+    this.setInitialInputs(contract, input)
+
+    this.setOutcomes(contract, outcomes)
+
+    return this._party.InitiateContract(contract, startingIndex)
+  }
+
+  private setInitialInputs (contract: Contract, input: InputDetails) {
+    contract.localCollateral = input.localCollateral
+    contract.remoteCollateral = input.remoteCollateral
+    contract.feeRate = input.feeRate
+    contract.maturityTime = input.maturityTime
+    contract.refundLockTime = input.refundLockTime
+    contract.cetCsvDelay = input.cetCsvDelay
+  }
+
+  private setOutcomes (contract: Contract, outcomes: Array<OutcomeDetails>) {
+    outcomes.forEach((outcome) => {
+      const { message, localAmount, remoteAmount } = outcome
+      const newOutcome = new Outcome(message, localAmount, remoteAmount)
+      contract.outcomes.push(newOutcome)
+    })
+  }
+
+  async confirmContractOffer (offerMessage: OfferMessage, startingIndex: number = 0): Promise<AcceptMessage> {
+    return this._party.OnOfferMessage(offerMessage, startingIndex)
+  }
+
+  async signContract (acceptMessage: AcceptMessage): Promise<SignMessage> {
+    return this._party.OnAcceptMessage(acceptMessage)
+  }
+
+  async finalizeContract (signMessage: SignMessage): Promise<string> {
+    return this._party.OnSignMessage(signMessage)
+  }
+
+  async unilateralClose (oracleSignature: string, outcomeIndex: number): Promise<string[]> {
+    return this._party.ExecuteUnilateralClose(oracleSignature, outcomeIndex)
   }
 
   async AddSignatureToFundTransaction(jsonObject: AddSignatureToFundTransactionRequest): Promise<AddSignatureToFundTransactionResponse> {
