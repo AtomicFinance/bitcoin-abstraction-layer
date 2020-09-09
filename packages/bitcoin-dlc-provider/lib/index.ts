@@ -1,5 +1,7 @@
 /// <reference path="Provider.d.ts" />
 
+export { default as Contract } from './models/Contract'
+
 export { default as AcceptMessage } from './models/AcceptMessage'
 export { default as Amount } from './models/Amount'
 export { default as MutualClosingMessage } from './models/MutualClosingMessage'

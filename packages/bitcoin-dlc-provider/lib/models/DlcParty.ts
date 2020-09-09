@@ -1,9 +1,7 @@
 import PartyInputs from "./PartyInputs";
 import Contract from "./Contract";
-// import Client from "bitcoin-core";
 import Amount from "./Amount";
 import Utxo from "./Utxo";
-// import * as Utils from "../utils/Utils";
 import {
   CreateDlcTransactionsRequest, GetRawCetSignaturesRequest, GetRawRefundTxSignatureRequest, VerifyCetSignaturesRequest,
   VerifyRefundTxSignatureRequest, GetRawFundTxSignatureRequest, SignFundTransactionRequest, AddSignatureToFundTransactionRequest,
@@ -35,11 +33,15 @@ export default class DlcParty {
     this.client = client;
   }
 
-  public async InitiateContract(initialContract: Contract, startingIndex: number) {
+  public async InitiateContract(initialContract: Contract, startingIndex: number): Promise<OfferMessage> {
+    await this.ImportContract(initialContract, startingIndex)
+    return this.contract.GetOfferMessage();
+  }
+
+  public async ImportContract(initialContract: Contract, startingIndex: number) {
     this.contract = initialContract;
     await this.Initialize(this.contract.localCollateral, startingIndex);
     this.contract.localPartyInputs = this.partyInputs;
-    return this.contract.GetOfferMessage();
   }
 
   private async Initialize(collateral: Amount, startingIndex: number) {
@@ -181,6 +183,7 @@ export default class DlcParty {
     const refundSignature = await this.client.GetRawRefundTxSignature(refundSignRequest);
 
     const acceptMessage = new AcceptMessage(
+      this.contract.id,
       this.partyInputs,
       cetSignatures.hex,
       refundSignature.hex
@@ -269,6 +272,7 @@ export default class DlcParty {
     }))
 
     return new SignMessage(
+      this.contract.id,
       fundTxSigs,
       cetSignatures,
       refundSignature,
@@ -481,6 +485,9 @@ export default class DlcParty {
     };
 
     closingTxHex = (await this.client.SignClosingTransaction(signClosingRequest)).hex;
+
+    console.log('cetHex', cetHex)
+    console.log('closingTxHex', closingTxHex)
 
     const cetTxHash = await this.client.getMethod('sendRawTransaction')(cetHex)
     const closingTxHash = await this.client.getMethod('sendRawTransaction')(closingTxHex)

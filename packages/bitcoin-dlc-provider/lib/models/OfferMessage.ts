@@ -14,7 +14,7 @@ export default class OfferMessage {
     readonly localPartyInputs: PartyInputs,
     readonly feeRate: number,
     readonly cetCsvDelay: number,
-    readonly refundLockTime: number
+    readonly refundLockTime: number,
   ) {}
 
   toJSON(): OfferMessageJSON {
@@ -49,7 +49,7 @@ export default class OfferMessage {
     }
 
     return Object.assign(offerMessage, json, {
-      contractId: new Date(json.contractId),
+      contractId: json.contractId,
       localCollateral: Amount.fromJSON(json.localCollateral),
       remoteCollateral: Amount.fromJSON(json.remoteCollateral),
       maturityTime: new Date(json.maturityTime),
