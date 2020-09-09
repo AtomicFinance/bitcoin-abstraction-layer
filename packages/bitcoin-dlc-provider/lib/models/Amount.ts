@@ -8,6 +8,7 @@ export default class Amount {
   private constructor(satoshis: number) {
     this._satoshis = satoshis;
     this.toJSON = Amount.prototype.toJSON;
+    this.GetSatoshiAmount = Amount.prototype.GetSatoshiAmount;
   }
 
   // Create an Amount object using bitcoin unit.

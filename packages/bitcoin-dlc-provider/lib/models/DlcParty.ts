@@ -138,6 +138,8 @@ export default class DlcParty {
 
     console.log('this.contract.remotePartyInputs', this.contract.remotePartyInputs)
 
+    console.log('this.contract.remoteCollateral', this.contract.remoteCollateral)
+
     const dlcTxRequest: CreateDlcTransactionsRequest = {
       outcomes: this.contract.outcomes.map((outcome) => {
         return {
@@ -217,8 +219,15 @@ export default class DlcParty {
   }
 
   public async OnAcceptMessage(acceptMessage: AcceptMessage): Promise<SignMessage> {
+    console.log('this.contract #1', this.contract)
     this.contract.ApplyAcceptMessage(acceptMessage);
-    this.CreateDlcTransactions();
+    console.log('this.contract #2', this.contract)
+    await this.CreateDlcTransactions();
+    console.log('dlc txs created')
+
+    console.log('this.contract #3', this.contract)
+    console.log('this.contract.fundTxId', this.contract.fundTxId)
+    console.log('this.contract.fundTxOutAmount', this.contract.fundTxOutAmount)
 
     const verifyCetSignaturesRequest: VerifyCetSignaturesRequest = {
       cetsHex: this.contract.localCetsHex,
@@ -230,7 +239,11 @@ export default class DlcParty {
       verifyRemote: true,
     };
 
+    console.log('verifyCetSignaturesRequest created')
+
     let areSigsValid = (await this.client.VerifyCetSignatures(verifyCetSignaturesRequest)).valid;
+
+    console.log('areSigsValid')
 
     const verifyRefundSigRequest: VerifyRefundTxSignatureRequest = {
       refundTxHex: this.contract.refundTransaction,
@@ -283,6 +296,8 @@ export default class DlcParty {
 
       return (await this.client.GetRawFundTxSignature(fundTxSignRequest)).hex;
     }));
+
+    console.log('fundTxSigs', fundTxSigs)
 
     this.contract.refundLocalSignature = refundSignature;
 
@@ -361,9 +376,11 @@ export default class DlcParty {
       fundTxHex = (await this.client.AddSignatureToFundTransaction(addSignRequest)).hex;
     });
 
-    const fundTx = await this.client.getMethod('sendRawTransaction')(fundTxHex);
+    console.log('fundTxHex', fundTxHex)
 
-    return fundTx
+    const fundTxHash = await this.client.getMethod('sendRawTransaction')(fundTxHex);
+
+    return fundTxHash
   }
 
   // public async CreateMutualClosingMessage(outcome: Outcome) {
