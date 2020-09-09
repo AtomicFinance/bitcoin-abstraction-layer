@@ -43,36 +43,23 @@ import { v4 as uuidv4 } from "uuid";
 export default class BitcoinDlcProvider extends Provider {
   _network: any;
   _cfdDlcJs: any;
-  _party: DlcParty;
+  _dlcs: DlcParty[];
 
   constructor(network: any) {
     super('BitcoinDlcProvider')
 
     this._network = network
-    this._party = new DlcParty(this)
+    this._dlcs = [] as DlcParty[]
 
     CfddlcHelper.initialized(() => {
       this._cfdDlcJs = CfddlcHelper.getCfddlcjs();
     }) 
   }
 
-  async CfdLoaded () {
+  private async CfdLoaded () {
     while (!this._cfdDlcJs) {
       await sleep(10)
     }
-  }
-
-  async initializeContractAndOffer (input: InputDetails, outcomes: Array<OutcomeDetails>, oracleInfo: OracleInfo, startingIndex: number = 0): Promise<OfferMessage> {
-    const contract = new Contract()
-
-    contract.id = uuidv4()
-    contract.oracleInfo = oracleInfo
-
-    this.setInitialInputs(contract, input)
-
-    this.setOutcomes(contract, outcomes)
-
-    return this._party.InitiateContract(contract, startingIndex)
   }
 
   private setInitialInputs (contract: Contract, input: InputDetails) {
@@ -92,20 +79,62 @@ export default class BitcoinDlcProvider extends Provider {
     })
   }
 
+  private findDlc (contractId: string): DlcParty {
+    return this._dlcs.find(dlc => dlc.contract.id === contractId)
+  }
+
+  async importContract (contract: Contract, startingIndex: number = 0) {
+    const dlcParty = new DlcParty(this)
+    this._dlcs.push(dlcParty)
+    await dlcParty.ImportContract(contract, startingIndex)
+  }
+
+  exportContract (contractId: string): Contract {
+    return this.findDlc(contractId).contract
+  }
+
+  exportContracts (): Contract[] {
+    const contracts: Contract [] = []
+    for (let i = 0; i < this._dlcs.length; i++) {
+      const dlc = this._dlcs[i]
+      contracts.push(dlc.contract)
+    }
+    return contracts
+  }
+
+  async initializeContractAndOffer (input: InputDetails, outcomes: Array<OutcomeDetails>, oracleInfo: OracleInfo, startingIndex: number = 0): Promise<OfferMessage> {
+    const contract = new Contract()
+
+    contract.id = uuidv4()
+    contract.oracleInfo = oracleInfo
+
+    this.setInitialInputs(contract, input)
+
+    this.setOutcomes(contract, outcomes)
+
+    const dlcParty = new DlcParty(this)
+    this._dlcs.push(dlcParty)
+
+    return dlcParty.InitiateContract(contract, startingIndex)
+  }
+
   async confirmContractOffer (offerMessage: OfferMessage, startingIndex: number = 0): Promise<AcceptMessage> {
-    return this._party.OnOfferMessage(offerMessage, startingIndex)
+    const dlcParty = new DlcParty(this)
+    this._dlcs.push(dlcParty)
+
+    return dlcParty.OnOfferMessage(offerMessage, startingIndex)
   }
 
   async signContract (acceptMessage: AcceptMessage): Promise<SignMessage> {
-    return this._party.OnAcceptMessage(acceptMessage)
+    return this.findDlc(acceptMessage.contractId).OnAcceptMessage(acceptMessage)
   }
 
   async finalizeContract (signMessage: SignMessage): Promise<string> {
-    return this._party.OnSignMessage(signMessage)
+    return this.findDlc(signMessage.contractId).OnSignMessage(signMessage)
   }
 
-  async unilateralClose (oracleSignature: string, outcomeIndex: number): Promise<string[]> {
-    return this._party.ExecuteUnilateralClose(oracleSignature, outcomeIndex)
+  async unilateralClose (oracleSignature: string, outcomeIndex: number, contractId: string): Promise<string[]> {
+    return this.findDlc(contractId).ExecuteUnilateralClose(oracleSignature, outcomeIndex)
   }
 
   async AddSignatureToFundTransaction(jsonObject: AddSignatureToFundTransactionRequest): Promise<AddSignatureToFundTransactionResponse> {
