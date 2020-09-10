@@ -23,7 +23,7 @@ export default class Amount {
 
   // Get the amount value in bitcoin.
   public GetBitcoinAmount() {
-    return this._satoshis * ConversionFactor;
+    return this._satoshis / ConversionFactor;
   }
 
   // Get the amount value in satoshi.
