@@ -1,10 +1,10 @@
-import Outcome from "./Outcome";
-import PartyInputs from "./PartyInputs";
+import Outcome, { OutcomeJSON } from "./Outcome";
+import PartyInputs, { PartyInputsJSON } from "./PartyInputs";
 import OracleInfo from "./OracleInfo";
-import OfferMessage from "./OfferMessage";
-import AcceptMessage from "./AcceptMessage";
+import OfferMessage, { OfferMessageJSON } from "./OfferMessage";
+import AcceptMessage, { AcceptMessageJSON } from "./AcceptMessage";
 import SignMessage from "./SignMessage";
-import Amount from "./Amount";
+import Amount, { AmountJSON } from "./Amount";
 
 export default class Contract {
   id: string;
@@ -78,4 +78,102 @@ export default class Contract {
     this.refundLocalSignature = signMessage.refundSignature;
     this.fundTxSignatures = signMessage.fundTxSignatures;
   }
+
+  toJSON(): ContractJSON {
+    const outcomesJSON: OutcomeJSON[] = []
+    for (let i = 0; i < this.outcomes.length; i++) {
+      const outcome = this.outcomes[i].toJSON()
+      outcomesJSON.push(outcome)
+    }
+
+    return Object.assign({}, this, {
+      id: this.id,
+      localCollateral: this.localCollateral.toJSON(),
+      remoteCollateral: this.remoteCollateral.toJSON(),
+      outcomes: outcomesJSON,
+      maturityTime: this.maturityTime.toString(),
+      feeRate: this.feeRate,
+      localPartyInputs: this.localPartyInputs.toJSON(),
+      remotePartyInputs: this.remotePartyInputs.toJSON(),
+      oracleInfo: this.oracleInfo,
+      cetCsvDelay: this.cetCsvDelay,
+      refundLockTime: this.refundLockTime,
+      isLocalParty: this.isLocalParty,
+      fundTxHex: this.fundTxHex,
+      fundTxId: this.fundTxId,
+      fundTxOutAmount: this.fundTxOutAmount.toJSON(),
+      fundTxSignatures: this.fundTxSignatures,
+      refundTransaction: this.refundTransaction,
+      refundLocalSignature: this.refundLocalSignature,
+      refundRemoteSignature: this.refundRemoteSignature,
+      localCetsHex: this.localCetsHex,
+      remoteCetsHex: this.remoteCetsHex,
+      cetSignatures: this.cetSignatures
+    });
+  }
+
+  static fromJSON(json: ContractJSON): OfferMessage {
+    let offerMessage = Object.create(OfferMessage.prototype);
+
+    const outcomes: Outcome[] = []
+
+    for (let i = 0; i < json.outcomes.length; i++) {
+      const outcome = Outcome.fromJSON(json.outcomes[i])
+      outcomes.push(outcome)
+    }
+
+    return Object.assign(offerMessage, json, {
+      id: json.id,
+      localCollateral: Amount.fromJSON(json.localCollateral),
+      remoteCollateral: Amount.fromJSON(json.remoteCollateral),
+      outcomes,
+      maturityTime: new Date(json.maturityTime),
+      feeRate: json.feeRate,
+      localPartyInputs: PartyInputs.fromJSON(json.localPartyInputs),
+      remotePartyInputs: PartyInputs.fromJSON(json.remotePartyInputs),
+      oracleInfo: json.oracleInfo,
+      cetCsvDelay: json.cetCsvDelay,
+      refundLockTime: json.refundLockTime,
+      isLocalParty: json.isLocalParty,
+      fundTxHex: json.fundTxHex,
+      fundTxId: json.fundTxId,
+      fundTxOutAmount: Amount.fromJSON(json.fundTxOutAmount),
+      fundTxSignatures: json.fundTxSignatures,
+      refundTransaction: json.refundTransaction,
+      refundLocalSignature: json.refundLocalSignature,
+      refundRemoteSignature: json.refundRemoteSignature,
+      localCetsHex: json.localCetsHex,
+      remoteCetsHex: json.remoteCetsHex,
+      cetSignatures: json.cetSignatures
+    });
+  }
+
+  static reviver(key: string, value: any): any {
+    return key === "" ? Contract.fromJSON(value) : value;
+  }
+}
+
+export interface ContractJSON {
+  id: string,
+  localCollateral: AmountJSON,
+  remoteCollateral: AmountJSON,
+  outcomes: OutcomeJSON[],
+  maturityTime: string,
+  feeRate: number,
+  localPartyInputs: PartyInputsJSON,
+  remotePartyInputs: PartyInputsJSON,
+  oracleInfo: OracleInfo,
+  cetCsvDelay: number,
+  refundLockTime: number,
+  isLocalParty: boolean,
+  fundTxHex: string,
+  fundTxId: string,
+  fundTxOutAmount: AmountJSON,
+  fundTxSignatures: string[],
+  refundTransaction: string,
+  refundLocalSignature: string,
+  refundRemoteSignature: string,
+  localCetsHex: string[],
+  remoteCetsHex: string[],
+  cetSignatures: string[]
 }

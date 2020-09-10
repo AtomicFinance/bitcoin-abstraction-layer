@@ -27,7 +27,7 @@ import {
   VerifyRefundTxSignatureRequest, VerifyRefundTxSignatureResponse
 } from 'cfd-dlc-js-wasm'
 
-import { InputDetails, OutcomeDetails, OracleInfo, OfferMessage, AcceptMessage, SignMessage } from '@atomicfinance/bitcoin-dlc-provider'
+import { InputDetails, OutcomeDetails, OracleInfo, OfferMessage, AcceptMessage, SignMessage, Contract } from '@atomicfinance/bitcoin-dlc-provider'
 
 export default class Dlc {
   client: Client;
@@ -54,6 +54,18 @@ export default class Dlc {
 
   async unilateralClose (oracleSignature: string, outcomeIndex: number): Promise<string[]> {
     return this.client.getMethod('unilateralClose')(oracleSignature, outcomeIndex)
+  }
+
+  async importContract (contract: Contract, startingIndex: number = 0) {
+    return this.client.getMethod('importContract')(contract, startingIndex)
+  }
+
+  exportContract (contractId: string): Contract {
+    return this.client.getMethod('exportContract')(contractId)
+  }
+
+  exportContracts (): Contract[] {
+    return this.client.getMethod('exportContracts')()
   }
 
   async AddSignatureToFundTransaction(jsonObject: AddSignatureToFundTransactionRequest): Promise<AddSignatureToFundTransactionResponse> {

@@ -67,7 +67,7 @@ export default class OfferMessage {
   }
 }
 
-interface OfferMessageJSON {
+export interface OfferMessageJSON {
   contractId: string,
   localCollateral: AmountJSON,
   remoteCollateral: AmountJSON,
