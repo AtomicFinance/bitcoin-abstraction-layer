@@ -32,6 +32,12 @@
     "build:dev:node": "lerna run build:node --stream",
     "build:dev:browser": "lerna run build:browser --stream",
     "build": "cross-env NODE_ENV=production npm run build:dev",
-    "watch": "cross-env NODE_ENV=production WEBPACK_WATCH=true lerna run build --parallel"
+    "watch": "cross-env NODE_ENV=production WEBPACK_WATCH=true lerna run build --parallel",
+    "new:version": "lerna version --no-push --no-git-tag-version && lerna clean --yes && lerna bootstrap",
+    "publish:all": "lerna publish from-package",
+    "prepublishOnly": "npm run build:dev:browser && npm run build"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
