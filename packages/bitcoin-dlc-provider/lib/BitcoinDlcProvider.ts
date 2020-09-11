@@ -83,6 +83,12 @@ export default class BitcoinDlcProvider extends Provider {
     return this._dlcs.find(dlc => dlc.contract.id === contractId)
   }
 
+  hasDlc (contractId: string): boolean {
+    return this._dlcs.some((dlc) => {
+      dlc.contract.id === contractId
+    })
+  }
+
   async importContract (contract: Contract, startingIndex: number = 0) {
     const dlcParty = new DlcParty(this)
     this._dlcs.push(dlcParty)

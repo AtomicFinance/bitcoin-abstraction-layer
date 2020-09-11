@@ -34,17 +34,19 @@ export default class DlcParty {
   }
 
   public async InitiateContract(initialContract: Contract, startingIndex: number): Promise<OfferMessage> {
-    await this.ImportContract(initialContract, startingIndex)
+    this.contract = initialContract;
+    await this.Initialize(this.contract.localCollateral, startingIndex);
+    this.contract.localPartyInputs = this.partyInputs;
     return this.contract.GetOfferMessage();
   }
 
   public async ImportContract(initialContract: Contract, startingIndex: number) {
     this.contract = initialContract;
-    await this.Initialize(this.contract.localCollateral, startingIndex);
+    await this.Initialize(this.contract.localCollateral, startingIndex, false);
     this.contract.localPartyInputs = this.partyInputs;
   }
 
-  private async Initialize(collateral: Amount, startingIndex: number) {
+  private async Initialize(collateral: Amount, startingIndex: number, checkUtxos: boolean = true) {
     const addresses = await this.client.getMethod('getAddresses')(startingIndex, 2, false)
     const changeAddresses = await this.client.getMethod('getAddresses')(startingIndex, 2, true)
 
@@ -60,20 +62,22 @@ export default class DlcParty {
     const fundPublicKey = addresses[1].publicKey.toString('hex')
     const sweepPublicKey = changeAddresses[1].publicKey.toString('hex')
 
-    const utxos = await this.GetUtxosForAmount(
-      collateral
-    );
+    if (checkUtxos === true) {
+      const utxos = await this.GetUtxosForAmount(
+        collateral
+      );
 
-    const inputs = new PartyInputs(
-      fundPublicKey,
-      sweepPublicKey,
-      changeAddress,
-      finalAddress,
-      utxos
-    );
+      const inputs = new PartyInputs(
+        fundPublicKey,
+        sweepPublicKey,
+        changeAddress,
+        finalAddress,
+        utxos
+      );
 
-    this.inputPrivateKeys = await this.GetPrivKeysForUtxos(inputs.utxos)
-    this.partyInputs = inputs;
+      this.inputPrivateKeys = await this.GetPrivKeysForUtxos(inputs.utxos)
+      this.partyInputs = inputs;
+    }
   }
 
   private async GetUtxosForAmount (amount: Amount) {
