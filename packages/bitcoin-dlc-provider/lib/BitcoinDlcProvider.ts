@@ -140,6 +140,9 @@ export default class BitcoinDlcProvider extends Provider {
   }
 
   async unilateralClose (oracleSignature: string, outcomeIndex: number, contractId: string): Promise<string[]> {
+    console.log('this.findDlc(contractId)', this.findDlc(contractId))
+    console.log('this.findDlc(contractId).contract', this.findDlc(contractId).contract)
+
     return this.findDlc(contractId).ExecuteUnilateralClose(oracleSignature, outcomeIndex)
   }
 

@@ -42,13 +42,17 @@ export default class PartyInputs {
       utxos.push(utxo)
     }
 
-    return Object.assign(partyInputs, json, {
+    const returnValue = Object.assign(partyInputs, json, {
       fundPublicKey: json.fundPublicKey,
       sweepPublicKey: json.sweepPublicKey,
       changeAddress: json.changeAddress,
       finalAddress: json.finalAddress,
       utxos
     });
+
+    console.log('returnValue partyinputs', returnValue)
+
+    return returnValue
   }
 
   static reviver(key: string, value: any): any {

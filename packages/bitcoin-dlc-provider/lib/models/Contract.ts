@@ -86,6 +86,8 @@ export default class Contract {
       outcomesJSON.push(outcome)
     }
 
+    console.log('this.fundTxSignatures', this.fundTxSignatures)
+
     return Object.assign({}, this, {
       id: this.id,
       localCollateral: this.localCollateral.toJSON(),
@@ -112,8 +114,8 @@ export default class Contract {
     });
   }
 
-  static fromJSON(json: ContractJSON): OfferMessage {
-    let offerMessage = Object.create(OfferMessage.prototype);
+  static fromJSON(json: ContractJSON): Contract {
+    let contractMessage = Object.create(Contract.prototype);
 
     const outcomes: Outcome[] = []
 
@@ -122,7 +124,10 @@ export default class Contract {
       outcomes.push(outcome)
     }
 
-    return Object.assign(offerMessage, json, {
+    console.log('json.localPartyInputs', json.localPartyInputs)
+    console.log('json.remotePartyInputs', json.remotePartyInputs)
+
+    const returnValue = Object.assign(contractMessage, json, {
       id: json.id,
       localCollateral: Amount.fromJSON(json.localCollateral),
       remoteCollateral: Amount.fromJSON(json.remoteCollateral),
@@ -146,6 +151,10 @@ export default class Contract {
       remoteCetsHex: json.remoteCetsHex,
       cetSignatures: json.cetSignatures
     });
+
+    console.log('returnValue contract', returnValue)
+
+    return returnValue
   }
 
   static reviver(key: string, value: any): any {
