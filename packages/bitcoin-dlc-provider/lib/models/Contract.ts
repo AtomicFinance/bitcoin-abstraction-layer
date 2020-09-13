@@ -127,32 +127,40 @@ export default class Contract {
     console.log('json.localPartyInputs', json.localPartyInputs)
     console.log('json.remotePartyInputs', json.remotePartyInputs)
 
-    const returnValue = Object.assign(contractMessage, json, {
-      id: json.id,
+    console.log('PartyInputs.fromJSON(json.localPartyInputs)', PartyInputs.fromJSON(json.localPartyInputs))
+    console.log('PartyInputs.fromJSON(json.remotePartyInputs)', PartyInputs.fromJSON(json.remotePartyInputs))
+
+    const returnValue = Object.assign(contractMessage, {...json,
+      id: 'test',
       localCollateral: Amount.fromJSON(json.localCollateral),
       remoteCollateral: Amount.fromJSON(json.remoteCollateral),
       outcomes,
       maturityTime: new Date(json.maturityTime),
-      feeRate: json.feeRate,
+      // feeRate: json.feeRate,
       localPartyInputs: PartyInputs.fromJSON(json.localPartyInputs),
-      remotePartyInputs: PartyInputs.fromJSON(json.remotePartyInputs),
-      oracleInfo: json.oracleInfo,
-      cetCsvDelay: json.cetCsvDelay,
-      refundLockTime: json.refundLockTime,
-      isLocalParty: json.isLocalParty,
-      fundTxHex: json.fundTxHex,
-      fundTxId: json.fundTxId,
-      fundTxOutAmount: Amount.fromJSON(json.fundTxOutAmount),
-      fundTxSignatures: json.fundTxSignatures,
-      refundTransaction: json.refundTransaction,
-      refundLocalSignature: json.refundLocalSignature,
-      refundRemoteSignature: json.refundRemoteSignature,
-      localCetsHex: json.localCetsHex,
-      remoteCetsHex: json.remoteCetsHex,
-      cetSignatures: json.cetSignatures
+      // remotePartyInputs: PartyInputs.fromJSON(json.remotePartyInputs),
+      // oracleInfo: json.oracleInfo,
+      // cetCsvDelay: json.cetCsvDelay,
+      // refundLockTime: json.refundLockTime,
+      // isLocalParty: json.isLocalParty,
+      // fundTxHex: json.fundTxHex,
+      // fundTxId: json.fundTxId,
+      // fundTxOutAmount: Amount.fromJSON(json.fundTxOutAmount),
+      // fundTxSignatures: json.fundTxSignatures,
+      // refundTransaction: json.refundTransaction,
+      // refundLocalSignature: json.refundLocalSignature,
+      // refundRemoteSignature: json.refundRemoteSignature,
+      // localCetsHex: json.localCetsHex,
+      // remoteCetsHex: json.remoteCetsHex,
+      // cetSignatures: json.cetSignatures
     });
 
+    // returnValue.localPartyInputs = PartyInputs.fromJSON(json.localPartyInputs)
+    // returnValue.localPartyInputs = {} as PartyInputs
+    // console.log('returnValue.localPartyInputs', returnValue.localPartyInputs)
+
     console.log('returnValue contract', returnValue)
+    debugger
 
     return returnValue
   }
