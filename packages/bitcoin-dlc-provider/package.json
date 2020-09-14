@@ -20,6 +20,7 @@
     "@atomicfinance/provider": "^0.1.0",
     "@liquality/provider": "^0.6.2",
     "@liquality/utils": "^0.6.2",
+    "@liquality/bitcoin-utils": "^0.6.2",
     "cfd-dlc-js-wasm": "github:zpv/cfd-dlc-js-wasm",
     "lodash": "^4.17.20",
     "uuid": "^8.3.0"
