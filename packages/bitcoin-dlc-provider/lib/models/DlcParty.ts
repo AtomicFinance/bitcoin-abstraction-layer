@@ -13,6 +13,8 @@ import SignMessage from "./SignMessage";
 import Outcome from "./Outcome";
 import MutualClosingMessage from "./MutualClosingMessage";
 
+import { decodeRawTransaction } from '@liquality/bitcoin-utils'
+
 import { asyncForEach } from '../utils/Utils'
 
 import BitcoinDlcProvider from '../BitcoinDlcProvider'
@@ -43,7 +45,6 @@ export default class DlcParty {
   public async ImportContract(initialContract: Contract, startingIndex: number) {
     this.contract = initialContract;
     await this.Initialize(this.contract.localCollateral, startingIndex, false);
-    this.contract.localPartyInputs = this.partyInputs;
   }
 
   private async Initialize(collateral: Amount, startingIndex: number, checkUtxos: boolean = true) {
@@ -62,22 +63,23 @@ export default class DlcParty {
     const fundPublicKey = addresses[1].publicKey.toString('hex')
     const sweepPublicKey = changeAddresses[1].publicKey.toString('hex')
 
+    let utxos: Utxo[] = []
     if (checkUtxos === true) {
-      const utxos = await this.GetUtxosForAmount(
-        collateral
-      );
-
-      const inputs = new PartyInputs(
-        fundPublicKey,
-        sweepPublicKey,
-        changeAddress,
-        finalAddress,
-        utxos
-      );
-
-      this.inputPrivateKeys = await this.GetPrivKeysForUtxos(inputs.utxos)
-      this.partyInputs = inputs;
+      utxos = await this.GetUtxosForAmount(collateral);
+    } else {
+      utxos = await this.GetFundingUtxos(startingIndex)
     }
+
+    const inputs = new PartyInputs(
+      fundPublicKey,
+      sweepPublicKey,
+      changeAddress,
+      finalAddress,
+      utxos
+    );
+
+    this.inputPrivateKeys = await this.GetPrivKeysForUtxos(inputs.utxos)
+    this.partyInputs = inputs;
   }
 
   private async GetUtxosForAmount (amount: Amount) {
@@ -101,6 +103,41 @@ export default class DlcParty {
     }
 
     return utxoSet;
+  }
+
+  private async GetFundingUtxos (startingIndex: number) {
+    const fundTransaction = await this.client.getMethod('DecodeRawTransaction')({ hex: this.contract.fundTxHex });
+
+    let utxos: Utxo[] = []
+    for (let i = 0; i < fundTransaction.vin.length; i++) {
+      const vin = fundTransaction.vin[i]
+
+      const vinRawTx = await this.client.getMethod('getRawTransactionByHash')(vin.txid)
+
+      const network = await this.client.getMethod('getConnectedNetwork')()
+
+      const vinTx = await decodeRawTransaction(vinRawTx, network)
+
+      const addresses = await this.client.getMethod('getAddresses')(startingIndex, 1, false)
+      const fundingAddress = addresses[0].address
+
+      for (let j = 0; j < vinTx.vout.length; j++) {
+        const vout = vinTx.vout[j]
+
+        if (fundingAddress === vout.scriptPubKey.addresses[0]) {
+          utxos.push({
+            txid: vinTx.hash,
+            vout: j,
+            amount: Amount.FromBitcoin(vout.value),
+            address: fundingAddress,
+            derivationPath: addresses[0].derivationPath,
+            toJSON: Utxo.prototype.toJSON
+          })
+        }
+      }
+    }
+
+    return utxos
   }
 
   private async GetPrivKeysForUtxos (utxoSet: Utxo[]): Promise<string[]> {

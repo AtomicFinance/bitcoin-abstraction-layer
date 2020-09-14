@@ -112,8 +112,8 @@ export default class Contract {
     });
   }
 
-  static fromJSON(json: ContractJSON): OfferMessage {
-    let offerMessage = Object.create(OfferMessage.prototype);
+  static fromJSON(json: ContractJSON): Contract {
+    let contractMessage = Object.create(Contract.prototype);
 
     const outcomes: Outcome[] = []
 
@@ -122,29 +122,15 @@ export default class Contract {
       outcomes.push(outcome)
     }
 
-    return Object.assign(offerMessage, json, {
+    return Object.assign(contractMessage, json, {
       id: json.id,
       localCollateral: Amount.fromJSON(json.localCollateral),
       remoteCollateral: Amount.fromJSON(json.remoteCollateral),
       outcomes,
       maturityTime: new Date(json.maturityTime),
-      feeRate: json.feeRate,
       localPartyInputs: PartyInputs.fromJSON(json.localPartyInputs),
       remotePartyInputs: PartyInputs.fromJSON(json.remotePartyInputs),
-      oracleInfo: json.oracleInfo,
-      cetCsvDelay: json.cetCsvDelay,
-      refundLockTime: json.refundLockTime,
-      isLocalParty: json.isLocalParty,
-      fundTxHex: json.fundTxHex,
-      fundTxId: json.fundTxId,
       fundTxOutAmount: Amount.fromJSON(json.fundTxOutAmount),
-      fundTxSignatures: json.fundTxSignatures,
-      refundTransaction: json.refundTransaction,
-      refundLocalSignature: json.refundLocalSignature,
-      refundRemoteSignature: json.refundRemoteSignature,
-      localCetsHex: json.localCetsHex,
-      remoteCetsHex: json.remoteCetsHex,
-      cetSignatures: json.cetSignatures
     });
   }
 
