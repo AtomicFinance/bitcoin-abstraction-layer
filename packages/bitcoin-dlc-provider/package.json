@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/bitcoin-dlc-provider",
   "umdName": "BitcoinDlcProvider",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "> TODO: description",
   "author": "Matthew Black <mblackmblackmblack@gmail.com>",
   "homepage": "",
@@ -17,7 +17,7 @@
     "build": "webpack --config ../../webpack/webpack.config.js"
   },
   "dependencies": {
-    "@atomicfinance/provider": "^0.1.1",
+    "@atomicfinance/provider": "^0.1.2",
     "@liquality/bitcoin-utils": "^0.6.2",
     "@liquality/provider": "^0.6.2",
     "@liquality/utils": "^0.6.2",
