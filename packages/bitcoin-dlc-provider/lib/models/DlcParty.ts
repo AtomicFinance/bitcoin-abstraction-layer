@@ -355,7 +355,6 @@ export default class DlcParty {
     }
 
     let fundTxHex = this.contract.fundTxHex;
-    console.log('fundTxHex #1', fundTxHex)
 
     await asyncForEach(this.partyInputs.utxos, async (input: any, i: number) => {
       const fundSignRequest: SignFundTransactionRequest = {
@@ -367,7 +366,6 @@ export default class DlcParty {
       };
 
       fundTxHex = (await this.client.SignFundTransaction(fundSignRequest)).hex;
-      console.log('fundTxHex #2', fundTxHex)
     })
 
     await asyncForEach(signMessage.fundTxSignatures, async (signature: any, index: number) => {
@@ -379,7 +377,6 @@ export default class DlcParty {
         pubkey: signMessage.utxoPublicKeys[index],
       };
       fundTxHex = (await this.client.AddSignatureToFundTransaction(addSignRequest)).hex;
-      console.log('fundTxHex #3', fundTxHex)
     })
 
     const fundTxHash = await this.client.getMethod('sendRawTransaction')(fundTxHex);
@@ -501,6 +498,8 @@ export default class DlcParty {
     const outcomeAmount = this.contract.isLocalParty
       ? this.contract.outcomes[outcomeIndex].local
       : this.contract.outcomes[outcomeIndex].remote;
+
+    if (outcomeAmount.GetSatoshiAmount() === 0) throw Error('Outcome Amount should be greater than 0')
 
     const closingTxRequest: CreateClosingTransactionRequest = {
       address: this.partyInputs.finalAddress,
