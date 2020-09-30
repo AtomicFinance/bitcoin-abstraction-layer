@@ -462,6 +462,24 @@ export default class DlcParty {
     oracleSignature: string,
     outcomeIndex: number
   ): Promise<string[]> {
+    const [ cetHex, closingTxHex ] = await this.BuildUnilateralClose(oracleSignature, outcomeIndex)
+
+    let cetTxHash
+    try {
+      cetTxHash = await this.client.getMethod('sendRawTransaction')(cetHex)
+    } catch(e) {
+      console.log('Cet Tx already created')
+    }
+
+    const closingTxHash = await this.client.getMethod('sendRawTransaction')(closingTxHex)
+
+    return [ cetTxHash, closingTxHash ]
+  }
+
+  public async BuildUnilateralClose(
+    oracleSignature: string,
+    outcomeIndex: number
+  ): Promise<string[]> {
     const cets = this.contract.isLocalParty
       ? this.contract.localCetsHex
       : this.contract.remoteCetsHex;
@@ -532,10 +550,7 @@ export default class DlcParty {
     console.log('cetHex', cetHex)
     console.log('closingTxHex', closingTxHex)
 
-    const cetTxHash = await this.client.getMethod('sendRawTransaction')(cetHex)
-    const closingTxHash = await this.client.getMethod('sendRawTransaction')(closingTxHex)
-
-    return [ cetTxHash, closingTxHash ]
+    return [ cetHex, closingTxHex ]
   }
 }
 

@@ -143,6 +143,10 @@ export default class BitcoinDlcProvider extends Provider {
     return this.findDlc(contractId).ExecuteUnilateralClose(oracleSignature, outcomeIndex)
   }
 
+  async buildUnilateralClose (oracleSignature: string, outcomeIndex: number, contractId: string): Promise<string[]> {
+    return this.findDlc(contractId).BuildUnilateralClose(oracleSignature, outcomeIndex)
+  }
+
   async AddSignatureToFundTransaction(jsonObject: AddSignatureToFundTransactionRequest): Promise<AddSignatureToFundTransactionResponse> {
     await this.CfdLoaded()
 

@@ -56,6 +56,10 @@ export default class Dlc {
     return this.client.getMethod('unilateralClose')(oracleSignature, outcomeIndex, contractId)
   }
 
+  async buildUnilateralClose (oracleSignature: string, outcomeIndex: number, contractId: string): Promise<string[]> {
+    return this.client.getMethod('buildUnilateralClose')(oracleSignature, outcomeIndex, contractId)
+  }
+
   hasDlc (contractId: string): boolean {
     return this.client.getMethod('hasDlc')(contractId)
   }
