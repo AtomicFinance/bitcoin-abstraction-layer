@@ -42,9 +42,9 @@ export default class DlcParty {
     return this.contract.GetOfferMessage();
   }
 
-  public async ImportContract(initialContract: Contract, startingIndex: number) {
+  public async ImportContract(initialContract: Contract) {
     this.contract = initialContract;
-    await this.Initialize(this.contract.localCollateral, startingIndex, false);
+    await this.Initialize(this.contract.localCollateral, this.contract.startingIndex, false);
   }
 
   private async Initialize(collateral: Amount, startingIndex: number, checkUtxos: boolean = true) {
@@ -198,6 +198,7 @@ export default class DlcParty {
 
   public async OnOfferMessage(offerMessage: OfferMessage, startingIndex: number): Promise<AcceptMessage> {
     this.contract = Contract.FromOfferMessage(offerMessage);
+    this.contract.startingIndex = startingIndex;
     await this.Initialize(offerMessage.remoteCollateral, startingIndex);
     this.contract.remotePartyInputs = this.partyInputs;
     await this.CreateDlcTransactions();
@@ -462,6 +463,46 @@ export default class DlcParty {
     oracleSignature: string,
     outcomeIndex: number
   ): Promise<string[]> {
+    const [ cetHex, closingTxHex ] = await this.BuildUnilateralClose(oracleSignature, outcomeIndex)
+
+    let cetTxHash
+    try {
+      cetTxHash = await this.client.getMethod('sendRawTransaction')(cetHex)
+    } catch(e) {
+      const cetTxid = decodeRawTransaction(cetHex).txid
+
+      try {
+        cetTxHash = (await this.client.getMethod('getTransactionByHash')(cetTxid)).hash
+
+        console.log('Cet Tx already created')
+      } catch(e) {
+        throw Error(`Failed to sendRawTransaction cetHex and tx has not been previously broadcast. cetHex: ${cetHex}`)
+      }
+    }
+
+    let closingTxHash
+    try {
+      closingTxHash = await this.client.getMethod('sendRawTransaction')(closingTxHex)
+    } catch(e) {
+
+      const closingTxid = decodeRawTransaction(closingTxHex).txid
+
+      try {
+        closingTxHash = (await this.client.getMethod('getTransactionByHash')(closingTxid)).hash
+
+        console.log('Closing Tx already created')
+      } catch(e) {
+        throw Error(`Failed to sendRawTransaction closingTxHex and tx has not been previously broadcast. cetHex: ${closingTxHex}`)
+      }
+    }
+
+    return [ cetTxHash, closingTxHash ]
+  }
+
+  public async BuildUnilateralClose(
+    oracleSignature: string,
+    outcomeIndex: number
+  ): Promise<string[]> {
     const cets = this.contract.isLocalParty
       ? this.contract.localCetsHex
       : this.contract.remoteCetsHex;
@@ -532,10 +573,7 @@ export default class DlcParty {
     console.log('cetHex', cetHex)
     console.log('closingTxHex', closingTxHex)
 
-    const cetTxHash = await this.client.getMethod('sendRawTransaction')(cetHex)
-    const closingTxHash = await this.client.getMethod('sendRawTransaction')(closingTxHex)
-
-    return [ cetTxHash, closingTxHash ]
+    return [ cetHex, closingTxHex ]
   }
 }
 
