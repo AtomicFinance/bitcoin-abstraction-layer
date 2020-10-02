@@ -36,12 +36,12 @@ export default class Dlc {
     this.client = client
   }
 
-  async initializeContractAndOffer (input: InputDetails, outcomes: Array<OutcomeDetails>, oracleInfo: OracleInfo): Promise<OfferMessage> {
-    return this.client.getMethod('initializeContractAndOffer')(input, outcomes, oracleInfo)
+  async initializeContractAndOffer (input: InputDetails, outcomes: Array<OutcomeDetails>, oracleInfo: OracleInfo, startingIndex: number = 0): Promise<OfferMessage> {
+    return this.client.getMethod('initializeContractAndOffer')(input, outcomes, oracleInfo, startingIndex)
   }
 
-  async confirmContractOffer (offerMessage: OfferMessage): Promise<AcceptMessage> {
-    return this.client.getMethod('confirmContractOffer')(offerMessage)
+  async confirmContractOffer (offerMessage: OfferMessage, startingIndex: number = 0): Promise<AcceptMessage> {
+    return this.client.getMethod('confirmContractOffer')(offerMessage, startingIndex)
   }
 
   async signContract (acceptMessage: AcceptMessage): Promise<SignMessage> {
@@ -64,8 +64,8 @@ export default class Dlc {
     return this.client.getMethod('hasDlc')(contractId)
   }
 
-  async importContract (contract: Contract, startingIndex: number = 0) {
-    return this.client.getMethod('importContract')(contract, startingIndex)
+  async importContract (contract: Contract) {
+    return this.client.getMethod('importContract')(contract)
   }
 
   exportContract (contractId: string): Contract {
