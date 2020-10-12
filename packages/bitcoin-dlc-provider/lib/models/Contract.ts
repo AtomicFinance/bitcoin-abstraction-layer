@@ -1,10 +1,10 @@
-import Outcome, { OutcomeJSON } from "./Outcome";
-import PartyInputs, { PartyInputsJSON } from "./PartyInputs";
-import OracleInfo from "./OracleInfo";
-import OfferMessage, { OfferMessageJSON } from "./OfferMessage";
-import AcceptMessage, { AcceptMessageJSON } from "./AcceptMessage";
-import SignMessage from "./SignMessage";
-import Amount, { AmountJSON } from "./Amount";
+import Outcome, { OutcomeJSON } from './Outcome';
+import PartyInputs, { PartyInputsJSON } from './PartyInputs';
+import OracleInfo from './OracleInfo';
+import OfferMessage, { OfferMessageJSON } from './OfferMessage';
+import AcceptMessage, { AcceptMessageJSON } from './AcceptMessage';
+import SignMessage from './SignMessage';
+import Amount, { AmountJSON } from './Amount';
 
 export default class Contract {
   id: string;
@@ -63,7 +63,7 @@ export default class Contract {
       feeRate: this.feeRate,
       cetCsvDelay: this.cetCsvDelay,
       refundLockTime: this.refundLockTime,
-      toJSON: OfferMessage.prototype.toJSON
+      toJSON: OfferMessage.prototype.toJSON,
     };
   }
 
@@ -80,46 +80,46 @@ export default class Contract {
   }
 
   toJSON(): ContractJSON {
-    const outcomesJSON: OutcomeJSON[] = []
+    const outcomesJSON: OutcomeJSON[] = [];
     for (let i = 0; i < this.outcomes.length; i++) {
-      const outcome = this.outcomes[i].toJSON()
-      outcomesJSON.push(outcome)
+      const outcome = this.outcomes[i].toJSON();
+      outcomesJSON.push(outcome);
     }
 
     return Object.assign({}, this, {
       id: this.id,
-      localCollateral: this.localCollateral.toJSON(),
-      remoteCollateral: this.remoteCollateral.toJSON(),
+      localCollateral: this.localCollateral?.toJSON(),
+      remoteCollateral: this.remoteCollateral?.toJSON(),
       outcomes: outcomesJSON,
-      maturityTime: this.maturityTime.toString(),
+      maturityTime: this.maturityTime?.toString(),
       feeRate: this.feeRate,
-      localPartyInputs: this.localPartyInputs.toJSON(),
-      remotePartyInputs: this.remotePartyInputs.toJSON(),
+      localPartyInputs: this.localPartyInputs?.toJSON(),
+      remotePartyInputs: this.remotePartyInputs?.toJSON(),
       oracleInfo: this.oracleInfo,
       cetCsvDelay: this.cetCsvDelay,
       refundLockTime: this.refundLockTime,
       isLocalParty: this.isLocalParty,
       fundTxHex: this.fundTxHex,
       fundTxId: this.fundTxId,
-      fundTxOutAmount: this.fundTxOutAmount.toJSON(),
+      fundTxOutAmount: this.fundTxOutAmount?.toJSON(),
       fundTxSignatures: this.fundTxSignatures,
       refundTransaction: this.refundTransaction,
       refundLocalSignature: this.refundLocalSignature,
       refundRemoteSignature: this.refundRemoteSignature,
       localCetsHex: this.localCetsHex,
       remoteCetsHex: this.remoteCetsHex,
-      cetSignatures: this.cetSignatures
+      cetSignatures: this.cetSignatures,
     });
   }
 
   static fromJSON(json: ContractJSON): Contract {
     let contractMessage = Object.create(Contract.prototype);
 
-    const outcomes: Outcome[] = []
+    const outcomes: Outcome[] = [];
 
     for (let i = 0; i < json.outcomes.length; i++) {
-      const outcome = Outcome.fromJSON(json.outcomes[i])
-      outcomes.push(outcome)
+      const outcome = Outcome.fromJSON(json.outcomes[i]);
+      outcomes.push(outcome);
     }
 
     return Object.assign(contractMessage, json, {
@@ -135,31 +135,31 @@ export default class Contract {
   }
 
   static reviver(key: string, value: any): any {
-    return key === "" ? Contract.fromJSON(value) : value;
+    return key === '' ? Contract.fromJSON(value) : value;
   }
 }
 
 export interface ContractJSON {
-  id: string,
-  localCollateral: AmountJSON,
-  remoteCollateral: AmountJSON,
-  outcomes: OutcomeJSON[],
-  maturityTime: string,
-  feeRate: number,
-  localPartyInputs: PartyInputsJSON,
-  remotePartyInputs: PartyInputsJSON,
-  oracleInfo: OracleInfo,
-  cetCsvDelay: number,
-  refundLockTime: number,
-  isLocalParty: boolean,
-  fundTxHex: string,
-  fundTxId: string,
-  fundTxOutAmount: AmountJSON,
-  fundTxSignatures: string[],
-  refundTransaction: string,
-  refundLocalSignature: string,
-  refundRemoteSignature: string,
-  localCetsHex: string[],
-  remoteCetsHex: string[],
-  cetSignatures: string[]
+  id: string;
+  localCollateral: AmountJSON;
+  remoteCollateral: AmountJSON;
+  outcomes: OutcomeJSON[];
+  maturityTime: string;
+  feeRate: number;
+  localPartyInputs: PartyInputsJSON;
+  remotePartyInputs: PartyInputsJSON;
+  oracleInfo: OracleInfo;
+  cetCsvDelay: number;
+  refundLockTime: number;
+  isLocalParty: boolean;
+  fundTxHex: string;
+  fundTxId: string;
+  fundTxOutAmount: AmountJSON;
+  fundTxSignatures: string[];
+  refundTransaction: string;
+  refundLocalSignature: string;
+  refundRemoteSignature: string;
+  localCetsHex: string[];
+  remoteCetsHex: string[];
+  cetSignatures: string[];
 }
