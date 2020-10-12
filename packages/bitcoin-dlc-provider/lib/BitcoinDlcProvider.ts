@@ -89,10 +89,10 @@ export default class BitcoinDlcProvider extends Provider {
     })
   }
 
-  async importContract (contract: Contract, startingIndex: number = 0) {
+  async importContract (contract: Contract) {
     const dlcParty = new DlcParty(this)
     this._dlcs.push(dlcParty)
-    await dlcParty.ImportContract(contract, startingIndex)
+    await dlcParty.ImportContract(contract)
   }
 
   exportContract (contractId: string): Contract {
@@ -113,6 +113,7 @@ export default class BitcoinDlcProvider extends Provider {
 
     contract.id = uuidv4()
     contract.oracleInfo = oracleInfo
+    contract.startingIndex = startingIndex
 
     this.setInitialInputs(contract, input)
 
@@ -141,6 +142,10 @@ export default class BitcoinDlcProvider extends Provider {
 
   async unilateralClose (oracleSignature: string, outcomeIndex: number, contractId: string): Promise<string[]> {
     return this.findDlc(contractId).ExecuteUnilateralClose(oracleSignature, outcomeIndex)
+  }
+
+  async buildUnilateralClose (oracleSignature: string, outcomeIndex: number, contractId: string): Promise<string[]> {
+    return this.findDlc(contractId).BuildUnilateralClose(oracleSignature, outcomeIndex)
   }
 
   async AddSignatureToFundTransaction(jsonObject: AddSignatureToFundTransactionRequest): Promise<AddSignatureToFundTransactionResponse> {

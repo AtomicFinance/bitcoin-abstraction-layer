@@ -29,6 +29,7 @@ export default class Contract {
   localCetsHex: string[];
   remoteCetsHex: string[];
   cetSignatures: string[];
+  startingIndex: number;
 
   constructor() {
     this.outcomes = [];
