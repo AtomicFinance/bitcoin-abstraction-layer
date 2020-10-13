@@ -1,13 +1,13 @@
-const path = require("path");
+const path = require('path');
 
-const cwd = process.cwd()
-const pkg = require(path.join(cwd, 'package.json'))
+const cwd = process.cwd();
+const pkg = require(path.join(cwd, 'package.json'));
 
-const libname = pkg.name.split('/')[1]
-const isProdEnv = process.env.NODE_ENV === 'production'
-const isWatchEnv = process.env.WEBPACK_WATCH === 'true'
+const libname = pkg.name.split('/')[1];
+const isProdEnv = process.env.NODE_ENV === 'production';
+const isWatchEnv = process.env.WEBPACK_WATCH === 'true';
 
-const filename = `${libname}${isProdEnv ? '.min' : ''}.js`
+const filename = `${libname}${isProdEnv ? '.min' : ''}.js`;
 
 module.exports = {
   mode: isProdEnv ? 'production' : 'development',
@@ -18,12 +18,16 @@ module.exports = {
   output: {
     path: path.resolve(cwd, 'dist'),
     filename,
-    library: pkg.umdName || (function () { throw new Error(`Add "umdName" property to ${pkg.name}'s package.json`) })(),
+    library:
+      pkg.umdName ||
+      (function () {
+        throw new Error(`Add "umdName" property to ${pkg.name}'s package.json`);
+      })(),
     libraryTarget: 'umd',
-    libraryExport: pkg.umdExport ? pkg.umdExport : undefined
+    libraryExport: pkg.umdExport ? pkg.umdExport : undefined,
   },
   resolve: {
-    extensions: [".ts", ".tsx", ".js"]
+    extensions: ['.ts', '.tsx', '.js'],
   },
   module: {
     rules: [
@@ -32,8 +36,8 @@ module.exports = {
         exclude: /node_modules/,
         use: [
           {
-            loader: "ts-loader"
-          }
+            loader: 'ts-loader',
+          },
         ],
       },
       {
@@ -51,10 +55,10 @@ module.exports = {
           type: 'commonjs',
           exports: ['callJsonApi', 'ccallCfd', 'CfdError'],
         },
-      }
-    ]
+      },
+    ],
   },
   node: {
     fs: 'empty',
-  }
+  },
 };

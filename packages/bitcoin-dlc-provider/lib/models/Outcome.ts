@@ -1,4 +1,4 @@
-import Amount, { AmountJSON } from "./Amount";
+import Amount, { AmountJSON } from './Amount';
 
 export default class Outcome {
   constructor(
@@ -11,7 +11,7 @@ export default class Outcome {
     return Object.assign({}, this, {
       message: this.message,
       local: this.local.toJSON(),
-      remote: this.remote.toJSON()
+      remote: this.remote.toJSON(),
     });
   }
 
@@ -20,17 +20,17 @@ export default class Outcome {
     return Object.assign(outcome, json, {
       message: json.message,
       local: Amount.fromJSON(json.local),
-      remote: Amount.fromJSON(json.remote)
+      remote: Amount.fromJSON(json.remote),
     });
   }
 
   static reviver(key: string, value: any): any {
-    return key === "" ? Outcome.fromJSON(value) : value;
+    return key === '' ? Outcome.fromJSON(value) : value;
   }
 }
 
 export interface OutcomeJSON {
   message: string;
-  local: AmountJSON,
-  remote: AmountJSON
+  local: AmountJSON;
+  remote: AmountJSON;
 }

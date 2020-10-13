@@ -1,9 +1,5 @@
-import Client from '@atomicfinance/client'
+import Client from '@atomicfinance/client';
 
-import * as providers from './providers'
+import * as providers from './providers';
 
-export {
-  Client,
-
-  providers
-}
+export { Client, providers };

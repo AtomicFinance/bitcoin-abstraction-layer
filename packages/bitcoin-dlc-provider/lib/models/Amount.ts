@@ -56,7 +56,7 @@ export default class Amount {
 
   toJSON(): AmountJSON {
     return Object.assign({}, this, {
-      _satoshis: this._satoshis
+      _satoshis: this._satoshis,
     });
   }
 
@@ -64,12 +64,12 @@ export default class Amount {
     let amount = Object.create(Amount.prototype);
     return Object.assign(amount, json, {
       _satoshis: json._satoshis,
-      GetSatoshiAmount: Amount.prototype.GetSatoshiAmount
+      GetSatoshiAmount: Amount.prototype.GetSatoshiAmount,
     });
   }
 
   static reviver(key: string, value: any): any {
-    return key === "" ? Amount.fromJSON(value) : value;
+    return key === '' ? Amount.fromJSON(value) : value;
   }
 }
 

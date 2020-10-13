@@ -1,7 +1,7 @@
-import Outcome, { OutcomeJSON } from "./Outcome";
-import OracleInfo from "./OracleInfo";
-import PartyInputs, { PartyInputsJSON } from "./PartyInputs";
-import Amount, { AmountJSON } from "./Amount";
+import Outcome, { OutcomeJSON } from './Outcome';
+import OracleInfo from './OracleInfo';
+import PartyInputs, { PartyInputsJSON } from './PartyInputs';
+import Amount, { AmountJSON } from './Amount';
 
 export default class OfferMessage {
   constructor(
@@ -14,14 +14,14 @@ export default class OfferMessage {
     readonly localPartyInputs: PartyInputs,
     readonly feeRate: number,
     readonly cetCsvDelay: number,
-    readonly refundLockTime: number,
+    readonly refundLockTime: number
   ) {}
 
   toJSON(): OfferMessageJSON {
-    const outcomesJSON: OutcomeJSON[] = []
+    const outcomesJSON: OutcomeJSON[] = [];
     for (let i = 0; i < this.outcomes.length; i++) {
-      const outcome = this.outcomes[i].toJSON()
-      outcomesJSON.push(outcome)
+      const outcome = this.outcomes[i].toJSON();
+      outcomesJSON.push(outcome);
     }
 
     return Object.assign({}, this, {
@@ -34,18 +34,18 @@ export default class OfferMessage {
       localPartyInputs: this.localPartyInputs.toJSON(),
       feeRate: this.feeRate,
       cetCsvDelay: this.cetCsvDelay,
-      refundLockTime: this.refundLockTime
+      refundLockTime: this.refundLockTime,
     });
   }
 
   static fromJSON(json: OfferMessageJSON): OfferMessage {
     let offerMessage = Object.create(OfferMessage.prototype);
 
-    const outcomes: Outcome[] = []
+    const outcomes: Outcome[] = [];
 
     for (let i = 0; i < json.outcomes.length; i++) {
-      const outcome = Outcome.fromJSON(json.outcomes[i])
-      outcomes.push(outcome)
+      const outcome = Outcome.fromJSON(json.outcomes[i]);
+      outcomes.push(outcome);
     }
 
     return Object.assign(offerMessage, json, {
@@ -58,24 +58,24 @@ export default class OfferMessage {
       localPartyInputs: PartyInputs.fromJSON(json.localPartyInputs),
       feeRate: json.feeRate,
       cetCsvDelay: json.cetCsvDelay,
-      refundLockTime: json.refundLockTime
+      refundLockTime: json.refundLockTime,
     });
   }
 
   static reviver(key: string, value: any): any {
-    return key === "" ? OfferMessage.fromJSON(value) : value;
+    return key === '' ? OfferMessage.fromJSON(value) : value;
   }
 }
 
 export interface OfferMessageJSON {
-  contractId: string,
-  localCollateral: AmountJSON,
-  remoteCollateral: AmountJSON,
-  maturityTime: string,
-  outcomes: OutcomeJSON[],
-  oracleInfo: OracleInfo,
-  localPartyInputs: PartyInputsJSON,
-  feeRate: number,
-  cetCsvDelay: number,
-  refundLockTime: number
+  contractId: string;
+  localCollateral: AmountJSON;
+  remoteCollateral: AmountJSON;
+  maturityTime: string;
+  outcomes: OutcomeJSON[];
+  oracleInfo: OracleInfo;
+  localPartyInputs: PartyInputsJSON;
+  feeRate: number;
+  cetCsvDelay: number;
+  refundLockTime: number;
 }

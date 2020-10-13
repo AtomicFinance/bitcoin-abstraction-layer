@@ -1,3 +1,3 @@
-import BitcoinCfdProvider from './BitcoinCfdProvider'
+import BitcoinCfdProvider from './BitcoinCfdProvider';
 
-export default BitcoinCfdProvider
+export default BitcoinCfdProvider;

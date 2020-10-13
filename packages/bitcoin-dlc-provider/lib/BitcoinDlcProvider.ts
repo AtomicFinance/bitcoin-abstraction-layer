@@ -1,44 +1,69 @@
-import CfddlcHelper from './cfddlcjsHelper'
-import Provider from '@atomicfinance/provider'
-import { sleep } from '@liquality/utils'
+import CfddlcHelper from './cfddlcjsHelper';
+import Provider from '@atomicfinance/provider';
+import { sleep } from '@liquality/utils';
 import {
-  AddSignatureToFundTransactionRequest, AddSignatureToFundTransactionResponse,
-  AddSignaturesToCetRequest, AddSignaturesToCetResponse,
-  AddSignaturesToMutualClosingTxRequest, AddSignaturesToMutualClosingTxResponse,
-  AddSignaturesToRefundTxRequest, AddSignaturesToRefundTxResponse,
-  CreateCetRequest, CreateCetResponse,
-  CreateClosingTransactionRequest, CreateClosingTransactionResponse,
-  CreateDlcTransactionsRequest, CreateDlcTransactionsResponse,
-  CreateFundTransactionRequest, CreateFundTransactionResponse,
-  CreateMutualClosingTransactionRequest, CreateMutualClosingTransactionResponse,
-  CreatePenaltyTransactionRequest, CreatePenaltyTransactionResponse,
-  CreateRefundTransactionRequest, CreateRefundTransactionResponse,
-  GetRawCetSignatureRequest, GetRawCetSignatureResponse,
-  GetRawCetSignaturesRequest, GetRawCetSignaturesResponse,
-  GetRawFundTxSignatureRequest, GetRawFundTxSignatureResponse,
-  GetRawMutualClosingTxSignatureRequest, GetRawMutualClosingTxSignatureResponse,
-  GetRawRefundTxSignatureRequest, GetRawRefundTxSignatureResponse,
-  GetSchnorrPublicNonceRequest, GetSchnorrPublicNonceResponse,
-  SchnorrSignRequest, SchnorrSignResponse,
-  SignClosingTransactionRequest, SignClosingTransactionResponse,
-  SignFundTransactionRequest, SignFundTransactionResponse,
-  VerifyCetSignatureRequest, VerifyCetSignatureResponse,
-  VerifyCetSignaturesRequest, VerifyCetSignaturesResponse,
-  VerifyFundTxSignatureRequest, VerifyFundTxSignatureResponse,
-  VerifyMutualClosingTxSignatureRequest, VerifyMutualClosingTxSignatureResponse,
-  VerifyRefundTxSignatureRequest, VerifyRefundTxSignatureResponse
-} from 'cfd-dlc-js-wasm'
-import DlcParty from './models/DlcParty'
-import Contract from './models/Contract'
+  AddSignatureToFundTransactionRequest,
+  AddSignatureToFundTransactionResponse,
+  AddSignaturesToCetRequest,
+  AddSignaturesToCetResponse,
+  AddSignaturesToMutualClosingTxRequest,
+  AddSignaturesToMutualClosingTxResponse,
+  AddSignaturesToRefundTxRequest,
+  AddSignaturesToRefundTxResponse,
+  CreateCetRequest,
+  CreateCetResponse,
+  CreateClosingTransactionRequest,
+  CreateClosingTransactionResponse,
+  CreateDlcTransactionsRequest,
+  CreateDlcTransactionsResponse,
+  CreateFundTransactionRequest,
+  CreateFundTransactionResponse,
+  CreateMutualClosingTransactionRequest,
+  CreateMutualClosingTransactionResponse,
+  CreatePenaltyTransactionRequest,
+  CreatePenaltyTransactionResponse,
+  CreateRefundTransactionRequest,
+  CreateRefundTransactionResponse,
+  GetRawCetSignatureRequest,
+  GetRawCetSignatureResponse,
+  GetRawCetSignaturesRequest,
+  GetRawCetSignaturesResponse,
+  GetRawFundTxSignatureRequest,
+  GetRawFundTxSignatureResponse,
+  GetRawMutualClosingTxSignatureRequest,
+  GetRawMutualClosingTxSignatureResponse,
+  GetRawRefundTxSignatureRequest,
+  GetRawRefundTxSignatureResponse,
+  GetSchnorrPublicNonceRequest,
+  GetSchnorrPublicNonceResponse,
+  SchnorrSignRequest,
+  SchnorrSignResponse,
+  SignClosingTransactionRequest,
+  SignClosingTransactionResponse,
+  SignFundTransactionRequest,
+  SignFundTransactionResponse,
+  VerifyCetSignatureRequest,
+  VerifyCetSignatureResponse,
+  VerifyCetSignaturesRequest,
+  VerifyCetSignaturesResponse,
+  VerifyFundTxSignatureRequest,
+  VerifyFundTxSignatureResponse,
+  VerifyMutualClosingTxSignatureRequest,
+  VerifyMutualClosingTxSignatureResponse,
+  VerifyRefundTxSignatureRequest,
+  VerifyRefundTxSignatureResponse,
+} from 'cfd-dlc-js-wasm';
+import DlcParty from './models/DlcParty';
+import Contract from './models/Contract';
 
-import InputDetails from './models/InputDetails'
-import OutcomeDetails from './models/OutcomeDetails'
-import OracleInfo from './models/OracleInfo'
-import Outcome from './models/Outcome'
-import OfferMessage from './models/OfferMessage'
-import AcceptMessage from './models/AcceptMessage'
-import SignMessage from './models/SignMessage'
-import { v4 as uuidv4 } from "uuid";
+import InputDetails from './models/InputDetails';
+import OutcomeDetails from './models/OutcomeDetails';
+import OracleInfo from './models/OracleInfo';
+import Outcome from './models/Outcome';
+import OfferMessage from './models/OfferMessage';
+import AcceptMessage from './models/AcceptMessage';
+import SignMessage from './models/SignMessage';
+import { v4 as uuidv4 } from 'uuid';
 
 export default class BitcoinDlcProvider extends Provider {
   _network: any;
@@ -46,255 +71,327 @@ export default class BitcoinDlcProvider extends Provider {
   _dlcs: DlcParty[];
 
   constructor(network: any) {
-    super('BitcoinDlcProvider')
+    super('BitcoinDlcProvider');
 
-    this._network = network
-    this._dlcs = [] as DlcParty[]
+    this._network = network;
+    this._dlcs = [] as DlcParty[];
 
     CfddlcHelper.initialized(() => {
       this._cfdDlcJs = CfddlcHelper.getCfddlcjs();
-    }) 
+    });
   }
 
-  private async CfdLoaded () {
+  private async CfdLoaded() {
     while (!this._cfdDlcJs) {
-      await sleep(10)
+      await sleep(10);
     }
   }
 
-  private setInitialInputs (contract: Contract, input: InputDetails) {
-    contract.localCollateral = input.localCollateral
-    contract.remoteCollateral = input.remoteCollateral
-    contract.feeRate = input.feeRate
-    contract.maturityTime = input.maturityTime
-    contract.refundLockTime = input.refundLockTime
-    contract.cetCsvDelay = input.cetCsvDelay
+  private setInitialInputs(contract: Contract, input: InputDetails) {
+    contract.localCollateral = input.localCollateral;
+    contract.remoteCollateral = input.remoteCollateral;
+    contract.feeRate = input.feeRate;
+    contract.maturityTime = input.maturityTime;
+    contract.refundLockTime = input.refundLockTime;
+    contract.cetCsvDelay = input.cetCsvDelay;
   }
 
-  private setOutcomes (contract: Contract, outcomes: Array<OutcomeDetails>) {
+  private setOutcomes(contract: Contract, outcomes: Array<OutcomeDetails>) {
     outcomes.forEach((outcome) => {
-      const { message, localAmount, remoteAmount } = outcome
-      const newOutcome = new Outcome(message, localAmount, remoteAmount)
-      contract.outcomes.push(newOutcome)
-    })
+      const { message, localAmount, remoteAmount } = outcome;
+      const newOutcome = new Outcome(message, localAmount, remoteAmount);
+      contract.outcomes.push(newOutcome);
+    });
   }
 
-  private findDlc (contractId: string): DlcParty {
-    return this._dlcs.find(dlc => dlc.contract.id === contractId)
+  private findDlc(contractId: string): DlcParty {
+    return this._dlcs.find((dlc) => dlc.contract.id === contractId);
   }
 
-  hasDlc (contractId: string): boolean {
+  hasDlc(contractId: string): boolean {
     return this._dlcs.some((dlc) => {
-      dlc.contract.id === contractId
-    })
+      dlc.contract.id === contractId;
+    });
   }
 
-  async importContract (contract: Contract) {
-    const dlcParty = new DlcParty(this)
-    this._dlcs.push(dlcParty)
-    await dlcParty.ImportContract(contract)
+  async importContract(contract: Contract) {
+    const dlcParty = new DlcParty(this);
+    this._dlcs.push(dlcParty);
+    await dlcParty.ImportContract(contract);
   }
 
-  exportContract (contractId: string): Contract {
-    return this.findDlc(contractId).contract
+  exportContract(contractId: string): Contract {
+    return this.findDlc(contractId).contract;
   }
 
-  exportContracts (): Contract[] {
-    const contracts: Contract [] = []
+  exportContracts(): Contract[] {
+    const contracts: Contract[] = [];
     for (let i = 0; i < this._dlcs.length; i++) {
-      const dlc = this._dlcs[i]
-      contracts.push(dlc.contract)
+      const dlc = this._dlcs[i];
+      contracts.push(dlc.contract);
     }
-    return contracts
+    return contracts;
   }
 
-  async initializeContractAndOffer (input: InputDetails, outcomes: Array<OutcomeDetails>, oracleInfo: OracleInfo, startingIndex: number = 0): Promise<OfferMessage> {
-    const contract = new Contract()
+  async initializeContractAndOffer(
+    input: InputDetails,
+    outcomes: Array<OutcomeDetails>,
+    oracleInfo: OracleInfo,
+    startingIndex: number = 0
+  ): Promise<OfferMessage> {
+    const contract = new Contract();
 
-    contract.id = uuidv4()
-    contract.oracleInfo = oracleInfo
-    contract.startingIndex = startingIndex
+    contract.id = uuidv4();
+    contract.oracleInfo = oracleInfo;
+    contract.startingIndex = startingIndex;
 
-    this.setInitialInputs(contract, input)
+    this.setInitialInputs(contract, input);
 
-    this.setOutcomes(contract, outcomes)
+    this.setOutcomes(contract, outcomes);
 
-    const dlcParty = new DlcParty(this)
-    this._dlcs.push(dlcParty)
+    const dlcParty = new DlcParty(this);
+    this._dlcs.push(dlcParty);
 
-    return dlcParty.InitiateContract(contract, startingIndex)
+    return dlcParty.InitiateContract(contract, startingIndex);
   }
 
-  async confirmContractOffer (offerMessage: OfferMessage, startingIndex: number = 0): Promise<AcceptMessage> {
-    const dlcParty = new DlcParty(this)
-    this._dlcs.push(dlcParty)
+  async confirmContractOffer(
+    offerMessage: OfferMessage,
+    startingIndex: number = 0
+  ): Promise<AcceptMessage> {
+    const dlcParty = new DlcParty(this);
+    this._dlcs.push(dlcParty);
 
-    return dlcParty.OnOfferMessage(offerMessage, startingIndex)
+    return dlcParty.OnOfferMessage(offerMessage, startingIndex);
   }
 
-  async signContract (acceptMessage: AcceptMessage): Promise<SignMessage> {
-    return this.findDlc(acceptMessage.contractId).OnAcceptMessage(acceptMessage)
+  async signContract(acceptMessage: AcceptMessage): Promise<SignMessage> {
+    return this.findDlc(acceptMessage.contractId).OnAcceptMessage(
+      acceptMessage
+    );
   }
 
-  async finalizeContract (signMessage: SignMessage): Promise<string> {
-    return this.findDlc(signMessage.contractId).OnSignMessage(signMessage)
+  async finalizeContract(signMessage: SignMessage): Promise<string> {
+    return this.findDlc(signMessage.contractId).OnSignMessage(signMessage);
   }
 
-  async unilateralClose (oracleSignature: string, outcomeIndex: number, contractId: string): Promise<string[]> {
-    return this.findDlc(contractId).ExecuteUnilateralClose(oracleSignature, outcomeIndex)
+  async unilateralClose(
+    oracleSignature: string,
+    outcomeIndex: number,
+    contractId: string
+  ): Promise<string[]> {
+    return this.findDlc(contractId).ExecuteUnilateralClose(
+      oracleSignature,
+      outcomeIndex
+    );
   }
 
-  async buildUnilateralClose (oracleSignature: string, outcomeIndex: number, contractId: string): Promise<string[]> {
-    return this.findDlc(contractId).BuildUnilateralClose(oracleSignature, outcomeIndex)
+  async buildUnilateralClose(
+    oracleSignature: string,
+    outcomeIndex: number,
+    contractId: string
+  ): Promise<string[]> {
+    return this.findDlc(contractId).BuildUnilateralClose(
+      oracleSignature,
+      outcomeIndex
+    );
   }
 
-  async AddSignatureToFundTransaction(jsonObject: AddSignatureToFundTransactionRequest): Promise<AddSignatureToFundTransactionResponse> {
-    await this.CfdLoaded()
+  async AddSignatureToFundTransaction(
+    jsonObject: AddSignatureToFundTransactionRequest
+  ): Promise<AddSignatureToFundTransactionResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.AddSignatureToFundTransaction(jsonObject)
+    return this._cfdDlcJs.AddSignatureToFundTransaction(jsonObject);
   }
 
-  async AddSignaturesToCet(jsonObject: AddSignaturesToCetRequest): Promise<AddSignaturesToCetResponse> {
-    await this.CfdLoaded()
+  async AddSignaturesToCet(
+    jsonObject: AddSignaturesToCetRequest
+  ): Promise<AddSignaturesToCetResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.AddSignaturesToCet(jsonObject)
+    return this._cfdDlcJs.AddSignaturesToCet(jsonObject);
   }
 
-  async AddSignaturesToMutualClosingTx(jsonObject: AddSignaturesToMutualClosingTxRequest): Promise<AddSignaturesToMutualClosingTxResponse> {
-    await this.CfdLoaded()
+  async AddSignaturesToMutualClosingTx(
+    jsonObject: AddSignaturesToMutualClosingTxRequest
+  ): Promise<AddSignaturesToMutualClosingTxResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.AddSignaturesToMutualClosingTx(jsonObject)
+    return this._cfdDlcJs.AddSignaturesToMutualClosingTx(jsonObject);
   }
 
-  async AddSignaturesToRefundTx(jsonObject: AddSignaturesToRefundTxRequest): Promise<AddSignaturesToRefundTxResponse> {
-    await this.CfdLoaded()
+  async AddSignaturesToRefundTx(
+    jsonObject: AddSignaturesToRefundTxRequest
+  ): Promise<AddSignaturesToRefundTxResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.AddSignaturesToRefundTx(jsonObject)
+    return this._cfdDlcJs.AddSignaturesToRefundTx(jsonObject);
   }
 
   async CreateCet(jsonObject: CreateCetRequest): Promise<CreateCetResponse> {
-    await this.CfdLoaded()
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.CreateCet(jsonObject)
+    return this._cfdDlcJs.CreateCet(jsonObject);
   }
 
-  async CreateClosingTransaction(jsonObject: CreateClosingTransactionRequest): Promise<CreateClosingTransactionResponse> {
-    await this.CfdLoaded()
+  async CreateClosingTransaction(
+    jsonObject: CreateClosingTransactionRequest
+  ): Promise<CreateClosingTransactionResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.CreateClosingTransaction(jsonObject)
+    return this._cfdDlcJs.CreateClosingTransaction(jsonObject);
   }
 
-  async CreateDlcTransactions(jsonObject: CreateDlcTransactionsRequest): Promise<CreateDlcTransactionsResponse> {
-    await this.CfdLoaded()
+  async CreateDlcTransactions(
+    jsonObject: CreateDlcTransactionsRequest
+  ): Promise<CreateDlcTransactionsResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.CreateDlcTransactions(jsonObject)
+    return this._cfdDlcJs.CreateDlcTransactions(jsonObject);
   }
 
-  async CreateFundTransaction(jsonObject: CreateFundTransactionRequest): Promise<CreateFundTransactionResponse> {
-    await this.CfdLoaded()
+  async CreateFundTransaction(
+    jsonObject: CreateFundTransactionRequest
+  ): Promise<CreateFundTransactionResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.CreateFundTransaction(jsonObject)
+    return this._cfdDlcJs.CreateFundTransaction(jsonObject);
   }
 
-  async CreateMutualClosingTransaction(jsonObject: CreateMutualClosingTransactionRequest): Promise<CreateMutualClosingTransactionResponse> {
-    await this.CfdLoaded()
+  async CreateMutualClosingTransaction(
+    jsonObject: CreateMutualClosingTransactionRequest
+  ): Promise<CreateMutualClosingTransactionResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.CreateMutualClosingTransaction(jsonObject)
+    return this._cfdDlcJs.CreateMutualClosingTransaction(jsonObject);
   }
 
-  async CreatePenaltyTransaction(jsonObject: CreatePenaltyTransactionRequest): Promise<CreatePenaltyTransactionResponse> {
-    await this.CfdLoaded()
+  async CreatePenaltyTransaction(
+    jsonObject: CreatePenaltyTransactionRequest
+  ): Promise<CreatePenaltyTransactionResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.CreatePenaltyTransaction(jsonObject)
+    return this._cfdDlcJs.CreatePenaltyTransaction(jsonObject);
   }
 
-  async CreateRefundTransaction(jsonObject: CreateRefundTransactionRequest): Promise<CreateRefundTransactionResponse> {
-    await this.CfdLoaded()
+  async CreateRefundTransaction(
+    jsonObject: CreateRefundTransactionRequest
+  ): Promise<CreateRefundTransactionResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.CreateRefundTransaction(jsonObject)
+    return this._cfdDlcJs.CreateRefundTransaction(jsonObject);
   }
 
-  async GetRawCetSignature(jsonObject: GetRawCetSignatureRequest): Promise<GetRawCetSignatureResponse> {
-    await this.CfdLoaded()
+  async GetRawCetSignature(
+    jsonObject: GetRawCetSignatureRequest
+  ): Promise<GetRawCetSignatureResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.GetRawCetSignature(jsonObject)
+    return this._cfdDlcJs.GetRawCetSignature(jsonObject);
   }
 
-  async GetRawCetSignatures(jsonObject: GetRawCetSignaturesRequest): Promise<GetRawCetSignaturesResponse> {
-    await this.CfdLoaded()
+  async GetRawCetSignatures(
+    jsonObject: GetRawCetSignaturesRequest
+  ): Promise<GetRawCetSignaturesResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.GetRawCetSignatures(jsonObject)
+    return this._cfdDlcJs.GetRawCetSignatures(jsonObject);
   }
 
-  async GetRawFundTxSignature(jsonObject: GetRawFundTxSignatureRequest): Promise<GetRawFundTxSignatureResponse> {
-    await this.CfdLoaded()
+  async GetRawFundTxSignature(
+    jsonObject: GetRawFundTxSignatureRequest
+  ): Promise<GetRawFundTxSignatureResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.GetRawFundTxSignature(jsonObject)
+    return this._cfdDlcJs.GetRawFundTxSignature(jsonObject);
   }
 
-  async GetRawMutualClosingTxSignature(jsonObject: GetRawMutualClosingTxSignatureRequest): Promise<GetRawMutualClosingTxSignatureResponse> {
-    await this.CfdLoaded()
+  async GetRawMutualClosingTxSignature(
+    jsonObject: GetRawMutualClosingTxSignatureRequest
+  ): Promise<GetRawMutualClosingTxSignatureResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.GetRawMutualClosingTxSignature(jsonObject)
+    return this._cfdDlcJs.GetRawMutualClosingTxSignature(jsonObject);
   }
 
-  async GetRawRefundTxSignature(jsonObject: GetRawRefundTxSignatureRequest): Promise<GetRawRefundTxSignatureResponse> {
-    await this.CfdLoaded()
+  async GetRawRefundTxSignature(
+    jsonObject: GetRawRefundTxSignatureRequest
+  ): Promise<GetRawRefundTxSignatureResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.GetRawRefundTxSignature(jsonObject)
+    return this._cfdDlcJs.GetRawRefundTxSignature(jsonObject);
   }
 
-  async GetSchnorrPublicNonce(jsonObject: GetSchnorrPublicNonceRequest): Promise<GetSchnorrPublicNonceResponse> {
-    await this.CfdLoaded()
+  async GetSchnorrPublicNonce(
+    jsonObject: GetSchnorrPublicNonceRequest
+  ): Promise<GetSchnorrPublicNonceResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.GetSchnorrPublicNonce(jsonObject)
+    return this._cfdDlcJs.GetSchnorrPublicNonce(jsonObject);
   }
 
-  async SchnorrSign(jsonObject: SchnorrSignRequest): Promise<SchnorrSignResponse> {
-    await this.CfdLoaded()
+  async SchnorrSign(
+    jsonObject: SchnorrSignRequest
+  ): Promise<SchnorrSignResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.SchnorrSign(jsonObject)
+    return this._cfdDlcJs.SchnorrSign(jsonObject);
   }
 
-  async SignClosingTransaction(jsonObject: SignClosingTransactionRequest): Promise<SignClosingTransactionResponse> {
-    await this.CfdLoaded()
+  async SignClosingTransaction(
+    jsonObject: SignClosingTransactionRequest
+  ): Promise<SignClosingTransactionResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.SignClosingTransaction(jsonObject)
+    return this._cfdDlcJs.SignClosingTransaction(jsonObject);
   }
 
-  async SignFundTransaction(jsonObject: SignFundTransactionRequest): Promise<SignFundTransactionResponse> {
-    await this.CfdLoaded()
+  async SignFundTransaction(
+    jsonObject: SignFundTransactionRequest
+  ): Promise<SignFundTransactionResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.SignFundTransaction(jsonObject)
+    return this._cfdDlcJs.SignFundTransaction(jsonObject);
   }
 
-  async VerifyCetSignature(jsonObject: VerifyCetSignatureRequest): Promise<VerifyCetSignatureResponse> {
-    await this.CfdLoaded()
+  async VerifyCetSignature(
+    jsonObject: VerifyCetSignatureRequest
+  ): Promise<VerifyCetSignatureResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.VerifyCetSignature(jsonObject)
+    return this._cfdDlcJs.VerifyCetSignature(jsonObject);
   }
 
-  async VerifyCetSignatures(jsonObject: VerifyCetSignaturesRequest): Promise<VerifyCetSignaturesResponse> {
-    await this.CfdLoaded()
+  async VerifyCetSignatures(
+    jsonObject: VerifyCetSignaturesRequest
+  ): Promise<VerifyCetSignaturesResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.VerifyCetSignatures(jsonObject)
+    return this._cfdDlcJs.VerifyCetSignatures(jsonObject);
   }
 
-  async VerifyFundTxSignature(jsonObject: VerifyFundTxSignatureRequest): Promise<VerifyFundTxSignatureResponse> {
-    await this.CfdLoaded()
+  async VerifyFundTxSignature(
+    jsonObject: VerifyFundTxSignatureRequest
+  ): Promise<VerifyFundTxSignatureResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.VerifyFundTxSignature(jsonObject)
+    return this._cfdDlcJs.VerifyFundTxSignature(jsonObject);
   }
 
-  async VerifyMutualClosingTxSignature(jsonObject: VerifyMutualClosingTxSignatureRequest): Promise<VerifyMutualClosingTxSignatureResponse> {
-    await this.CfdLoaded()
+  async VerifyMutualClosingTxSignature(
+    jsonObject: VerifyMutualClosingTxSignatureRequest
+  ): Promise<VerifyMutualClosingTxSignatureResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.VerifyMutualClosingTxSignature(jsonObject)
+    return this._cfdDlcJs.VerifyMutualClosingTxSignature(jsonObject);
   }
 
-  async VerifyRefundTxSignature(jsonObject: VerifyRefundTxSignatureRequest): Promise<VerifyRefundTxSignatureResponse> {
-    await this.CfdLoaded()
+  async VerifyRefundTxSignature(
+    jsonObject: VerifyRefundTxSignatureRequest
+  ): Promise<VerifyRefundTxSignatureResponse> {
+    await this.CfdLoaded();
 
-    return this._cfdDlcJs.VerifyRefundTxSignature(jsonObject)
+    return this._cfdDlcJs.VerifyRefundTxSignature(jsonObject);
   }
 }
