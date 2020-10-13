@@ -1,15 +1,15 @@
-import * as _ from 'lodash'
-const { find, findLast, findLastIndex, isFunction } = _
+import * as _ from 'lodash';
+const { find, findLast, findLastIndex, isFunction } = _;
 
-import Dlc from './Dlc'
-import Cfd from './Cfd'
+import Dlc from './Dlc';
+import Cfd from './Cfd';
 
 import {
   DuplicateProviderError,
   InvalidProviderError,
   NoProviderError,
-  UnimplementedMethodError
-} from '@liquality/errors'
+  UnimplementedMethodError,
+} from '@liquality/errors';
 
 export default class Client extends Dlc {
   _providers: Array<Client>;
@@ -22,19 +22,19 @@ export default class Client extends Dlc {
   /**
    * Client
    */
-  constructor (client?: Client) {
-    super(client)
-    
-    this.client = client
+  constructor(client?: Client) {
+    super(client);
+
+    this.client = client;
     /**
      * @type {Array}
      */
-    this._providers = []
+    this._providers = [];
 
-    this._dlc = new Dlc(this)
-    this._cfd = new Cfd(this)
+    this._dlc = new Dlc(this);
+    this._cfd = new Cfd(this);
 
-    this.identifier = 'Client'
+    this.identifier = 'Client';
   }
 
   /**
@@ -44,24 +44,26 @@ export default class Client extends Dlc {
    * @throws {InvalidProviderError} When invalid provider is provider
    * @throws {DuplicateProviderError} When same provider is added again
    */
-  addProvider (provider: any) {
+  addProvider(provider: any) {
     if (!isFunction(provider.setClient)) {
-      throw new (InvalidProviderError('Provider should have "setClient" method') as any)
+      throw new (InvalidProviderError(
+        'Provider should have "setClient" method'
+      ) as any)();
     }
 
     const duplicate = find(
       this._providers,
-      _provider => provider.constructor === _provider.constructor
-    )
+      (_provider) => provider.constructor === _provider.constructor
+    );
 
     if (duplicate) {
-      throw new (DuplicateProviderError('Duplicate provider') as any)
+      throw new (DuplicateProviderError('Duplicate provider') as any)();
     }
 
-    provider.setClient(this)
-    this._providers.push(provider)
+    provider.setClient(this);
+    this._providers.push(provider);
 
-    return this
+    return this;
   }
 
   /**
@@ -76,42 +78,50 @@ export default class Client extends Dlc {
    * @throws {UnsupportedMethodError} When requested method is not supported by
    *  version specified
    */
-  getProviderForMethod (method: any, requestor: any = false) : Client {
+  getProviderForMethod(method: any, requestor: any = false): Client {
     if (this._providers.concat(this.client._providers).length === 0) {
-      throw new (NoProviderError('No provider provided. Add a provider to the client') as any)
+      throw new (NoProviderError(
+        'No provider provided. Add a provider to the client'
+      ) as any)();
     }
 
     let indexOfRequestor = requestor
-      ? findLastIndex(
-        this._providers.concat(this.client._providers),
-        function(provider) {
-          return requestor.constructor === provider.constructor || (provider.getIdentifier && requestor.getIdentifier() === provider.getIdentifier())
-        },
-      ) : this._providers.concat(this.client._providers).length
+      ? findLastIndex(this._providers.concat(this.client._providers), function (
+          provider
+        ) {
+          return (
+            requestor.constructor === provider.constructor ||
+            (provider.getIdentifier &&
+              requestor.getIdentifier() === provider.getIdentifier())
+          );
+        })
+      : this._providers.concat(this.client._providers).length;
 
-    if (indexOfRequestor === -1) indexOfRequestor = 0
+    if (indexOfRequestor === -1) indexOfRequestor = 0;
 
     let provider = findLast(
       this._providers.concat(this.client._providers),
-      function(provider) {
+      function (provider) {
         try {
-          return isFunction((provider as any)[method])
-        } catch(e) {
+          return isFunction((provider as any)[method]);
+        } catch (e) {
           try {
-            return isFunction(provider.getMethod(method))
-          } catch(e) {
-            return false
+            return isFunction(provider.getMethod(method));
+          } catch (e) {
+            return false;
           }
         }
       },
       indexOfRequestor - 1
-    )
+    );
 
     if (provider == null) {
-      throw new (UnimplementedMethodError(`Unimplemented method "${method}"`) as any)
+      throw new (UnimplementedMethodError(
+        `Unimplemented method "${method}"`
+      ) as any)();
     }
 
-    return provider
+    return provider;
   }
 
   /**
@@ -121,28 +131,28 @@ export default class Client extends Dlc {
    *  above the requestor in the stack.
    * @return {function} Returns method from provider instance associated with the requested method
    */
-  getMethod (method: any, requestor?: any) : any {
+  getMethod(method: any, requestor?: any): any {
     try {
-      const provider = this.getProviderForMethod(method, requestor)
-      return (provider as any)[method].bind(provider)
-    } catch(e) {
+      const provider = this.getProviderForMethod(method, requestor);
+      return (provider as any)[method].bind(provider);
+    } catch (e) {
       try {
-        return this.client.getMethod(method)
-      } catch(e) {
-        return (this.client as any)[method]
+        return this.client.getMethod(method);
+      } catch (e) {
+        return (this.client as any)[method];
       }
     }
   }
 
-  get dlc () {
-    return this._dlc
+  get dlc() {
+    return this._dlc;
   }
 
-  get cfd () {
-    return this._cfd
+  get cfd() {
+    return this._cfd;
   }
 
-  getIdentifier () {
+  getIdentifier() {
     return this.identifier;
   }
 }

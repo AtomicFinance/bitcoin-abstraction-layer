@@ -1,4 +1,4 @@
-import Amount, { AmountJSON } from "./Amount";
+import Amount, { AmountJSON } from './Amount';
 
 export default class Utxo {
   constructor(
@@ -15,7 +15,7 @@ export default class Utxo {
       vout: this.vout,
       amount: this.amount.toJSON(),
       address: this.address,
-      derivationPath: this.derivationPath
+      derivationPath: this.derivationPath,
     });
   }
 
@@ -26,19 +26,19 @@ export default class Utxo {
       vout: json.vout,
       amount: Amount.fromJSON(json.amount),
       address: json.address,
-      derivationPath: json.derivationPath
+      derivationPath: json.derivationPath,
     });
   }
 
   static reviver(key: string, value: any): any {
-    return key === "" ? Utxo.fromJSON(value) : value;
+    return key === '' ? Utxo.fromJSON(value) : value;
   }
 }
 
 export interface UtxoJSON {
-  txid: string,
-  vout: number,
-  amount: AmountJSON,
-  address: string,
-  derivationPath: string
+  txid: string;
+  vout: number;
+  amount: AmountJSON;
+  address: string;
+  derivationPath: string;
 }

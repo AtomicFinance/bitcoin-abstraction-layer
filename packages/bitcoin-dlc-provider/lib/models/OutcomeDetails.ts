@@ -1,4 +1,4 @@
-import Amount from './Amount'
+import Amount from './Amount';
 
 export default class OutcomeDetails {
   constructor(

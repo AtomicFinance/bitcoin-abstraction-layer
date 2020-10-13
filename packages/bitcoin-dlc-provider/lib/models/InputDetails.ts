@@ -1,4 +1,4 @@
-import Amount from './Amount'
+import Amount from './Amount';
 
 export default class InputDetails {
   constructor(
@@ -7,6 +7,6 @@ export default class InputDetails {
     readonly feeRate: number,
     readonly maturityTime: Date,
     readonly refundLockTime: number,
-    readonly cetCsvDelay: number,
+    readonly cetCsvDelay: number
   ) {}
 }

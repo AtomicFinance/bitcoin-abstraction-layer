@@ -1,4 +1,4 @@
-declare module "@liquality/errors" {
+declare module '@liquality/errors' {
   function DuplicateProviderError(error: string): any;
   function InvalidProviderError(error: string): any;
   function NoProviderError(error: string): any;

@@ -1,4 +1,4 @@
-import Utxo, { UtxoJSON } from "./Utxo";
+import Utxo, { UtxoJSON } from './Utxo';
 
 export default class PartyInputs {
   constructor(
@@ -17,10 +17,10 @@ export default class PartyInputs {
   }
 
   toJSON(): PartyInputsJSON {
-    const utxosJSON: UtxoJSON[] = []
+    const utxosJSON: UtxoJSON[] = [];
     for (let i = 0; i < this.utxos.length; i++) {
-      const utxo = this.utxos[i].toJSON()
-      utxosJSON.push(utxo)
+      const utxo = this.utxos[i].toJSON();
+      utxosJSON.push(utxo);
     }
 
     return Object.assign({}, this, {
@@ -28,18 +28,18 @@ export default class PartyInputs {
       sweepPublicKey: this.sweepPublicKey,
       changeAddress: this.changeAddress,
       finalAddress: this.finalAddress,
-      utxos: utxosJSON
+      utxos: utxosJSON,
     });
   }
 
   static fromJSON(json: PartyInputsJSON): PartyInputs {
     let partyInputs = Object.create(PartyInputs.prototype);
 
-    const utxos: Utxo[] = []
+    const utxos: Utxo[] = [];
 
     for (let i = 0; i < json.utxos.length; i++) {
-      const utxo = Utxo.fromJSON(json.utxos[i])
-      utxos.push(utxo)
+      const utxo = Utxo.fromJSON(json.utxos[i]);
+      utxos.push(utxo);
     }
 
     return Object.assign(partyInputs, json, {
@@ -47,19 +47,19 @@ export default class PartyInputs {
       sweepPublicKey: json.sweepPublicKey,
       changeAddress: json.changeAddress,
       finalAddress: json.finalAddress,
-      utxos
+      utxos,
     });
   }
 
   static reviver(key: string, value: any): any {
-    return key === "" ? PartyInputs.fromJSON(value) : value;
+    return key === '' ? PartyInputs.fromJSON(value) : value;
   }
 }
 
 export interface PartyInputsJSON {
-  fundPublicKey: string,
-  sweepPublicKey: string,
-  changeAddress: string,
-  finalAddress: string,
-  utxos: UtxoJSON[]
+  fundPublicKey: string;
+  sweepPublicKey: string;
+  changeAddress: string;
+  finalAddress: string;
+  utxos: UtxoJSON[];
 }

@@ -1,13 +1,13 @@
 /// <reference path="Client.d.ts" />
 
-import Client from '@atomicfinance/client'
+import Client from '@atomicfinance/client';
 
 export default class Provider {
   client: Client;
   version: number;
   identifier: string;
 
-  constructor (identifier: string) {
+  constructor(identifier: string) {
     this.identifier = identifier;
   }
 
@@ -15,8 +15,8 @@ export default class Provider {
    * Set client to a provider instance.
    * @param {!ChainAbstractionLayer} client - The ChainAbstractionLayer instance
    */
-  setClient (client?: any) {
-    this.client = client
+  setClient(client?: any) {
+    this.client = client;
   }
 
   /**
@@ -25,11 +25,11 @@ export default class Provider {
    * @return {function} Returns a method from a provider above current Provider
    *  in the stack.
    */
-  getMethod (method?: any) {
-    return this.client.getMethod(method, this).bind(this)
+  getMethod(method?: any) {
+    return this.client.getMethod(method, this).bind(this);
   }
 
-  getIdentifier () {
+  getIdentifier() {
     return this.identifier;
   }
 }
