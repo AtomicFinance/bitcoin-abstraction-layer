@@ -145,6 +145,18 @@ export default class Dlc {
     return this.client.getMethod('deleteContract')(contractId)
   }
 
+  async importContractFromOfferMessage (offerMessage: OfferMessage) {
+    return this.client.getMethod('importContractFromOfferMessage')(offerMessage)
+  }
+
+  async importContractFromAcceptMessage (offerMessage: OfferMessage, acceptMessage: AcceptMessage) {
+    return this.client.getMethod('importContractFromAcceptMessage')(offerMessage, acceptMessage)
+  }
+
+  async importContractFromSignMessage (offerMessage: OfferMessage, signMessage: SignMessage) {
+    return this.client.getMethod('importContractFromSignMessage')(offerMessage, signMessage)
+  }
+
   async AddSignatureToFundTransaction(
     jsonObject: AddSignatureToFundTransactionRequest
   ): Promise<AddSignatureToFundTransactionResponse> {
