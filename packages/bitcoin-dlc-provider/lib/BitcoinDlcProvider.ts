@@ -108,6 +108,14 @@ export default class BitcoinDlcProvider extends Provider {
     return this._dlcs.find((dlc) => dlc.contract.id === contractId);
   }
 
+  private deleteDlc (contractId: string) {
+    this._dlcs.forEach((dlc, i) => {
+      if (dlc.contract.id === contractId) {
+        this._dlcs.splice(i, 1)
+      }
+    })
+  }
+
   hasDlc(contractId: string): boolean {
     return this._dlcs.some((dlc) => {
       dlc.contract.id === contractId;
@@ -131,6 +139,10 @@ export default class BitcoinDlcProvider extends Provider {
       contracts.push(dlc.contract);
     }
     return contracts;
+  }
+
+  deleteContract (contractId: string) {
+    this.deleteDlc(contractId)
   }
 
   async initializeContractAndOffer(

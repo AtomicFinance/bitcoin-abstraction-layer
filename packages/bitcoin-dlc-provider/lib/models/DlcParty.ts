@@ -97,8 +97,21 @@ export default class DlcParty {
     const fundPublicKey = addresses[1].publicKey.toString('hex');
     const sweepPublicKey = changeAddresses[1].publicKey.toString('hex');
 
+    let fundTxCreated = false
+    if (this.contract.fundTxHex) {
+      const network = await this.client.getMethod('getConnectedNetwork')();
+      const fundTx = await decodeRawTransaction(this.contract.fundTxHex, network)
+      const refundTx = await decodeRawTransaction(this.contract.refundTransaction, network);
+      const fundAddress = fundTx.vout[refundTx.vin[0].vout].scriptPubKey.addresses
+
+      const balance = await this.client.getMethod('getBalance')(fundAddress)
+      if (balance.gt(0)) {
+        fundTxCreated = true
+      }
+    }
+
     let utxos: Utxo[] = [];
-    if (checkUtxos === true || !this.contract.fundTxHex) {
+    if (checkUtxos === true || !this.contract.fundTxHex || !fundTxCreated) {
       utxos = await this.GetUtxosForAmount(collateral);
     } else {
       utxos = await this.GetFundingUtxos(startingIndex);
