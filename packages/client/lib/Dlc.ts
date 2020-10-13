@@ -141,6 +141,10 @@ export default class Dlc {
     return this.client.getMethod('exportContracts')();
   }
 
+  deleteContract (contractId: string) {
+    return this.client.getMethod('deleteContract')(contractId)
+  }
+
   async AddSignatureToFundTransaction(
     jsonObject: AddSignatureToFundTransactionRequest
   ): Promise<AddSignatureToFundTransactionResponse> {
