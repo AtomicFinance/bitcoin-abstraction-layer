@@ -98,7 +98,7 @@ export default class DlcParty {
     const sweepPublicKey = changeAddresses[1].publicKey.toString('hex');
 
     let utxos: Utxo[] = [];
-    if (checkUtxos === true) {
+    if (checkUtxos === true || !this.contract.fundTxHex) {
       utxos = await this.GetUtxosForAmount(collateral);
     } else {
       utxos = await this.GetFundingUtxos(startingIndex);
