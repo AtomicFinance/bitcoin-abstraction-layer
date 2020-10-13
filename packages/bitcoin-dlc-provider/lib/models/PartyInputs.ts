@@ -34,6 +34,7 @@ export default class PartyInputs {
 
   static fromJSON(json: PartyInputsJSON): PartyInputs {
     let partyInputs = Object.create(PartyInputs.prototype);
+    if (!json) return;
 
     const utxos: Utxo[] = [];
 
