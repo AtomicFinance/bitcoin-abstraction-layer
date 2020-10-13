@@ -145,6 +145,23 @@ export default class BitcoinDlcProvider extends Provider {
     this.deleteDlc(contractId)
   }
 
+  async importContractFromOfferMessage (offerMessage: OfferMessage) {
+    const contract = Contract.FromOfferMessage(offerMessage)
+    await this.importContract(contract)
+  }
+
+  async importContractFromAcceptMessage (offerMessage: OfferMessage, acceptMessage: AcceptMessage) {
+    const contract = Contract.FromOfferMessage(offerMessage)
+    contract.ApplyAcceptMessage(acceptMessage)
+    await this.importContract(contract)
+  }
+
+  async importContractFromSignMessage (offerMessage: OfferMessage, signMessage: SignMessage) {
+    const contract = Contract.FromOfferMessage(offerMessage)
+    contract.ApplySignMessage(signMessage)
+    await this.importContract(contract)
+  }
+
   async initializeContractAndOffer(
     input: InputDetails,
     outcomes: Array<OutcomeDetails>,
