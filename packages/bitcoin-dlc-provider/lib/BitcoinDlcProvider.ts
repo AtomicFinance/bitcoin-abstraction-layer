@@ -64,6 +64,7 @@ import Outcome from './models/Outcome';
 import OfferMessage from './models/OfferMessage';
 import AcceptMessage from './models/AcceptMessage';
 import SignMessage from './models/SignMessage';
+import Utxo from './models/Utxo';
 import { v4 as uuidv4 } from 'uuid';
 
 export default class BitcoinDlcProvider extends Provider {
@@ -227,6 +228,32 @@ export default class BitcoinDlcProvider extends Provider {
       oracleSignature,
       outcomeIndex
     );
+  }
+
+  async getFundingUtxoAddressesForOfferMessages (offerMessages: OfferMessage[]) {
+    const fundingAddresses: string[] = []
+    const fundingUtxos: Utxo[] = []
+    offerMessages.forEach(offerMessage => {
+      offerMessage.localPartyInputs.utxos.forEach(utxo => {
+        if (fundingAddresses.indexOf(utxo.address) === -1) fundingAddresses.push(utxo.address)
+        fundingUtxos.push(utxo)
+      })
+    })
+
+    return { addresses: fundingAddresses, utxos: fundingUtxos }
+  }
+
+  async getFundingUtxoAddressesForAcceptMessages (acceptMessages: AcceptMessage[]) {
+    const fundingAddresses: string[] = []
+    const fundingUtxos: Utxo[] = []
+    acceptMessages.forEach(acceptMessage => {
+      acceptMessage.remotePartyInputs.utxos.forEach(utxo => {
+        if (fundingAddresses.indexOf(utxo.address) === -1) fundingAddresses.push(utxo.address)
+        fundingUtxos.push(utxo)
+      })
+    })
+
+    return { addresses: fundingAddresses, utxos: fundingUtxos }
   }
 
   async AddSignatureToFundTransaction(
