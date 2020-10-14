@@ -130,6 +130,14 @@ export default class Dlc {
     );
   }
 
+  async getFundingUtxoAddressesForOfferMessages (offerMessages: OfferMessage[]) {
+    return this.client.getMethod('getFundingUtxoAddressesForOfferMessages')(offerMessages)
+  }
+
+  async getFundingUtxoAddressesForAcceptMessages (acceptMessages: AcceptMessage[]) {
+    return this.client.getMethod('getFundingUtxoAddressesForAcceptMessages')(acceptMessages)
+  }
+
   hasDlc(contractId: string): boolean {
     return this.client.getMethod('hasDlc')(contractId);
   }
