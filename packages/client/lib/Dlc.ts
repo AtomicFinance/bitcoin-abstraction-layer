@@ -53,6 +53,7 @@ import {
 } from 'cfd-dlc-js-wasm';
 
 import {
+  Input,
   InputDetails,
   OutcomeDetails,
   OracleInfo,
@@ -73,23 +74,27 @@ export default class Dlc {
     input: InputDetails,
     outcomes: Array<OutcomeDetails>,
     oracleInfo: OracleInfo,
-    startingIndex: number = 0
+    startingIndex: number = 0,
+    fixedInputs: Input[] = []
   ): Promise<OfferMessage> {
     return this.client.getMethod('initializeContractAndOffer')(
       input,
       outcomes,
       oracleInfo,
-      startingIndex
+      startingIndex,
+      fixedInputs
     );
   }
 
   async confirmContractOffer(
     offerMessage: OfferMessage,
-    startingIndex: number = 0
+    startingIndex: number = 0,
+    fixedInputs: Input[] = []
   ): Promise<AcceptMessage> {
     return this.client.getMethod('confirmContractOffer')(
       offerMessage,
-      startingIndex
+      startingIndex,
+      fixedInputs
     );
   }
 
