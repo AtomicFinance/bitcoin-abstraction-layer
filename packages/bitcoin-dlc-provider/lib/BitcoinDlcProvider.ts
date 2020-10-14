@@ -56,6 +56,7 @@ import {
 import DlcParty from './models/DlcParty';
 import Contract from './models/Contract';
 
+import Input from './models/Input';
 import InputDetails from './models/InputDetails';
 import OutcomeDetails from './models/OutcomeDetails';
 import OracleInfo from './models/OracleInfo';
@@ -164,9 +165,10 @@ export default class BitcoinDlcProvider extends Provider {
 
   async initializeContractAndOffer(
     input: InputDetails,
-    outcomes: Array<OutcomeDetails>,
+    outcomes: OutcomeDetails[],
     oracleInfo: OracleInfo,
-    startingIndex: number = 0
+    startingIndex: number = 0,
+    fixedInputs: Input[] = []
   ): Promise<OfferMessage> {
     const contract = new Contract();
 
@@ -181,17 +183,18 @@ export default class BitcoinDlcProvider extends Provider {
     const dlcParty = new DlcParty(this);
     this._dlcs.push(dlcParty);
 
-    return dlcParty.InitiateContract(contract, startingIndex);
+    return dlcParty.InitiateContract(contract, startingIndex, fixedInputs);
   }
 
   async confirmContractOffer(
     offerMessage: OfferMessage,
-    startingIndex: number = 0
+    startingIndex: number = 0,
+    fixedInputs: Input[] = []
   ): Promise<AcceptMessage> {
     const dlcParty = new DlcParty(this);
     this._dlcs.push(dlcParty);
 
-    return dlcParty.OnOfferMessage(offerMessage, startingIndex);
+    return dlcParty.OnOfferMessage(offerMessage, startingIndex, fixedInputs);
   }
 
   async signContract(acceptMessage: AcceptMessage): Promise<SignMessage> {

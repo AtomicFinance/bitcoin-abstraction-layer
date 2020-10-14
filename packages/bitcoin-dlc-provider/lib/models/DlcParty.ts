@@ -18,6 +18,7 @@ import {
   CreateClosingTransactionRequest,
   SignClosingTransactionRequest,
 } from 'cfd-dlc-js-wasm';
+import Input from './Input'
 import OfferMessage from './OfferMessage';
 import AcceptMessage from './AcceptMessage';
 import SignMessage from './SignMessage';
@@ -48,10 +49,11 @@ export default class DlcParty {
 
   public async InitiateContract(
     initialContract: Contract,
-    startingIndex: number
+    startingIndex: number,
+    fixedInputs: Input[]
   ): Promise<OfferMessage> {
     this.contract = initialContract;
-    await this.Initialize(this.contract.localCollateral, startingIndex);
+    await this.Initialize(this.contract.localCollateral, startingIndex, fixedInputs);
     this.contract.localPartyInputs = this.partyInputs;
     return this.contract.GetOfferMessage();
   }
@@ -61,6 +63,7 @@ export default class DlcParty {
     await this.Initialize(
       this.contract.localCollateral,
       this.contract.startingIndex,
+      [],
       false
     );
   }
@@ -68,6 +71,7 @@ export default class DlcParty {
   private async Initialize(
     collateral: Amount,
     startingIndex: number,
+    fixedInputs: Input[],
     checkUtxos: boolean = true
   ) {
     const addresses = await this.client.getMethod('getAddresses')(
@@ -112,7 +116,7 @@ export default class DlcParty {
 
     let utxos: Utxo[] = [];
     if (checkUtxos === true || !this.contract.fundTxHex || !fundTxCreated) {
-      utxos = await this.GetUtxosForAmount(collateral);
+      utxos = await this.GetUtxosForAmount(collateral, fixedInputs);
     } else {
       utxos = await this.GetFundingUtxos(startingIndex);
     }
@@ -129,12 +133,13 @@ export default class DlcParty {
     this.partyInputs = inputs;
   }
 
-  private async GetUtxosForAmount(amount: Amount) {
+  private async GetUtxosForAmount(amount: Amount, fixedInputs: Input[]) {
     const outputs = [{ to: BurnAddress, value: amount.GetSatoshiAmount() }];
     const feePerByte = await this.client.getMethod('getFeePerByte')();
     const inputsForAmount = await this.client.getMethod('getInputsForAmount')(
       outputs,
-      feePerByte
+      feePerByte,
+      fixedInputs
     );
     const { inputs: utxos } = inputsForAmount;
 
@@ -262,11 +267,12 @@ export default class DlcParty {
 
   public async OnOfferMessage(
     offerMessage: OfferMessage,
-    startingIndex: number
+    startingIndex: number,
+    fixedInputs: Input[]
   ): Promise<AcceptMessage> {
     this.contract = Contract.FromOfferMessage(offerMessage);
     this.contract.startingIndex = startingIndex;
-    await this.Initialize(offerMessage.remoteCollateral, startingIndex);
+    await this.Initialize(offerMessage.remoteCollateral, startingIndex, fixedInputs);
     this.contract.remotePartyInputs = this.partyInputs;
     await this.CreateDlcTransactions();
     const cetSignRequest: GetRawCetSignaturesRequest = {
