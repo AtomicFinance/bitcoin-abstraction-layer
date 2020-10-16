@@ -142,8 +142,8 @@ export default class Dlc {
     return this.client.getMethod('hasDlc')(contractId);
   }
 
-  async importContract(contract: Contract) {
-    return this.client.getMethod('importContract')(contract);
+  async importContract(contract: Contract, startingIndex: number) {
+    return this.client.getMethod('importContract')(contract, startingIndex);
   }
 
   exportContract(contractId: string): Contract {
@@ -158,16 +158,20 @@ export default class Dlc {
     return this.client.getMethod('deleteContract')(contractId)
   }
 
-  async importContractFromOfferMessage (offerMessage: OfferMessage) {
-    return this.client.getMethod('importContractFromOfferMessage')(offerMessage)
+  async importContractFromOfferMessage (offerMessage: OfferMessage, startingIndex: number) {
+    return this.client.getMethod('importContractFromOfferMessage')(offerMessage, startingIndex)
   }
 
-  async importContractFromAcceptMessage (offerMessage: OfferMessage, acceptMessage: AcceptMessage) {
-    return this.client.getMethod('importContractFromAcceptMessage')(offerMessage, acceptMessage)
+  async importContractFromAcceptMessage (offerMessage: OfferMessage, acceptMessage: AcceptMessage, startingIndex: number) {
+    return this.client.getMethod('importContractFromAcceptMessage')(offerMessage, acceptMessage, startingIndex)
   }
 
-  async importContractFromSignMessage (offerMessage: OfferMessage, signMessage: SignMessage) {
-    return this.client.getMethod('importContractFromSignMessage')(offerMessage, signMessage)
+  async importContractFromAcceptAndSignMessage (offerMessage: OfferMessage, acceptMessage: AcceptMessage, signMessage: SignMessage, startingIndex: number) {
+    return this.client.getMethod('importContractFromAcceptAndSignMessage')(offerMessage, acceptMessage, signMessage, startingIndex)
+  }
+
+  async importContractFromSignMessage (offerMessage: OfferMessage, signMessage: SignMessage, startingIndex: number) {
+    return this.client.getMethod('importContractFromSignMessage')(offerMessage, signMessage, startingIndex)
   }
 
   async AddSignatureToFundTransaction(

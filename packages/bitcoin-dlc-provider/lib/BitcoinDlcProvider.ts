@@ -124,10 +124,10 @@ export default class BitcoinDlcProvider extends Provider {
     });
   }
 
-  async importContract(contract: Contract) {
+  async importContract(contract: Contract, startingIndex: number) {
     const dlcParty = new DlcParty(this);
     this._dlcs.push(dlcParty);
-    await dlcParty.ImportContract(contract);
+    await dlcParty.ImportContract(contract, startingIndex);
   }
 
   exportContract(contractId: string): Contract {
@@ -147,21 +147,28 @@ export default class BitcoinDlcProvider extends Provider {
     this.deleteDlc(contractId)
   }
 
-  async importContractFromOfferMessage (offerMessage: OfferMessage) {
+  async importContractFromOfferMessage (offerMessage: OfferMessage, startingIndex: number = 0) {
     const contract = Contract.FromOfferMessage(offerMessage)
-    await this.importContract(contract)
+    await this.importContract(contract, startingIndex)
   }
 
-  async importContractFromAcceptMessage (offerMessage: OfferMessage, acceptMessage: AcceptMessage) {
+  async importContractFromAcceptMessage (offerMessage: OfferMessage, acceptMessage: AcceptMessage, startingIndex: number = 0) {
     const contract = Contract.FromOfferMessage(offerMessage)
     contract.ApplyAcceptMessage(acceptMessage)
-    await this.importContract(contract)
+    await this.importContract(contract, startingIndex)
   }
 
-  async importContractFromSignMessage (offerMessage: OfferMessage, signMessage: SignMessage) {
+  async importContractFromAcceptAndSignMessage (offerMessage: OfferMessage, acceptMessage: AcceptMessage, signMessage: SignMessage, startingIndex: number = 0) {
+    const contract = Contract.FromOfferMessage(offerMessage)
+    contract.ApplyAcceptMessage(acceptMessage)
+    contract.ApplySignMessage(signMessage)
+    await this.importContract(contract, startingIndex)
+  }
+
+  async importContractFromSignMessage (offerMessage: OfferMessage, signMessage: SignMessage, startingIndex: number = 0) {
     const contract = Contract.FromOfferMessage(offerMessage)
     contract.ApplySignMessage(signMessage)
-    await this.importContract(contract)
+    await this.importContract(contract, startingIndex)
   }
 
   async initializeContractAndOffer(
