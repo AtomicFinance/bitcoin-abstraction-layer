@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/provider",
   "umdName": "Provider",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "> TODO: description",
   "author": "Matthew Black <mblackmblackmblack@gmail.com>",
   "homepage": "",
@@ -17,7 +17,7 @@
     "build": "webpack --config ../../webpack/webpack.config.js"
   },
   "dependencies": {
-    "@atomicfinance/client": "^0.1.4",
+    "@atomicfinance/client": "^0.1.5",
     "lodash": "^4.17.20"
   },
   "devDependencies": {
