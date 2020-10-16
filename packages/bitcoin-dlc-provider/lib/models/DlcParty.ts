@@ -58,8 +58,12 @@ export default class DlcParty {
     return this.contract.GetOfferMessage();
   }
 
-  public async ImportContract(initialContract: Contract) {
+  public async ImportContract(initialContract: Contract, startingIndex: number = 0) {
     this.contract = initialContract;
+    console.log('this.contract.startingIndex', this.contract.startingIndex)
+    if (!this.contract.startingIndex) {
+      this.contract.startingIndex = startingIndex
+    }
     await this.Initialize(
       this.contract.localCollateral,
       this.contract.startingIndex,
