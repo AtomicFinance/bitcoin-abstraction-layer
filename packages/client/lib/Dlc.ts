@@ -106,6 +106,10 @@ export default class Dlc {
     return this.client.getMethod('finalizeContract')(signMessage);
   }
 
+  async refund(contractId: string) {
+    return this.client.getMethod('refund')(contractId);
+  }
+
   async unilateralClose(
     oracleSignature: string,
     outcomeIndex: number,
@@ -170,8 +174,8 @@ export default class Dlc {
     return this.client.getMethod('importContractFromAcceptAndSignMessage')(offerMessage, acceptMessage, signMessage, startingIndex)
   }
 
-  async importContractFromSignMessage (offerMessage: OfferMessage, signMessage: SignMessage, startingIndex: number) {
-    return this.client.getMethod('importContractFromSignMessage')(offerMessage, signMessage, startingIndex)
+  async importContractFromSignMessageAndCreateFinal (offerMessage: OfferMessage, acceptMessage: AcceptMessage, signMessage: SignMessage, startingIndex: number = 0) {
+    return this.client.getMethod('importContractFromSignMessageAndCreateFinal')(offerMessage, acceptMessage, signMessage, startingIndex)
   }
 
   async AddSignatureToFundTransaction(

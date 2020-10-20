@@ -51,7 +51,7 @@ import {
   VerifyMutualClosingTxSignatureRequest,
   VerifyMutualClosingTxSignatureResponse,
   VerifyRefundTxSignatureRequest,
-  VerifyRefundTxSignatureResponse,
+  VerifyRefundTxSignatureResponse
 } from 'cfd-dlc-js-wasm';
 import DlcParty from './models/DlcParty';
 import Contract from './models/Contract';
@@ -110,6 +110,17 @@ export default class BitcoinDlcProvider extends Provider {
     return this._dlcs.find((dlc) => dlc.contract.id === contractId);
   }
 
+  private updateDlcContractId(oldContractId: string, newContractId: string): boolean {
+    let updated = false
+    this._dlcs.forEach(dlc => {
+      if (dlc.contract.id === oldContractId) {
+        dlc.contract.id = newContractId
+        updated = true
+      }
+    })
+    return updated
+  }
+
   private deleteDlc (contractId: string) {
     this._dlcs.forEach((dlc, i) => {
       if (dlc.contract.id === contractId) {
@@ -147,28 +158,113 @@ export default class BitcoinDlcProvider extends Provider {
     this.deleteDlc(contractId)
   }
 
+  // Only Alice
   async importContractFromOfferMessage (offerMessage: OfferMessage, startingIndex: number = 0) {
-    const contract = Contract.FromOfferMessage(offerMessage)
-    await this.importContract(contract, startingIndex)
+    const { localCollateral, remoteCollateral, feeRate, maturityTime, refundLockTime, cetCsvDelay, oracleInfo } = offerMessage
+
+    const input: InputDetails = {
+      localCollateral,
+      remoteCollateral,
+      feeRate,
+      maturityTime,
+      refundLockTime,
+      cetCsvDelay
+    }
+
+    const outcomes: OutcomeDetails[] = []
+
+    offerMessage.outcomes.forEach(outcome => {
+      const { message, local, remote } = outcome
+
+      outcomes.push({
+        localAmount: local,
+        remoteAmount: remote,
+        message
+      })
+    })
+
+    const fixedInputs: Input[] = []
+
+    offerMessage.localPartyInputs.utxos.forEach(utxo => {
+      const { txid, vout, address, amount, derivationPath } = utxo
+
+      const utxoAmount = amount.GetSatoshiAmount()
+
+      fixedInputs.push({
+        txid,
+        vout,
+        address,
+        amount: utxoAmount,
+        derivationPath,
+        label: '',
+        scriptPubKey: '',
+        confirmations: 0,
+        spendable: false,
+        solvable: false,
+        safe: false,
+        satoshis: 0,
+        value: 0
+      })
+    })
+
+    const initOfferMessage = await this.initializeContractAndOffer(input, outcomes, oracleInfo, startingIndex, fixedInputs)
+    const updateSuccess = this.updateDlcContractId(initOfferMessage.contractId, offerMessage.contractId)
+    if (!updateSuccess) {
+      throw Error('Dlc Contract ID did not update successfully')
+    }
   }
 
+  // Only Bob
   async importContractFromAcceptMessage (offerMessage: OfferMessage, acceptMessage: AcceptMessage, startingIndex: number = 0) {
-    const contract = Contract.FromOfferMessage(offerMessage)
-    contract.ApplyAcceptMessage(acceptMessage)
-    await this.importContract(contract, startingIndex)
+    const fixedInputs: Input[] = []
+
+    acceptMessage.remotePartyInputs.utxos.forEach(utxo => {
+      const { txid, vout, address, amount, derivationPath } = utxo
+
+      const utxoAmount = amount.GetSatoshiAmount()
+
+      fixedInputs.push({
+        txid,
+        vout,
+        address,
+        amount: utxoAmount,
+        derivationPath,
+        label: '',
+        scriptPubKey: '',
+        confirmations: 0,
+        spendable: false,
+        solvable: false,
+        safe: false,
+        satoshis: 0,
+        value: 0
+      })
+    })
+
+    const initAcceptMessage = await this.confirmContractOffer(offerMessage, startingIndex, fixedInputs)
+    const updateSuccess = this.updateDlcContractId(initAcceptMessage.contractId, acceptMessage.contractId)
+    if (!updateSuccess) {
+      throw Error('Dlc Contract ID did not update successfully')
+    }
   }
 
+  // Only Alice
   async importContractFromAcceptAndSignMessage (offerMessage: OfferMessage, acceptMessage: AcceptMessage, signMessage: SignMessage, startingIndex: number = 0) {
-    const contract = Contract.FromOfferMessage(offerMessage)
-    contract.ApplyAcceptMessage(acceptMessage)
-    contract.ApplySignMessage(signMessage)
-    await this.importContract(contract, startingIndex)
+    await this.importContractFromOfferMessage(offerMessage, startingIndex)
+
+    const initSignMessage = await this.signContract(acceptMessage)
+
+    console.log('signMessage', signMessage)
+    console.log('initSignMessage', initSignMessage)
   }
 
-  async importContractFromSignMessage (offerMessage: OfferMessage, signMessage: SignMessage, startingIndex: number = 0) {
-    const contract = Contract.FromOfferMessage(offerMessage)
-    contract.ApplySignMessage(signMessage)
-    await this.importContract(contract, startingIndex)
+  // Only Bob
+  async importContractFromSignMessageAndCreateFinal (offerMessage: OfferMessage, acceptMessage: AcceptMessage, signMessage: SignMessage, startingIndex: number = 0) {
+    await this.importContractFromAcceptMessage(offerMessage, acceptMessage, startingIndex)
+    try {
+      await this.finalizeContract(signMessage)
+    } catch(e) {
+      console.log('error', e)
+    }
   }
 
   async initializeContractAndOffer(
@@ -213,6 +309,10 @@ export default class BitcoinDlcProvider extends Provider {
 
   async finalizeContract(signMessage: SignMessage): Promise<string> {
     return this.findDlc(signMessage.contractId).OnSignMessage(signMessage);
+  }
+
+  async refund(contractId: string) {
+    return this.findDlc(contractId).Refund();
   }
 
   async unilateralClose(
