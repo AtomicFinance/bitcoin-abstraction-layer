@@ -121,7 +121,13 @@ export default class DlcParty {
 
     let utxos: Utxo[] = [];
     if (checkUtxos === true || !this.contract.fundTxHex || !fundTxCreated) {
-      utxos = await this.GetUtxosForAmount(collateral, fixedInputs);
+      if (this.contract.isLocalParty && this.contract.localPartyInputs?.utxos.length > 0) {
+        utxos = this.contract.localPartyInputs.utxos
+      } else if (!this.contract.isLocalParty && this.contract.remotePartyInputs?.utxos.length > 0) {
+        utxos = this.contract.remotePartyInputs.utxos
+      } else {
+        utxos = await this.GetUtxosForAmount(collateral, fixedInputs);
+      }
     } else {
       utxos = await this.GetFundingUtxos(startingIndex);
     }
