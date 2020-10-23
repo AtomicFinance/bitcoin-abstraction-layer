@@ -1,19 +1,19 @@
 import Client from './Client';
 
-export default class Dlc {
+export default class Wallet {
   client: Client;
 
   constructor(client?: Client) {
     this.client = client;
   }
 
-  async buildSweepTransaction(
+  async buildSweepTransactionWithSetOutputs(
     externalChangeAddress: string,
     feePerByte: number,
     outputs: Output[],
     fixedInputs: Input[]
   ) {
-    return this.client.getMethod('buildSweepTransaction')(
+    return this.client.getMethod('buildSweepTransactionWithSetOutputs')(
       externalChangeAddress,
       feePerByte,
       outputs,
@@ -21,13 +21,13 @@ export default class Dlc {
     );
   }
 
-  async sendSweepTransaction(
+  async sendSweepTransactionWithSetOutputs(
     externalChangeAddress: string,
     feePerByte: number,
     outputs: Output[],
     fixedInputs: Input[]
   ) {
-    return this.client.getMethod('sendSweepTransaction')(
+    return this.client.getMethod('sendSweepTransactionWithSetOutputs')(
       externalChangeAddress,
       feePerByte,
       outputs,

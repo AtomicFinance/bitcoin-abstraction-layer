@@ -13,7 +13,7 @@ export default class BitcoinWalletProvider extends Provider {
     this._network = network;
   }
 
-  async buildSweepTransaction(
+  async buildSweepTransactionWithSetOutputs(
     externalChangeAddress: string,
     feePerByte: number,
     _outputs: Output[],
@@ -27,7 +27,7 @@ export default class BitcoinWalletProvider extends Provider {
     );
   }
 
-  async sendSweepTransaction(
+  async sendSweepTransactionWithSetOutputs(
     externalChangeAddress: string,
     feePerByte: number,
     _outputs: Output[],
@@ -65,7 +65,7 @@ export default class BitcoinWalletProvider extends Provider {
       const spliceIndex = outputs.findIndex(
         (sweepOutput: Output) => output.value === sweepOutput.value
       );
-      outputs.splice(spliceIndex, spliceIndex + 1);
+      outputs.splice(spliceIndex, 1);
     });
     _outputs.push({
       to: externalChangeAddress,

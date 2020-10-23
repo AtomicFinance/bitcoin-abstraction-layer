@@ -19,6 +19,7 @@
   "dependencies": {
     "@atomicfinance/bitcoin-cfd-provider": "^0.1.6",
     "@atomicfinance/bitcoin-dlc-provider": "^0.1.6",
+    "@atomicfinance/bitcoin-wallet-provider": "^0.1.6",
     "@atomicfinance/client": "^0.1.6",
     "lodash": "^4.17.20"
   },

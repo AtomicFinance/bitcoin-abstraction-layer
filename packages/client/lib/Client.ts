@@ -3,6 +3,7 @@ const { find, findLast, findLastIndex, isFunction } = _;
 
 import Dlc from './Dlc';
 import Cfd from './Cfd';
+import Wallet from './Wallet';
 
 import {
   DuplicateProviderError,
@@ -16,6 +17,7 @@ export default class Client extends Dlc {
   version: string;
   _dlc: Dlc;
   _cfd: Cfd;
+  _wallet: Wallet;
   client: Client;
   identifier: string;
 
@@ -33,6 +35,7 @@ export default class Client extends Dlc {
 
     this._dlc = new Dlc(this);
     this._cfd = new Cfd(this);
+    this._wallet = new Wallet(this);
 
     this.identifier = 'Client';
   }
@@ -150,6 +153,10 @@ export default class Client extends Dlc {
 
   get cfd() {
     return this._cfd;
+  }
+
+  get wallet() {
+    return this._wallet;
   }
 
   getIdentifier() {

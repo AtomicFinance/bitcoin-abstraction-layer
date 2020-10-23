@@ -1,3 +1,1 @@
-import BitcoinWalletProvider from './BitcoinWalletProvider';
-
-export default BitcoinWalletProvider;
+export { default } from './BitcoinWalletProvider';
