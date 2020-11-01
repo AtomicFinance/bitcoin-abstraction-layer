@@ -147,12 +147,21 @@ export default class DlcParty {
   private async GetUtxosForAmount(amount: Amount, fixedInputs: Input[]) {
     const outputs = [{ to: BurnAddress, value: amount.GetSatoshiAmount() }];
     const feePerByte = await this.client.getMethod('getFeePerByte')();
-    const inputsForAmount = await this.client.getMethod('getInputsForAmount')(
-      outputs,
-      feePerByte,
-      fixedInputs
-    );
-    const { inputs: utxos } = inputsForAmount;
+    let utxos
+    try {
+      const inputsForAmount = await this.client.getMethod('getInputsForAmount')(
+        outputs,
+        feePerByte,
+        fixedInputs
+      );
+      utxos = inputsForAmount.inputs
+    } catch(e) {
+      if (fixedInputs.length === 0) {
+        throw Error('Not enough balance getInputsForAmount')
+      } else {
+        utxos = fixedInputs
+      }
+    }
 
     const utxoSet: Utxo[] = [];
     for (let i = 0; i < utxos.length; i++) {
