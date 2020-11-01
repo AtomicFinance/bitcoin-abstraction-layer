@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/bitcoin-wallet-provider",
   "umdName": "BitcoinWalletProvider",
-  "version": "0.1.9",
+  "version": "0.2.0",
   "description": "> TODO: description",
   "author": "Matthew Black <mblackmblackmblack@gmail.com>",
   "homepage": "",
@@ -17,7 +17,7 @@
     "build": "webpack --config ../../webpack/webpack.config.js"
   },
   "dependencies": {
-    "@atomicfinance/provider": "^0.1.9",
+    "@atomicfinance/provider": "^0.2.0",
     "@liquality/bitcoin-utils": "^0.7.1",
     "@liquality/provider": "^0.7.1",
     "lodash": "^4.17.20"
