@@ -33,6 +33,8 @@ import { asyncForEach } from '../utils/Utils';
 
 import BitcoinDlcProvider from '../BitcoinDlcProvider';
 
+const ESTIMATED_SIZE = 312;
+
 export default class DlcParty {
   readonly client: BitcoinDlcProvider;
   readonly passphrase: string;
@@ -145,13 +147,12 @@ export default class DlcParty {
   }
 
   private async GetUtxosForAmount(amount: Amount, fixedInputs: Input[]) {
-    const outputs = [{ to: BurnAddress, value: amount.GetSatoshiAmount() }];
-    const feePerByte = await this.client.getMethod('getFeePerByte')();
+    const outputs = [{ to: BurnAddress, value: (amount.GetSatoshiAmount() + ESTIMATED_SIZE * (this.contract.feeRate - 1)) }];
     let utxos
     try {
       const inputsForAmount = await this.client.getMethod('getInputsForAmount')(
         outputs,
-        feePerByte,
+        1,
         fixedInputs
       );
       utxos = inputsForAmount.inputs
