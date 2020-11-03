@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/bitcoin-cfd-provider",
   "umdName": "BitcoinCfdProvider",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "> TODO: description",
   "author": "Matthew Black <mblackmblackmblack@gmail.com>",
   "homepage": "",
@@ -17,7 +17,7 @@
     "build": "webpack --config ../../webpack/webpack.config.js"
   },
   "dependencies": {
-    "@atomicfinance/provider": "^0.2.0",
+    "@atomicfinance/provider": "^0.2.1",
     "@liquality/provider": "^0.7.1",
     "@liquality/utils": "^0.7.1",
     "cfd-js-wasm": "github:p2pderivatives/cfd-js-wasm#semver:^0.1.6",
