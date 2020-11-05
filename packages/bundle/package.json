@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/bundle",
   "umdName": "Bundle",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "> TODO: description",
   "author": "Matthew Black <mblackmblackmblack@gmail.com>",
   "homepage": "",
@@ -17,10 +17,10 @@
     "build": "webpack --config ../../webpack/webpack.config.js"
   },
   "dependencies": {
-    "@atomicfinance/bitcoin-cfd-provider": "^0.2.1",
-    "@atomicfinance/bitcoin-dlc-provider": "^0.2.1",
-    "@atomicfinance/bitcoin-wallet-provider": "^0.2.1",
-    "@atomicfinance/client": "^0.2.1",
+    "@atomicfinance/bitcoin-cfd-provider": "^0.2.2",
+    "@atomicfinance/bitcoin-dlc-provider": "^0.2.2",
+    "@atomicfinance/bitcoin-wallet-provider": "^0.2.2",
+    "@atomicfinance/client": "^0.2.2",
     "lodash": "^4.17.20"
   },
   "devDependencies": {
