@@ -1,4 +1,4 @@
-import CfddlcHelper from './cfddlcjsHelper';
+// import CfddlcHelper from './cfddlcjsHelper';
 import Provider from '@atomicfinance/provider';
 import { sleep } from '@liquality/utils';
 import {
@@ -51,8 +51,8 @@ import {
   VerifyMutualClosingTxSignatureRequest,
   VerifyMutualClosingTxSignatureResponse,
   VerifyRefundTxSignatureRequest,
-  VerifyRefundTxSignatureResponse
-} from 'cfd-dlc-js-wasm';
+  VerifyRefundTxSignatureResponse,
+} from './DlcInterfaces';
 import DlcParty from './models/DlcParty';
 import Contract from './models/Contract';
 
@@ -72,15 +72,12 @@ export default class BitcoinDlcProvider extends Provider {
   _cfdDlcJs: any;
   _dlcs: DlcParty[];
 
-  constructor(network: any) {
+  constructor(network: any, cfdDlcJs?: any) {
     super('BitcoinDlcProvider');
 
     this._network = network;
     this._dlcs = [] as DlcParty[];
-
-    CfddlcHelper.initialized(() => {
-      this._cfdDlcJs = CfddlcHelper.getCfddlcjs();
-    });
+    this._cfdDlcJs = cfdDlcJs;
   }
 
   private async CfdLoaded() {
@@ -274,6 +271,7 @@ export default class BitcoinDlcProvider extends Provider {
     startingIndex: number = 0,
     fixedInputs: Input[] = []
   ): Promise<OfferMessage> {
+    console.log('test initializeContractAndOffer')
     const contract = new Contract();
 
     contract.id = uuidv4();

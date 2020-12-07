@@ -1,4 +1,4 @@
-import CfdHelper from './cfdjsHelper';
+// import CfdHelper from './cfdjsHelper';
 import Provider from '@atomicfinance/provider';
 import { sleep } from '@liquality/utils';
 import {
@@ -139,20 +139,17 @@ import {
   VerifySignResponse,
   VerifySignatureRequest,
   VerifySignatureResponse,
-} from 'cfd-js-wasm';
+} from './CfdInterfaces';
 
 export default class BitcoinCfdProvider extends Provider {
   _network: any;
   _cfdJs: any;
 
-  constructor(network: any) {
+  constructor(network: any, cfdJs?: any) {
     super('BitcoinCfdProvider');
 
     this._network = network;
-
-    CfdHelper.initialized((result: any) => {
-      this._cfdJs = CfdHelper.getCfdjs();
-    });
+    this._cfdJs = cfdJs
   }
 
   async CfdLoaded() {
