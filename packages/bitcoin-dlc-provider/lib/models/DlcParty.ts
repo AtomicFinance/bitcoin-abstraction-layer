@@ -4,19 +4,21 @@ import Amount from './Amount';
 import Utxo from './Utxo';
 import {
   CreateDlcTransactionsRequest,
-  GetRawCetSignaturesRequest,
+  // GetRawCetSignaturesRequest,
+  CreateCetAdaptorSignaturesRequest,
   GetRawRefundTxSignatureRequest,
-  VerifyCetSignaturesRequest,
+  // VerifyCetSignaturesRequest,
+  VerifyCetAdaptorSignaturesRequest,
   VerifyRefundTxSignatureRequest,
   GetRawFundTxSignatureRequest,
   SignFundTransactionRequest,
   AddSignatureToFundTransactionRequest,
-  GetRawMutualClosingTxSignatureRequest,
-  AddSignaturesToMutualClosingTxRequest,
-  GetRawCetSignatureRequest,
-  AddSignaturesToCetRequest,
-  CreateClosingTransactionRequest,
-  SignClosingTransactionRequest,
+  // GetRawMutualClosingTxSignatureRequest,
+  // AddSignaturesToMutualClosingTxRequest,
+  // GetRawCetSignatureRequest,
+  // AddSignaturesToCetRequest,
+  // CreateClosingTransactionRequest,
+  // SignClosingTransactionRequest,
   CreateRefundTransactionRequest,
   AddSignaturesToRefundTxRequest
 } from 'cfd-dlc-js-wasm';
@@ -296,13 +298,17 @@ export default class DlcParty {
     await this.Initialize(offerMessage.remoteCollateral, startingIndex, fixedInputs);
     this.contract.remotePartyInputs = this.partyInputs;
     await this.CreateDlcTransactions();
-    const cetSignRequest: GetRawCetSignaturesRequest = {
+    // const cetSignRequest: GetRawCetSignaturesRequest = {
+    const cetSignRequest: CreateCetAdaptorSignaturesRequest = {
       cetsHex: this.contract.localCetsHex,
       privkey: this.fundPrivateKey,
       fundTxId: this.contract.fundTxId,
       localFundPubkey: offerMessage.localPartyInputs.fundPublicKey,
       remoteFundPubkey: this.partyInputs.fundPublicKey,
+      oraclePubkey: '',
+      oracleRValue: '',
       fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
+      messages: []
     };
 
     const cetSignatures = await this.client.GetRawCetSignatures(cetSignRequest);
@@ -336,11 +342,15 @@ export default class DlcParty {
     this.contract.ApplyAcceptMessage(acceptMessage);
     await this.CreateDlcTransactions();
 
-    const verifyCetSignaturesRequest: VerifyCetSignaturesRequest = {
+    const verifyCetSignaturesRequest: VerifyCetAdaptorSignaturesRequest = {
       cetsHex: this.contract.localCetsHex,
-      signatures: acceptMessage.cetSignatures,
+      // signatures: acceptMessage.cetSignatures,
+      adaptorPairs: [],
+      messages: [],
       localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
       remoteFundPubkey: acceptMessage.remotePartyInputs.fundPublicKey,
+      oraclePubkey: '',
+      oracleRValue: '',
       fundTxId: this.contract.fundTxId,
       fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
       verifyRemote: true,

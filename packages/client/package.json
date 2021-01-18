@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@liquality/errors": "^0.7.1",
-    "cfd-dlc-js-wasm": "github:zpv/cfd-dlc-js-wasm#semver:^1.0.4",
+    "cfd-dlc-js-wasm": "github:matthewjablack/cfd-dlc-js-wasm#semver:^1.0.5",
     "cfd-js-wasm": "github:p2pderivatives/cfd-js-wasm#semver:^0.1.6",
     "lodash": "^4.17.20"
   },

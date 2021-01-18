@@ -26,7 +26,7 @@
   "scripts": {
     "bootstrap": "lerna bootstrap --force-local && lerna link --force-local",
     "link": "lerna link",
-    "test": "cross-env NODE_ENV=test ts-mocha -p tsconfig.spec.json tests/**/*.test.ts",
+    "test": "ts-node test/index.ts",
     "build:dev": "lerna run build --stream",
     "build:dev:node": "lerna run build:node --stream",
     "build:dev:browser": "lerna run build:browser --stream",
@@ -38,5 +38,10 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "bitcoin-core": "^3.0.0",
+    "bitcoin-simple-rpc": "^0.0.1",
+    "uuid": "^8.3.2"
   }
 }
