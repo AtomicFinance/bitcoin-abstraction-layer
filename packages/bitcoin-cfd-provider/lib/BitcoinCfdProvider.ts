@@ -1,4 +1,3 @@
-import CfdHelper from './cfdjsHelper';
 import Provider from '@atomicfinance/provider';
 import { sleep } from '@liquality/utils';
 import {
@@ -139,7 +138,9 @@ import {
   VerifySignResponse,
   VerifySignatureRequest,
   VerifySignatureResponse,
-} from 'cfd-js-wasm';
+} from './cfdJsTypes';
+import * as isNode from 'is-node'
+// import { isNode } from './environment'
 
 export default class BitcoinCfdProvider extends Provider {
   _network: any;
@@ -150,9 +151,19 @@ export default class BitcoinCfdProvider extends Provider {
 
     this._network = network;
 
-    CfdHelper.initialized((result: any) => {
-      this._cfdJs = CfdHelper.getCfdjs();
-    });
+    if (isNode) {
+      console.log('isNode')
+      const { CreateKeyPair } = require('./cfdExporter')
+      // this._cfdJs = cfdJs
+      console.log('isNode 2')
+      console.log('this._cfdJs', this._cfdJs)
+      console.log('isNode 3')
+    } else {
+      const CfdHelper = require('./cfdjsHelper')
+      CfdHelper.initialized((result: any) => {
+        this._cfdJs = CfdHelper.getCfdjs();
+      });
+    }
   }
 
   async CfdLoaded() {

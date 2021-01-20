@@ -1,4 +1,12 @@
-import { getCfd, addInitializedListener } from 'cfd-js-wasm';
+import { isNode } from './environment'
+let getCfd: any
+let addInitializedListener: any
+// if (!isNode()) {
+//   console.log('not isNode')
+//   const { getCfd: getCfdWasm, addInitializedListener: addInitializedListenerWasm } = require('cfd-js-wasm')
+//   getCfd = getCfdWasm
+//   addInitializedListener = addInitializedListenerWasm
+// }
 
 class Helper {
   getResponse(result: any) {

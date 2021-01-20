@@ -50,7 +50,7 @@ import {
   VerifyMutualClosingTxSignatureResponse,
   VerifyRefundTxSignatureRequest,
   VerifyRefundTxSignatureResponse,
-} from 'cfd-dlc-js-wasm';
+} from './cfdDlcJsTypes';
 
 import {
   Input,

@@ -10,6 +10,8 @@
   "author": "CryptoGarage Inc.",
   "license": "MIT",
   "dependencies": {
+    "@atomicfinance/bitcoin-dlc-provider": "^0.2.2",
+    "@atomicfinance/bundle": "^0.2.2",
     "@liquality/bitcoin-js-wallet-provider": "^0.8.11",
     "@liquality/bitcoin-networks": "^0.8.11",
     "@liquality/bitcoin-rpc-provider": "^0.8.11",

@@ -1,4 +1,3 @@
-import CfddlcHelper from './cfddlcjsHelper';
 import Provider from '@atomicfinance/provider';
 import { sleep } from '@liquality/utils';
 import {
@@ -52,7 +51,8 @@ import {
   VerifyMutualClosingTxSignatureResponse,
   VerifyRefundTxSignatureRequest,
   VerifyRefundTxSignatureResponse
-} from 'cfd-dlc-js-wasm';
+} from './cfdDlcJsTypes';
+import { isNode } from './environment'
 import DlcParty from './models/DlcParty';
 import Contract from './models/Contract';
 
@@ -78,9 +78,15 @@ export default class BitcoinDlcProvider extends Provider {
     this._network = network;
     this._dlcs = [] as DlcParty[];
 
-    CfddlcHelper.initialized(() => {
-      this._cfdDlcJs = CfddlcHelper.getCfddlcjs();
-    });
+    // if (isNode()) {
+    //   const { cfdDlcJs } = require('./cfdExporter')
+    //   this._cfdDlcJs = cfdDlcJs
+    // } else {
+    //   const CfddlcHelper = require('./cfddlcjsHelper')
+    //   CfddlcHelper.initialized((result: any) => {
+    //     this._cfdDlcJs = CfddlcHelper.getCfddlcjs();
+    //   });
+    // }
   }
 
   private async CfdLoaded() {

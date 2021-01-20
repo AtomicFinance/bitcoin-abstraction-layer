@@ -1,4 +1,14 @@
-import { getCfddlc, addInitializedListener } from 'cfd-dlc-js-wasm';
+import { isNode } from './environment'
+let getCfddlc: any
+let addInitializedListener: any
+// if (!isNode()) {
+//   const {
+//     getCfddlc: getCfddlcWasm,
+//     addInitializedListener: addInitializedListenerWasm
+//   } = require('cfd-dlc-js-wasm')
+//   getCfddlc = getCfddlcWasm;
+//   addInitializedListener = addInitializedListenerWasm
+// }
 
 class Helper {
   getResponse(result: any) {
@@ -6,7 +16,7 @@ class Helper {
   }
 
   getCfddlcjs() {
-    return getCfddlc();
+    return getCfddlc()
   }
 
   initialized(func: any) {

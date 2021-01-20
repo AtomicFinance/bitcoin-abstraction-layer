@@ -32,14 +32,19 @@ bitcoin.addProvider(
 );
 
 const cfdProvider = new dlcProviders.bitcoin.BitcoinCfdProvider(bitcoinNetwork);
-const dlcProvider = new dlcProviders.bitcoin.BitcoinDlcProvider(bitcoinNetwork);
-const walletProvider = new dlcProviders.bitcoin.BitcoinWalletProvider(
-  bitcoinNetwork
-);
+// const dlcProvider = new dlcProviders.bitcoin.BitcoinDlcProvider(bitcoinNetwork);
+// const walletProvider = new dlcProviders.bitcoin.BitcoinWalletProvider(
+//   bitcoinNetwork
+// );
 
-bitcoin.finance.addProvider(cfdProvider);
-bitcoin.finance.addProvider(dlcProvider);
-bitcoin.finance.addProvider(walletProvider);
+// bitcoin.finance.addProvider(cfdProvider);
+// bitcoin.finance.addProvider(dlcProvider);
+// bitcoin.finance.addProvider(walletProvider);
+
+
+
+
+
 
 // export function CreateWalletClient(walletName: string) {
 //   const clientConfig: ClientOption = {
