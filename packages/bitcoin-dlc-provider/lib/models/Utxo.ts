@@ -6,7 +6,8 @@ export default class Utxo {
     readonly vout: number,
     readonly amount: Amount,
     readonly address: string,
-    readonly derivationPath: string
+    readonly derivationPath: string,
+    readonly maxWitnessLength: number
   ) {}
 
   toJSON(): UtxoJSON {
@@ -16,6 +17,7 @@ export default class Utxo {
       amount: this.amount.toJSON(),
       address: this.address,
       derivationPath: this.derivationPath,
+      maxWitnessLength: this.maxWitnessLength,
     });
   }
 
@@ -27,6 +29,7 @@ export default class Utxo {
       amount: Amount.fromJSON(json.amount),
       address: json.address,
       derivationPath: json.derivationPath,
+      maxWitnessLength: json.maxWitnessLength,
     });
   }
 
@@ -41,4 +44,5 @@ export interface UtxoJSON {
   amount: AmountJSON;
   address: string;
   derivationPath: string;
+  maxWitnessLength: number;
 }
