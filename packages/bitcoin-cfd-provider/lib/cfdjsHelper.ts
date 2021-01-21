@@ -1,4 +1,6 @@
-import { getCfd, addInitializedListener } from 'cfd-js-wasm';
+// import { getCfd, addInitializedListener } from 'cfd-js-wasm';
+let getCfd: any;
+let addInitializedListener: any;
 
 class Helper {
   getResponse(result: any) {

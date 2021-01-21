@@ -139,7 +139,8 @@ import {
   VerifySignResponse,
   VerifySignatureRequest,
   VerifySignatureResponse,
-} from 'cfd-js-wasm';
+} from './cfdJsTypes';
+import * as isNode from 'is-node'
 
 export default class BitcoinCfdProvider extends Provider {
   _network: any;
@@ -150,14 +151,22 @@ export default class BitcoinCfdProvider extends Provider {
 
     this._network = network;
 
-    CfdHelper.initialized((result: any) => {
-      this._cfdJs = CfdHelper.getCfdjs();
-    });
+    if (isNode) {
+      const cfdJs = require('./cfdExporter')
+      this._cfdJs = cfdJs.default ? cfdJs.default : cfdJs
+    } else {
+      const CfdHelper = require('./cfdjsHelper')
+      CfdHelper.initialized((result: any) => {
+        this._cfdJs = CfdHelper.getCfdjs();
+      });
+    }
   }
 
   async CfdLoaded() {
-    while (!this._cfdJs) {
-      await sleep(1);
+    if (!isNode) {
+      while (!this._cfdJs) {
+        await sleep(1);
+      }
     }
   }
 
@@ -703,5 +712,14 @@ export default class BitcoinCfdProvider extends Provider {
     await this.CfdLoaded();
 
     return this._cfdJs.VerifySignature(jsonObject);
+  }
+
+  async GetAddressScript(address: string) {
+    await this.CfdLoaded();
+
+    const req = { address };
+
+    const info = this._cfdJs.GetAddressInfo(req);
+    return info.lockingScript;
   }
 }

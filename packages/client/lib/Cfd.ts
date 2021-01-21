@@ -137,7 +137,7 @@ import {
   VerifySignResponse,
   VerifySignatureRequest,
   VerifySignatureResponse,
-} from 'cfd-js-wasm';
+} from './CfdJsTypes';
 
 export default class Cfd {
   client: Client;

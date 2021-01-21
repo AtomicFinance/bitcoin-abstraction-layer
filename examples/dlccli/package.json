@@ -1,0 +1,32 @@
+{
+  "name": "dlccli",
+  "version": "0.0.1",
+  "description": "tutorial to learn DLC using the cfd-dlc-js library",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "example": "ts-node index.ts"
+  },
+  "author": "CryptoGarage Inc.",
+  "license": "MIT",
+  "dependencies": {
+    "@atomicfinance/bitcoin-dlc-provider": "^0.2.2",
+    "@atomicfinance/bundle": "^0.2.2",
+    "@liquality/bitcoin-js-wallet-provider": "^0.8.11",
+    "@liquality/bitcoin-networks": "^0.8.11",
+    "@liquality/bitcoin-rpc-provider": "^0.8.11",
+    "@liquality/client": "^0.8.11",
+    "bip39": "^3.0.3",
+    "bitcoin-simple-rpc": "0.0.1",
+    "inquirer": "^7.1.0",
+    "inquirer-datepicker": "^1.1.0",
+    "tslint": "^6.1.2",
+    "uuid": "^7.0.3"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^6.5.0",
+    "@types/node": "^13.13.2",
+    "ts-node": "^8.9.0",
+    "typescript": "^3.8.3"
+  }
+}

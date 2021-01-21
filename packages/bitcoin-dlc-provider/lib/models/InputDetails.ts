@@ -5,8 +5,6 @@ export default class InputDetails {
     readonly localCollateral: Amount,
     readonly remoteCollateral: Amount,
     readonly feeRate: number,
-    readonly maturityTime: Date,
     readonly refundLockTime: number,
-    readonly cetCsvDelay: number
   ) {}
 }

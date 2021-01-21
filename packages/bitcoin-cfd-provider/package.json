@@ -7,6 +7,7 @@
   "homepage": "",
   "license": "ISC",
   "main": "dist/index.cjs.js",
+  "types": "lib/cfdJsTypes.d.ts",
   "files": [
     "dist",
     "lib"
@@ -20,8 +21,10 @@
     "@atomicfinance/provider": "^0.2.2",
     "@liquality/provider": "^0.7.1",
     "@liquality/utils": "^0.7.1",
+    "cfd-js": "github:cryptogarageinc/cfd-js#v0.0.21",
     "cfd-js-wasm": "github:p2pderivatives/cfd-js-wasm#semver:^0.1.6",
-    "lodash": "^4.17.20"
+    "lodash": "^4.17.20",
+    "is-node": "github:matthewjablack/is-node"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.160"

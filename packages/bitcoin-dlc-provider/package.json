@@ -21,9 +21,11 @@
     "@liquality/bitcoin-utils": "^0.7.1",
     "@liquality/provider": "^0.7.1",
     "@liquality/utils": "^0.7.1",
+    "cfd-dlc-js": "github:cryptogarageinc/cfd-dlc-js#v0.0.1",
     "cfd-dlc-js-wasm": "github:zpv/cfd-dlc-js-wasm#semver:^1.0.4",
     "lodash": "^4.17.20",
-    "uuid": "^8.3.0"
+    "uuid": "^8.3.0",
+    "is-node": "github:matthewjablack/is-node"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.160"
