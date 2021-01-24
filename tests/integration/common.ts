@@ -72,5 +72,5 @@ const chains = {
 export {
   CONSTANTS,
   chains,
-  sleep,
+  sleep
 }
