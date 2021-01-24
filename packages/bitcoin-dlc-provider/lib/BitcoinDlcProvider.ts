@@ -288,9 +288,9 @@ export default class BitcoinDlcProvider extends Provider {
     return this.findDlc(signMessage.contractId).OnSignMessage(signMessage);
   }
 
-  async refund(contractId: string) {
-    return this.findDlc(contractId).Refund();
-  }
+  // async refund(contractId: string) {
+  //   return this.findDlc(contractId).Refund();
+  // }
 
   // async unilateralClose(
   //   oracleSignature: string,

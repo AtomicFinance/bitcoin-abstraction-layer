@@ -34,6 +34,30 @@ export interface AddSignatureToFundTransactionResponse {
 }
 
 /** Create an adaptor signature for a CET */
+export interface CalculateCetAdaptorSignatureRequest {
+  cetHex: string;
+  adaptorPoint: string;
+  privkey: string;
+  fundTxId: string;
+  fundVout?: number;
+  localFundPubkey: string;
+  remoteFundPubkey: string;
+  fundInputAmount: bigint | number;
+}
+
+/** Create an adaptor signature for a CET */
+export interface CalculateCetAdaptorSignaturesRequest {
+  cetsHex: string[];
+  adaptorPoint: string[];
+  privkey: string;
+  fundTxId: string;
+  fundVout?: number;
+  localFundPubkey: string;
+  remoteFundPubkey: string;
+  fundInputAmount: bigint | number;
+}
+
+/** Create an adaptor signature for a CET */
 export interface CreateCetAdaptorSignatureRequest {
   cetHex: string;
   privkey: string;
@@ -319,6 +343,18 @@ export function AddSignaturesToRefundTx(jsonObject: AddSignaturesToRefundTxReque
 * @return {AddSignatureToFundTransactionResponse} - response data.
 */
 export function AddSignatureToFundTransaction(jsonObject: AddSignatureToFundTransactionRequest): AddSignatureToFundTransactionResponse;
+
+/**
+* @param {CalculateCetAdaptorSignatureRequest} jsonObject - request data.
+* @return {CreateCetAdaptorSignatureResponse} - response data.
+*/
+export function CalculateCetAdaptorSignature(jsonObject: CalculateCetAdaptorSignatureRequest): CreateCetAdaptorSignatureResponse;
+
+/**
+* @param {CalculateCetAdaptorSignaturesRequest} jsonObject - request data.
+* @return {CreateCetAdaptorSignaturesResponse} - response data.
+*/
+export function CalculateCetAdaptorSignatures(jsonObject: CalculateCetAdaptorSignaturesRequest): CreateCetAdaptorSignaturesResponse;
 
 /**
 * @param {CreateCetRequest} jsonObject - request data.

@@ -5,6 +5,9 @@ import Contract from './Contract';
 import Amount from './Amount';
 import Utxo from './Utxo';
 import {
+  CreateMultisigRequest
+} from '../cfdJsTypes'
+import {
   CreateDlcTransactionsRequest,
   CreateCetAdaptorSignaturesRequest,
   GetRawRefundTxSignatureRequest,
@@ -22,6 +25,7 @@ import {
   CreateRefundTransactionRequest,
   AddSignaturesToRefundTxRequest,
   VerifyCetAdaptorSignaturesRequest,
+  SignCetRequest
 } from '../@types/cfd-dlc-js';
 import Input from './Input'
 import OfferMessage from './OfferMessage';
@@ -559,57 +563,111 @@ export default class DlcParty {
     return fundTxHash;
   }
 
-  public async Refund () {
-    let refundTxHex = this.contract.refundTransaction
+  public async ExitEarly() {
+    const pubkey1 = this.contract.localPartyInputs.fundPublicKey
+    const pubkey2 = this.contract.remotePartyInputs.fundPublicKey
 
-    const refundSignRequest: GetRawRefundTxSignatureRequest = {
-      refundTxHex: this.contract.refundTransaction,
-      privkey: this.fundPrivateKey,
-      fundTxId: this.contract.fundTxId,
-      localFundPubkey: this.partyInputs.fundPublicKey,
-      remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
-      fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
-    };
-
-    const refundSignature = (await this.client.GetRawRefundTxSignature(
-      refundSignRequest
-    )).hex;
-
-    const signatures = this.contract.isLocalParty
-      ? [refundSignature, this.contract.refundRemoteSignature]
-      : [this.contract.refundLocalSignature, refundSignature];
-
-    const addSignaturesToRefundTxRequest: AddSignaturesToRefundTxRequest = {
-      refundTxHex,
-      signatures,
-      fundTxId: this.contract.fundTxId,
-      localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
-      remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey
+    const createMultisigRequest: CreateMultisigRequest = {
+      nrequired: 2,
+      keys: [pubkey1, pubkey2],
+      network: 'regtest',
+      hashType: 'p2wsh'
     }
 
-    refundTxHex = (await this.client.AddSignaturesToRefundTx(addSignaturesToRefundTxRequest)).hex
+    const multisig = await this.client.getMethod('CreateMultisig')() .finance.cfd.CreateMultisig(createMultisigRequest)
+    console.log('multisig', multisig)
+  }
 
-    let refundTxHash;
+  public async SignAndBroadcastCet(
+    outcomeIndex: number,
+    oracleSignature: string
+  ) {
+    const signCetRequest: SignCetRequest = {
+      cetHex: this.contract.cetsHex[outcomeIndex],
+      fundPrivkey: this.fundPrivateKey,
+      fundTxId: this.contract.fundTxId,
+      localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
+      remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
+      oracleSignature,
+      fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
+      adaptorSignature: this.contract.cetAdaptorPairs[outcomeIndex].signature,
+    }
+
+    const finalCet = (await this.client.SignCet(signCetRequest)).hex;
+
+    let cetTxHash;
     try {
-      refundTxHash = await this.client.getMethod('sendRawTransaction')(refundTxHex);
-    } catch (sendTxError) {
-      const cetTxid = decodeRawTransaction(refundTxHash).txid;
+      cetTxHash = await this.client.getMethod('sendRawTransaction')(finalCet);
+    } catch (e) {
+      const cetTxid = decodeRawTransaction(finalCet).txid;
 
       try {
-        refundTxHash = (
+        cetTxHash = (
           await this.client.getMethod('getTransactionByHash')(cetTxid)
         ).hash;
 
-        console.log('Refund Tx already created');
+        console.log('Cet Tx already created');
       } catch (e) {
         throw Error(
-          `Failed to sendRawTransaction refundTxHex and tx has not been previously broadcast. Error: ${sendTxError} | refundTxHex: ${refundTxHex}`
+          `Failed to sendRawTransaction cetHex and tx has not been previously broadcast. cetHex: ${finalCet}`
         );
       }
     }
 
-    return refundTxHash;
+    return cetTxHash;
   }
+
+  // public async Refund () {
+  //   let refundTxHex = this.contract.refundTransaction
+
+  //   const refundSignRequest: GetRawRefundTxSignatureRequest = {
+  //     refundTxHex: this.contract.refundTransaction,
+  //     privkey: this.fundPrivateKey,
+  //     fundTxId: this.contract.fundTxId,
+  //     localFundPubkey: this.partyInputs.fundPublicKey,
+  //     remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
+  //     fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
+  //   };
+
+  //   const refundSignature = (await this.client.GetRawRefundTxSignature(
+  //     refundSignRequest
+  //   )).hex;
+
+  //   const signatures = this.contract.isLocalParty
+  //     ? [refundSignature, this.contract.refundRemoteSignature]
+  //     : [this.contract.refundLocalSignature, refundSignature];
+
+  //   const addSignaturesToRefundTxRequest: AddSignaturesToRefundTxRequest = {
+  //     refundTxHex,
+  //     signatures,
+  //     fundTxId: this.contract.fundTxId,
+  //     localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
+  //     remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey
+  //   }
+
+  //   refundTxHex = (await this.client.AddSignaturesToRefundTx(addSignaturesToRefundTxRequest)).hex
+
+  //   let refundTxHash;
+  //   try {
+  //     refundTxHash = await this.client.getMethod('sendRawTransaction')(refundTxHex);
+  //   } catch (sendTxError) {
+  //     const cetTxid = decodeRawTransaction(refundTxHash).txid;
+
+  //     try {
+  //       refundTxHash = (
+  //         await this.client.getMethod('getTransactionByHash')(cetTxid)
+  //       ).hash;
+
+  //       console.log('Refund Tx already created');
+  //     } catch (e) {
+  //       throw Error(
+  //         `Failed to sendRawTransaction refundTxHex and tx has not been previously broadcast. Error: ${sendTxError} | refundTxHex: ${refundTxHex}`
+  //       );
+  //     }
+  //   }
+
+  //   return refundTxHash;
+  // }
 
   // public async CreateMutualClosingMessage(outcome: Outcome) {
   //   const mutualClosingRequest = {
