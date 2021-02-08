@@ -1,7 +1,10 @@
 import Amount, { AmountJSON } from './Amount';
 
 export default class Payout {
-  constructor(readonly local: Amount, readonly remote: Amount) {}
+  constructor(
+    readonly local: Amount,
+    readonly remote: Amount
+  ) {}
 
   toJSON(): PayoutJSON {
     return Object.assign({}, this, {

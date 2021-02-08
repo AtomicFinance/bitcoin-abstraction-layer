@@ -14,6 +14,7 @@
     "@types/mocha": "^8.0.3",
     "@types/uuid": "^8.3.0",
     "bip39": "^3.0.2",
+    "cfd-js": "github:p2pderivatives/cfd-js#v0.2.2",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "cross-env": "^7.0.2",
@@ -34,7 +35,7 @@
   "scripts": {
     "bootstrap": "lerna bootstrap --force-local && lerna link --force-local",
     "link": "lerna link",
-    "test": "cross-env NODE_ENV=test ts-mocha -p tsconfig.spec.json tests/**/*.test.ts",
+    "test": "cross-env NODE_ENV=test ts-mocha -p tsconfig.spec.json --timeout 150000 tests/**/*.test.ts",
     "build:dev": "lerna run build --stream",
     "build:dev:node": "lerna run build:node --stream",
     "build:dev:browser": "lerna run build:browser --stream",
@@ -46,5 +47,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "bip-schnorr": "^0.6.2"
   }
 }

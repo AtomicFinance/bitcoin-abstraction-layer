@@ -37,10 +37,12 @@ const CONSTANTS = {
   BITCOIN_ADDRESS_DEFAULT_BALANCE: 50 * 1e8
 }
 
+const { network, rpc} = config.bitcoin
+
 console.warn = () => {} // Silence warnings
 
 function mockedBitcoinRpcProvider () {
-  const bitcoinRpcProvider = new providers.bitcoin.BitcoinRpcProvider(config.bitcoin.rpc.host, config.bitcoin.rpc.username, config.bitcoin.rpc.password)
+  const bitcoinRpcProvider = new BitcoinRpcProvider(rpc.host, rpc.username, rpc.password)
   // Mock Fee Per Byte to prevent from changing
   bitcoinRpcProvider.getFeePerByte = async () => CONSTANTS.BITCOIN_FEE_PER_BYTE
   return bitcoinRpcProvider
@@ -50,27 +52,66 @@ const bitcoinWithNode = new Client()
 const bitcoinWithNodeFinance = new FinanceClient(bitcoinWithNode);
 bitcoinWithNode.finance = bitcoinWithNodeFinance
 bitcoinWithNode.addProvider(mockedBitcoinRpcProvider())
-bitcoinWithNode.addProvider(new providers.bitcoin.BitcoinNodeWalletProvider(config.bitcoin.network, config.bitcoin.rpc.host, config.bitcoin.rpc.username, config.bitcoin.rpc.password, 'bech32'))
-bitcoinWithNode.finance.addProvider(new BitcoinCfdProvider(config.bitcoin.network));
-bitcoinWithNode.finance.addProvider(new BitcoinDlcProvider(config.bitcoin.network));
-bitcoinWithNode.finance.addProvider(new BitcoinWalletProvider(config.bitcoin.network));
+bitcoinWithNode.addProvider(new BitcoinNodeWalletProvider(network, rpc.host, rpc.username, rpc.password, 'bech32'))
+bitcoinWithNode.finance.addProvider(new BitcoinCfdProvider(network));
+bitcoinWithNode.finance.addProvider(new BitcoinDlcProvider(network));
+bitcoinWithNode.finance.addProvider(new BitcoinWalletProvider(network));
 
 const bitcoinWithJs = new Client()
 const bitcoinWithJsFinance = new FinanceClient(bitcoinWithJs);
 bitcoinWithJs.finance = bitcoinWithJsFinance
 bitcoinWithJs.addProvider(mockedBitcoinRpcProvider())
-bitcoinWithJs.addProvider(new providers.bitcoin.BitcoinJsWalletProvider(config.bitcoin.network, generateMnemonic(256), 'bech32'))
-bitcoinWithJs.finance.addProvider(new BitcoinCfdProvider(config.bitcoin.network));
-bitcoinWithJs.finance.addProvider(new BitcoinDlcProvider(config.bitcoin.network));
-bitcoinWithJs.finance.addProvider(new BitcoinWalletProvider(config.bitcoin.network));
+bitcoinWithJs.addProvider(new BitcoinJsWalletProvider(network, generateMnemonic(256), 'bech32'))
+bitcoinWithJs.finance.addProvider(new BitcoinCfdProvider(network));
+bitcoinWithJs.finance.addProvider(new BitcoinDlcProvider(network));
+bitcoinWithJs.finance.addProvider(new BitcoinWalletProvider(network));
+
+const bitcoinWithJs2 = new Client()
+const bitcoinWithJsFinance2 = new FinanceClient(bitcoinWithJs2);
+bitcoinWithJs2.finance = bitcoinWithJsFinance2
+bitcoinWithJs2.addProvider(mockedBitcoinRpcProvider())
+bitcoinWithJs2.addProvider(new BitcoinJsWalletProvider(network, generateMnemonic(256), 'bech32'))
+bitcoinWithJs2.finance.addProvider(new BitcoinCfdProvider(network));
+bitcoinWithJs2.finance.addProvider(new BitcoinDlcProvider(network));
+bitcoinWithJs2.finance.addProvider(new BitcoinWalletProvider(network));
 
 const chains = {
-  bitcoinWithNode: { id: 'Bitcoin Node', name: 'bitcoin', client: bitcoinWithNode, network: config.bitcoin.network, segwitFeeImplemented: true },
-  bitcoinWithJs: { id: 'Bitcoin Js', name: 'bitcoin', client: bitcoinWithJs, network: config.bitcoin.network }
+  bitcoinWithNode: { id: 'Bitcoin Node', name: 'bitcoin', client: bitcoinWithNode, network: network, segwitFeeImplemented: true },
+  bitcoinWithJs: { id: 'Bitcoin Js', name: 'bitcoin', client: bitcoinWithJs, network: network },
+  bitcoinWithJs2: { id: 'Bitcoin Js', name: 'bitcoin', client: bitcoinWithJs, network: network },
+}
+
+async function fundAddress (address: string) {
+  const tx = await chains.bitcoinWithNode.client.chain.sendTransaction(address, CONSTANTS.BITCOIN_ADDRESS_DEFAULT_BALANCE)
+  await mineBlock()
+  return tx
+}
+
+async function importAddresses (chain: Chain) {
+  return chain.client.getMethod('importAddresses')()
+}
+
+async function mineBlock () {
+  try {
+    await chains.bitcoinWithNode.client.chain.generateBlock(1)
+  } catch (e) {
+    if (!(e instanceof errors.UnimplementedMethodError)) throw e
+    console.log('Skipped mining block - not implement for chain - probably client automines')
+  }
+}
+
+interface Chain {
+  id: string;
+  name: string;
+  client: Client;
+  network: any;
+  segwitFeeImplemented?: boolean;
 }
 
 export {
   CONSTANTS,
   chains,
-  sleep
+  sleep,
+  fundAddress,
+  importAddresses
 }

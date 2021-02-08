@@ -8,6 +8,7 @@ import {
 import {
   CreateDlcTransactionsRequest,
   CreateCetAdaptorSignaturesRequest,
+  // CalculateCetAdaptorSignaturesRequest,
   GetRawRefundTxSignatureRequest,
   // VerifyCetSignaturesRequest,
   VerifyRefundTxSignatureRequest,
@@ -37,6 +38,7 @@ import { decodeRawTransaction } from '@liquality/bitcoin-utils';
 import { asyncForEach } from '../utils/Utils';
 
 import BitcoinDlcProvider from '../BitcoinDlcProvider';
+import { VerifyCetSignatureRequest } from 'cfd-dlc-js-wasm';
 
 const ESTIMATED_SIZE = 312;
 
@@ -152,6 +154,7 @@ export default class DlcParty {
   }
 
   private async GetUtxosForAmount(amount: Amount, fixedInputs: Input[]) {
+    if (amount.GetSatoshiAmount() === 0) { return [] }
     const outputs = [{ to: BurnAddress, value: (amount.GetSatoshiAmount() + ESTIMATED_SIZE * (this.contract.feeRate - 1)) }];
     let utxos
     try {
@@ -283,6 +286,8 @@ export default class DlcParty {
       feeRate: this.contract.feeRate
     };
 
+    console.log('dlctxrequest', dlcTxRequest)
+
     const dlcTransactions = await this.client.CreateDlcTransactions(
       dlcTxRequest
     );
@@ -303,13 +308,17 @@ export default class DlcParty {
     startingIndex: number,
     fixedInputs: Input[]
   ): Promise<AcceptMessage> {
+    console.time("from offer message");
     this.contract = Contract.FromOfferMessage(offerMessage);
+    console.timeEnd("from offer message");
     this.contract.startingIndex = startingIndex;
     await this.Initialize(offerMessage.remoteCollateral, startingIndex, fixedInputs);
     this.contract.remotePartyInputs = this.partyInputs;
+    console.time("create dlc txs");
     await this.CreateDlcTransactions();
+    console.timeEnd("create dlc txs");
     const cetSignRequest: CreateCetAdaptorSignaturesRequest = {
-      messages: this.contract.messages,
+      messagesList: this.contract.messagesList,
       cetsHex: this.contract.cetsHex,
       privkey: this.fundPrivateKey,
       fundTxId: this.contract.fundTxId,
@@ -317,10 +326,12 @@ export default class DlcParty {
       remoteFundPubkey: this.partyInputs.fundPublicKey,
       fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
       oraclePubkey: this.contract.oracleInfo.publicKey,
-      oracleRValue: this.contract.oracleInfo.rValue
+      oracleRValues: this.contract.oracleInfo.rValues
     }
 
+    console.time("create cet adaptor sigs");
     const cetSignatures = await this.client.CreateCetAdaptorSignatures(cetSignRequest);
+    console.timeEnd("create cet adaptor sigs");
 
     const refundSignRequest: GetRawRefundTxSignatureRequest = {
       refundTxHex: this.contract.refundTransaction,
@@ -353,9 +364,9 @@ export default class DlcParty {
 
     const verifyCetAdaptorSignaturesRequest: VerifyCetAdaptorSignaturesRequest = {
       cetsHex: this.contract.cetsHex,
-      messages: this.contract.messages,
+      messagesList: this.contract.messagesList,
       oraclePubkey: this.contract.oracleInfo.publicKey,
-      oracleRValue: this.contract.oracleInfo.rValue,
+      oracleRValues: this.contract.oracleInfo.rValues,
       adaptorPairs: acceptMessage.cetAdaptorPairs,
       localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
       remoteFundPubkey: acceptMessage.remotePartyInputs.fundPublicKey,
@@ -404,8 +415,8 @@ export default class DlcParty {
       remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
       fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
       oraclePubkey: this.contract.oracleInfo.publicKey,
-      oracleRValue: this.contract.oracleInfo.rValue,
-      messages: this.contract.messages,
+      oracleRValues: this.contract.oracleInfo.rValues,
+      messagesList: this.contract.messagesList,
     }
 
     // const cetSignRequest: GetRawCetSignaturesRequest = {
@@ -474,7 +485,7 @@ export default class DlcParty {
   public async OnSignMessage(signMessage: SignMessage): Promise<string> {
     this.contract.ApplySignMessage(signMessage);
 
-    const verifyCetSignaturesRequest = {
+    const verifyCetSignaturesRequest: VerifyCetAdaptorSignaturesRequest = {
       cetsHex: this.contract.cetsHex,
       adaptorPairs: this.contract.cetAdaptorPairs,
       localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
@@ -482,9 +493,9 @@ export default class DlcParty {
       fundTxId: this.contract.fundTxId,
       fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
       verifyRemote: false,
-      messages: this.contract.messages,
+      messagesList: this.contract.messagesList,
       oraclePubkey: this.contract.oracleInfo.publicKey,
-      oracleRValue: this.contract.oracleInfo.rValue
+      oracleRValues: this.contract.oracleInfo.rValues
     };
 
     let areSigsValid = (
@@ -582,7 +593,7 @@ export default class DlcParty {
 
   public async SignAndBroadcastCet(
     outcomeIndex: number,
-    oracleSignature: string
+    oracleSignatures: string[]
   ) {
     const signCetRequest: SignCetRequest = {
       cetHex: this.contract.cetsHex[outcomeIndex],
@@ -590,7 +601,7 @@ export default class DlcParty {
       fundTxId: this.contract.fundTxId,
       localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
       remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
-      oracleSignature,
+      oracleSignatures,
       fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
       adaptorSignature: this.contract.cetAdaptorPairs[outcomeIndex].signature,
     }
