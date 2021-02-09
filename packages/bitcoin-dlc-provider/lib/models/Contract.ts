@@ -6,14 +6,14 @@ import AcceptMessage, { AcceptMessageJSON } from './AcceptMessage';
 import Payout, { PayoutJSON } from './Payout'
 import SignMessage from './SignMessage';
 import Amount, { AmountJSON } from './Amount';
-import { AdaptorPair } from '../cfdDlcJsTypes';
+import { AdaptorPair, Messages } from '../cfdDlcJsTypes';
 
 export default class Contract {
   id: string;
   localCollateral: Amount;
   remoteCollateral: Amount;
   payouts: Payout[];
-  messages: string[];
+  messagesList: Messages[];
   feeRate: number;
   localPartyInputs: PartyInputs;
   remotePartyInputs: PartyInputs;
@@ -34,7 +34,7 @@ export default class Contract {
 
   constructor() {
     this.payouts = [];
-    this.messages = [];
+    this.messagesList = [];
   }
 
   public static FromOfferMessage(offerMessage: OfferMessage) {
@@ -48,7 +48,7 @@ export default class Contract {
     contract.feeRate = offerMessage.feeRate;
     contract.refundLockTime = offerMessage.refundLockTime;
     contract.isLocalParty = false;
-    contract.messages = offerMessage.messages;
+    contract.messagesList = offerMessage.messagesList;
     return contract;
   }
 
@@ -63,7 +63,7 @@ export default class Contract {
       localPartyInputs: this.localPartyInputs,
       feeRate: this.feeRate,
       refundLockTime: this.refundLockTime,
-      messages: this.messages,
+      messagesList: this.messagesList,
       toJSON: OfferMessage.prototype.toJSON,
     };
   }
@@ -126,7 +126,7 @@ export default class Contract {
       localCollateral: Amount.fromJSON(json.localCollateral),
       remoteCollateral: Amount.fromJSON(json.remoteCollateral),
       payouts,
-      messages: json.messages,
+      messagesList: json.messagesList,
       localPartyInputs: PartyInputs.fromJSON(json.localPartyInputs),
       remotePartyInputs: PartyInputs.fromJSON(json.remotePartyInputs),
       fundTxOutAmount: Amount.fromJSON(json.fundTxOutAmount),
@@ -143,7 +143,7 @@ export interface ContractJSON {
   localCollateral: AmountJSON;
   remoteCollateral: AmountJSON;
   payouts: PayoutJSON[];
-  messages: string[];
+  messagesList: Messages[];
   feeRate: number;
   localPartyInputs: PartyInputsJSON;
   remotePartyInputs: PartyInputsJSON;

@@ -1,4 +1,6 @@
 /// <reference path="Provider.d.ts" />
+/// <reference path="BipSchnorr.d.ts" />
+/// <reference path="SchnorrAdaptorPoints.d.ts" />
 
 export { default as Contract } from './models/Contract';
 
@@ -15,5 +17,7 @@ export { default as Utxo } from './models/Utxo';
 
 export { default as InputDetails } from './models/InputDetails';
 export { default as OutcomeDetails } from './models/OutcomeDetails';
+
+export { default as PayoutDetails } from './models/PayoutDetails';
 
 export { default } from './BitcoinDlcProvider';

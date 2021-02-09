@@ -34,30 +34,6 @@ export interface AddSignatureToFundTransactionResponse {
 }
 
 /** Create an adaptor signature for a CET */
-export interface CalculateCetAdaptorSignatureRequest {
-  cetHex: string;
-  adaptorPoint: string;
-  privkey: string;
-  fundTxId: string;
-  fundVout?: number;
-  localFundPubkey: string;
-  remoteFundPubkey: string;
-  fundInputAmount: bigint | number;
-}
-
-/** Create an adaptor signature for a CET */
-export interface CalculateCetAdaptorSignaturesRequest {
-  cetsHex: string[];
-  adaptorPoint: string[];
-  privkey: string;
-  fundTxId: string;
-  fundVout?: number;
-  localFundPubkey: string;
-  remoteFundPubkey: string;
-  fundInputAmount: bigint | number;
-}
-
-/** Create an adaptor signature for a CET */
 export interface CreateCetAdaptorSignatureRequest {
   cetHex: string;
   privkey: string;
@@ -66,9 +42,9 @@ export interface CreateCetAdaptorSignatureRequest {
   localFundPubkey: string;
   remoteFundPubkey: string;
   oraclePubkey: string;
-  oracleRValue: string;
+  oracleRValues: string[];
   fundInputAmount: bigint | number;
-  message: string;
+  messages: string[];
 }
 
 export interface CreateCetAdaptorSignatureResponse {
@@ -85,9 +61,9 @@ export interface CreateCetAdaptorSignaturesRequest {
   localFundPubkey: string;
   remoteFundPubkey: string;
   oraclePubkey: string;
-  oracleRValue: string;
+  oracleRValues: string[];
   fundInputAmount: bigint | number;
-  messages: string[];
+  messagesList: Messages[];
 }
 
 export interface CreateCetAdaptorSignaturesResponse {
@@ -211,6 +187,10 @@ export interface InnerErrorResponse {
   message: string;
 }
 
+export interface Messages {
+  messages: string[];
+}
+
 export interface PayoutRequest {
   local: bigint | number;
   remote: bigint | number;
@@ -226,7 +206,7 @@ export interface SignCetRequest {
   remoteFundPubkey: string;
   fundInputAmount: bigint | number;
   adaptorSignature: string;
-  oracleSignature: string;
+  oracleSignatures: string[];
 }
 
 export interface SignCetResponse {
@@ -268,11 +248,11 @@ export interface VerifyCetAdaptorSignatureRequest {
   cetHex: string;
   adaptorSignature: string;
   adaptorProof: string;
-  message: string;
+  messages: string[];
   localFundPubkey: string;
   remoteFundPubkey: string;
   oraclePubkey: string;
-  oracleRValue: string;
+  oracleRValues: string[];
   fundTxId: string;
   fundVout?: number;
   fundInputAmount: bigint | number;
@@ -287,11 +267,11 @@ export interface VerifyCetAdaptorSignatureResponse {
 export interface VerifyCetAdaptorSignaturesRequest {
   cetsHex: string[];
   adaptorPairs: AdaptorPair[];
-  messages: string[];
+  messagesList: Messages[];
   localFundPubkey: string;
   remoteFundPubkey: string;
   oraclePubkey: string;
-  oracleRValue: string;
+  oracleRValues: string[];
   fundTxId: string;
   fundVout?: number;
   fundInputAmount: bigint | number;
@@ -343,18 +323,6 @@ export function AddSignaturesToRefundTx(jsonObject: AddSignaturesToRefundTxReque
 * @return {AddSignatureToFundTransactionResponse} - response data.
 */
 export function AddSignatureToFundTransaction(jsonObject: AddSignatureToFundTransactionRequest): AddSignatureToFundTransactionResponse;
-
-/**
-* @param {CalculateCetAdaptorSignatureRequest} jsonObject - request data.
-* @return {CreateCetAdaptorSignatureResponse} - response data.
-*/
-export function CalculateCetAdaptorSignature(jsonObject: CalculateCetAdaptorSignatureRequest): CreateCetAdaptorSignatureResponse;
-
-/**
-* @param {CalculateCetAdaptorSignaturesRequest} jsonObject - request data.
-* @return {CreateCetAdaptorSignaturesResponse} - response data.
-*/
-export function CalculateCetAdaptorSignatures(jsonObject: CalculateCetAdaptorSignaturesRequest): CreateCetAdaptorSignaturesResponse;
 
 /**
 * @param {CreateCetRequest} jsonObject - request data.

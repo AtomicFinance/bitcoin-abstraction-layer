@@ -32,11 +32,13 @@ import {
   VerifyFundTxSignatureRequest,
   VerifyFundTxSignatureResponse,
   VerifyRefundTxSignatureRequest,
-  VerifyRefundTxSignatureResponse
+  VerifyRefundTxSignatureResponse,
+  Messages
 } from './cfdDlcJsTypes';
 import DlcParty from './models/DlcParty';
 import Contract from './models/Contract';
 
+import Amount from './models/Amount'
 import Input from './models/Input';
 import InputDetails from './models/InputDetails';
 import OutcomeDetails from './models/OutcomeDetails';
@@ -49,7 +51,10 @@ import SignMessage from './models/SignMessage';
 import Payout from './models/Payout'
 import Utxo from './models/Utxo';
 import { v4 as uuidv4 } from 'uuid';
-import * as isNode from 'is-node'
+import * as isNode from 'is-node';
+import { math } from 'bip-schnorr';
+import { createAdaptorPoint } from 'schnorr-adaptor-points'
+import BN from 'bignumber.js'
 
 export default class BitcoinDlcProvider extends Provider {
   _network: any;
@@ -63,12 +68,8 @@ export default class BitcoinDlcProvider extends Provider {
     this._dlcs = [] as DlcParty[];
 
     if (isNode) {
-      console.log('isNode')
       const cfdDlcJs = require('./cfdDlcExporter')
       this._cfdDlcJs = cfdDlcJs.default ? cfdDlcJs.default : cfdDlcJs
-      console.log('isNode 2')
-      console.log('this._cfdJs', this._cfdDlcJs)
-      console.log('isNode 3')
     } else {
       const CfddlcHelper = require('./cfddlcjsHelper');
       CfddlcHelper.initialized(() => {
@@ -152,7 +153,7 @@ export default class BitcoinDlcProvider extends Provider {
 
   // Only Alice
   async importContractFromOfferMessage (offerMessage: OfferMessage, startingIndex: number = 0) {
-    const { localCollateral, remoteCollateral, feeRate, refundLockTime, oracleInfo } = offerMessage
+    const { localCollateral, remoteCollateral, feeRate, refundLockTime, oracleInfo, messagesList } = offerMessage
 
     const input: InputDetails = {
       localCollateral,
@@ -196,7 +197,7 @@ export default class BitcoinDlcProvider extends Provider {
       })
     })
 
-    const initOfferMessage = await this.initializeContractAndOffer(input, payouts, oracleInfo, startingIndex, fixedInputs)
+    const initOfferMessage = await this.initializeContractAndOffer(input, payouts, oracleInfo, messagesList, startingIndex, fixedInputs)
     const updateSuccess = this.updateDlcContractId(initOfferMessage.contractId, offerMessage.contractId)
     if (!updateSuccess) {
       throw Error('Dlc Contract ID did not update successfully')
@@ -256,10 +257,37 @@ export default class BitcoinDlcProvider extends Provider {
     }
   }
 
+  outputsToPayouts(outputs: Output[], rValuesMessagesList: Messages[], localCollateral: Amount, remoteCollateral: Amount, payoutLocal: boolean): { payouts: PayoutDetails[], messagesList: Messages[] } {
+    const payouts: PayoutDetails[] = []
+    const messagesList: Messages[] =[]
+
+    outputs.forEach((output: any) => {
+      const { payout, groups } = output
+      const payoutAmount: Amount = Amount.FromSatoshis(payout)
+
+      groups.forEach((group: number[]) => {
+        const messages = []
+        for (let i = 0; i < group.length; i++) {
+          const digit: number = group[i]
+          messages.push(rValuesMessagesList[i].messages[digit])
+        }
+
+        const localAmount = payoutLocal ? payoutAmount : localCollateral.AddAmount(remoteCollateral).CompareWith(payoutAmount)
+        const remoteAmount = payoutLocal ? localCollateral.AddAmount(remoteCollateral).CompareWith(payoutAmount) : payoutAmount
+        payouts.push({ localAmount, remoteAmount })
+        messagesList.push({ messages })
+      })
+
+    })
+
+    return { payouts, messagesList }
+  }
+
   async initializeContractAndOffer(
     input: InputDetails,
     payouts: PayoutDetails[],
     oracleInfo: OracleInfo,
+    messagesList: Messages[],
     startingIndex: number = 0,
     fixedInputs: Input[] = []
   ): Promise<OfferMessage> {
@@ -268,6 +296,7 @@ export default class BitcoinDlcProvider extends Provider {
     contract.id = uuidv4();
     contract.oracleInfo = oracleInfo;
     contract.startingIndex = startingIndex;
+    contract.messagesList = messagesList;
 
     this.setInitialInputs(contract, input);
 
@@ -477,4 +506,9 @@ export default class BitcoinDlcProvider extends Provider {
 
     return this._cfdDlcJs.VerifyRefundTxSignature(jsonObject);
   }
+}
+
+interface Output {
+  payout: number,
+  groups: number[][]
 }

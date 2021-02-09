@@ -21,11 +21,14 @@
     "@liquality/bitcoin-utils": "^0.7.1",
     "@liquality/provider": "^0.7.1",
     "@liquality/utils": "^0.7.1",
-    "cfd-dlc-js": "github:matthewjablack/cfd-dlc-js#v0.0.13",
+    "cfd-dlc-js": "github:matthewjablack/cfd-dlc-js#v0.0.12",
     "cfd-dlc-js-wasm": "github:zpv/cfd-dlc-js-wasm#semver:^1.0.4",
     "lodash": "^4.17.20",
     "uuid": "^8.3.0",
-    "is-node": "github:matthewjablack/is-node"
+    "is-node": "github:matthewjablack/is-node",
+    "schnorr-adaptor-points": "^0.1.0",
+    "bip-schnorr": "^0.6.2",
+    "bignumber.js": "9.0.1"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.160"
