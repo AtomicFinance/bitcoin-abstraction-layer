@@ -2,7 +2,8 @@ import Outcome, { OutcomeJSON } from './Outcome';
 import OracleInfo from './OracleInfo';
 import PartyInputs, { PartyInputsJSON } from './PartyInputs';
 import Payout, { PayoutJSON } from './Payout'
-import Amount, { AmountJSON } from './Amount';
+import Amount, { AmountJSON } from './Amount'
+import { Messages } from '../cfdDlcJsTypes'
 
 export default class OfferMessage {
   constructor(
@@ -10,7 +11,7 @@ export default class OfferMessage {
     readonly localCollateral: Amount,
     readonly remoteCollateral: Amount,
     readonly payouts: Payout[],
-    readonly messages: string[],
+    readonly messagesList: Messages[],
     readonly oracleInfo: OracleInfo,
     readonly localPartyInputs: PartyInputs,
     readonly feeRate: number,
@@ -29,7 +30,7 @@ export default class OfferMessage {
       localCollateral: this.localCollateral.toJSON(),
       remoteCollateral: this.remoteCollateral.toJSON(),
       payouts: payoutsJSON,
-      messages: this.messages,
+      messagesList: this.messagesList,
       oracleInfo: this.oracleInfo,
       localPartyInputs: this.localPartyInputs.toJSON(),
       feeRate: this.feeRate,
@@ -52,7 +53,7 @@ export default class OfferMessage {
       localCollateral: Amount.fromJSON(json.localCollateral),
       remoteCollateral: Amount.fromJSON(json.remoteCollateral),
       payouts,
-      messages: json.messages,
+      messagesList: json.messagesList,
       oracleInfo: json.oracleInfo,
       localPartyInputs: PartyInputs.fromJSON(json.localPartyInputs),
       feeRate: json.feeRate,
@@ -70,7 +71,7 @@ export interface OfferMessageJSON {
   localCollateral: AmountJSON;
   remoteCollateral: AmountJSON;
   payouts: PayoutJSON[];
-  messages: string[];
+  messagesList: Messages[];
   oracleInfo: OracleInfo;
   localPartyInputs: PartyInputsJSON;
   feeRate: number;

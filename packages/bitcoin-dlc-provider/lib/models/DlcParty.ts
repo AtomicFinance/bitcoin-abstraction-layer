@@ -10,7 +10,11 @@ import {
 import {
   CreateDlcTransactionsRequest,
   CreateCetAdaptorSignaturesRequest,
+  CreateCetAdaptorSignatureRequest,
+  CreateCetAdaptorSignaturesResponse,
+  // CalculateCetAdaptorSignaturesRequest,
   GetRawRefundTxSignatureRequest,
+  AdaptorPair,
   // VerifyCetSignaturesRequest,
   VerifyRefundTxSignatureRequest,
   GetRawFundTxSignatureRequest,
@@ -25,7 +29,8 @@ import {
   CreateRefundTransactionRequest,
   AddSignaturesToRefundTxRequest,
   VerifyCetAdaptorSignaturesRequest,
-  SignCetRequest
+  SignCetRequest,
+  VerifyCetSignatureRequest
 } from '../@types/cfd-dlc-js';
 import Input from './Input'
 import OfferMessage from './OfferMessage';
@@ -34,7 +39,6 @@ import SignMessage from './SignMessage';
 import Outcome from './Outcome';
 import MutualClosingMessage from './MutualClosingMessage';
 import BitcoinDlcProvider from '../BitcoinDlcProvider';
-import { asyncForEach } from '../utils/Utils';
 
 const ESTIMATED_SIZE = 312;
 
@@ -150,6 +154,7 @@ export default class DlcParty {
   }
 
   private async GetUtxosForAmount(amount: Amount, fixedInputs: Input[]) {
+    if (amount.GetSatoshiAmount() === 0) { return [] }
     const outputs = [{ to: BurnAddress, value: (amount.GetSatoshiAmount() + ESTIMATED_SIZE * (this.contract.feeRate - 1)) }];
     let utxos
     try {
@@ -281,6 +286,8 @@ export default class DlcParty {
       feeRate: this.contract.feeRate
     };
 
+    console.log('dlctxrequest', dlcTxRequest)
+
     const dlcTransactions = await this.client.CreateDlcTransactions(
       dlcTxRequest
     );
@@ -301,24 +308,78 @@ export default class DlcParty {
     startingIndex: number,
     fixedInputs: Input[]
   ): Promise<AcceptMessage> {
+    console.time("from offer message");
     this.contract = Contract.FromOfferMessage(offerMessage);
+    console.timeEnd("from offer message");
     this.contract.startingIndex = startingIndex;
     await this.Initialize(offerMessage.remoteCollateral, startingIndex, fixedInputs);
     this.contract.remotePartyInputs = this.partyInputs;
+    console.time("create dlc txs");
     await this.CreateDlcTransactions();
-    const cetSignRequest: CreateCetAdaptorSignaturesRequest = {
-      messages: this.contract.messages,
-      cetsHex: this.contract.cetsHex,
-      privkey: this.fundPrivateKey,
-      fundTxId: this.contract.fundTxId,
-      localFundPubkey: offerMessage.localPartyInputs.fundPublicKey,
-      remoteFundPubkey: this.partyInputs.fundPublicKey,
-      fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
-      oraclePubkey: this.contract.oracleInfo.publicKey,
-      oracleRValue: this.contract.oracleInfo.rValue
+    console.timeEnd("create dlc txs");
+
+    console.log('this.contract.messagesList.length', this.contract.messagesList.length)
+
+    const threads: Set<Worker> = new Set();
+
+    const messagesList = this.contract.messagesList
+    const cetsHex = this.contract.cetsHex
+
+
+    let adaptorPairs: AdaptorPair[] = []
+
+    const chunk = 1200;
+    for (let i = 0, j = messagesList.length; i < j; i += chunk) {
+      const tempMessagesList = messagesList.slice(i, i + chunk)
+      const tempCetsHex = cetsHex.slice(i, i + chunk)
+
+      const cetSignRequest = {
+        messagesList: tempMessagesList,
+        cetsHex: tempCetsHex,
+        privkey: this.fundPrivateKey,
+        fundTxId: this.contract.fundTxId,
+        localFundPubkey: offerMessage.localPartyInputs.fundPublicKey,
+        remoteFundPubkey: this.partyInputs.fundPublicKey,
+        fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
+        oraclePubkey: this.contract.oracleInfo.publicKey,
+        oracleRValues: this.contract.oracleInfo.rValues
+      }
+
+      threads.add(new Worker('./packages/bitcoin-dlc-provider/lib/workers/worker.js', {
+        workerData: { cetSignRequest }
+      }))
+    }
+    for (let worker of threads) {
+      worker.on('error', (err) => { throw err; });
+      worker.on('exit', () => {
+        threads.delete(worker);
+        console.log(`Thread exiting, ${threads.size} running...`);
+      })
+      worker.on('message', (msg) => {
+        adaptorPairs = adaptorPairs.concat(msg.adaptorPairs)
+      });
     }
 
-    const cetSignatures = await this.client.CreateCetAdaptorSignatures(cetSignRequest);
+    while (threads.size !== 0) {
+      await sleep(200)
+      console.log('threads', threads.size)
+    }
+
+    const cetSignatures: CreateCetAdaptorSignaturesResponse = { adaptorPairs }
+
+    // const cetSignRequest: CreateCetAdaptorSignaturesRequest = {
+    //   messagesList: this.contract.messagesList,
+    //   cetsHex: this.contract.cetsHex,
+    //   privkey: this.fundPrivateKey,
+    //   fundTxId: this.contract.fundTxId,
+    //   localFundPubkey: offerMessage.localPartyInputs.fundPublicKey,
+    //   remoteFundPubkey: this.partyInputs.fundPublicKey,
+    //   fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
+    //   oraclePubkey: this.contract.oracleInfo.publicKey,
+    //   oracleRValues: this.contract.oracleInfo.rValues
+    // }
+
+    // const cetSignatures: CreateCetAdaptorSignaturesResponse = await this.client.CreateCetAdaptorSignatures(cetSignRequest)
 
     const refundSignRequest: GetRawRefundTxSignatureRequest = {
       refundTxHex: this.contract.refundTransaction,
@@ -343,6 +404,20 @@ export default class DlcParty {
     return acceptMessage;
   }
 
+  // private createWorker (id, index) {
+  //   const worker = new Worker('../workers/worker.ts', { workerData: { id }})
+  //   worker.on('error', (err) => { throw err })
+  //   worker.on('message', this.callback.bind(worker, index))
+  // }
+
+  // private callback (index, data) {
+
+  // }
+
+  // private done() {
+    
+  // }
+
   public async OnAcceptMessage(
     acceptMessage: AcceptMessage
   ): Promise<SignMessage> {
@@ -351,9 +426,9 @@ export default class DlcParty {
 
     const verifyCetAdaptorSignaturesRequest: VerifyCetAdaptorSignaturesRequest = {
       cetsHex: this.contract.cetsHex,
-      messages: this.contract.messages,
+      messagesList: this.contract.messagesList,
       oraclePubkey: this.contract.oracleInfo.publicKey,
-      oracleRValue: this.contract.oracleInfo.rValue,
+      oracleRValues: this.contract.oracleInfo.rValues,
       adaptorPairs: acceptMessage.cetAdaptorPairs,
       localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
       remoteFundPubkey: acceptMessage.remotePartyInputs.fundPublicKey,
@@ -402,8 +477,8 @@ export default class DlcParty {
       remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
       fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
       oraclePubkey: this.contract.oracleInfo.publicKey,
-      oracleRValue: this.contract.oracleInfo.rValue,
-      messages: this.contract.messages,
+      oracleRValues: this.contract.oracleInfo.rValues,
+      messagesList: this.contract.messagesList,
     }
 
     // const cetSignRequest: GetRawCetSignaturesRequest = {
@@ -472,7 +547,7 @@ export default class DlcParty {
   public async OnSignMessage(signMessage: SignMessage): Promise<string> {
     this.contract.ApplySignMessage(signMessage);
 
-    const verifyCetSignaturesRequest = {
+    const verifyCetSignaturesRequest: VerifyCetAdaptorSignaturesRequest = {
       cetsHex: this.contract.cetsHex,
       adaptorPairs: this.contract.cetAdaptorPairs,
       localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
@@ -480,9 +555,9 @@ export default class DlcParty {
       fundTxId: this.contract.fundTxId,
       fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
       verifyRemote: false,
-      messages: this.contract.messages,
+      messagesList: this.contract.messagesList,
       oraclePubkey: this.contract.oracleInfo.publicKey,
-      oracleRValue: this.contract.oracleInfo.rValue
+      oracleRValues: this.contract.oracleInfo.rValues
     };
 
     let areSigsValid = (
@@ -580,7 +655,7 @@ export default class DlcParty {
 
   public async SignAndBroadcastCet(
     outcomeIndex: number,
-    oracleSignature: string
+    oracleSignatures: string[]
   ) {
     const signCetRequest: SignCetRequest = {
       cetHex: this.contract.cetsHex[outcomeIndex],
@@ -588,7 +663,7 @@ export default class DlcParty {
       fundTxId: this.contract.fundTxId,
       localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
       remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
-      oracleSignature,
+      oracleSignatures,
       fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
       adaptorSignature: this.contract.cetAdaptorPairs[outcomeIndex].signature,
     }

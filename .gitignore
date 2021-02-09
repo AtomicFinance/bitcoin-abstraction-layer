@@ -23,3 +23,5 @@
 /packages/**/lib/*.js
 /packages/**/lib/models/*.js
 /packages/**/lib/utils/*.js
+
+lerna-debug.log

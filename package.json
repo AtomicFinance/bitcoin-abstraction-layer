@@ -18,6 +18,9 @@
     "@types/uuid": "^8.3.0",
     "@types/node": "12.12.2",
     "bip39": "^3.0.2",
+    "cfd-js": "github:p2pderivatives/cfd-js#v0.2.2",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
     "cross-env": "^7.0.2",
     "exports-loader": "^1.1.0",
     "lerna": "^3.22.1",
@@ -45,5 +48,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "bip-schnorr": "^0.6.2"
   }
 }
