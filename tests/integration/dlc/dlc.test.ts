@@ -22,9 +22,9 @@ import {
   CalculateEcSignatureRequest,
   VerifySignatureRequest,
   MultisigSignData,
-  AddMultisigSignRequest
+  AddMultisigSignRequest,
 } from '../types/cfdJsTypes'
-import { Messages } from '../types/cfdDlcJsTypes'
+import { Messages, CreateCetAdaptorSignaturesRequest } from '../types/cfdDlcJsTypes'
 import Amount from '../../../packages/bitcoin-dlc-provider/lib/models/Amount';
 import InputDetails from '../../../packages/bitcoin-dlc-provider/lib/models/InputDetails';
 import PayoutDetails from '../../../packages/bitcoin-dlc-provider/lib/models/PayoutDetails';
@@ -51,7 +51,83 @@ const bob = chains.bitcoinWithJs2.client
 
 describe('dlc provider', () => {
   describe('initializeContractAndOffer', () => {
-    it.only('should create proper offer message', async () => {
+    it('test', async () => {
+      const cetAdaptorSignRequest: CreateCetAdaptorSignaturesRequest = {
+        messagesList: [{ messages: ['2012241bd361f299bb727af5f402c41af84d01268e571d45753bb14fd61391f3']}],
+        cetsHex: [
+          '02000000011082b061b5332b59e0e13146f22f871b231b83b17741dc2292be4adaa021a9c00000000000ffffffff0200e1f50500000000160014d346e68d8ee4d25a51779202a69c34ea8dc3e453e803000000000000160014d346e68d8ee4d25a51779202a69c34ea8dc3e45300000000'
+        ],
+        privkey: '18221500a08e0f6db234e497b2c3ce37dffa22d6bce64fb395908f40faf6f6fd',
+        fundTxId: '0200000002542543432371232a9c9cdbd362eabc616916f19c4ae1ebe9c870bd315b46e7850100000000ffffffff9fd2609f9fdb35460d8679d39ff88a0573afbfcd951fea5f0fbef661b21b2ac90100000000ffffffff038cebf50500000000220020b223fda83d7d7a72619b143b3b9bbbc10578f8c3c676d4cf25f853f787cd7057c208102401000000160014e9f0a3911a7ff253689f4e41c57dd23b80509efcdae5052a01000000160014e9f0a3911a7ff253689f4e41c57dd23b80509efc00000000',
+        localFundPubkey: '023592bd470ef06ae29a4982491e9e96265fc76912242a444b055a790403c0f5e7',
+        remoteFundPubkey: '023592bd470ef06ae29a4982491e9e96265fc76912242a444b055a790403c0f5e7',
+        fundInputAmount: 100002700,
+        oraclePubkey: 'c6c519b017280b6be4f0fc3c2bbb705bc86de2449259bb6570696fb866a5cccb',
+        oracleRValues: ['9679923cae79c21e29e4b90621ee8b9f9c4ffc740e992886c3bb343eb56fb258']
+      }
+
+      const test = await alice.finance.dlc.CreateCetAdaptorSignatures(cetAdaptorSignRequest)
+      console.log('test', test)
+    })
+
+    it.only('should', async () => {
+      const localCollateral = Amount.FromSatoshis(100000000)
+      const remoteCollateral = Amount.FromSatoshis(1000)
+      const feeRate = 10
+      const refundLockTime = 1622175850
+
+      const inputDetails: InputDetails = {
+        localCollateral,
+        remoteCollateral,
+        feeRate,
+        refundLockTime
+      }
+
+      const base = 1
+
+      const oracle = new Oracle('olivia', 1)
+      const oracleInfo = oracle.GetOracleInfo()
+
+      const { rValues } = oracleInfo
+
+      const rValuesMessagesList: Messages[] = []
+      rValues.forEach(r => {
+        const messages = []
+        for (let i = 0; i < base; i++) {
+          const m = math.taggedHash('DLC/oracle/attestation/v0', i.toString()).toString('hex')
+          messages.push(m)
+        }
+        rValuesMessagesList.push({ messages })
+      })
+
+      const startingIndex = 0
+
+      const aliceInput = await getInput(alice)
+      const bobInput = await getInput(bob)
+
+      const payouts: PayoutDetails[] = [{
+        localAmount: Amount.FromSatoshis(100000000),
+        remoteAmount: Amount.FromSatoshis(1000)
+      }]
+
+      const messagesList: Messages[] = rValuesMessagesList
+
+      const offerMessage = await alice.finance.dlc.initializeContractAndOffer(inputDetails, payouts, oracleInfo, messagesList, startingIndex, [aliceInput])
+      console.log('offerMessage', offerMessage)
+
+      console.time("accept message");
+      const acceptMessage = await bob.finance.dlc.confirmContractOffer(offerMessage, startingIndex, [bobInput])
+      console.timeEnd("accept message");
+
+      console.time("sign message");
+      const signMessage = await alice.finance.dlc.signContract(acceptMessage)
+      console.timeEnd("sign message");
+
+      // const txid = await bob.finance.dlc.finalizeContract(signMessage)
+      // console.log('txid', txid)
+    })
+
+    it('should create proper offer message', async () => {
       const localCollateral = Amount.FromSatoshis(100000000)
       const remoteCollateral = Amount.FromSatoshis(1000)
       const feeRate = 10
@@ -109,6 +185,13 @@ describe('dlc provider', () => {
       const acceptMessage = await bob.finance.dlc.confirmContractOffer(offerMessage, startingIndex, [bobInput])
       console.timeEnd("accept message");
       // console.log('acceptMessage', acceptMessage)
+
+      console.time("sign message");
+      const signMessage = await alice.finance.dlc.signContract(acceptMessage)
+      console.timeEnd("sign message");
+
+      const txid = await bob.finance.dlc.finalizeContract(signMessage)
+      console.log('txid', txid)
     })
   })
   // describe('multisig', () => {
