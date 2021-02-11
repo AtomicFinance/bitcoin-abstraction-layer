@@ -1,5 +1,3 @@
-/// <reference path="Client.d.ts" />
-
 import Client from '@atomicfinance/client';
 
 export default class Provider {

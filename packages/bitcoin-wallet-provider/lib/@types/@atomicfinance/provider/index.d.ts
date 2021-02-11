@@ -1,4 +1,4 @@
-declare class Client {
+declare class Provider {
   constructor();
   getMethod(client?: any, requestor?: any): any;
 }

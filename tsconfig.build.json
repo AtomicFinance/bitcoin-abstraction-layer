@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es5",
+    "sourceMap": true,
+    "noEmitOnError": true,
+    "skipLibCheck": true
+  },
+
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

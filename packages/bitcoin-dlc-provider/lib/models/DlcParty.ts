@@ -1,3 +1,5 @@
+import Provider from '@atomicfinance/provider';
+import { decodeRawTransaction } from '@liquality/bitcoin-utils';
 import PartyInputs from './PartyInputs';
 import Contract from './Contract';
 import Amount from './Amount';
@@ -19,19 +21,15 @@ import {
   SignClosingTransactionRequest,
   CreateRefundTransactionRequest,
   AddSignaturesToRefundTxRequest
-} from '../DlcInterfaces';
+} from '../@types/cfd-dlc-js';
 import Input from './Input'
 import OfferMessage from './OfferMessage';
 import AcceptMessage from './AcceptMessage';
 import SignMessage from './SignMessage';
 import Outcome from './Outcome';
 import MutualClosingMessage from './MutualClosingMessage';
-
-import { decodeRawTransaction } from '@liquality/bitcoin-utils';
-
-import { asyncForEach } from '../utils/Utils';
-
 import BitcoinDlcProvider from '../BitcoinDlcProvider';
+import { asyncForEach } from '../utils/Utils';
 
 const ESTIMATED_SIZE = 312;
 

@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.build.json",
+
+  "compilerOptions": {
+    "outDir": "./dist",
+    "esModuleInterop": true,
+    "declaration": true,
+    "declarationDir": "./lib",
+    "types": ["node"],
+    "typeRoots": ["@types"],
+    "lib": ["es2015", "DOM"],
+    "moduleResolution": "node"
+  },
+
+  "include": [
+    "lib/**/*"
+  ]
+}

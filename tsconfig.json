@@ -1,18 +1,13 @@
 {
+  "extends": "./tsconfig.build.json",
+
   "compilerOptions": {
-    "outDir": "./dist/",
-    "noImplicitAny": true,
-    "module": "es6",
-    "target": "es5",
-    "allowJs": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "paths": {
       "@atomicfinance/*": ["packages/*/lib"]
     },
-    "moduleResolution": "node",
-    "declaration": true,
-    "experimentalDecorators": true
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "types": []
   }
 }

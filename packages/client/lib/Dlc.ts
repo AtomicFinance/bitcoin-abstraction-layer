@@ -50,7 +50,7 @@ import {
   VerifyMutualClosingTxSignatureResponse,
   VerifyRefundTxSignatureRequest,
   VerifyRefundTxSignatureResponse,
-} from './DlcInterfaces';
+} from './@types/cfd-dlc-js';
 
 import {
   Input,
@@ -61,7 +61,7 @@ import {
   AcceptMessage,
   SignMessage,
   Contract,
-} from '@atomicfinance/bitcoin-dlc-provider';
+} from './@types/@atomicfinance/bitcoin-dlc-provider';
 
 export default class Dlc {
   client: Client;

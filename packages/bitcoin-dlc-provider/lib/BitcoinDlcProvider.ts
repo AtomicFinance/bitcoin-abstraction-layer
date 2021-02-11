@@ -1,4 +1,3 @@
-// import CfddlcHelper from './cfddlcjsHelper';
 import Provider from '@atomicfinance/provider';
 import { sleep } from '@liquality/utils';
 import {
@@ -52,11 +51,11 @@ import {
   VerifyMutualClosingTxSignatureResponse,
   VerifyRefundTxSignatureRequest,
   VerifyRefundTxSignatureResponse,
-} from './DlcInterfaces';
+} from './@types/cfd-dlc-js';
 import DlcParty from './models/DlcParty';
 import Contract from './models/Contract';
 
-import Input from './models/Input';
+import Input from './models/Input';     
 import InputDetails from './models/InputDetails';
 import OutcomeDetails from './models/OutcomeDetails';
 import OracleInfo from './models/OracleInfo';
