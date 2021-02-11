@@ -1,4 +1,12 @@
 import Provider from '@atomicfinance/provider';
+
+declare module '@atomicfinance/provider' {
+  export class Provider {
+    constructor();
+    getMethod(client?: any, requestor?: any): any;
+  }
+}
+
 import {
   normalizeTransactionObject,
   decodeRawTransaction,

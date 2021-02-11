@@ -1,14 +1,15 @@
 {
   "name": "root",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "devDependencies": {
     "@liquality/utils": "^0.7.1",
-    "@types/chai": "^4.2.12",
     "@types/mocha": "^8.0.3",
     "@types/uuid": "^8.3.0",
+    "@types/node": "12.12.2",
     "bip39": "^3.0.2",
-    "chai": "^4.2.0",
-    "chai-as-promised": "^7.1.1",
     "cross-env": "^7.0.2",
     "exports-loader": "^1.1.0",
     "lerna": "^3.22.1",
@@ -26,12 +27,9 @@
   "scripts": {
     "bootstrap": "lerna bootstrap --force-local && lerna link --force-local",
     "link": "lerna link",
-    "test": "cross-env NODE_ENV=test ts-mocha -p tsconfig.spec.json tests/**/*.test.ts",
-    "build:dev": "lerna run build --stream",
-    "build:dev:node": "lerna run build:node --stream",
-    "build:dev:browser": "lerna run build:browser --stream",
-    "build": "cross-env NODE_ENV=production npm run build:dev",
-    "watch": "cross-env NODE_ENV=production WEBPACK_WATCH=true lerna run build --parallel",
+    "clean": "lerna run clean",
+    "build": "lerna run build",
+    "test": "lerna run test",
     "new:version": "lerna version --no-push --no-git-tag-version && lerna clean --yes && lerna bootstrap",
     "publish:all": "lerna publish from-package",
     "prepublishOnly": "npm run build:dev:browser && npm run build"
