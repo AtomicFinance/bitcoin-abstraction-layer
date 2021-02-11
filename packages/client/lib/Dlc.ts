@@ -97,13 +97,13 @@ export default class Dlc {
   }
 
   async unilateralClose(
-    oracleSignature: string,
     outcomeIndex: number,
+    oracleSignatures: string[],
     contractId: string
   ): Promise<string[]> {
     return this.client.getMethod('unilateralClose')(
-      oracleSignature,
       outcomeIndex,
+      oracleSignatures,
       contractId
     );
   }

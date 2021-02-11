@@ -61,7 +61,6 @@ export default class BitcoinDlcProvider extends Provider {
   _dlcs: DlcParty[];
 
   constructor(network: any, cfdDlcJs?: any) {
-    console.log('cfdDlcJs', cfdDlcJs)
     super('BitcoinDlcProvider');
 
     this._network = network;
@@ -233,9 +232,6 @@ export default class BitcoinDlcProvider extends Provider {
     await this.importContractFromOfferMessage(offerMessage, startingIndex)
 
     const initSignMessage = await this.signContract(acceptMessage)
-
-    console.log('signMessage', signMessage)
-    console.log('initSignMessage', initSignMessage)
   }
 
   // Only Bob
@@ -282,7 +278,6 @@ export default class BitcoinDlcProvider extends Provider {
     startingIndex: number = 0,
     fixedInputs: Input[] = []
   ): Promise<OfferMessage> {
-    console.log('test initializeContractAndOffer')
     const contract = new Contract();
 
     contract.id = uuidv4();
@@ -321,31 +316,20 @@ export default class BitcoinDlcProvider extends Provider {
     return this.findDlc(signMessage.contractId).OnSignMessage(signMessage);
   }
 
-  // async refund(contractId: string) {
-  //   return this.findDlc(contractId).Refund();
-  // }
+  async refund(contractId: string) {
+    return this.findDlc(contractId).Refund();
+  }
 
-  // async unilateralClose(
-  //   oracleSignature: string,
-  //   outcomeIndex: number,
-  //   contractId: string
-  // ): Promise<string[]> {
-  //   return this.findDlc(contractId).ExecuteUnilateralClose(
-  //     oracleSignature,
-  //     outcomeIndex
-  //   );
-  // }
-
-  // async buildUnilateralClose(
-  //   oracleSignature: string,
-  //   outcomeIndex: number,
-  //   contractId: string
-  // ): Promise<string[]> {
-  //   return this.findDlc(contractId).BuildUnilateralClose(
-  //     oracleSignature,
-  //     outcomeIndex
-  //   );
-  // }
+  async unilateralClose(
+    outcomeIndex: number,
+    oracleSignatures: string[],
+    contractId: string
+  ): Promise<string[]> {
+    return this.findDlc(contractId).SignAndBroadcastCet(
+      outcomeIndex,
+      oracleSignatures
+    );
+  }
 
   async getFundingUtxoAddressesForOfferMessages (offerMessages: OfferMessage[]) {
     const fundingAddresses: string[] = []

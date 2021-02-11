@@ -19,7 +19,7 @@
     "@types/node": "12.12.2",
     "bip39": "^3.0.2",
     "cfd-js": "github:p2pderivatives/cfd-js#v0.2.2",
-    "cfd-dlc-js": "github:p2pderivatives/cfd-dlc-js#v0.0.9",
+    "cfd-dlc-js": "github:matthewjablack/cfd-dlc-js#v0.0.11",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "cross-env": "^7.0.2",

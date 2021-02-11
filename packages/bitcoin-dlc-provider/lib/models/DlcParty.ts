@@ -287,8 +287,6 @@ export default class DlcParty {
       feeRate: this.contract.feeRate
     };
 
-    console.log('dlctxrequest', dlcTxRequest)
-
     const dlcTransactions = await this.client.CreateDlcTransactions(
       dlcTxRequest
     );
@@ -309,17 +307,11 @@ export default class DlcParty {
     startingIndex: number,
     fixedInputs: Input[]
   ): Promise<AcceptMessage> {
-    console.time("from offer message");
     this.contract = Contract.FromOfferMessage(offerMessage);
-    console.timeEnd("from offer message");
     this.contract.startingIndex = startingIndex;
     await this.Initialize(offerMessage.remoteCollateral, startingIndex, fixedInputs);
     this.contract.remotePartyInputs = this.partyInputs;
-    console.time("create dlc txs");
     await this.CreateDlcTransactions();
-    console.timeEnd("create dlc txs");
-
-    console.log('this.contract.messagesList.length', this.contract.messagesList.length)
 
     const cetSignRequest: CreateCetAdaptorSignaturesRequest = {
       messagesList: this.contract.messagesList,
@@ -332,8 +324,6 @@ export default class DlcParty {
       oraclePubkey: this.contract.oracleInfo.publicKey,
       oracleRValues: this.contract.oracleInfo.rValues
     }
-
-    console.log('cetSignRequest', cetSignRequest)
 
     const cetSignatures: CreateCetAdaptorSignaturesResponse = await this.client.CreateCetAdaptorSignatures(cetSignRequest)
 
@@ -366,8 +356,6 @@ export default class DlcParty {
     this.contract.ApplyAcceptMessage(acceptMessage);
     await this.CreateDlcTransactions();
 
-    console.log('test1')
-
     const verifyCetAdaptorSignaturesRequest: VerifyCetAdaptorSignaturesRequest = {
       cetsHex: this.contract.cetsHex,
       messagesList: this.contract.messagesList,
@@ -381,13 +369,9 @@ export default class DlcParty {
       verifyRemote: true,
     };
 
-    console.log('test2')
-
     let areSigsValid = (
       await this.client.VerifyCetAdaptorSignatures(verifyCetAdaptorSignaturesRequest)
     ).valid;
-
-    console.log('test3')
 
     const verifyRefundSigRequest: VerifyRefundTxSignatureRequest = {
       refundTxHex: this.contract.refundTransaction,
@@ -399,8 +383,6 @@ export default class DlcParty {
       verifyRemote: true,
     };
 
-    console.log('test4')
-
     areSigsValid =
       areSigsValid &&
       (await this.client.VerifyRefundTxSignature(verifyRefundSigRequest)).valid;
@@ -409,63 +391,21 @@ export default class DlcParty {
       throw new Error('Invalid signatures received');
     }
 
-    console.log('test5')
-
-    // const cetSignRequest: CreateCetAdaptorSignaturesRequest = {
-    //   messagesList: this.contract.messagesList,
-    //   cetsHex: this.contract.cetsHex,
-    //   privkey: this.fundPrivateKey,
-    //   fundTxId: this.contract.fundTxId,
-    //   localFundPubkey: offerMessage.localPartyInputs.fundPublicKey,
-    //   remoteFundPubkey: this.partyInputs.fundPublicKey,
-    //   fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
-    //   oraclePubkey: this.contract.oracleInfo.publicKey,
-    //   oracleRValues: this.contract.oracleInfo.rValues
-    // }
-
-    console.log('this.contract.messagesList[0]', this.contract.messagesList[0])
-
     const cetAdaptorSignRequest: CreateCetAdaptorSignaturesRequest = {
       messagesList: this.contract.messagesList,
       cetsHex: this.contract.cetsHex,
       privkey: this.fundPrivateKey,
-      fundTxId: this.contract.fundTxHex,
+      fundTxId: this.contract.fundTxId,
       localFundPubkey: this.partyInputs.fundPublicKey,
-      remoteFundPubkey: acceptMessage.remotePartyInputs.fundPublicKey,
+      remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
       fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
       oraclePubkey: this.contract.oracleInfo.publicKey,
       oracleRValues: this.contract.oracleInfo.rValues
     }
 
-    console.log('cetAdaptorSignRequest', cetAdaptorSignRequest)
-
-    console.log('test6')
-
     const cetAdaptorPairs = (
       await this.client.CreateCetAdaptorSignatures(cetAdaptorSignRequest)
     ).adaptorPairs;
-
-    // const cetAdaptorPairs = await Promise.all(
-    //   this.contract.messagesList.map(async (messages, i) => {
-    //     const cetAdaptorSignRequest: CreateCetAdaptorSignatureRequest = {
-    //       messages: messages.messages,
-    //       cetHex: this.contract.cetsHex[i],
-    //       privkey: this.fundPrivateKey,
-    //       fundTxId: this.contract.fundTxHex,
-    //       localFundPubkey: this.partyInputs.fundPublicKey,
-    //       remoteFundPubkey: acceptMessage.remotePartyInputs.fundPublicKey,
-    //       fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
-    //       oraclePubkey: this.contract.oracleInfo.publicKey,
-    //       oracleRValues: this.contract.oracleInfo.rValues
-    //     }
-
-    //     const adaptorPair = await this.client.CreateCetAdaptorSignature(cetAdaptorSignRequest)
-
-    //     return adaptorPair
-    //   })
-    // )
-
-    console.log('test7')
 
     const refundSignRequest: GetRawRefundTxSignatureRequest = {
       refundTxHex: this.contract.refundTransaction,
@@ -611,21 +551,6 @@ export default class DlcParty {
     return fundTxHash;
   }
 
-  public async ExitEarly() {
-    const pubkey1 = this.contract.localPartyInputs.fundPublicKey
-    const pubkey2 = this.contract.remotePartyInputs.fundPublicKey
-
-    const createMultisigRequest: CreateMultisigRequest = {
-      nrequired: 2,
-      keys: [pubkey1, pubkey2],
-      network: 'regtest',
-      hashType: 'p2wsh'
-    }
-
-    const multisig = await this.client.getMethod('CreateMultisig')() .finance.cfd.CreateMultisig(createMultisigRequest)
-    console.log('multisig', multisig)
-  }
-
   public async SignAndBroadcastCet(
     outcomeIndex: number,
     oracleSignatures: string[]
@@ -665,268 +590,38 @@ export default class DlcParty {
     return cetTxHash;
   }
 
-  // public async Refund () {
-  //   let refundTxHex = this.contract.refundTransaction
+  public async Refund () {
+    const addSigsToRefundTxRequest: AddSignaturesToRefundTxRequest = {
+      refundTxHex: this.contract.refundTransaction,
+      signatures: [this.contract.refundLocalSignature, this.contract.refundRemoteSignature],
+      fundTxId: this.contract.fundTxId,
+      localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
+      remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey
+    }
 
-  //   const refundSignRequest: GetRawRefundTxSignatureRequest = {
-  //     refundTxHex: this.contract.refundTransaction,
-  //     privkey: this.fundPrivateKey,
-  //     fundTxId: this.contract.fundTxId,
-  //     localFundPubkey: this.partyInputs.fundPublicKey,
-  //     remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
-  //     fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
-  //   };
+    const refundHex = (await this.client.AddSignaturesToRefundTx(addSigsToRefundTxRequest)).hex
 
-  //   const refundSignature = (await this.client.GetRawRefundTxSignature(
-  //     refundSignRequest
-  //   )).hex;
+    let refundTxHash;
+    try {
+      refundTxHash = await this.client.getMethod('sendRawTransaction')(refundHex);
+    } catch (e) {
+      const refundTxid = decodeRawTransaction(refundHex).txid;
 
-  //   const signatures = this.contract.isLocalParty
-  //     ? [refundSignature, this.contract.refundRemoteSignature]
-  //     : [this.contract.refundLocalSignature, refundSignature];
+      try {
+        refundTxHash = (
+          await this.client.getMethod('getTransactionByHash')(refundTxid)
+        ).hash;
 
-  //   const addSignaturesToRefundTxRequest: AddSignaturesToRefundTxRequest = {
-  //     refundTxHex,
-  //     signatures,
-  //     fundTxId: this.contract.fundTxId,
-  //     localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
-  //     remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey
-  //   }
+        console.log('Cet Tx already created');
+      } catch (e) {
+        throw Error(
+          `Failed to sendRawTransaction cetHex and tx has not been previously broadcast. cetHex: ${refundHex}`
+        );
+      }
+    }
 
-  //   refundTxHex = (await this.client.AddSignaturesToRefundTx(addSignaturesToRefundTxRequest)).hex
-
-  //   let refundTxHash;
-  //   try {
-  //     refundTxHash = await this.client.getMethod('sendRawTransaction')(refundTxHex);
-  //   } catch (sendTxError) {
-  //     const cetTxid = decodeRawTransaction(refundTxHash).txid;
-
-  //     try {
-  //       refundTxHash = (
-  //         await this.client.getMethod('getTransactionByHash')(cetTxid)
-  //       ).hash;
-
-  //       console.log('Refund Tx already created');
-  //     } catch (e) {
-  //       throw Error(
-  //         `Failed to sendRawTransaction refundTxHex and tx has not been previously broadcast. Error: ${sendTxError} | refundTxHex: ${refundTxHex}`
-  //       );
-  //     }
-  //   }
-
-  //   return refundTxHash;
-  // }
-
-  // public async CreateMutualClosingMessage(outcome: Outcome) {
-  //   const mutualClosingRequest = {
-  //     localFinalAddress: this.contract.localPartyInputs.finalAddress,
-  //     remoteFinalAddress: this.contract.remotePartyInputs.finalAddress,
-  //     localAmount: outcome.local.GetSatoshiAmount(),
-  //     remoteAmount: outcome.remote.GetSatoshiAmount(),
-  //     fundTxId: this.contract.fundTxId,
-  //     feeRate: this.contract.feeRate,
-  //   };
-
-  //   const mutualClosingTx = (await this.client.CreateMutualClosingTransaction(
-  //     mutualClosingRequest
-  //   )).hex;
-
-  //   const signRequest: GetRawMutualClosingTxSignatureRequest = {
-  //     fundTxId: this.contract.fundTxId,
-  //     mutualClosingHex: mutualClosingTx,
-  //     privkey: this.fundPrivateKey,
-  //     localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
-  //     remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
-  //     fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
-  //   };
-
-  //   const signature = (await this.client.GetRawMutualClosingTxSignature(signRequest)).hex;
-
-  //   return new MutualClosingMessage(outcome, signature);
-  // }
-
-  // public async OnMutualClosingMessage(
-  //   mutualClosingMessage: MutualClosingMessage
-  // ) {
-  //   const mutualClosingRequest = {
-  //     localFinalAddress: this.contract.localPartyInputs.finalAddress,
-  //     remoteFinalAddress: this.contract.remotePartyInputs.finalAddress,
-  //     localAmount: mutualClosingMessage.outcome.local.GetSatoshiAmount(),
-  //     remoteAmount: mutualClosingMessage.outcome.remote.GetSatoshiAmount(),
-  //     fundTxId: this.contract.fundTxId,
-  //     feeRate: this.contract.feeRate,
-  //   };
-
-  //   let mutualClosingTx = bitcoin.finance.dlc.CreateMutualClosingTransaction(
-  //     mutualClosingRequest
-  //   ).hex;
-
-  //   const signRequest: GetRawMutualClosingTxSignatureRequest = {
-  //     fundTxId: this.contract.fundTxId,
-  //     mutualClosingHex: mutualClosingTx,
-  //     privkey: this.fundPrivateKey,
-  //     localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
-  //     remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
-  //     fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
-  //   };
-
-  //   const signature = bitcoin.finance.dlc.GetRawMutualClosingTxSignature(signRequest).hex;
-
-  //   const signatures = this.contract.isLocalParty
-  //     ? [signature, mutualClosingMessage.signature]
-  //     : [mutualClosingMessage.signature, signature];
-
-  //   const addSigsRequest: AddSignaturesToMutualClosingTxRequest = {
-  //     mutualClosingTxHex: mutualClosingTx,
-  //     signatures,
-  //     fundTxId: this.contract.fundTxId,
-  //     localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
-  //     remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
-  //   };
-
-  //   mutualClosingTx = bitcoin.finance.dlc.AddSignaturesToMutualClosingTx(addSigsRequest).hex;
-
-  //   await this.walletClient.sendRawTransaction(mutualClosingTx);
-
-  //   await this.GenerateBlocks(1);
-  // }
-
-  // public async ExecuteUnilateralClose(
-  //   oracleSignature: string,
-  //   outcomeIndex: number
-  // ): Promise<string[]> {
-  //   const [cetHex, closingTxHex] = await this.BuildUnilateralClose(
-  //     oracleSignature,
-  //     outcomeIndex
-  //   );
-
-  //   let cetTxHash;
-  //   try {
-  //     cetTxHash = await this.client.getMethod('sendRawTransaction')(cetHex);
-  //   } catch (e) {
-  //     const cetTxid = decodeRawTransaction(cetHex).txid;
-
-  //     try {
-  //       cetTxHash = (
-  //         await this.client.getMethod('getTransactionByHash')(cetTxid)
-  //       ).hash;
-
-  //       console.log('Cet Tx already created');
-  //     } catch (e) {
-  //       throw Error(
-  //         `Failed to sendRawTransaction cetHex and tx has not been previously broadcast. cetHex: ${cetHex}`
-  //       );
-  //     }
-  //   }
-
-  //   let closingTxHash;
-  //   try {
-  //     closingTxHash = await this.client.getMethod('sendRawTransaction')(
-  //       closingTxHex
-  //     );
-  //   } catch (e) {
-  //     const closingTxid = decodeRawTransaction(closingTxHex).txid;
-
-  //     try {
-  //       closingTxHash = (
-  //         await this.client.getMethod('getTransactionByHash')(closingTxid)
-  //       ).hash;
-
-  //       console.log('Closing Tx already created');
-  //     } catch (e) {
-  //       throw Error(
-  //         `Failed to sendRawTransaction closingTxHex and tx has not been previously broadcast. cetHex: ${closingTxHex}`
-  //       );
-  //     }
-  //   }
-
-  //   return [cetTxHash, closingTxHash];
-  // }
-
-  // public async BuildUnilateralClose(
-  //   oracleSignature: string,
-  //   outcomeIndex: number
-  // ): Promise<string[]> {
-  //   const cets = this.contract.isLocalParty
-  //     ? this.contract.localCetsHex
-  //     : this.contract.remoteCetsHex;
-
-  //   let cetHex = cets[outcomeIndex];
-
-  //   const signRequest: GetRawCetSignatureRequest = {
-  //     cetHex,
-  //     privkey: this.fundPrivateKey,
-  //     fundTxId: this.contract.fundTxId,
-  //     localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
-  //     remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
-  //     fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
-  //   };
-
-  //   const cetSign = (await this.client.GetRawCetSignature(signRequest)).hex;
-
-  //   const signatures = this.contract.isLocalParty
-  //     ? [cetSign, this.contract.cetSignatures[outcomeIndex]]
-  //     : [this.contract.cetSignatures[outcomeIndex], cetSign];
-
-  //   const addSignRequest: AddSignaturesToCetRequest = {
-  //     cetHex,
-  //     signatures,
-  //     fundTxId: this.contract.fundTxId,
-  //     localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
-  //     remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
-  //   };
-
-  //   cetHex = (await this.client.AddSignaturesToCet(addSignRequest)).hex;
-
-  //   const cet = await this.client.getMethod('DecodeRawTransaction')({
-  //     hex: cetHex,
-  //   });
-
-  //   const outcomeAmount = this.contract.isLocalParty
-  //     ? this.contract.outcomes[outcomeIndex].local
-  //     : this.contract.outcomes[outcomeIndex].remote;
-
-  //   if (outcomeAmount.GetSatoshiAmount() === 0)
-  //     throw Error('Outcome Amount should be greater than 0');
-
-  //   const closingTxRequest: CreateClosingTransactionRequest = {
-  //     address: this.partyInputs.finalAddress,
-  //     amount: outcomeAmount.GetSatoshiAmount(),
-  //     cetTxId: cet.txid,
-  //   };
-
-  //   let closingTxHex = (
-  //     await this.client.CreateClosingTransaction(closingTxRequest)
-  //   ).hex;
-
-  //   const remoteSweepKey = this.contract.isLocalParty
-  //     ? this.contract.remotePartyInputs.sweepPublicKey
-  //     : this.contract.localPartyInputs.sweepPublicKey;
-
-  //   const signClosingRequest: SignClosingTransactionRequest = {
-  //     closingTxHex,
-  //     cetTxId: cet.txid,
-  //     amount: cet.vout[0].value,
-  //     localFundPrivkey: this.fundPrivateKey,
-  //     localSweepPubkey: this.partyInputs.sweepPublicKey,
-  //     remoteSweepPubkey: remoteSweepKey,
-  //     oraclePubkey: this.contract.oracleInfo.publicKey,
-  //     oracleRPoints: [this.contract.oracleInfo.rValue],
-  //     oracleSigs: [oracleSignature],
-  //     messages: [this.contract.outcomes[outcomeIndex].message],
-  //     csvDelay: this.contract.cetCsvDelay,
-  //   };
-
-  //   closingTxHex = (
-  //     await this.client.SignClosingTransaction(signClosingRequest)
-  //   ).hex;
-
-  //   console.log('cetHex', cetHex);
-  //   console.log('closingTxHex', closingTxHex);
-
-  //   return [cetHex, closingTxHex];
-  // }
+    return refundTxHash;
+  }
 }
 
-// Put this outside the class
 const BurnAddress = 'bcrt1qxcjufgh2jarkp2qkx68azh08w9v5gah8u6es8s';
