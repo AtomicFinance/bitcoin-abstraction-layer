@@ -51,7 +51,7 @@ export default class Amount {
   // Returns the difference between the amount of satoshi in this object and
   // the amount of satoshi of the given object.
   public CompareWith(amount: Amount) {
-    return this._satoshis - amount._satoshis;
+    return new Amount(this._satoshis - amount._satoshis);
   }
 
   toJSON(): AmountJSON {

@@ -14,4 +14,6 @@ export { default as Utxo } from './models/Utxo';
 export { default as InputDetails } from './models/InputDetails';
 export { default as OutcomeDetails } from './models/OutcomeDetails';
 
+export { default as PayoutDetails } from './models/PayoutDetails';
+
 export { default } from './BitcoinDlcProvider';

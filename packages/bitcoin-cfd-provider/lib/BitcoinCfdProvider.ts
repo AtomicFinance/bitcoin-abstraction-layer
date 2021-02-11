@@ -140,6 +140,7 @@ import {
   VerifySignatureRequest,
   VerifySignatureResponse,
 } from './@types/cfd-js';
+import * as isNode from 'is-node'
 
 export default class BitcoinCfdProvider extends Provider {
   _network: any;
@@ -153,8 +154,10 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CfdLoaded() {
-    while (!this._cfdJs) {
-      await sleep(1);
+    if (!isNode) {
+      while (!this._cfdJs) {
+        await sleep(1);
+      }
     }
   }
 
@@ -700,5 +703,14 @@ export default class BitcoinCfdProvider extends Provider {
     await this.CfdLoaded();
 
     return this._cfdJs.VerifySignature(jsonObject);
+  }
+
+  async GetAddressScript(address: string) {
+    await this.CfdLoaded();
+
+    const req = { address };
+
+    const info = this._cfdJs.GetAddressInfo(req);
+    return info.lockingScript;
   }
 }

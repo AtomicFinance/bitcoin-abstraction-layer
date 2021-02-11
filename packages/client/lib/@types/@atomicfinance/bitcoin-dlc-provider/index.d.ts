@@ -70,6 +70,11 @@ export class Outcome {
   static reviver(key: string, value: any): any;
 }
 
+export class PayoutDetails {
+  readonly localAmount: Amount;
+  readonly remoteAmount: Amount;
+}
+
 export interface OutcomeJSON {
   message: string;
   local: AmountJSON;
