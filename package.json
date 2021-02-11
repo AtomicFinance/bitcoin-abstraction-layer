@@ -45,7 +45,7 @@
     "test": "cross-env NODE_ENV=test ts-mocha -p tsconfig.spec.json --timeout 150000 tests/**/*.test.ts",
     "new:version": "lerna version --no-push --no-git-tag-version && lerna clean --yes && lerna bootstrap",
     "publish:all": "lerna publish from-package",
-    "prepublishOnly": "npm run build:dev:browser && npm run build"
+    "prepublishOnly": "npm run build"
   },
   "publishConfig": {
     "access": "public"
