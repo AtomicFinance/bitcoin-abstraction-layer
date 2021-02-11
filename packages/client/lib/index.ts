@@ -1,5 +1,2 @@
-/// <reference path="Client.d.ts" />
-
-import Client from './Client';
-
-export default Client;
+export { default as Client } from './Client'
+export { default } from './Client';

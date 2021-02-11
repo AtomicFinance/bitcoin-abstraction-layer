@@ -3,15 +3,17 @@ import PartyInputs, { PartyInputsJSON } from './PartyInputs';
 import OracleInfo from './OracleInfo';
 import OfferMessage, { OfferMessageJSON } from './OfferMessage';
 import AcceptMessage, { AcceptMessageJSON } from './AcceptMessage';
+import Payout, { PayoutJSON } from './Payout'
 import SignMessage from './SignMessage';
 import Amount, { AmountJSON } from './Amount';
+import { AdaptorPair, Messages } from '../@types/cfd-dlc-js';
 
 export default class Contract {
   id: string;
   localCollateral: Amount;
   remoteCollateral: Amount;
-  outcomes: Outcome[];
-  maturityTime: Date;
+  payouts: Payout[];
+  messagesList: Messages[];
   feeRate: number;
   localPartyInputs: PartyInputs;
   remotePartyInputs: PartyInputs;
@@ -26,13 +28,13 @@ export default class Contract {
   refundTransaction: string;
   refundLocalSignature: string;
   refundRemoteSignature: string;
-  localCetsHex: string[];
-  remoteCetsHex: string[];
-  cetSignatures: string[];
+  cetsHex: string[];
+  cetAdaptorPairs: AdaptorPair[];
   startingIndex: number;
 
   constructor() {
-    this.outcomes = [];
+    this.payouts = [];
+    this.messagesList = [];
   }
 
   public static FromOfferMessage(offerMessage: OfferMessage) {
@@ -40,14 +42,13 @@ export default class Contract {
     contract.id = offerMessage.contractId;
     contract.localCollateral = offerMessage.localCollateral;
     contract.remoteCollateral = offerMessage.remoteCollateral;
-    contract.maturityTime = offerMessage.maturityTime;
-    contract.outcomes = offerMessage.outcomes;
+    contract.payouts = offerMessage.payouts;
     contract.oracleInfo = offerMessage.oracleInfo;
     contract.localPartyInputs = offerMessage.localPartyInputs;
     contract.feeRate = offerMessage.feeRate;
-    contract.cetCsvDelay = offerMessage.cetCsvDelay;
     contract.refundLockTime = offerMessage.refundLockTime;
     contract.isLocalParty = false;
+    contract.messagesList = offerMessage.messagesList;
     return contract;
   }
 
@@ -57,42 +58,40 @@ export default class Contract {
       contractId: this.id,
       localCollateral: this.localCollateral,
       remoteCollateral: this.remoteCollateral,
-      maturityTime: this.maturityTime,
-      outcomes: this.outcomes,
+      payouts: this.payouts,
       oracleInfo: this.oracleInfo,
       localPartyInputs: this.localPartyInputs,
       feeRate: this.feeRate,
-      cetCsvDelay: this.cetCsvDelay,
       refundLockTime: this.refundLockTime,
+      messagesList: this.messagesList,
       toJSON: OfferMessage.prototype.toJSON,
     };
   }
 
   public ApplyAcceptMessage(acceptMessage: AcceptMessage) {
-    this.cetSignatures = acceptMessage.cetSignatures;
+    this.cetAdaptorPairs = acceptMessage.cetAdaptorPairs;
     this.refundRemoteSignature = acceptMessage.refundSignature;
     this.remotePartyInputs = acceptMessage.remotePartyInputs;
   }
 
   public ApplySignMessage(signMessage: SignMessage) {
-    this.cetSignatures = signMessage.cetSignatures;
+    this.cetAdaptorPairs = signMessage.cetAdaptorPairs;
     this.refundLocalSignature = signMessage.refundSignature;
     this.fundTxSignatures = signMessage.fundTxSignatures;
   }
 
   toJSON(): ContractJSON {
-    const outcomesJSON: OutcomeJSON[] = [];
-    for (let i = 0; i < this.outcomes.length; i++) {
-      const outcome = this.outcomes[i].toJSON();
-      outcomesJSON.push(outcome);
+    const payoutsJSON: PayoutJSON[] = [];
+    for (let i = 0; i < this.payouts.length; i++) {
+      const payout = this.payouts[i].toJSON();
+      payoutsJSON.push(payout);
     }
 
     return Object.assign({}, this, {
       id: this.id,
       localCollateral: this.localCollateral?.toJSON(),
       remoteCollateral: this.remoteCollateral?.toJSON(),
-      outcomes: outcomesJSON,
-      maturityTime: this.maturityTime?.toString(),
+      payouts: payoutsJSON,
       feeRate: this.feeRate,
       localPartyInputs: this.localPartyInputs?.toJSON(),
       remotePartyInputs: this.remotePartyInputs?.toJSON(),
@@ -107,28 +106,27 @@ export default class Contract {
       refundTransaction: this.refundTransaction,
       refundLocalSignature: this.refundLocalSignature,
       refundRemoteSignature: this.refundRemoteSignature,
-      localCetsHex: this.localCetsHex,
-      remoteCetsHex: this.remoteCetsHex,
-      cetSignatures: this.cetSignatures,
+      cetsHex: this.cetsHex,
+      cetAdaptorPairs: this.cetAdaptorPairs
     });
   }
 
   static fromJSON(json: ContractJSON): Contract {
     let contractMessage = Object.create(Contract.prototype);
 
-    const outcomes: Outcome[] = [];
+    const payouts: Payout[] = [];
 
-    for (let i = 0; i < json.outcomes.length; i++) {
-      const outcome = Outcome.fromJSON(json.outcomes[i]);
-      outcomes.push(outcome);
+    for (let i = 0; i < json.payouts.length; i++) {
+      const payout = Payout.fromJSON(json.payouts[i]);
+      payouts.push(payout);
     }
 
     return Object.assign(contractMessage, json, {
       id: json.id,
       localCollateral: Amount.fromJSON(json.localCollateral),
       remoteCollateral: Amount.fromJSON(json.remoteCollateral),
-      outcomes,
-      maturityTime: new Date(json.maturityTime),
+      payouts,
+      messagesList: json.messagesList,
       localPartyInputs: PartyInputs.fromJSON(json.localPartyInputs),
       remotePartyInputs: PartyInputs.fromJSON(json.remotePartyInputs),
       fundTxOutAmount: Amount.fromJSON(json.fundTxOutAmount),
@@ -144,8 +142,8 @@ export interface ContractJSON {
   id: string;
   localCollateral: AmountJSON;
   remoteCollateral: AmountJSON;
-  outcomes: OutcomeJSON[];
-  maturityTime: string;
+  payouts: PayoutJSON[];
+  messagesList: Messages[];
   feeRate: number;
   localPartyInputs: PartyInputsJSON;
   remotePartyInputs: PartyInputsJSON;
@@ -160,7 +158,6 @@ export interface ContractJSON {
   refundTransaction: string;
   refundLocalSignature: string;
   refundRemoteSignature: string;
-  localCetsHex: string[];
-  remoteCetsHex: string[];
-  cetSignatures: string[];
+  cetsHex: string[];
+  cetAdaptorPairs: AdaptorPair[];
 }

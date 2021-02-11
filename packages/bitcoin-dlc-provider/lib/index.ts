@@ -1,5 +1,3 @@
-/// <reference path="Provider.d.ts" />
-
 export { default as Contract } from './models/Contract';
 
 export { default as AcceptMessage } from './models/AcceptMessage';
@@ -15,5 +13,7 @@ export { default as Utxo } from './models/Utxo';
 
 export { default as InputDetails } from './models/InputDetails';
 export { default as OutcomeDetails } from './models/OutcomeDetails';
+
+export { default as PayoutDetails } from './models/PayoutDetails';
 
 export { default } from './BitcoinDlcProvider';

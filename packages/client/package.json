@@ -1,25 +1,25 @@
 {
   "name": "@atomicfinance/client",
   "umdName": "Client",
-  "version": "0.2.2",
+  "version": "1.0.0-alpha.0",
   "description": "> TODO: description",
   "author": "Matthew Black <mblackmblackmblack@gmail.com>",
   "homepage": "",
   "license": "ISC",
-  "main": "dist/index.cjs.js",
+  "main": "dist/index",
+  "types": "lib/index",
   "files": [
-    "dist",
-    "lib"
+    "dist"
   ],
   "scripts": {
-    "build:node": "webpack --config ../../webpack/webpack.node.config.js",
-    "build:browser": "webpack --config ../../webpack/webpack.browser.config.js",
-    "build": "webpack --config ../../webpack/webpack.config.js"
+    "build": "yarn run clean && yarn run compile",
+    "clean": "rimraf -rf ./dist",
+    "compile": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "yarn run build",
+    "test": "yarn run build"
   },
   "dependencies": {
     "@liquality/errors": "^0.7.1",
-    "cfd-dlc-js-wasm": "github:zpv/cfd-dlc-js-wasm#semver:^1.0.4",
-    "cfd-js-wasm": "github:p2pderivatives/cfd-js-wasm#semver:^0.1.6",
     "lodash": "^4.17.20"
   },
   "devDependencies": {

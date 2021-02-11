@@ -1,86 +1,71 @@
-import CfddlcHelper from './cfddlcjsHelper';
 import Provider from '@atomicfinance/provider';
 import { sleep } from '@liquality/utils';
 import {
   AddSignatureToFundTransactionRequest,
   AddSignatureToFundTransactionResponse,
-  AddSignaturesToCetRequest,
-  AddSignaturesToCetResponse,
-  AddSignaturesToMutualClosingTxRequest,
-  AddSignaturesToMutualClosingTxResponse,
+  CreateCetAdaptorSignatureRequest,
+  CreateCetAdaptorSignatureResponse,
+  CreateCetAdaptorSignaturesRequest,
+  CreateCetAdaptorSignaturesResponse,
   AddSignaturesToRefundTxRequest,
   AddSignaturesToRefundTxResponse,
   CreateCetRequest,
   CreateCetResponse,
-  CreateClosingTransactionRequest,
-  CreateClosingTransactionResponse,
   CreateDlcTransactionsRequest,
   CreateDlcTransactionsResponse,
   CreateFundTransactionRequest,
   CreateFundTransactionResponse,
-  CreateMutualClosingTransactionRequest,
-  CreateMutualClosingTransactionResponse,
-  CreatePenaltyTransactionRequest,
-  CreatePenaltyTransactionResponse,
   CreateRefundTransactionRequest,
   CreateRefundTransactionResponse,
-  GetRawCetSignatureRequest,
-  GetRawCetSignatureResponse,
-  GetRawCetSignaturesRequest,
-  GetRawCetSignaturesResponse,
   GetRawFundTxSignatureRequest,
   GetRawFundTxSignatureResponse,
-  GetRawMutualClosingTxSignatureRequest,
-  GetRawMutualClosingTxSignatureResponse,
   GetRawRefundTxSignatureRequest,
   GetRawRefundTxSignatureResponse,
-  GetSchnorrPublicNonceRequest,
-  GetSchnorrPublicNonceResponse,
-  SchnorrSignRequest,
-  SchnorrSignResponse,
-  SignClosingTransactionRequest,
-  SignClosingTransactionResponse,
+  SignCetRequest,
+  SignCetResponse,
+  VerifyCetAdaptorSignatureRequest,
+  VerifyCetAdaptorSignatureResponse,
+  VerifyCetAdaptorSignaturesRequest,
+  VerifyCetAdaptorSignaturesResponse,
   SignFundTransactionRequest,
   SignFundTransactionResponse,
-  VerifyCetSignatureRequest,
-  VerifyCetSignatureResponse,
-  VerifyCetSignaturesRequest,
-  VerifyCetSignaturesResponse,
   VerifyFundTxSignatureRequest,
   VerifyFundTxSignatureResponse,
-  VerifyMutualClosingTxSignatureRequest,
-  VerifyMutualClosingTxSignatureResponse,
   VerifyRefundTxSignatureRequest,
-  VerifyRefundTxSignatureResponse
-} from 'cfd-dlc-js-wasm';
+  VerifyRefundTxSignatureResponse,
+  Messages
+} from './@types/cfd-dlc-js';
 import DlcParty from './models/DlcParty';
 import Contract from './models/Contract';
 
-import Input from './models/Input';
+import Amount from './models/Amount'
+import Input from './models/Input';     
 import InputDetails from './models/InputDetails';
 import OutcomeDetails from './models/OutcomeDetails';
-import OracleInfo from './models/OracleInfo';
 import Outcome from './models/Outcome';
+import PayoutDetails from './models/PayoutDetails';
+import OracleInfo from './models/OracleInfo';
 import OfferMessage from './models/OfferMessage';
 import AcceptMessage from './models/AcceptMessage';
 import SignMessage from './models/SignMessage';
+import Payout from './models/Payout'
 import Utxo from './models/Utxo';
 import { v4 as uuidv4 } from 'uuid';
+import * as isNode from 'is-node';
+import { math } from 'bip-schnorr';
+import BN from 'bignumber.js'
 
 export default class BitcoinDlcProvider extends Provider {
   _network: any;
   _cfdDlcJs: any;
   _dlcs: DlcParty[];
 
-  constructor(network: any) {
+  constructor(network: any, cfdDlcJs?: any) {
     super('BitcoinDlcProvider');
 
     this._network = network;
     this._dlcs = [] as DlcParty[];
-
-    CfddlcHelper.initialized(() => {
-      this._cfdDlcJs = CfddlcHelper.getCfddlcjs();
-    });
+    this._cfdDlcJs = cfdDlcJs;
   }
 
   private async CfdLoaded() {
@@ -93,17 +78,15 @@ export default class BitcoinDlcProvider extends Provider {
     contract.localCollateral = input.localCollateral;
     contract.remoteCollateral = input.remoteCollateral;
     contract.feeRate = input.feeRate;
-    contract.maturityTime = input.maturityTime;
     contract.refundLockTime = input.refundLockTime;
-    contract.cetCsvDelay = input.cetCsvDelay;
   }
 
-  private setOutcomes(contract: Contract, outcomes: Array<OutcomeDetails>) {
-    outcomes.forEach((outcome) => {
-      const { message, localAmount, remoteAmount } = outcome;
-      const newOutcome = new Outcome(message, localAmount, remoteAmount);
-      contract.outcomes.push(newOutcome);
-    });
+  private setPayouts(contract: Contract, payouts: PayoutDetails[]) {
+    payouts.forEach((payout) => {
+      const { localAmount, remoteAmount } = payout;
+      const newPayout = new Payout(localAmount, remoteAmount);
+      contract.payouts.push(newPayout)
+    })
   }
 
   private findDlc(contractId: string): DlcParty {
@@ -160,26 +143,23 @@ export default class BitcoinDlcProvider extends Provider {
 
   // Only Alice
   async importContractFromOfferMessage (offerMessage: OfferMessage, startingIndex: number = 0) {
-    const { localCollateral, remoteCollateral, feeRate, maturityTime, refundLockTime, cetCsvDelay, oracleInfo } = offerMessage
+    const { localCollateral, remoteCollateral, feeRate, refundLockTime, oracleInfo, messagesList } = offerMessage
 
     const input: InputDetails = {
       localCollateral,
       remoteCollateral,
       feeRate,
-      maturityTime,
-      refundLockTime,
-      cetCsvDelay
+      refundLockTime
     }
 
-    const outcomes: OutcomeDetails[] = []
+    const payouts: PayoutDetails[] = []
 
-    offerMessage.outcomes.forEach(outcome => {
-      const { message, local, remote } = outcome
+    offerMessage.payouts.forEach(payout => {
+      const { local, remote } = payout
 
-      outcomes.push({
+      payouts.push({
         localAmount: local,
-        remoteAmount: remote,
-        message
+        remoteAmount: remote
       })
     })
 
@@ -207,7 +187,7 @@ export default class BitcoinDlcProvider extends Provider {
       })
     })
 
-    const initOfferMessage = await this.initializeContractAndOffer(input, outcomes, oracleInfo, startingIndex, fixedInputs)
+    const initOfferMessage = await this.initializeContractAndOffer(input, payouts, oracleInfo, messagesList, startingIndex, fixedInputs)
     const updateSuccess = this.updateDlcContractId(initOfferMessage.contractId, offerMessage.contractId)
     if (!updateSuccess) {
       throw Error('Dlc Contract ID did not update successfully')
@@ -252,9 +232,6 @@ export default class BitcoinDlcProvider extends Provider {
     await this.importContractFromOfferMessage(offerMessage, startingIndex)
 
     const initSignMessage = await this.signContract(acceptMessage)
-
-    console.log('signMessage', signMessage)
-    console.log('initSignMessage', initSignMessage)
   }
 
   // Only Bob
@@ -267,10 +244,37 @@ export default class BitcoinDlcProvider extends Provider {
     }
   }
 
+  outputsToPayouts(outputs: Output[], rValuesMessagesList: Messages[], localCollateral: Amount, remoteCollateral: Amount, payoutLocal: boolean): { payouts: PayoutDetails[], messagesList: Messages[] } {
+    const payouts: PayoutDetails[] = []
+    const messagesList: Messages[] =[]
+
+    outputs.forEach((output: any) => {
+      const { payout, groups } = output
+      const payoutAmount: Amount = Amount.FromSatoshis(payout)
+
+      groups.forEach((group: number[]) => {
+        const messages = []
+        for (let i = 0; i < group.length; i++) {
+          const digit: number = group[i]
+          messages.push(rValuesMessagesList[i].messages[digit])
+        }
+
+        const localAmount = payoutLocal ? payoutAmount : localCollateral.AddAmount(remoteCollateral).CompareWith(payoutAmount)
+        const remoteAmount = payoutLocal ? localCollateral.AddAmount(remoteCollateral).CompareWith(payoutAmount) : payoutAmount
+        payouts.push({ localAmount, remoteAmount })
+        messagesList.push({ messages })
+      })
+
+    })
+
+    return { payouts, messagesList }
+  }
+
   async initializeContractAndOffer(
     input: InputDetails,
-    outcomes: OutcomeDetails[],
+    payouts: PayoutDetails[],
     oracleInfo: OracleInfo,
+    messagesList: Messages[],
     startingIndex: number = 0,
     fixedInputs: Input[] = []
   ): Promise<OfferMessage> {
@@ -279,10 +283,11 @@ export default class BitcoinDlcProvider extends Provider {
     contract.id = uuidv4();
     contract.oracleInfo = oracleInfo;
     contract.startingIndex = startingIndex;
+    contract.messagesList = messagesList;
 
     this.setInitialInputs(contract, input);
 
-    this.setOutcomes(contract, outcomes);
+    this.setPayouts(contract, payouts);
 
     const dlcParty = new DlcParty(this);
     this._dlcs.push(dlcParty);
@@ -316,24 +321,13 @@ export default class BitcoinDlcProvider extends Provider {
   }
 
   async unilateralClose(
-    oracleSignature: string,
     outcomeIndex: number,
+    oracleSignatures: string[],
     contractId: string
   ): Promise<string[]> {
-    return this.findDlc(contractId).ExecuteUnilateralClose(
-      oracleSignature,
-      outcomeIndex
-    );
-  }
-
-  async buildUnilateralClose(
-    oracleSignature: string,
-    outcomeIndex: number,
-    contractId: string
-  ): Promise<string[]> {
-    return this.findDlc(contractId).BuildUnilateralClose(
-      oracleSignature,
-      outcomeIndex
+    return this.findDlc(contractId).SignAndBroadcastCet(
+      outcomeIndex,
+      oracleSignatures
     );
   }
 
@@ -371,20 +365,20 @@ export default class BitcoinDlcProvider extends Provider {
     return this._cfdDlcJs.AddSignatureToFundTransaction(jsonObject);
   }
 
-  async AddSignaturesToCet(
-    jsonObject: AddSignaturesToCetRequest
-  ): Promise<AddSignaturesToCetResponse> {
+  async CreateCetAdaptorSignature(
+    jsonObject: CreateCetAdaptorSignatureRequest
+  ): Promise<CreateCetAdaptorSignatureResponse> {
     await this.CfdLoaded();
 
-    return this._cfdDlcJs.AddSignaturesToCet(jsonObject);
+    return this._cfdDlcJs.CreateCetAdaptorSignature(jsonObject)
   }
 
-  async AddSignaturesToMutualClosingTx(
-    jsonObject: AddSignaturesToMutualClosingTxRequest
-  ): Promise<AddSignaturesToMutualClosingTxResponse> {
+  async CreateCetAdaptorSignatures(
+    jsonObject: CreateCetAdaptorSignaturesRequest
+  ): Promise<CreateCetAdaptorSignaturesResponse> {
     await this.CfdLoaded();
 
-    return this._cfdDlcJs.AddSignaturesToMutualClosingTx(jsonObject);
+    return this._cfdDlcJs.CreateCetAdaptorSignatures(jsonObject)
   }
 
   async AddSignaturesToRefundTx(
@@ -399,14 +393,6 @@ export default class BitcoinDlcProvider extends Provider {
     await this.CfdLoaded();
 
     return this._cfdDlcJs.CreateCet(jsonObject);
-  }
-
-  async CreateClosingTransaction(
-    jsonObject: CreateClosingTransactionRequest
-  ): Promise<CreateClosingTransactionResponse> {
-    await this.CfdLoaded();
-
-    return this._cfdDlcJs.CreateClosingTransaction(jsonObject);
   }
 
   async CreateDlcTransactions(
@@ -425,44 +411,12 @@ export default class BitcoinDlcProvider extends Provider {
     return this._cfdDlcJs.CreateFundTransaction(jsonObject);
   }
 
-  async CreateMutualClosingTransaction(
-    jsonObject: CreateMutualClosingTransactionRequest
-  ): Promise<CreateMutualClosingTransactionResponse> {
-    await this.CfdLoaded();
-
-    return this._cfdDlcJs.CreateMutualClosingTransaction(jsonObject);
-  }
-
-  async CreatePenaltyTransaction(
-    jsonObject: CreatePenaltyTransactionRequest
-  ): Promise<CreatePenaltyTransactionResponse> {
-    await this.CfdLoaded();
-
-    return this._cfdDlcJs.CreatePenaltyTransaction(jsonObject);
-  }
-
   async CreateRefundTransaction(
     jsonObject: CreateRefundTransactionRequest
   ): Promise<CreateRefundTransactionResponse> {
     await this.CfdLoaded();
 
     return this._cfdDlcJs.CreateRefundTransaction(jsonObject);
-  }
-
-  async GetRawCetSignature(
-    jsonObject: GetRawCetSignatureRequest
-  ): Promise<GetRawCetSignatureResponse> {
-    await this.CfdLoaded();
-
-    return this._cfdDlcJs.GetRawCetSignature(jsonObject);
-  }
-
-  async GetRawCetSignatures(
-    jsonObject: GetRawCetSignaturesRequest
-  ): Promise<GetRawCetSignaturesResponse> {
-    await this.CfdLoaded();
-
-    return this._cfdDlcJs.GetRawCetSignatures(jsonObject);
   }
 
   async GetRawFundTxSignature(
@@ -473,14 +427,6 @@ export default class BitcoinDlcProvider extends Provider {
     return this._cfdDlcJs.GetRawFundTxSignature(jsonObject);
   }
 
-  async GetRawMutualClosingTxSignature(
-    jsonObject: GetRawMutualClosingTxSignatureRequest
-  ): Promise<GetRawMutualClosingTxSignatureResponse> {
-    await this.CfdLoaded();
-
-    return this._cfdDlcJs.GetRawMutualClosingTxSignature(jsonObject);
-  }
-
   async GetRawRefundTxSignature(
     jsonObject: GetRawRefundTxSignatureRequest
   ): Promise<GetRawRefundTxSignatureResponse> {
@@ -489,28 +435,28 @@ export default class BitcoinDlcProvider extends Provider {
     return this._cfdDlcJs.GetRawRefundTxSignature(jsonObject);
   }
 
-  async GetSchnorrPublicNonce(
-    jsonObject: GetSchnorrPublicNonceRequest
-  ): Promise<GetSchnorrPublicNonceResponse> {
+  async SignCet(
+    jsonObject: SignCetRequest
+  ): Promise<SignCetResponse> {
     await this.CfdLoaded();
 
-    return this._cfdDlcJs.GetSchnorrPublicNonce(jsonObject);
+    return this._cfdDlcJs.SignCet(jsonObject)
   }
 
-  async SchnorrSign(
-    jsonObject: SchnorrSignRequest
-  ): Promise<SchnorrSignResponse> {
+  async VerifyCetAdaptorSignature(
+    jsonObject: VerifyCetAdaptorSignatureRequest
+  ): Promise<VerifyCetAdaptorSignatureResponse> {
     await this.CfdLoaded();
 
-    return this._cfdDlcJs.SchnorrSign(jsonObject);
+    return this._cfdDlcJs.VerifyCetAdaptorSignature(jsonObject)
   }
 
-  async SignClosingTransaction(
-    jsonObject: SignClosingTransactionRequest
-  ): Promise<SignClosingTransactionResponse> {
+  async VerifyCetAdaptorSignatures(
+    jsonObject: VerifyCetAdaptorSignaturesRequest
+  ): Promise<VerifyCetAdaptorSignaturesResponse> {
     await this.CfdLoaded();
 
-    return this._cfdDlcJs.SignClosingTransaction(jsonObject);
+    return this._cfdDlcJs.VerifyCetAdaptorSignatures(jsonObject)
   }
 
   async SignFundTransaction(
@@ -521,36 +467,12 @@ export default class BitcoinDlcProvider extends Provider {
     return this._cfdDlcJs.SignFundTransaction(jsonObject);
   }
 
-  async VerifyCetSignature(
-    jsonObject: VerifyCetSignatureRequest
-  ): Promise<VerifyCetSignatureResponse> {
-    await this.CfdLoaded();
-
-    return this._cfdDlcJs.VerifyCetSignature(jsonObject);
-  }
-
-  async VerifyCetSignatures(
-    jsonObject: VerifyCetSignaturesRequest
-  ): Promise<VerifyCetSignaturesResponse> {
-    await this.CfdLoaded();
-
-    return this._cfdDlcJs.VerifyCetSignatures(jsonObject);
-  }
-
   async VerifyFundTxSignature(
     jsonObject: VerifyFundTxSignatureRequest
   ): Promise<VerifyFundTxSignatureResponse> {
     await this.CfdLoaded();
 
     return this._cfdDlcJs.VerifyFundTxSignature(jsonObject);
-  }
-
-  async VerifyMutualClosingTxSignature(
-    jsonObject: VerifyMutualClosingTxSignatureRequest
-  ): Promise<VerifyMutualClosingTxSignatureResponse> {
-    await this.CfdLoaded();
-
-    return this._cfdDlcJs.VerifyMutualClosingTxSignature(jsonObject);
   }
 
   async VerifyRefundTxSignature(
@@ -560,4 +482,9 @@ export default class BitcoinDlcProvider extends Provider {
 
     return this._cfdDlcJs.VerifyRefundTxSignature(jsonObject);
   }
+}
+
+interface Output {
+  payout: number,
+  groups: number[][]
 }
