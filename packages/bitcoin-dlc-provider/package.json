@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/bitcoin-dlc-provider",
   "umdName": "BitcoinDlcProvider",
-  "version": "0.2.2",
+  "version": "1.0.0-alpha.0",
   "description": "> TODO: description",
   "author": "Matthew Black <mblackmblackmblack@gmail.com>",
   "homepage": "",
@@ -19,15 +19,15 @@
     "test": "yarn run build"
   },
   "dependencies": {
-    "@atomicfinance/provider": "^0.2.2",
+    "@atomicfinance/provider": "^1.0.0-alpha.0",
     "@liquality/bitcoin-utils": "^0.7.1",
     "@liquality/provider": "^0.7.1",
     "@liquality/utils": "^0.7.1",
-    "lodash": "^4.17.20",
-    "uuid": "^8.3.0",
-    "is-node": "github:matthewjablack/is-node",
+    "bignumber.js": "9.0.1",
     "bip-schnorr": "^0.6.2",
-    "bignumber.js": "9.0.1"
+    "is-node": "github:matthewjablack/is-node",
+    "lodash": "^4.17.20",
+    "uuid": "^8.3.0"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.160",
