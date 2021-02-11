@@ -1,17 +1,17 @@
-import { getCfddlc, addInitializedListener } from 'cfd-dlc-js-wasm';
+// import { getCfddlc, addInitializedListener } from 'cfd-dlc-js-wasm';
 
-class Helper {
-  getResponse(result: any) {
-    return Promise.resolve(result);
-  }
+// class Helper {
+//   getResponse(result: any) {
+//     return Promise.resolve(result);
+//   }
 
-  getCfddlcjs() {
-    return getCfddlc();
-  }
+//   getCfddlcjs() {
+//     return getCfddlc();
+//   }
 
-  initialized(func: any) {
-    return addInitializedListener(func);
-  }
-}
+//   initialized(func: any) {
+//     return addInitializedListener(func);
+//   }
+// }
 
-export default new Helper();
+// export default new Helper();

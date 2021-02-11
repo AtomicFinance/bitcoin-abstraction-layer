@@ -19,7 +19,7 @@ import {
   SignClosingTransactionRequest,
   CreateRefundTransactionRequest,
   AddSignaturesToRefundTxRequest
-} from 'cfd-dlc-js-wasm';
+} from '../DlcInterfaces';
 import Input from './Input'
 import OfferMessage from './OfferMessage';
 import AcceptMessage from './AcceptMessage';

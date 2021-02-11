@@ -56,9 +56,9 @@ export default class BitcoinWalletProvider extends Provider {
     _outputs: Output[] = [],
     fixedInputs: Input[]
   ) {
-    let _feePerByte = feePerByte || (await this.client.getMethod('getFeePerByte')()) || FEE_PER_BYTE_FALLBACK;
-    let inputs: Input[] = []
-    let outputs: Output[] = []
+    const _feePerByte = feePerByte || (await this.client.getMethod('getFeePerByte')()) || FEE_PER_BYTE_FALLBACK;
+    const inputs: Input[] = []
+    const outputs: Output[] = []
     try {
       const inputsForAmount = await this.client.getMethod(
         'getInputsForAmount'
@@ -66,16 +66,16 @@ export default class BitcoinWalletProvider extends Provider {
       if (inputsForAmount.change) {
         throw Error('There should not be any change for sweeping transaction');
       }
-      inputs = inputsForAmount.inputs
-      outputs = inputsForAmount.outputs
+      inputs.push(...(inputsForAmount.inputs || []))
+      outputs.push(...(inputsForAmount.outputs || []))
     } catch(e) {
       if (fixedInputs.length === 0) {
         throw Error(`Inputs for amount doesn't exist and no fixedInputs provided`)
       }
 
       const inputsForAmount = await this._getInputForAmountWithoutUtxoCheck(_outputs, _feePerByte, fixedInputs)
-      inputs = inputsForAmount.inputs
-      outputs = inputsForAmount.outputs
+      inputs.push(...(inputsForAmount.inputs || []))
+      outputs.push(...(inputsForAmount.outputs || []))
     }
     _outputs.forEach((output) => {
       const spliceIndex = outputs.findIndex(
@@ -99,8 +99,8 @@ export default class BitcoinWalletProvider extends Provider {
     const outputBalance = _outputs.reduce((a, b) => a + (b['value'] || 0), 0)
     const amountToSend = utxoBalance - (_feePerByte * (((_outputs.length + 1) * 39) + (fixedInputs.length * 153))) // todo better calculation
 
-    let targets = _outputs.map((target, i) => ({ id: 'main', value: target.value }))
-    targets.push({ id: 'main', value: amountToSend - outputBalance })
+    const targets = _outputs.map((target, i) => ({ id: 'main', value: target.value }))
+    if ((amountToSend - outputBalance) > 0) { targets.push({ id: 'main', value: amountToSend - outputBalance }) }
 
     return selectCoins(fixedInputs, targets, Math.ceil(_feePerByte), fixedInputs)
   }
