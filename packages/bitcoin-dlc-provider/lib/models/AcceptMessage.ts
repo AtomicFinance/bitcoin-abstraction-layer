@@ -1,4 +1,4 @@
-import { AdaptorPair } from '../cfdDlcJsTypes'
+import { AdaptorPair } from '../@types/cfd-dlc-js'
 import PartyInputs, { PartyInputsJSON } from './PartyInputs';
 
 export default class AcceptMessage {

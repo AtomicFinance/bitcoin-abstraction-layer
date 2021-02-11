@@ -39,7 +39,6 @@ import {
   Amount,
   Input,
   InputDetails,
-  OutcomeDetails,
   OracleInfo,
   OfferMessage,
   AcceptMessage,

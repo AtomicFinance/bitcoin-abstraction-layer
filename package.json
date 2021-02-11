@@ -19,6 +19,7 @@
     "@types/node": "12.12.2",
     "bip39": "^3.0.2",
     "cfd-js": "github:p2pderivatives/cfd-js#v0.2.2",
+    "cfd-dlc-js": "github:p2pderivatives/cfd-dlc-js#v0.0.9",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "cross-env": "^7.0.2",
@@ -41,7 +42,7 @@
     "link": "lerna link",
     "clean": "lerna run clean",
     "build": "lerna run build",
-    "test": "lerna run test",
+    "test": "cross-env NODE_ENV=test ts-mocha -p tsconfig.spec.json --timeout 150000 tests/**/*.test.ts",
     "new:version": "lerna version --no-push --no-git-tag-version && lerna clean --yes && lerna bootstrap",
     "publish:all": "lerna publish from-package",
     "prepublishOnly": "npm run build:dev:browser && npm run build"

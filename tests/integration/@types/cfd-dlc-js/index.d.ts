@@ -1,6 +1,5 @@
 /* eslint-disable max-len */
 /* eslint-disable indent */
-
 export interface AdaptorPair {
   signature: string;
   proof: string;
@@ -31,6 +30,18 @@ export interface AddSignatureToFundTransactionRequest {
 
 export interface AddSignatureToFundTransactionResponse {
   hex: string;
+}
+
+/** Create an adaptor signature using multiple oracles for a CET */
+export interface CreateCetAdaptorSignatureMultiOracleRequest {
+  cetHex: string;
+  privkey: string;
+  fundTxId: string;
+  fundVout?: number;
+  localFundPubkey: string;
+  remoteFundPubkey: string;
+  oracleInfos: OracleInfo[];
+  fundInputAmount: bigint | number;
 }
 
 /** Create an adaptor signature for a CET */
@@ -191,6 +202,12 @@ export interface Messages {
   messages: string[];
 }
 
+export interface OracleInfo {
+  oraclePubkey: string;
+  oracleRValues: string[];
+  messages: string[];
+}
+
 export interface PayoutRequest {
   local: bigint | number;
   remote: bigint | number;
@@ -241,6 +258,20 @@ export interface TxInRequest {
 export interface TxOutRequest {
   amount: bigint | number;
   address: string;
+}
+
+/** Verify a signature for a CET */
+export interface VerifyCetAdaptorSignatureMultiOracleRequest {
+  cetHex: string;
+  adaptorSignature: string;
+  adaptorProof: string;
+  oracleInfos: OracleInfo[];
+  localFundPubkey: string;
+  remoteFundPubkey: string;
+  fundTxId: string;
+  fundVout?: number;
+  fundInputAmount: bigint | number;
+  verifyRemote: boolean;
 }
 
 /** Verify a signature for a CET */
@@ -337,6 +368,12 @@ export function CreateCet(jsonObject: CreateCetRequest): CreateCetResponse;
 export function CreateCetAdaptorSignature(jsonObject: CreateCetAdaptorSignatureRequest): CreateCetAdaptorSignatureResponse;
 
 /**
+* @param {CreateCetAdaptorSignatureMultiOracleRequest} jsonObject - request data.
+* @return {CreateCetAdaptorSignatureResponse} - response data.
+*/
+export function CreateCetAdaptorSignatureMultiOracle(jsonObject: CreateCetAdaptorSignatureMultiOracleRequest): CreateCetAdaptorSignatureResponse;
+
+/**
 * @param {CreateCetAdaptorSignaturesRequest} jsonObject - request data.
 * @return {CreateCetAdaptorSignaturesResponse} - response data.
 */
@@ -389,6 +426,12 @@ export function SignFundTransaction(jsonObject: SignFundTransactionRequest): Sig
 * @return {VerifyCetAdaptorSignatureResponse} - response data.
 */
 export function VerifyCetAdaptorSignature(jsonObject: VerifyCetAdaptorSignatureRequest): VerifyCetAdaptorSignatureResponse;
+
+/**
+* @param {VerifyCetAdaptorSignatureMultiOracleRequest} jsonObject - request data.
+* @return {VerifyCetAdaptorSignatureResponse} - response data.
+*/
+export function VerifyCetAdaptorSignatureMultiOracle(jsonObject: VerifyCetAdaptorSignatureMultiOracleRequest): VerifyCetAdaptorSignatureResponse;
 
 /**
 * @param {VerifyCetAdaptorSignaturesRequest} jsonObject - request data.

@@ -1,4 +1,4 @@
-import { AdaptorPair } from '../cfdDlcJsTypes';
+import { AdaptorPair } from '../@types/cfd-dlc-js';
 
 export default class SignMessage {
   constructor(

@@ -53,7 +53,6 @@ import Utxo from './models/Utxo';
 import { v4 as uuidv4 } from 'uuid';
 import * as isNode from 'is-node';
 import { math } from 'bip-schnorr';
-import { createAdaptorPoint } from 'schnorr-adaptor-points'
 import BN from 'bignumber.js'
 
 export default class BitcoinDlcProvider extends Provider {
@@ -62,6 +61,7 @@ export default class BitcoinDlcProvider extends Provider {
   _dlcs: DlcParty[];
 
   constructor(network: any, cfdDlcJs?: any) {
+    console.log('cfdDlcJs', cfdDlcJs)
     super('BitcoinDlcProvider');
 
     this._network = network;

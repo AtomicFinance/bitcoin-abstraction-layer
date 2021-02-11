@@ -23,8 +23,8 @@ import {
   VerifySignatureRequest,
   MultisigSignData,
   AddMultisigSignRequest,
-} from '../types/cfdJsTypes'
-import { Messages, CreateCetAdaptorSignaturesRequest } from '../types/cfdDlcJsTypes'
+} from '../@types/cfd-js'
+import { Messages, CreateCetAdaptorSignaturesRequest } from '../@types/cfd-dlc-js'
 import Amount from '../../../packages/bitcoin-dlc-provider/lib/models/Amount';
 import InputDetails from '../../../packages/bitcoin-dlc-provider/lib/models/InputDetails';
 import PayoutDetails from '../../../packages/bitcoin-dlc-provider/lib/models/PayoutDetails';

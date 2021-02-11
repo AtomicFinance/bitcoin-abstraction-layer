@@ -3,7 +3,7 @@ import OracleInfo from './OracleInfo';
 import PartyInputs, { PartyInputsJSON } from './PartyInputs';
 import Payout, { PayoutJSON } from './Payout'
 import Amount, { AmountJSON } from './Amount'
-import { Messages } from '../cfdDlcJsTypes'
+import { Messages } from '../@types/cfd-dlc-js'
 
 export default class OfferMessage {
   constructor(

@@ -26,7 +26,6 @@
     "lodash": "^4.17.20",
     "uuid": "^8.3.0",
     "is-node": "github:matthewjablack/is-node",
-    "schnorr-adaptor-points": "^0.1.0",
     "bip-schnorr": "^0.6.2",
     "bignumber.js": "9.0.1"
   },

@@ -6,7 +6,7 @@ import Amount from './Amount';
 import Utxo from './Utxo';
 import {
   CreateMultisigRequest
-} from '../cfdJsTypes'
+} from '../@types/cfd-js'
 import {
   CreateDlcTransactionsRequest,
   CreateCetAdaptorSignaturesRequest,
@@ -29,8 +29,7 @@ import {
   CreateRefundTransactionRequest,
   AddSignaturesToRefundTxRequest,
   VerifyCetAdaptorSignaturesRequest,
-  SignCetRequest,
-  VerifyCetSignatureRequest
+  SignCetRequest
 } from '../@types/cfd-dlc-js';
 import Input from './Input'
 import OfferMessage from './OfferMessage';
@@ -40,6 +39,7 @@ import Outcome from './Outcome';
 import MutualClosingMessage from './MutualClosingMessage';
 import BitcoinDlcProvider from '../BitcoinDlcProvider';
 import { sleep } from '@liquality/utils';
+import { asyncForEach } from '../utils/Utils'
 
 const ESTIMATED_SIZE = 312;
 

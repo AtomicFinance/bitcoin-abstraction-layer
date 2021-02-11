@@ -6,7 +6,7 @@ import AcceptMessage, { AcceptMessageJSON } from './AcceptMessage';
 import Payout, { PayoutJSON } from './Payout'
 import SignMessage from './SignMessage';
 import Amount, { AmountJSON } from './Amount';
-import { AdaptorPair, Messages } from '../cfdDlcJsTypes';
+import { AdaptorPair, Messages } from '../@types/cfd-dlc-js';
 
 export default class Contract {
   id: string;

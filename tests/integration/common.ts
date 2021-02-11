@@ -19,6 +19,13 @@ import { generateMnemonic } from 'bip39'
 import config from './config'
 import BigNumber from 'bignumber.js'
 
+import * as cfdJs from 'cfd-js'
+import * as cfdDlcJs from 'cfd-dlc-js'
+
+// const cfdDlcJs = require('cfd-dlc-js')
+
+// console.log('cfdDlcJs', cfdDlcJs)
+
 const providers = {
   bitcoin: {
     BitcoinRpcProvider,
@@ -53,8 +60,8 @@ const bitcoinWithNodeFinance = new FinanceClient(bitcoinWithNode);
 bitcoinWithNode.finance = bitcoinWithNodeFinance
 bitcoinWithNode.addProvider(mockedBitcoinRpcProvider())
 bitcoinWithNode.addProvider(new BitcoinNodeWalletProvider(network, rpc.host, rpc.username, rpc.password, 'bech32'))
-bitcoinWithNode.finance.addProvider(new BitcoinCfdProvider(network));
-bitcoinWithNode.finance.addProvider(new BitcoinDlcProvider(network));
+bitcoinWithNode.finance.addProvider(new BitcoinCfdProvider(network, cfdJs));
+bitcoinWithNode.finance.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
 bitcoinWithNode.finance.addProvider(new BitcoinWalletProvider(network));
 
 const bitcoinWithJs = new Client()
@@ -62,8 +69,8 @@ const bitcoinWithJsFinance = new FinanceClient(bitcoinWithJs);
 bitcoinWithJs.finance = bitcoinWithJsFinance
 bitcoinWithJs.addProvider(mockedBitcoinRpcProvider())
 bitcoinWithJs.addProvider(new BitcoinJsWalletProvider(network, generateMnemonic(256), 'bech32'))
-bitcoinWithJs.finance.addProvider(new BitcoinCfdProvider(network));
-bitcoinWithJs.finance.addProvider(new BitcoinDlcProvider(network));
+bitcoinWithJs.finance.addProvider(new BitcoinCfdProvider(network, cfdJs));
+bitcoinWithJs.finance.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
 bitcoinWithJs.finance.addProvider(new BitcoinWalletProvider(network));
 
 const bitcoinWithJs2 = new Client()
@@ -71,8 +78,8 @@ const bitcoinWithJsFinance2 = new FinanceClient(bitcoinWithJs2);
 bitcoinWithJs2.finance = bitcoinWithJsFinance2
 bitcoinWithJs2.addProvider(mockedBitcoinRpcProvider())
 bitcoinWithJs2.addProvider(new BitcoinJsWalletProvider(network, generateMnemonic(256), 'bech32'))
-bitcoinWithJs2.finance.addProvider(new BitcoinCfdProvider(network));
-bitcoinWithJs2.finance.addProvider(new BitcoinDlcProvider(network));
+bitcoinWithJs2.finance.addProvider(new BitcoinCfdProvider(network, cfdJs));
+bitcoinWithJs2.finance.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
 bitcoinWithJs2.finance.addProvider(new BitcoinWalletProvider(network));
 
 const chains = {
