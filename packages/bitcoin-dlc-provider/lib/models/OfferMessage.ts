@@ -1,39 +1,39 @@
 import Outcome, { OutcomeJSON } from './Outcome';
 import OracleInfo from './OracleInfo';
 import PartyInputs, { PartyInputsJSON } from './PartyInputs';
-import Amount, { AmountJSON } from './Amount';
+import Payout, { PayoutJSON } from './Payout'
+import Amount, { AmountJSON } from './Amount'
+import { Messages } from '../@types/cfd-dlc-js'
 
 export default class OfferMessage {
   constructor(
     readonly contractId: string,
     readonly localCollateral: Amount,
     readonly remoteCollateral: Amount,
-    readonly maturityTime: Date,
-    readonly outcomes: Outcome[],
+    readonly payouts: Payout[],
+    readonly messagesList: Messages[],
     readonly oracleInfo: OracleInfo,
     readonly localPartyInputs: PartyInputs,
     readonly feeRate: number,
-    readonly cetCsvDelay: number,
     readonly refundLockTime: number
   ) {}
 
   toJSON(): OfferMessageJSON {
-    const outcomesJSON: OutcomeJSON[] = [];
-    for (let i = 0; i < this.outcomes.length; i++) {
-      const outcome = this.outcomes[i].toJSON();
-      outcomesJSON.push(outcome);
+    const payoutsJSON: PayoutJSON[] = [];
+    for (let i = 0; i < this.payouts.length; i++) {
+      const payout = this.payouts[i].toJSON();
+      payoutsJSON.push(payout);
     }
 
     return Object.assign({}, this, {
       contractId: this.contractId,
       localCollateral: this.localCollateral.toJSON(),
       remoteCollateral: this.remoteCollateral.toJSON(),
-      maturityTime: this.maturityTime.toString(),
-      outcomes: outcomesJSON,
+      payouts: payoutsJSON,
+      messagesList: this.messagesList,
       oracleInfo: this.oracleInfo,
       localPartyInputs: this.localPartyInputs.toJSON(),
       feeRate: this.feeRate,
-      cetCsvDelay: this.cetCsvDelay,
       refundLockTime: this.refundLockTime,
     });
   }
@@ -41,23 +41,22 @@ export default class OfferMessage {
   static fromJSON(json: OfferMessageJSON): OfferMessage {
     let offerMessage = Object.create(OfferMessage.prototype);
 
-    const outcomes: Outcome[] = [];
+    const payouts: Payout[] = [];
 
-    for (let i = 0; i < json.outcomes.length; i++) {
-      const outcome = Outcome.fromJSON(json.outcomes[i]);
-      outcomes.push(outcome);
+    for (let i = 0; i < json.payouts.length; i++) {
+      const outcome = Payout.fromJSON(json.payouts[i]);
+      payouts.push(outcome);
     }
 
     return Object.assign(offerMessage, json, {
       contractId: json.contractId,
       localCollateral: Amount.fromJSON(json.localCollateral),
       remoteCollateral: Amount.fromJSON(json.remoteCollateral),
-      maturityTime: new Date(json.maturityTime),
-      outcomes,
+      payouts,
+      messagesList: json.messagesList,
       oracleInfo: json.oracleInfo,
       localPartyInputs: PartyInputs.fromJSON(json.localPartyInputs),
       feeRate: json.feeRate,
-      cetCsvDelay: json.cetCsvDelay,
       refundLockTime: json.refundLockTime,
     });
   }
@@ -71,11 +70,10 @@ export interface OfferMessageJSON {
   contractId: string;
   localCollateral: AmountJSON;
   remoteCollateral: AmountJSON;
-  maturityTime: string;
-  outcomes: OutcomeJSON[];
+  payouts: PayoutJSON[];
+  messagesList: Messages[];
   oracleInfo: OracleInfo;
   localPartyInputs: PartyInputsJSON;
   feeRate: number;
-  cetCsvDelay: number;
   refundLockTime: number;
 }

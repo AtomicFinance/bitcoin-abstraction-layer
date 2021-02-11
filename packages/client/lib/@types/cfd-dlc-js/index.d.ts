@@ -1,43 +1,11 @@
 /* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
-export interface AddSignatureToFundTransactionRequest {
-  fundTxHex: string;
+/* eslint-disable indent */
+export interface AdaptorPair {
   signature: string;
-  prevTxId: string;
-  prevVout: number;
-  pubkey: string;
+  proof: string;
 }
 
-export interface AddSignatureToFundTransactionResponse {
-  hex: string;
-}
-
-export interface AddSignaturesToCetRequest {
-  cetHex: string;
-  signatures: string[];
-  fundTxId: string;
-  fundVout?: number;
-  localFundPubkey: string;
-  remoteFundPubkey: string;
-}
-
-export interface AddSignaturesToCetResponse {
-  hex: string;
-}
-
-export interface AddSignaturesToMutualClosingTxRequest {
-  mutualClosingTxHex: string;
-  signatures: string[];
-  fundTxId: string;
-  fundVout?: number;
-  localFundPubkey: string;
-  remoteFundPubkey: string;
-}
-
-export interface AddSignaturesToMutualClosingTxResponse {
-  hex: string;
-}
-
+/** Add signatures to a refund transaction */
 export interface AddSignaturesToRefundTxRequest {
   refundTxHex: string;
   signatures: string[];
@@ -51,115 +19,123 @@ export interface AddSignaturesToRefundTxResponse {
   hex: string;
 }
 
-export interface CreateCetRequest {
-  localFundPubkey: string;
-  localSweepPubkey: string;
-  remoteSweepPubkey: string;
-  remoteFinalAddress: string;
-  oraclePubkey: string;
-  oracleRPoints: string[];
-  messages: string[];
-  csvDelay: number;
-  localPayout: bigint | number;
-  remotePayout: bigint | number;
-  feeRate: bigint | number;
+/** Add a signature to fund transaction */
+export interface AddSignatureToFundTransactionRequest {
+  fundTxHex: string;
+  signature: string;
+  prevTxId: string;
+  prevVout: number;
+  pubkey: string;
+}
+
+export interface AddSignatureToFundTransactionResponse {
+  hex: string;
+}
+
+/** Create an adaptor signature using multiple oracles for a CET */
+export interface CreateCetAdaptorSignatureMultiOracleRequest {
+  cetHex: string;
+  privkey: string;
   fundTxId: string;
   fundVout?: number;
-  maturityTime: bigint | number;
+  localFundPubkey: string;
+  remoteFundPubkey: string;
+  oracleInfos: OracleInfo[];
+  fundInputAmount: bigint | number;
+}
+
+/** Create an adaptor signature for a CET */
+export interface CreateCetAdaptorSignatureRequest {
+  cetHex: string;
+  privkey: string;
+  fundTxId: string;
+  fundVout?: number;
+  localFundPubkey: string;
+  remoteFundPubkey: string;
+  oraclePubkey: string;
+  oracleRValues: string[];
+  fundInputAmount: bigint | number;
+  messages: string[];
+}
+
+export interface CreateCetAdaptorSignatureResponse {
+  signature: string;
+  proof: string;
+}
+
+/** Create an adaptor signature for a CET */
+export interface CreateCetAdaptorSignaturesRequest {
+  cetsHex: string[];
+  privkey: string;
+  fundTxId: string;
+  fundVout?: number;
+  localFundPubkey: string;
+  remoteFundPubkey: string;
+  oraclePubkey: string;
+  oracleRValues: string[];
+  fundInputAmount: bigint | number;
+  messagesList: Messages[];
+}
+
+export interface CreateCetAdaptorSignaturesResponse {
+  adaptorPairs: AdaptorPair[];
+}
+
+/** Create a CET */
+export interface CreateCetRequest {
+  localFundPubkey: string;
+  remoteFundPubkey: string;
+  localFinalAddress: string;
+  remoteFinalAddress: string;
+  localPayout: bigint | number;
+  remotePayout: bigint | number;
+  fundTxId: string;
+  fundVout?: number;
+  lockTime: bigint | number;
 }
 
 export interface CreateCetResponse {
   hex: string;
 }
 
-export interface CreateClosingTransactionRequest {
-  address: string;
-  amount: bigint | number;
-  cetTxId: string;
-  cetVout?: number;
-}
-
-export interface CreateClosingTransactionResponse {
-  hex: string;
-}
-
-export interface PayoutRequest {
-  local: bigint | number;
-  remote: bigint | number;
-  messages: string[];
-}
-
-export interface TxInRequest {
-  txid: string;
-  vout: number;
-}
-
-export interface TxInRequest {
-  txid: string;
-  vout: number;
-}
-
+/** Create Dlc transactions */
 export interface CreateDlcTransactionsRequest {
-  outcomes: PayoutRequest[];
-  oracleRPoints: string[];
-  oraclePubkey: string;
+  payouts: PayoutRequest[];
   localFundPubkey: string;
-  localSweepPubkey: string;
-  localFinalAddress: string;
+  localFinalScriptPubkey: string;
   remoteFundPubkey: string;
-  remoteSweepPubkey: string;
-  remoteFinalAddress: string;
+  remoteFinalScriptPubkey: string;
   localInputAmount: bigint | number;
   localCollateralAmount: bigint | number;
   remoteInputAmount: bigint | number;
   remoteCollateralAmount: bigint | number;
-  csvDelay: bigint | number;
   refundLocktime: bigint | number;
-  localInputs: TxInRequest[];
-  localChangeAddress: string;
-  remoteInputs: TxInRequest[];
-  remoteChangeAddress: string;
+  localInputs: TxInInfoRequest[];
+  localChangeScriptPubkey: string;
+  remoteInputs: TxInInfoRequest[];
+  remoteChangeScriptPubkey: string;
   feeRate: number;
-  maturityTime: bigint | number;
+  cetLockTime?: bigint | number;
+  fundLockTime?: bigint | number;
   optionDest?: string;
   optionPremium?: bigint | number;
 }
 
 export interface CreateDlcTransactionsResponse {
   fundTxHex: string;
-  localCetsHex: string[];
-  remoteCetsHex: string[];
+  cetsHex: string[];
   refundTxHex: string;
 }
 
-export interface TxInRequestA {
-  txid: string;
-  vout: number;
-}
-
-export interface TxOutRequestA {
-  amount: bigint | number;
-  address: string;
-}
-
-export interface TxInRequestA {
-  txid: string;
-  vout: number;
-}
-
-export interface TxOutRequestA {
-  amount: bigint | number;
-  address: string;
-}
-
+/** Create a fund transaction */
 export interface CreateFundTransactionRequest {
   localPubkey: string;
   remotePubkey: string;
   outputAmount: bigint | number;
-  localInputs: TxInRequestA[];
-  localChange: TxOutRequestA;
-  remoteInputs: TxInRequestA[];
-  remoteChange: TxOutRequestA;
+  localInputs: TxInRequest[];
+  localChange: TxOutRequest;
+  remoteInputs: TxInRequest[];
+  remoteChange: TxOutRequest;
   feeRate: bigint | number;
   optionDest?: string;
   optionPremium?: bigint | number;
@@ -169,34 +145,10 @@ export interface CreateFundTransactionResponse {
   hex: string;
 }
 
-export interface CreateMutualClosingTransactionRequest {
-  localFinalAddress: string;
-  remoteFinalAddress: string;
-  localAmount: bigint | number;
-  remoteAmount: bigint | number;
-  feeRate: bigint | number;
-  fundTxId: string;
-  fundVout?: number;
-}
-
-export interface CreateMutualClosingTransactionResponse {
-  hex: string;
-}
-
-export interface CreatePenaltyTransactionRequest {
-  finalAddress: string;
-  amount: bigint | number;
-  cetTxId: string;
-  cetVout?: number;
-}
-
-export interface CreatePenaltyTransactionResponse {
-  hex: string;
-}
-
+/** Create a refund transaction */
 export interface CreateRefundTransactionRequest {
-  localFinalAddress: string;
-  remoteFinalAddress: string;
+  localFinalScriptPubkey: string;
+  remoteFinalScriptPubkey: string;
   localAmount: bigint | number;
   remoteAmount: bigint | number;
   lockTime: bigint | number;
@@ -208,44 +160,11 @@ export interface CreateRefundTransactionResponse {
   hex: string;
 }
 
-export interface InnerErrorResponse {
-  code: number;
-  type: string;
-  message: string;
-}
-
 export interface ErrorResponse {
   error: InnerErrorResponse;
 }
 
-export interface GetRawCetSignatureRequest {
-  cetHex: string;
-  privkey: string;
-  fundTxId: string;
-  fundVout?: number;
-  localFundPubkey: string;
-  remoteFundPubkey: string;
-  fundInputAmount: bigint | number;
-}
-
-export interface GetRawCetSignatureResponse {
-  hex: string;
-}
-
-export interface GetRawCetSignaturesRequest {
-  cetsHex: string[];
-  privkey: string;
-  fundTxId: string;
-  fundVout?: number;
-  localFundPubkey: string;
-  remoteFundPubkey: string;
-  fundInputAmount: bigint | number;
-}
-
-export interface GetRawCetSignaturesResponse {
-  hex: string[];
-}
-
+/** Get a signature for a fund transaction input */
 export interface GetRawFundTxSignatureRequest {
   fundTxHex: string;
   privkey: string;
@@ -258,20 +177,7 @@ export interface GetRawFundTxSignatureResponse {
   hex: string;
 }
 
-export interface GetRawMutualClosingTxSignatureRequest {
-  mutualClosingHex: string;
-  privkey: string;
-  fundTxId: string;
-  fundVout?: number;
-  localFundPubkey: string;
-  remoteFundPubkey: string;
-  fundInputAmount: bigint | number;
-}
-
-export interface GetRawMutualClosingTxSignatureResponse {
-  hex: string;
-}
-
+/** Get a signature for a CET */
 export interface GetRawRefundTxSignatureRequest {
   refundTxHex: string;
   privkey: string;
@@ -286,43 +192,45 @@ export interface GetRawRefundTxSignatureResponse {
   hex: string;
 }
 
-export interface GetSchnorrPublicNonceRequest {
-  kValue: string;
-}
-
-export interface GetSchnorrPublicNonceResponse {
-  hex: string;
-}
-
-export interface SchnorrSignRequest {
-  privkey: string;
-  kValue: string;
+export interface InnerErrorResponse {
+  code: number;
+  type: string;
   message: string;
 }
 
-export interface SchnorrSignResponse {
-  hex: string;
-}
-
-export interface SignClosingTransactionRequest {
-  closingTxHex: string;
-  localFundPrivkey: string;
-  localSweepPubkey: string;
-  remoteSweepPubkey: string;
-  oraclePubkey: string;
-  oracleRPoints: string[];
+export interface Messages {
   messages: string[];
-  csvDelay: bigint | number;
-  oracleSigs: string[];
-  cetTxId: string;
-  cetVout?: number;
-  amount: bigint | number;
 }
 
-export interface SignClosingTransactionResponse {
+export interface OracleInfo {
+  oraclePubkey: string;
+  oracleRValues: string[];
+  messages: string[];
+}
+
+export interface PayoutRequest {
+  local: bigint | number;
+  remote: bigint | number;
+}
+
+/** Sign a CET */
+export interface SignCetRequest {
+  cetHex: string;
+  fundPrivkey: string;
+  fundTxId: string;
+  fundVout?: number;
+  localFundPubkey: string;
+  remoteFundPubkey: string;
+  fundInputAmount: bigint | number;
+  adaptorSignature: string;
+  oracleSignatures: string[];
+}
+
+export interface SignCetResponse {
   hex: string;
 }
 
+/** Sign a fund transaction input */
 export interface SignFundTransactionRequest {
   fundTxHex: string;
   privkey: string;
@@ -335,9 +243,29 @@ export interface SignFundTransactionResponse {
   hex: string;
 }
 
-export interface VerifyCetSignatureRequest {
+export interface TxInInfoRequest {
+  txid: string;
+  vout: number;
+  redeemScript?: string;
+  maxWitnessLength: number;
+}
+
+export interface TxInRequest {
+  txid: string;
+  vout: number;
+}
+
+export interface TxOutRequest {
+  amount: bigint | number;
+  address: string;
+}
+
+/** Verify a signature for a CET */
+export interface VerifyCetAdaptorSignatureMultiOracleRequest {
   cetHex: string;
-  signature: string;
+  adaptorSignature: string;
+  adaptorProof: string;
+  oracleInfos: OracleInfo[];
   localFundPubkey: string;
   remoteFundPubkey: string;
   fundTxId: string;
@@ -346,25 +274,46 @@ export interface VerifyCetSignatureRequest {
   verifyRemote: boolean;
 }
 
-export interface VerifyCetSignatureResponse {
+/** Verify a signature for a CET */
+export interface VerifyCetAdaptorSignatureRequest {
+  cetHex: string;
+  adaptorSignature: string;
+  adaptorProof: string;
+  messages: string[];
+  localFundPubkey: string;
+  remoteFundPubkey: string;
+  oraclePubkey: string;
+  oracleRValues: string[];
+  fundTxId: string;
+  fundVout?: number;
+  fundInputAmount: bigint | number;
+  verifyRemote: boolean;
+}
+
+export interface VerifyCetAdaptorSignatureResponse {
   valid: boolean;
 }
 
-export interface VerifyCetSignaturesRequest {
+/** Verify a set of signatures for a set of CET */
+export interface VerifyCetAdaptorSignaturesRequest {
   cetsHex: string[];
-  signatures: string[];
+  adaptorPairs: AdaptorPair[];
+  messagesList: Messages[];
   localFundPubkey: string;
   remoteFundPubkey: string;
+  oraclePubkey: string;
+  oracleRValues: string[];
   fundTxId: string;
   fundVout?: number;
   fundInputAmount: bigint | number;
   verifyRemote: boolean;
 }
 
-export interface VerifyCetSignaturesResponse {
+export interface VerifyCetAdaptorSignaturesResponse {
   valid: boolean;
 }
 
+/** Verify a signature for a mutual closing transaction */
 export interface VerifyFundTxSignatureRequest {
   fundTxHex: string;
   signature: string;
@@ -378,21 +327,7 @@ export interface VerifyFundTxSignatureResponse {
   valid: boolean;
 }
 
-export interface VerifyMutualClosingTxSignatureRequest {
-  mutualClosingHex: string;
-  signature: string;
-  localFundPubkey: string;
-  remoteFundPubkey: string;
-  fundTxId: string;
-  fundVout?: number;
-  fundInputAmount: bigint | number;
-  verifyRemote: boolean;
-}
-
-export interface VerifyMutualClosingTxSignatureResponse {
-  valid: boolean;
-}
-
+/** Verify a signature for a refund transaction */
 export interface VerifyRefundTxSignatureRequest {
   refundTxHex: string;
   signature: string;
@@ -408,137 +343,136 @@ export interface VerifyRefundTxSignatureResponse {
   valid: boolean;
 }
 
-// CFD CONTENT START
+/**
+* @param {AddSignaturesToRefundTxRequest} jsonObject - request data.
+* @return {AddSignaturesToRefundTxResponse} - response data.
+*/
+export function AddSignaturesToRefundTx(jsonObject: AddSignaturesToRefundTxRequest): AddSignaturesToRefundTxResponse;
 
 /**
-* script data
-* @property {string} asm - script asm string
-* @property {string} hex - script hex
+* @param {AddSignatureToFundTransactionRequest} jsonObject - request data.
+* @return {AddSignatureToFundTransactionResponse} - response data.
 */
-export interface DecodeUnlockingScript {
-  asm: string;
-  hex: string;
-}
+export function AddSignatureToFundTransaction(jsonObject: AddSignatureToFundTransactionRequest): AddSignatureToFundTransactionResponse;
 
 /**
-* locking script data
-* @property {string} asm? - script asm string
-* @property {string} hex? - script hex
-* @property {number} reqSigs? - require signature num
-* @property {string} type? - script type
-* @property {string[]} addresses? - address list
+* @param {CreateCetRequest} jsonObject - request data.
+* @return {CreateCetResponse} - response data.
 */
-export interface DecodeLockingScript {
-  asm?: string;
-  hex?: string;
-  reqSigs?: number;
-  type?: string;
-  addresses?: string[];
-}
+export function CreateCet(jsonObject: CreateCetRequest): CreateCetResponse;
 
 /**
-* Request for decode transaction.
-* @property {string} hex - transaction hex
-* @property {string} network? - network type
-* @property {boolean} iswitness? - dump witness (unused)
+* @param {CreateCetAdaptorSignatureRequest} jsonObject - request data.
+* @return {CreateCetAdaptorSignatureResponse} - response data.
 */
-export interface DecodeRawTransactionRequest {
-  hex: string;
-  network?: string;
-  iswitness?: boolean;
-}
+export function CreateCetAdaptorSignature(jsonObject: CreateCetAdaptorSignatureRequest): CreateCetAdaptorSignatureResponse;
 
 /**
-* @property {string} txid - txid
-* @property {string} hash - transaction hash (txid or wtxid)
-* @property {number} version - transaction version
-* @property {number} size - transaction size
-* @property {number} vsize - transaction vsize
-* @property {number} weight - weight
-* @property {number} locktime - locktime
-* @property {DecodeRawTransactionTxIn[]} vin? - decode txin data
-* @property {DecodeRawTransactionTxOut[]} vout? - txout data
+* @param {CreateCetAdaptorSignatureMultiOracleRequest} jsonObject - request data.
+* @return {CreateCetAdaptorSignatureResponse} - response data.
 */
-export interface DecodeRawTransactionResponse {
-  txid: string;
-  hash: string;
-  version: number;
-  size: number;
-  vsize: number;
-  weight: number;
-  locktime: number;
-  vin?: DecodeRawTransactionTxIn[];
-  vout?: DecodeRawTransactionTxOut[];
-}
+export function CreateCetAdaptorSignatureMultiOracle(jsonObject: CreateCetAdaptorSignatureMultiOracleRequest): CreateCetAdaptorSignatureResponse;
 
 /**
-* decode txin data
-* @property {string} coinbase? - coinbase flag (coinbase is only)
-* @property {string} txid? - utxo txid
-* @property {number} vout? - utxo vout
-* @property {DecodeUnlockingScript} scriptSig? - scriptsig
-* @property {string[]} txinwitness? - txin witness stack
-* @property {number} sequence? - sequence number
+* @param {CreateCetAdaptorSignaturesRequest} jsonObject - request data.
+* @return {CreateCetAdaptorSignaturesResponse} - response data.
 */
-export interface DecodeRawTransactionTxIn {
-  coinbase?: string;
-  txid?: string;
-  vout?: number;
-  scriptSig?: DecodeUnlockingScript;
-  txinwitness?: string[];
-  sequence?: number;
-}
+export function CreateCetAdaptorSignatures(jsonObject: CreateCetAdaptorSignaturesRequest): CreateCetAdaptorSignaturesResponse;
 
 /**
-* txout data
-* @property {bigint} value? - satoshi amount
-* @property {number} n - vout number
-* @property {DecodeLockingScript} scriptPubKey? - locking script
+* @param {CreateDlcTransactionsRequest} jsonObject - request data.
+* @return {CreateDlcTransactionsResponse} - response data.
 */
-export interface DecodeRawTransactionTxOut {
-  value?: bigint;
-  n: number;
-  scriptPubKey?: DecodeLockingScript;
-}
+export function CreateDlcTransactions(jsonObject: CreateDlcTransactionsRequest): CreateDlcTransactionsResponse;
 
-// CFD CONTENT END
+/**
+* @param {CreateFundTransactionRequest} jsonObject - request data.
+* @return {CreateFundTransactionResponse} - response data.
+*/
+export function CreateFundTransaction(jsonObject: CreateFundTransactionRequest): CreateFundTransactionResponse;
 
-export class Cfdlcjs {
-  AddSignatureToFundTransaction(jsonObject: AddSignatureToFundTransactionRequest): Promise<AddSignatureToFundTransactionResponse>;
-  AddSignaturesToCet(jsonObject: AddSignaturesToCetRequest): Promise<AddSignaturesToCetResponse>;
-  AddSignaturesToMutualClosingTx(jsonObject: AddSignaturesToMutualClosingTxRequest): Promise<AddSignaturesToMutualClosingTxResponse>;
-  AddSignaturesToRefundTx(jsonObject: AddSignaturesToRefundTxRequest): Promise<AddSignaturesToRefundTxResponse>;
-  CreateCet(jsonObject: CreateCetRequest): Promise<CreateCetResponse>;
-  CreateClosingTransaction(jsonObject: CreateClosingTransactionRequest): Promise<CreateClosingTransactionResponse>;
-  CreateDlcTransactions(jsonObject: CreateDlcTransactionsRequest): Promise<CreateDlcTransactionsResponse>;
-  CreateFundTransaction(jsonObject: CreateFundTransactionRequest): Promise<CreateFundTransactionResponse>;
-  CreateMutualClosingTransaction(jsonObject: CreateMutualClosingTransactionRequest): Promise<CreateMutualClosingTransactionResponse>;
-  CreatePenaltyTransaction(jsonObject: CreatePenaltyTransactionRequest): Promise<CreatePenaltyTransactionResponse>;
-  CreateRefundTransaction(jsonObject: CreateRefundTransactionRequest): Promise<CreateRefundTransactionResponse>;
-  GetRawCetSignature(jsonObject: GetRawCetSignatureRequest): Promise<GetRawCetSignatureResponse>;
-  GetRawCetSignatures(jsonObject: GetRawCetSignaturesRequest): Promise<GetRawCetSignaturesResponse>;
-  GetRawFundTxSignature(jsonObject: GetRawFundTxSignatureRequest): Promise<GetRawFundTxSignatureResponse>;
-  GetRawMutualClosingTxSignature(jsonObject: GetRawMutualClosingTxSignatureRequest): Promise<GetRawMutualClosingTxSignatureResponse>;
-  GetRawRefundTxSignature(jsonObject: GetRawRefundTxSignatureRequest): Promise<GetRawRefundTxSignatureResponse>;
-  GetSchnorrPublicNonce(jsonObject: GetSchnorrPublicNonceRequest): Promise<GetSchnorrPublicNonceResponse>;
-  SchnorrSign(jsonObject: SchnorrSignRequest): Promise<SchnorrSignResponse>;
-  SignClosingTransaction(jsonObject: SignClosingTransactionRequest): Promise<SignClosingTransactionResponse>;
-  SignFundTransaction(jsonObject: SignFundTransactionRequest): Promise<SignFundTransactionResponse>;
-  VerifyCetSignature(jsonObject: VerifyCetSignatureRequest): Promise<VerifyCetSignatureResponse>;
-  VerifyCetSignatures(jsonObject: VerifyCetSignaturesRequest): Promise<VerifyCetSignaturesResponse>;
-  VerifyFundTxSignature(jsonObject: VerifyFundTxSignatureRequest): Promise<VerifyFundTxSignatureResponse>;
-  VerifyMutualClosingTxSignature(jsonObject: VerifyMutualClosingTxSignatureRequest): Promise<VerifyMutualClosingTxSignatureResponse>;
-  VerifyRefundTxSignature(jsonObject: VerifyRefundTxSignatureRequest): Promise<VerifyRefundTxSignatureResponse>;
-  DecodeRawTransaction(jsonObject: DecodeRawTransactionRequest): Promise<DecodeRawTransactionResponse>;
-}
+/**
+* @param {CreateRefundTransactionRequest} jsonObject - request data.
+* @return {CreateRefundTransactionResponse} - response data.
+*/
+export function CreateRefundTransaction(jsonObject: CreateRefundTransactionRequest): CreateRefundTransactionResponse;
 
-export function addInitializedListener(func: () => Promise<void>): void;
+/**
+* @param {GetRawFundTxSignatureRequest} jsonObject - request data.
+* @return {GetRawFundTxSignatureResponse} - response data.
+*/
+export function GetRawFundTxSignature(jsonObject: GetRawFundTxSignatureRequest): GetRawFundTxSignatureResponse;
 
-export function getCfddlc(): Cfdlcjs;
+/**
+* @param {GetRawRefundTxSignatureRequest} jsonObject - request data.
+* @return {GetRawRefundTxSignatureResponse} - response data.
+*/
+export function GetRawRefundTxSignature(jsonObject: GetRawRefundTxSignatureRequest): GetRawRefundTxSignatureResponse;
 
-export class CfdError extends Error {
+/**
+* @param {SignCetRequest} jsonObject - request data.
+* @return {SignCetResponse} - response data.
+*/
+export function SignCet(jsonObject: SignCetRequest): SignCetResponse;
+
+/**
+* @param {SignFundTransactionRequest} jsonObject - request data.
+* @return {SignFundTransactionResponse} - response data.
+*/
+export function SignFundTransaction(jsonObject: SignFundTransactionRequest): SignFundTransactionResponse;
+
+/**
+* @param {VerifyCetAdaptorSignatureRequest} jsonObject - request data.
+* @return {VerifyCetAdaptorSignatureResponse} - response data.
+*/
+export function VerifyCetAdaptorSignature(jsonObject: VerifyCetAdaptorSignatureRequest): VerifyCetAdaptorSignatureResponse;
+
+/**
+* @param {VerifyCetAdaptorSignatureMultiOracleRequest} jsonObject - request data.
+* @return {VerifyCetAdaptorSignatureResponse} - response data.
+*/
+export function VerifyCetAdaptorSignatureMultiOracle(jsonObject: VerifyCetAdaptorSignatureMultiOracleRequest): VerifyCetAdaptorSignatureResponse;
+
+/**
+* @param {VerifyCetAdaptorSignaturesRequest} jsonObject - request data.
+* @return {VerifyCetAdaptorSignaturesResponse} - response data.
+*/
+export function VerifyCetAdaptorSignatures(jsonObject: VerifyCetAdaptorSignaturesRequest): VerifyCetAdaptorSignaturesResponse;
+
+/**
+* @param {VerifyFundTxSignatureRequest} jsonObject - request data.
+* @return {VerifyFundTxSignatureResponse} - response data.
+*/
+export function VerifyFundTxSignature(jsonObject: VerifyFundTxSignatureRequest): VerifyFundTxSignatureResponse;
+
+/**
+* @param {VerifyRefundTxSignatureRequest} jsonObject - request data.
+* @return {VerifyRefundTxSignatureResponse} - response data.
+*/
+export function VerifyRefundTxSignature(jsonObject: VerifyRefundTxSignatureRequest): VerifyRefundTxSignatureResponse;
+
+/** error class. */
+export class CfdDlcError extends Error {
+  /**
+   * constructor.
+   * @param {string} message - Error message.
+   * @param {InnerErrorResponse} errorInformation - Error information data.
+   * @param {Error} cause - Cause of the error.
+   */
   constructor(message: string, errorInformation: InnerErrorResponse, cause: Error);
+  /**
+   * get error string.
+   * @return {string} - string data.
+   */
   toString(): string;
+  /**
+   * get error information.
+   * @return {InnerErrorResponse} - InnerErrorResponse data.
+   */
   getErrorInformation(): InnerErrorResponse;
+  /**
+   * get error cause.
+   * @return {Error} - Error data.
+   */
   getCause(): Error;
 }
