@@ -8,6 +8,7 @@
     },
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "types": []
+    "types": [],
+    "lib": ["es2015"],
   }
 }
