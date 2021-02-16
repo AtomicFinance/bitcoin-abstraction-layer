@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/provider",
   "umdName": "Provider",
-  "version": "1.0.0-alpha.0",
+  "version": "1.0.0-alpha.1",
   "description": "> TODO: description",
   "author": "Matthew Black <mblackmblackmblack@gmail.com>",
   "homepage": "",
@@ -19,7 +19,7 @@
     "test": "yarn run build"
   },
   "dependencies": {
-    "@atomicfinance/client": "^1.0.0-alpha.0",
+    "@atomicfinance/client": "^1.0.0-alpha.1",
     "lodash": "^4.17.20"
   },
   "devDependencies": {
