@@ -710,7 +710,7 @@ export default class BitcoinCfdProvider extends Provider {
 
     const req = { address };
 
-    const info = this._cfdJs.GetAddressInfo(req);
+    const info = await this.GetAddressInfo(req);
     return info.lockingScript;
   }
 }
