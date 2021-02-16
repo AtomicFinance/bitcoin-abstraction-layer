@@ -41,8 +41,6 @@ import Contract from './models/Contract';
 import Amount from './models/Amount'
 import Input from './models/Input';     
 import InputDetails from './models/InputDetails';
-import OutcomeDetails from './models/OutcomeDetails';
-import Outcome from './models/Outcome';
 import PayoutDetails from './models/PayoutDetails';
 import OracleInfo from './models/OracleInfo';
 import OfferMessage from './models/OfferMessage';
@@ -51,9 +49,6 @@ import SignMessage from './models/SignMessage';
 import Payout from './models/Payout'
 import Utxo from './models/Utxo';
 import { v4 as uuidv4 } from 'uuid';
-import * as isNode from 'is-node';
-import { math } from 'bip-schnorr';
-import BN from 'bignumber.js'
 
 export default class BitcoinDlcProvider extends Provider {
   _network: any;

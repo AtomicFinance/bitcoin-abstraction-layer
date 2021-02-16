@@ -136,7 +136,7 @@ import {
   VerifySignRequest,
   VerifySignResponse,
   VerifySignatureRequest,
-  VerifySignatureResponse,
+  VerifySignatureResponse
 } from './@types/cfd-js';
 
 export default class Cfd {

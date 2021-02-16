@@ -24,7 +24,6 @@
     "@liquality/provider": "^0.7.1",
     "@liquality/utils": "^0.7.1",
     "bignumber.js": "9.0.1",
-    "bip-schnorr": "^0.6.2",
     "is-node": "github:matthewjablack/is-node",
     "lodash": "^4.17.20",
     "uuid": "^8.3.0"
