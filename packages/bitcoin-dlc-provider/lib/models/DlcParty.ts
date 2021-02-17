@@ -5,28 +5,14 @@ import Contract from './Contract';
 import Amount from './Amount';
 import Utxo from './Utxo';
 import {
-  CreateMultisigRequest
-} from '../@types/cfd-js'
-import {
   CreateDlcTransactionsRequest,
   CreateCetAdaptorSignaturesRequest,
-  CreateCetAdaptorSignatureRequest,
   CreateCetAdaptorSignaturesResponse,
-  // CalculateCetAdaptorSignaturesRequest,
   GetRawRefundTxSignatureRequest,
-  AdaptorPair,
-  // VerifyCetSignaturesRequest,
   VerifyRefundTxSignatureRequest,
   GetRawFundTxSignatureRequest,
   SignFundTransactionRequest,
   AddSignatureToFundTransactionRequest,
-  // GetRawMutualClosingTxSignatureRequest,
-  // AddSignaturesToMutualClosingTxRequest,
-  // GetRawCetSignatureRequest,
-  // AddSignaturesToCetRequest,
-  // CreateClosingTransactionRequest,
-  // SignClosingTransactionRequest,
-  CreateRefundTransactionRequest,
   AddSignaturesToRefundTxRequest,
   VerifyCetAdaptorSignaturesRequest,
   SignCetRequest
@@ -35,10 +21,7 @@ import Input from './Input'
 import OfferMessage from './OfferMessage';
 import AcceptMessage from './AcceptMessage';
 import SignMessage from './SignMessage';
-import Outcome from './Outcome';
-import MutualClosingMessage from './MutualClosingMessage';
 import BitcoinDlcProvider from '../BitcoinDlcProvider';
-import { sleep } from '@liquality/utils';
 import { asyncForEach } from '../utils/Utils'
 
 const ESTIMATED_SIZE = 312;
