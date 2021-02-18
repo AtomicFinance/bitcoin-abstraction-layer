@@ -1,47 +1,67 @@
 import Provider from '@atomicfinance/provider';
 import { decodeRawTransaction } from '@liquality/bitcoin-utils';
-import PartyInputs from './PartyInputs';
-import Contract from './Contract';
-import Amount from './Amount';
-import Utxo from './Utxo';
 import {
-  CreateMultisigRequest
-} from '../@types/cfd-js'
-import {
-  CreateDlcTransactionsRequest,
-  CreateCetAdaptorSignaturesRequest,
-  CreateCetAdaptorSignatureRequest,
-  CreateCetAdaptorSignaturesResponse,
+  AdaptorPair,
+  AddSignaturesToRefundTxRequest, AddSignatureToFundTransactionRequest, CreateCetAdaptorSignaturesRequest,
+
+  CreateCetAdaptorSignaturesResponse, CreateDlcTransactionsRequest,
+
+
+
+
+
+
+
+
+  GetRawFundTxSignatureRequest,
   // CalculateCetAdaptorSignaturesRequest,
   GetRawRefundTxSignatureRequest,
-  AdaptorPair,
-  // VerifyCetSignaturesRequest,
-  VerifyRefundTxSignatureRequest,
-  GetRawFundTxSignatureRequest,
-  SignFundTransactionRequest,
-  AddSignatureToFundTransactionRequest,
-  // GetRawMutualClosingTxSignatureRequest,
-  // AddSignaturesToMutualClosingTxRequest,
-  // GetRawCetSignatureRequest,
-  // AddSignaturesToCetRequest,
-  // CreateClosingTransactionRequest,
-  // SignClosingTransactionRequest,
-  CreateRefundTransactionRequest,
-  AddSignaturesToRefundTxRequest,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  SignCetRequest, SignFundTransactionRequest,
+
+
+
+
+
+
+
+
+
   VerifyCetAdaptorSignaturesRequest,
-  SignCetRequest
+  // VerifyCetSignaturesRequest,
+  VerifyRefundTxSignatureRequest
 } from '../@types/cfd-dlc-js';
-import Input from './Input'
-import OfferMessage from './OfferMessage';
-import AcceptMessage from './AcceptMessage';
-import SignMessage from './SignMessage';
-import Outcome from './Outcome';
-import MutualClosingMessage from './MutualClosingMessage';
 import BitcoinDlcProvider from '../BitcoinDlcProvider';
-import { sleep } from '@liquality/utils';
-import { asyncForEach } from '../utils/Utils'
+import { asyncForEach } from '../utils/Utils';
+import AcceptMessage from './AcceptMessage';
+import Amount from './Amount';
+import Contract from './Contract';
+import Input from './Input';
+import OfferMessage from './OfferMessage';
+import PartyInputs from './PartyInputs';
+import SignMessage from './SignMessage';
+import Utxo from './Utxo';
 
 const ESTIMATED_SIZE = 312;
+
+type AdaptorSignatureJobResponse = {
+  index: number,
+  response: CreateCetAdaptorSignaturesResponse
+}
 
 export default class DlcParty {
   readonly client: BitcoinDlcProvider;
@@ -313,19 +333,44 @@ export default class DlcParty {
     this.contract.remotePartyInputs = this.partyInputs;
     await this.CreateDlcTransactions();
 
-    const cetSignRequest: CreateCetAdaptorSignaturesRequest = {
-      messagesList: this.contract.messagesList,
-      cetsHex: this.contract.cetsHex,
-      privkey: this.fundPrivateKey,
-      fundTxId: this.contract.fundTxId,
-      localFundPubkey: offerMessage.localPartyInputs.fundPublicKey,
-      remoteFundPubkey: this.partyInputs.fundPublicKey,
-      fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
-      oraclePubkey: this.contract.oracleInfo.publicKey,
-      oracleRValues: this.contract.oracleInfo.rValues
+    console.log("Initiating cetSignRequest")
+    const messagesList = this.contract.messagesList
+     const cetsHex = this.contract.cetsHex
+
+    const chunk = 100;
+    const adaptorPairs: AdaptorPair[] = [];
+    const adaptorSigRequestPromises: Promise<AdaptorSignatureJobResponse>[] = []
+    
+    for (let i = 0, j = messagesList.length; i < j; i += chunk) {
+      
+      const tempMessagesList = messagesList.slice(i, i + chunk)
+      const tempCetsHex = cetsHex.slice(i, i + chunk)
+
+      const cetSignRequest: CreateCetAdaptorSignaturesRequest = {
+         messagesList: tempMessagesList,
+         cetsHex: tempCetsHex,
+         privkey: this.fundPrivateKey,
+         fundTxId: this.contract.fundTxId,
+         localFundPubkey: offerMessage.localPartyInputs.fundPublicKey,
+         remoteFundPubkey: this.partyInputs.fundPublicKey,
+         fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
+         oraclePubkey: this.contract.oracleInfo.publicKey,
+         oracleRValues: this.contract.oracleInfo.rValues
+      }
+
+      adaptorSigRequestPromises.push((async () => {
+        console.log(`Creating adaptor signatures for chunk ${i} - ${i + chunk}`) 
+        const response = await this.client.CreateCetAdaptorSignatures(cetSignRequest)
+        console.log(`CREATED adaptor signatures for chunk ${i} - ${i + chunk}`) 
+        return {index: i, response}
+      })())
     }
 
-    const cetSignatures: CreateCetAdaptorSignaturesResponse = await this.client.CreateCetAdaptorSignatures(cetSignRequest)
+    (await Promise.all(adaptorSigRequestPromises)).sort((a,b) => a.index - b.index).forEach(r => {
+      adaptorPairs.push(...r.response.adaptorPairs)
+    });
+
+    console.log("Finished")
 
     const refundSignRequest: GetRawRefundTxSignatureRequest = {
       refundTxHex: this.contract.refundTransaction,
@@ -343,7 +388,7 @@ export default class DlcParty {
     const acceptMessage = new AcceptMessage(
       this.contract.id,
       this.partyInputs,
-      cetSignatures.adaptorPairs,
+      adaptorPairs,
       refundSignature.hex
     );
 
@@ -353,25 +398,54 @@ export default class DlcParty {
   public async OnAcceptMessage(
     acceptMessage: AcceptMessage
   ): Promise<SignMessage> {
+    console.time('CreateDlcTransactions')
     this.contract.ApplyAcceptMessage(acceptMessage);
     await this.CreateDlcTransactions();
+    console.timeEnd('CreateDlcTransactions')
 
-    const verifyCetAdaptorSignaturesRequest: VerifyCetAdaptorSignaturesRequest = {
-      cetsHex: this.contract.cetsHex,
-      messagesList: this.contract.messagesList,
-      oraclePubkey: this.contract.oracleInfo.publicKey,
-      oracleRValues: this.contract.oracleInfo.rValues,
-      adaptorPairs: acceptMessage.cetAdaptorPairs,
-      localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
-      remoteFundPubkey: acceptMessage.remotePartyInputs.fundPublicKey,
-      fundTxId: this.contract.fundTxId,
-      fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
-      verifyRemote: true,
-    };
+    console.log("Initiating VerifyCetAdaptorSignatures")
+    const messagesList = this.contract.messagesList
+    const cetsHex = this.contract.cetsHex
 
-    let areSigsValid = (
-      await this.client.VerifyCetAdaptorSignatures(verifyCetAdaptorSignaturesRequest)
-    ).valid;
+    const chunk = 50;
+    const sigsValidity: Promise<Boolean>[] = []
+
+    console.time('VerifyCetAdaptorSignatures')
+    for (let i = 0, j = messagesList.length; i < j; i += chunk) {
+      const tempMessagesList = messagesList.slice(i, i + chunk)
+      const tempCetsHex = cetsHex.slice(i, i + chunk)
+      const tempAdaptorPairs = acceptMessage.cetAdaptorPairs.slice(i, i + chunk)
+
+      const verifyCetAdaptorSignaturesRequest: VerifyCetAdaptorSignaturesRequest = {
+        cetsHex: tempCetsHex,
+        messagesList: tempMessagesList,
+        oraclePubkey: this.contract.oracleInfo.publicKey,
+        oracleRValues: this.contract.oracleInfo.rValues,
+        adaptorPairs: tempAdaptorPairs,
+        localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
+        remoteFundPubkey: acceptMessage.remotePartyInputs.fundPublicKey,
+        fundTxId: this.contract.fundTxId,
+        fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
+        verifyRemote: true,
+      };
+      
+      // console.log(`Verifying adaptor signatures for chunk ${i} - ${i + chunk}`) 
+      // sigsValidity.push((await (this.client.VerifyCetAdaptorSignatures(verifyCetAdaptorSignaturesRequest))).valid)
+      // console.log(`Verified adaptor signatures for chunk ${i} - ${i + chunk}`) 
+
+      sigsValidity.push((async () => {
+        // console.log(`Verifying adaptor signatures for chunk ${i} - ${i + chunk}`) 
+        const response = await this.client.VerifyCetAdaptorSignatures(verifyCetAdaptorSignaturesRequest)
+        // console.log(`Verified adaptor signatures for chunk ${i} - ${i + chunk}`) 
+        return response.valid
+      })())
+    }
+
+
+    let areSigsValid = (await Promise.all(sigsValidity)).every((b) => b)
+
+    console.timeEnd('VerifyCetAdaptorSignatures')
+ 
 
     const verifyRefundSigRequest: VerifyRefundTxSignatureRequest = {
       refundTxHex: this.contract.refundTransaction,
@@ -391,21 +465,41 @@ export default class DlcParty {
       throw new Error('Invalid signatures received');
     }
 
-    const cetAdaptorSignRequest: CreateCetAdaptorSignaturesRequest = {
-      messagesList: this.contract.messagesList,
-      cetsHex: this.contract.cetsHex,
-      privkey: this.fundPrivateKey,
-      fundTxId: this.contract.fundTxId,
-      localFundPubkey: this.partyInputs.fundPublicKey,
-      remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
-      fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
-      oraclePubkey: this.contract.oracleInfo.publicKey,
-      oracleRValues: this.contract.oracleInfo.rValues
+    const cetAdaptorPairs: AdaptorPair[] = [];
+
+    const adaptorSigRequestPromises: Promise<CreateCetAdaptorSignaturesResponse>[] = []
+
+    console.time('CreateCetAdaptorSignatures')
+    for (let i = 0, j = messagesList.length; i < j; i += chunk) {
+      
+      const tempMessagesList = messagesList.slice(i, i + chunk)
+      const tempCetsHex = cetsHex.slice(i, i + chunk)
+
+      const cetSignRequest: CreateCetAdaptorSignaturesRequest = {
+         messagesList: tempMessagesList,
+         cetsHex: tempCetsHex,
+         privkey: this.fundPrivateKey,
+         fundTxId: this.contract.fundTxId,
+         localFundPubkey: this.partyInputs.fundPublicKey,
+         remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
+         fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
+         oraclePubkey: this.contract.oracleInfo.publicKey,
+         oracleRValues: this.contract.oracleInfo.rValues
+      }
+
+      adaptorSigRequestPromises.push((async () => {
+        // console.log(`Creating adaptor signatures for chunk ${i} - ${i + chunk}`) 
+        const response = await this.client.CreateCetAdaptorSignatures(cetSignRequest)
+        // console.log(`CREATED adaptor signatures for chunk ${i} - ${i + chunk}`) 
+        return response
+      })())
     }
 
-    const cetAdaptorPairs = (
-      await this.client.CreateCetAdaptorSignatures(cetAdaptorSignRequest)
-    ).adaptorPairs;
+    (await Promise.all(adaptorSigRequestPromises)).forEach((r) => {
+      cetAdaptorPairs.push(...r.adaptorPairs)
+    })
+
+    console.timeEnd('CreateCetAdaptorSignatures')
 
     const refundSignRequest: GetRawRefundTxSignatureRequest = {
       refundTxHex: this.contract.refundTransaction,
