@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/bitcoin-wallet-provider",
   "umdName": "BitcoinWalletProvider",
-  "version": "1.0.0-alpha.2",
+  "version": "1.0.0-alpha.3",
   "description": "> TODO: description",
   "author": "Matthew Black <mblackmblackmblack@gmail.com>",
   "homepage": "",
@@ -19,7 +19,7 @@
     "test": "yarn run build"
   },
   "dependencies": {
-    "@atomicfinance/provider": "^1.0.0-alpha.2",
+    "@atomicfinance/provider": "^1.0.0-alpha.3",
     "@liquality/bitcoin-utils": "^0.7.1",
     "@liquality/provider": "^0.7.1",
     "bitcoinjs-lib": "5.2.0",

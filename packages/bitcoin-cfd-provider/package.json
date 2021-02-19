@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/bitcoin-cfd-provider",
   "umdName": "BitcoinCfdProvider",
-  "version": "1.0.0-alpha.2",
+  "version": "1.0.0-alpha.3",
   "description": "> TODO: description",
   "author": "Matthew Black <mblackmblackmblack@gmail.com>",
   "homepage": "",
@@ -19,7 +19,7 @@
     "test": "yarn run build"
   },
   "dependencies": {
-    "@atomicfinance/provider": "^1.0.0-alpha.2",
+    "@atomicfinance/provider": "^1.0.0-alpha.3",
     "@liquality/provider": "^0.7.1",
     "@liquality/utils": "^0.7.1",
     "is-node": "github:matthewjablack/is-node",
