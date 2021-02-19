@@ -3,46 +3,11 @@ import { decodeRawTransaction } from '@liquality/bitcoin-utils';
 import {
   AdaptorPair,
   AddSignaturesToRefundTxRequest, AddSignatureToFundTransactionRequest, CreateCetAdaptorSignaturesRequest,
-
   CreateCetAdaptorSignaturesResponse, CreateDlcTransactionsRequest,
-
-
-
-
-
-
-
-
   GetRawFundTxSignatureRequest,
-  // CalculateCetAdaptorSignaturesRequest,
   GetRawRefundTxSignatureRequest,
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   SignCetRequest, SignFundTransactionRequest,
-
-
-
-
-
-
-
-
-
   VerifyCetAdaptorSignaturesRequest,
-  // VerifyCetSignaturesRequest,
   VerifyRefundTxSignatureRequest
 } from '../@types/cfd-dlc-js';
 import BitcoinDlcProvider from '../BitcoinDlcProvider';
@@ -333,7 +298,6 @@ export default class DlcParty {
     this.contract.remotePartyInputs = this.partyInputs;
     await this.CreateDlcTransactions();
 
-    console.log("Initiating cetSignRequest")
     const messagesList = this.contract.messagesList
      const cetsHex = this.contract.cetsHex
 
@@ -359,9 +323,7 @@ export default class DlcParty {
       }
 
       adaptorSigRequestPromises.push((async () => {
-        console.log(`Creating adaptor signatures for chunk ${i} - ${i + chunk}`) 
         const response = await this.client.CreateCetAdaptorSignatures(cetSignRequest)
-        console.log(`CREATED adaptor signatures for chunk ${i} - ${i + chunk}`) 
         return {index: i, response}
       })())
     }
@@ -369,8 +331,6 @@ export default class DlcParty {
     (await Promise.all(adaptorSigRequestPromises)).sort((a,b) => a.index - b.index).forEach(r => {
       adaptorPairs.push(...r.response.adaptorPairs)
     });
-
-    console.log("Finished")
 
     const refundSignRequest: GetRawRefundTxSignatureRequest = {
       refundTxHex: this.contract.refundTransaction,
@@ -398,19 +358,15 @@ export default class DlcParty {
   public async OnAcceptMessage(
     acceptMessage: AcceptMessage
   ): Promise<SignMessage> {
-    console.time('CreateDlcTransactions')
     this.contract.ApplyAcceptMessage(acceptMessage);
     await this.CreateDlcTransactions();
-    console.timeEnd('CreateDlcTransactions')
 
-    console.log("Initiating VerifyCetAdaptorSignatures")
     const messagesList = this.contract.messagesList
     const cetsHex = this.contract.cetsHex
 
     const chunk = 50;
     const sigsValidity: Promise<Boolean>[] = []
 
-    console.time('VerifyCetAdaptorSignatures')
     for (let i = 0, j = messagesList.length; i < j; i += chunk) {
       const tempMessagesList = messagesList.slice(i, i + chunk)
       const tempCetsHex = cetsHex.slice(i, i + chunk)
@@ -429,23 +385,13 @@ export default class DlcParty {
         verifyRemote: true,
       };
       
-      // console.log(`Verifying adaptor signatures for chunk ${i} - ${i + chunk}`) 
-      // sigsValidity.push((await (this.client.VerifyCetAdaptorSignatures(verifyCetAdaptorSignaturesRequest))).valid)
-      // console.log(`Verified adaptor signatures for chunk ${i} - ${i + chunk}`) 
-
       sigsValidity.push((async () => {
-        // console.log(`Verifying adaptor signatures for chunk ${i} - ${i + chunk}`) 
         const response = await this.client.VerifyCetAdaptorSignatures(verifyCetAdaptorSignaturesRequest)
-        // console.log(`Verified adaptor signatures for chunk ${i} - ${i + chunk}`) 
         return response.valid
       })())
     }
 
-
     let areSigsValid = (await Promise.all(sigsValidity)).every((b) => b)
-
-    console.timeEnd('VerifyCetAdaptorSignatures')
- 
 
     const verifyRefundSigRequest: VerifyRefundTxSignatureRequest = {
       refundTxHex: this.contract.refundTransaction,
@@ -469,7 +415,6 @@ export default class DlcParty {
 
     const adaptorSigRequestPromises: Promise<CreateCetAdaptorSignaturesResponse>[] = []
 
-    console.time('CreateCetAdaptorSignatures')
     for (let i = 0, j = messagesList.length; i < j; i += chunk) {
       
       const tempMessagesList = messagesList.slice(i, i + chunk)
@@ -488,9 +433,7 @@ export default class DlcParty {
       }
 
       adaptorSigRequestPromises.push((async () => {
-        // console.log(`Creating adaptor signatures for chunk ${i} - ${i + chunk}`) 
         const response = await this.client.CreateCetAdaptorSignatures(cetSignRequest)
-        // console.log(`CREATED adaptor signatures for chunk ${i} - ${i + chunk}`) 
         return response
       })())
     }
@@ -498,8 +441,6 @@ export default class DlcParty {
     (await Promise.all(adaptorSigRequestPromises)).forEach((r) => {
       cetAdaptorPairs.push(...r.adaptorPairs)
     })
-
-    console.timeEnd('CreateCetAdaptorSignatures')
 
     const refundSignRequest: GetRawRefundTxSignatureRequest = {
       refundTxHex: this.contract.refundTransaction,

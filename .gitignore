@@ -25,3 +25,4 @@
 /packages/**/lib/utils/*.js
 
 lerna-debug.log
+.vscode
