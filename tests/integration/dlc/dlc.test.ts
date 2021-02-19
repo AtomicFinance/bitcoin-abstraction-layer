@@ -6,7 +6,7 @@ import BN from 'bignumber.js'
 import _ from 'lodash'
 import { decodeRawTransaction } from '@liquality/bitcoin-utils';
 import Client from '@liquality/client'
-import { chains, fundAddress } from '../common'
+import { chains, fundAddress, mineBlock } from '../common'
 import { Messages } from '../@types/cfd-dlc-js'
 import Amount from '../../../packages/bitcoin-dlc-provider/lib/models/Amount';
 import InputDetails from '../../../packages/bitcoin-dlc-provider/lib/models/InputDetails';
@@ -128,7 +128,7 @@ describe('dlc provider', () => {
     const txid = await bob.finance.dlc.finalizeContract(signMessage)
     const tx = await alice.getMethod('getTransactionByHash')(txid)
 
-    await sleep(1000)
+    await mineBlock()
 
     const { contractId } = offerMessage
     const refundTxid = await alice.finance.dlc.refund(contractId)
