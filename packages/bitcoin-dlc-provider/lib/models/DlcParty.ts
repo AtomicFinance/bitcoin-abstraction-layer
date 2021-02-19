@@ -364,7 +364,7 @@ export default class DlcParty {
     const messagesList = this.contract.messagesList
     const cetsHex = this.contract.cetsHex
 
-    const chunk = 50;
+    const chunk = 100;
     const sigsValidity: Promise<Boolean>[] = []
 
     for (let i = 0, j = messagesList.length; i < j; i += chunk) {
@@ -412,9 +412,7 @@ export default class DlcParty {
     }
 
     const cetAdaptorPairs: AdaptorPair[] = [];
-
-    const adaptorSigRequestPromises: Promise<CreateCetAdaptorSignaturesResponse>[] = []
-
+    const adaptorSigRequestPromises: Promise<AdaptorSignatureJobResponse>[] = []
     for (let i = 0, j = messagesList.length; i < j; i += chunk) {
       
       const tempMessagesList = messagesList.slice(i, i + chunk)
@@ -431,16 +429,15 @@ export default class DlcParty {
          oraclePubkey: this.contract.oracleInfo.publicKey,
          oracleRValues: this.contract.oracleInfo.rValues
       }
-
       adaptorSigRequestPromises.push((async () => {
         const response = await this.client.CreateCetAdaptorSignatures(cetSignRequest)
-        return response
+        return {index: i, response}
       })())
     }
 
-    (await Promise.all(adaptorSigRequestPromises)).forEach((r) => {
-      cetAdaptorPairs.push(...r.adaptorPairs)
-    })
+    (await Promise.all(adaptorSigRequestPromises)).sort((a,b) => a.index - b.index).forEach(r => {
+      cetAdaptorPairs.push(...r.response.adaptorPairs)
+    });
 
     const refundSignRequest: GetRawRefundTxSignatureRequest = {
       refundTxHex: this.contract.refundTransaction,
@@ -495,22 +492,38 @@ export default class DlcParty {
   public async OnSignMessage(signMessage: SignMessage): Promise<string> {
     this.contract.ApplySignMessage(signMessage);
 
-    const verifyCetSignaturesRequest: VerifyCetAdaptorSignaturesRequest = {
-      cetsHex: this.contract.cetsHex,
-      adaptorPairs: this.contract.cetAdaptorPairs,
-      localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
-      remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
-      fundTxId: this.contract.fundTxId,
-      fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
-      verifyRemote: false,
-      messagesList: this.contract.messagesList,
-      oraclePubkey: this.contract.oracleInfo.publicKey,
-      oracleRValues: this.contract.oracleInfo.rValues
-    };
+    const messagesList = this.contract.messagesList
+    const cetsHex = this.contract.cetsHex
+    const adaptorPairs = this.contract.cetAdaptorPairs
 
-    let areSigsValid = (
-      await this.client.VerifyCetAdaptorSignatures(verifyCetSignaturesRequest)
-    ).valid;
+    const chunk = 100;
+    const sigsValidity: Promise<Boolean>[] = []
+
+    for (let i = 0, j = messagesList.length; i < j; i += chunk) {
+      const tempMessagesList = messagesList.slice(i, i + chunk)
+      const tempCetsHex = cetsHex.slice(i, i + chunk)
+      const tempAdaptorPairs = adaptorPairs.slice(i, i + chunk)
+
+      const verifyCetAdaptorSignaturesRequest: VerifyCetAdaptorSignaturesRequest = {
+        cetsHex: tempCetsHex,
+        messagesList: tempMessagesList,
+        adaptorPairs: tempAdaptorPairs,
+        localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
+        remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
+        fundTxId: this.contract.fundTxId,
+        fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
+        verifyRemote: false,
+        oraclePubkey: this.contract.oracleInfo.publicKey,
+        oracleRValues: this.contract.oracleInfo.rValues
+      };
+      
+      sigsValidity.push((async () => {
+        const response = await this.client.VerifyCetAdaptorSignatures(verifyCetAdaptorSignaturesRequest)
+        return response.valid
+      })())
+    }
+
+    let areSigsValid = (await Promise.all(sigsValidity)).every((b) => b)
 
     const verifyRefundSigRequest: VerifyRefundTxSignatureRequest = {
       refundTxHex: this.contract.refundTransaction,
