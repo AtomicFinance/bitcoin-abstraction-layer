@@ -101,5 +101,6 @@ export {
   chains,
   sleep,
   fundAddress,
-  importAddresses
+  importAddresses,
+  mineBlock
 }
