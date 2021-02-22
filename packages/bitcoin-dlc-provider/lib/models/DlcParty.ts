@@ -894,7 +894,7 @@ export default class DlcParty {
         console.log('Cet Tx already created');
       } catch (e) {
         throw Error(
-          `Failed to sendRawTransaction cetHex and tx has not been previously broadcast. cetHex: ${refundHex}. refundHex1: ${refundHex1}`
+          `Failed to sendRawTransaction cetHex and tx has not been previously broadcast. cetHex: ${refundHex}`
         );
       }
     }
