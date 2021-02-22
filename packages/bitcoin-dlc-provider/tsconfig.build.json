@@ -9,7 +9,8 @@
     "types": ["node"],
     "typeRoots": ["@types"],
     "lib": ["es2015", "DOM"],
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "downlevelIteration": true
   },
 
   "include": [

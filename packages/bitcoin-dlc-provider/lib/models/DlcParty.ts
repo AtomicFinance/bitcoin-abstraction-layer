@@ -20,6 +20,8 @@ import OfferMessage from './OfferMessage';
 import PartyInputs from './PartyInputs';
 import SignMessage from './SignMessage';
 import Utxo from './Utxo';
+import { Worker, isMainThread, parentPort, workerData } from 'worker_threads'
+import { sleep } from '@liquality/utils';
 
 const ESTIMATED_SIZE = 312;
 
@@ -298,11 +300,13 @@ export default class DlcParty {
     this.contract.remotePartyInputs = this.partyInputs;
     await this.CreateDlcTransactions();
 
-    const messagesList = this.contract.messagesList
-     const cetsHex = this.contract.cetsHex
+    const threads: Set<any> = new Set();
 
-    const chunk = 100;
-    const adaptorPairs: AdaptorPair[] = [];
+    const messagesList = this.contract.messagesList
+    const cetsHex = this.contract.cetsHex
+
+    const chunk = 1200;
+    let adaptorPairs: AdaptorPair[] = [];
     const adaptorSigRequestPromises: Promise<AdaptorSignatureJobResponse>[] = []
     
     for (let i = 0, j = messagesList.length; i < j; i += chunk) {
@@ -322,15 +326,35 @@ export default class DlcParty {
          oracleRValues: this.contract.oracleInfo.rValues
       }
 
-      adaptorSigRequestPromises.push((async () => {
-        const response = await this.client.CreateCetAdaptorSignatures(cetSignRequest)
-        return {index: i, response}
-      })())
+      threads.add(new Worker('./packages/bitcoin-dlc-provider/lib/workers/worker.js', {
+        workerData: { cetSignRequest }
+      }))
+
+      // adaptorSigRequestPromises.push((async () => {
+      //   const response = await this.client.CreateCetAdaptorSignatures(cetSignRequest)
+      //   return {index: i, response}
+      // })())
     }
 
-    (await Promise.all(adaptorSigRequestPromises)).sort((a,b) => a.index - b.index).forEach(r => {
-      adaptorPairs.push(...r.response.adaptorPairs)
-    });
+    for (let worker of threads) {
+      worker.on('error', (err) => { throw err; });
+      worker.on('exit', () => {
+        threads.delete(worker);
+        console.log(`Thread exiting, ${threads.size} running...`);
+      })
+      worker.on('message', (msg) => {
+        adaptorPairs = adaptorPairs.concat(msg.adaptorPairs)
+      });
+    }
+
+    while (threads.size !== 0) {
+      await sleep(200)
+      console.log('threads', threads.size)
+    }
+
+    // (await Promise.all(adaptorSigRequestPromises)).sort((a,b) => a.index - b.index).forEach(r => {
+    //   adaptorPairs.push(...r.response.adaptorPairs)
+    // });
 
     const refundSignRequest: GetRawRefundTxSignatureRequest = {
       refundTxHex: this.contract.refundTransaction,
