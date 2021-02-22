@@ -159,6 +159,18 @@ export class SignMessage {
   constructor(contractId: string, fundTxSignatures: string[], cetSignatures: string[], refundSignature: string, utxoPublicKeys: string[]);
 }
 
+export class Output {
+  readonly address: string;
+  readonly amount: Amount;
+  constructor(address: string, amount: Amount)
+}
+
+export class MutualClosingMessage {
+  readonly outputs: Output[];
+  readonly signature: string;
+  constructor(outputs: Output[], signature: string)
+}
+
 export class Contract {
   id: string;
   localCollateral: Amount;

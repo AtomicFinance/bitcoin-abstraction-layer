@@ -1,5 +1,5 @@
-import Outcome from './Outcome';
+import Output from './Output';
 
 export default class MutualClosingMessage {
-  constructor(readonly outcome: Outcome, readonly signature: string) {}
+  constructor(readonly outputs: Output[], readonly signature: string) {}
 }

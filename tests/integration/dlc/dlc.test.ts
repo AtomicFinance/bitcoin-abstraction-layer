@@ -12,6 +12,7 @@ import Amount from '../../../packages/bitcoin-dlc-provider/lib/models/Amount';
 import InputDetails from '../../../packages/bitcoin-dlc-provider/lib/models/InputDetails';
 import PayoutDetails from '../../../packages/bitcoin-dlc-provider/lib/models/PayoutDetails';
 import Input from '../../../packages/bitcoin-dlc-provider/lib/models/Input';
+import Output from '../../../packages/bitcoin-dlc-provider/lib/models/Output';
 import Oracle from '../models/Oracle'
 import { math } from 'bip-schnorr';
 import { sleep } from '@liquality/utils'
@@ -70,6 +71,8 @@ describe('dlc provider', () => {
     const signMessage = await alice.finance.dlc.signContract(acceptMessage)
     const txid = await bob.finance.dlc.finalizeContract(signMessage)
     const tx = await alice.getMethod('getTransactionByHash')(txid)
+
+    await mineBlock()
 
     const { contractId } = offerMessage
     const outcomeIndex = 0
@@ -138,6 +141,67 @@ describe('dlc provider', () => {
     expect(refundTx._raw.vout.length).to.equal(2)
   })
 
+  it('multisig', async () => {
+    const localCollateral = Amount.FromSatoshis(100000000)
+    const remoteCollateral = Amount.FromSatoshis(1000)
+    const feeRate = 10
+    const refundLockTime = 1622175850
+
+    const inputDetails: InputDetails = {
+      localCollateral,
+      remoteCollateral,
+      feeRate,
+      refundLockTime
+    }
+
+    const oracle = new Oracle('olivia', 1)
+    const oracleInfo = oracle.GetOracleInfo()
+
+    const { rValues } = oracleInfo
+
+    const rValuesMessagesList: Messages[] = []
+    rValues.forEach(r => {
+      const messages = []
+      for (let i = 0; i < 1; i++) {
+        const m = math.taggedHash('DLC/oracle/attestation/v0', i.toString()).toString('hex')
+        messages.push(m)
+      }
+      rValuesMessagesList.push({ messages })
+    })
+
+    const startingIndex = 0
+
+    const aliceInput = await getInput(alice)
+    const bobInput = await getInput(bob)
+
+    const payouts: PayoutDetails[] = [{
+      localAmount: Amount.FromSatoshis(100000000),
+      remoteAmount: Amount.FromSatoshis(1000)
+    }]
+
+    const messagesList: Messages[] = rValuesMessagesList
+
+    const offerMessage = await alice.finance.dlc.initializeContractAndOffer(inputDetails, payouts, oracleInfo, messagesList, startingIndex, [aliceInput])
+    const acceptMessage = await bob.finance.dlc.confirmContractOffer(offerMessage, startingIndex, [bobInput])
+    const signMessage = await alice.finance.dlc.signContract(acceptMessage)
+    const txid = await bob.finance.dlc.finalizeContract(signMessage)
+    const tx = await alice.getMethod('getTransactionByHash')(txid)
+
+    const { contractId } = offerMessage
+
+    const outputs: Output[] = []
+    outputs.push(new Output('bcrt1qxcjufgh2jarkp2qkx68azh08w9v5gah8u6es8s', Amount.FromSatoshis(100001000)))
+
+    await mineBlock()
+
+    const mutualClosingMessage = await bob.finance.dlc.initiateEarlyExit(contractId, outputs)
+    const exitTxid = await alice.finance.dlc.finalizeEarlyExit(contractId, mutualClosingMessage)
+    const exitTx = await alice.getMethod('getTransactionByHash')(exitTxid)
+
+    expect(tx._raw.vout.length).to.equal(3)
+    expect(exitTx._raw.vout.length).to.equal(1)
+  })
+
   it('from outcomes with multiple r values', async () => {
     const localCollateral = Amount.FromSatoshis(100000000)
     const remoteCollateral = Amount.FromSatoshis(1000)
@@ -151,7 +215,7 @@ describe('dlc provider', () => {
       refundLockTime
     }
 
-    const significantDigits = base2Output.default.map((output: Output) => output.groups.map((a: number[]) => a.length).reduce((a: number, b: number) => Math.max(a, b))).reduce((a: number, b: number) => Math.max(a, b))
+    const significantDigits = base2Output.default.map((output: GeneratedOutput) => output.groups.map((a: number[]) => a.length).reduce((a: number, b: number) => Math.max(a, b))).reduce((a: number, b: number) => Math.max(a, b))
 
     const base = 2
 
@@ -231,7 +295,7 @@ async function getInput(client: Client): Promise<Input> {
   return input
 }
 
-interface Output {
+interface GeneratedOutput {
   payout: number,
   groups: number[][]
 }
