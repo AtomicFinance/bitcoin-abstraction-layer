@@ -26,3 +26,4 @@
 
 lerna-debug.log
 .vscode
+yarn-error.log

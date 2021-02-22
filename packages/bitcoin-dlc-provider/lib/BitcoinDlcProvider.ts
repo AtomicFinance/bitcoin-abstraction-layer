@@ -39,7 +39,8 @@ import DlcParty from './models/DlcParty';
 import Contract from './models/Contract';
 
 import Amount from './models/Amount'
-import Input from './models/Input';     
+import Input from './models/Input';
+import Output from './models/Output';
 import InputDetails from './models/InputDetails';
 import PayoutDetails from './models/PayoutDetails';
 import OracleInfo from './models/OracleInfo';
@@ -49,6 +50,7 @@ import SignMessage from './models/SignMessage';
 import Payout from './models/Payout'
 import Utxo from './models/Utxo';
 import { v4 as uuidv4 } from 'uuid';
+import { MutualClosingMessage } from '.';
 
 export default class BitcoinDlcProvider extends Provider {
   _network: any;
@@ -239,7 +241,7 @@ export default class BitcoinDlcProvider extends Provider {
     }
   }
 
-  outputsToPayouts(outputs: Output[], rValuesMessagesList: Messages[], localCollateral: Amount, remoteCollateral: Amount, payoutLocal: boolean): { payouts: PayoutDetails[], messagesList: Messages[] } {
+  outputsToPayouts(outputs: GeneratedOutput[], rValuesMessagesList: Messages[], localCollateral: Amount, remoteCollateral: Amount, payoutLocal: boolean): { payouts: PayoutDetails[], messagesList: Messages[] } {
     const payouts: PayoutDetails[] = []
     const messagesList: Messages[] =[]
 
@@ -313,6 +315,14 @@ export default class BitcoinDlcProvider extends Provider {
 
   async refund(contractId: string) {
     return this.findDlc(contractId).Refund();
+  }
+
+  async initiateEarlyExit(contractId: string, outputs: Output[]) {
+    return this.findDlc(contractId).InitiateEarlyExit(outputs);
+  }
+
+  async finalizeEarlyExit(contractId: string, mutualClosingMessage: MutualClosingMessage) {
+    return this.findDlc(contractId).OnMutualClose(mutualClosingMessage);
   }
 
   async unilateralClose(
@@ -479,7 +489,7 @@ export default class BitcoinDlcProvider extends Provider {
   }
 }
 
-interface Output {
+interface GeneratedOutput {
   payout: number,
   groups: number[][]
 }

@@ -22,7 +22,7 @@ chai.use(chaiAsPromised)
 
 const CONSTANTS = {
   BITCOIN_FEE_PER_BYTE: 3,
-  BITCOIN_ADDRESS_DEFAULT_BALANCE: 50 * 1e8
+  BITCOIN_ADDRESS_DEFAULT_BALANCE: 2 * 1e8
 }
 
 const { network, rpc} = config.bitcoin

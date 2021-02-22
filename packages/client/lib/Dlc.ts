@@ -39,12 +39,14 @@ import {
   Amount,
   Input,
   InputDetails,
+  Output,
   OracleInfo,
   OfferMessage,
   AcceptMessage,
   SignMessage,
   Contract,
-  PayoutDetails
+  PayoutDetails,
+  MutualClosingMessage
 } from './@types/@atomicfinance/bitcoin-dlc-provider';
 
 export default class Dlc {
@@ -94,6 +96,14 @@ export default class Dlc {
 
   async refund(contractId: string) {
     return this.client.getMethod('refund')(contractId);
+  }
+
+  async initiateEarlyExit(contractId: string, outputs: Output[]) {
+    return this.client.getMethod('initiateEarlyExit')(contractId, outputs)
+  }
+
+  async finalizeEarlyExit(contractId: string, mutualClosingMessage: MutualClosingMessage) {
+    return this.client.getMethod('finalizeEarlyExit')(contractId, mutualClosingMessage)
   }
 
   async unilateralClose(
@@ -164,7 +174,7 @@ export default class Dlc {
     return this.client.getMethod('importContractFromSignMessageAndCreateFinal')(offerMessage, acceptMessage, signMessage, startingIndex)
   }
 
-  outputsToPayouts(outputs: Output[], oracleInfos: OracleInfo[], rValuesMessagesList: Messages[], localCollateral: Amount, remoteCollateral: Amount, payoutLocal: boolean): { payouts: PayoutDetails[], messagesList: Messages[] } {
+  outputsToPayouts(outputs: GeneratedOutput[], oracleInfos: OracleInfo[], rValuesMessagesList: Messages[], localCollateral: Amount, remoteCollateral: Amount, payoutLocal: boolean): { payouts: PayoutDetails[], messagesList: Messages[] } {
     return this.client.getMethod('outputsToPayouts')(outputs, oracleInfos, rValuesMessagesList, localCollateral, remoteCollateral, payoutLocal)
   }
 
@@ -263,7 +273,7 @@ export default class Dlc {
   }
 }
 
-interface Output {
+interface GeneratedOutput {
   payout: number,
   groups: number[][]
 }
