@@ -48,7 +48,6 @@ export default class DlcParty {
 
   partyInputs: PartyInputs;
   fundPrivateKey: string;
-  sweepPrivateKey: string;
   inputPrivateKeys: string[];
   contract: Contract;
 
@@ -103,15 +102,9 @@ export default class DlcParty {
     const fundPrivateKeyPair = await this.client.getMethod('keyPair')(
       addresses[1].derivationPath
     );
-    const sweepPrivateKeyPair = await this.client.getMethod('keyPair')(
-      changeAddresses[1].derivationPath
-    );
 
     this.fundPrivateKey = Buffer.from(fundPrivateKeyPair.__D).toString('hex');
-    this.sweepPrivateKey = Buffer.from(sweepPrivateKeyPair.__D).toString('hex');
-
     const fundPublicKey = addresses[1].publicKey.toString('hex');
-    const sweepPublicKey = changeAddresses[1].publicKey.toString('hex');
 
     let fundTxCreated = false
     if (this.contract.fundTxHex) {
@@ -141,7 +134,6 @@ export default class DlcParty {
 
     const inputs = new PartyInputs(
       fundPublicKey,
-      sweepPublicKey,
       changeAddress,
       finalAddress,
       utxos
