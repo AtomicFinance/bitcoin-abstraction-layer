@@ -344,112 +344,144 @@ export interface VerifyRefundTxSignatureResponse {
 }
 
 /**
-* @param {AddSignaturesToRefundTxRequest} jsonObject - request data.
-* @return {AddSignaturesToRefundTxResponse} - response data.
-*/
-export function AddSignaturesToRefundTx(jsonObject: AddSignaturesToRefundTxRequest): AddSignaturesToRefundTxResponse;
+ * @param {AddSignaturesToRefundTxRequest} jsonObject - request data.
+ * @return {AddSignaturesToRefundTxResponse} - response data.
+ */
+export function AddSignaturesToRefundTx(
+  jsonObject: AddSignaturesToRefundTxRequest,
+): AddSignaturesToRefundTxResponse;
 
 /**
-* @param {AddSignatureToFundTransactionRequest} jsonObject - request data.
-* @return {AddSignatureToFundTransactionResponse} - response data.
-*/
-export function AddSignatureToFundTransaction(jsonObject: AddSignatureToFundTransactionRequest): AddSignatureToFundTransactionResponse;
+ * @param {AddSignatureToFundTransactionRequest} jsonObject - request data.
+ * @return {AddSignatureToFundTransactionResponse} - response data.
+ */
+export function AddSignatureToFundTransaction(
+  jsonObject: AddSignatureToFundTransactionRequest,
+): AddSignatureToFundTransactionResponse;
 
 /**
-* @param {CreateCetRequest} jsonObject - request data.
-* @return {CreateCetResponse} - response data.
-*/
+ * @param {CreateCetRequest} jsonObject - request data.
+ * @return {CreateCetResponse} - response data.
+ */
 export function CreateCet(jsonObject: CreateCetRequest): CreateCetResponse;
 
 /**
-* @param {CreateCetAdaptorSignatureRequest} jsonObject - request data.
-* @return {CreateCetAdaptorSignatureResponse} - response data.
-*/
-export function CreateCetAdaptorSignature(jsonObject: CreateCetAdaptorSignatureRequest): CreateCetAdaptorSignatureResponse;
+ * @param {CreateCetAdaptorSignatureRequest} jsonObject - request data.
+ * @return {CreateCetAdaptorSignatureResponse} - response data.
+ */
+export function CreateCetAdaptorSignature(
+  jsonObject: CreateCetAdaptorSignatureRequest,
+): CreateCetAdaptorSignatureResponse;
 
 /**
-* @param {CreateCetAdaptorSignatureMultiOracleRequest} jsonObject - request data.
-* @return {CreateCetAdaptorSignatureResponse} - response data.
-*/
-export function CreateCetAdaptorSignatureMultiOracle(jsonObject: CreateCetAdaptorSignatureMultiOracleRequest): CreateCetAdaptorSignatureResponse;
+ * @param {CreateCetAdaptorSignatureMultiOracleRequest} jsonObject - request data.
+ * @return {CreateCetAdaptorSignatureResponse} - response data.
+ */
+export function CreateCetAdaptorSignatureMultiOracle(
+  jsonObject: CreateCetAdaptorSignatureMultiOracleRequest,
+): CreateCetAdaptorSignatureResponse;
 
 /**
-* @param {CreateCetAdaptorSignaturesRequest} jsonObject - request data.
-* @return {CreateCetAdaptorSignaturesResponse} - response data.
-*/
-export function CreateCetAdaptorSignatures(jsonObject: CreateCetAdaptorSignaturesRequest): CreateCetAdaptorSignaturesResponse;
+ * @param {CreateCetAdaptorSignaturesRequest} jsonObject - request data.
+ * @return {CreateCetAdaptorSignaturesResponse} - response data.
+ */
+export function CreateCetAdaptorSignatures(
+  jsonObject: CreateCetAdaptorSignaturesRequest,
+): CreateCetAdaptorSignaturesResponse;
 
 /**
-* @param {CreateDlcTransactionsRequest} jsonObject - request data.
-* @return {CreateDlcTransactionsResponse} - response data.
-*/
-export function CreateDlcTransactions(jsonObject: CreateDlcTransactionsRequest): CreateDlcTransactionsResponse;
+ * @param {CreateDlcTransactionsRequest} jsonObject - request data.
+ * @return {CreateDlcTransactionsResponse} - response data.
+ */
+export function CreateDlcTransactions(
+  jsonObject: CreateDlcTransactionsRequest,
+): CreateDlcTransactionsResponse;
 
 /**
-* @param {CreateFundTransactionRequest} jsonObject - request data.
-* @return {CreateFundTransactionResponse} - response data.
-*/
-export function CreateFundTransaction(jsonObject: CreateFundTransactionRequest): CreateFundTransactionResponse;
+ * @param {CreateFundTransactionRequest} jsonObject - request data.
+ * @return {CreateFundTransactionResponse} - response data.
+ */
+export function CreateFundTransaction(
+  jsonObject: CreateFundTransactionRequest,
+): CreateFundTransactionResponse;
 
 /**
-* @param {CreateRefundTransactionRequest} jsonObject - request data.
-* @return {CreateRefundTransactionResponse} - response data.
-*/
-export function CreateRefundTransaction(jsonObject: CreateRefundTransactionRequest): CreateRefundTransactionResponse;
+ * @param {CreateRefundTransactionRequest} jsonObject - request data.
+ * @return {CreateRefundTransactionResponse} - response data.
+ */
+export function CreateRefundTransaction(
+  jsonObject: CreateRefundTransactionRequest,
+): CreateRefundTransactionResponse;
 
 /**
-* @param {GetRawFundTxSignatureRequest} jsonObject - request data.
-* @return {GetRawFundTxSignatureResponse} - response data.
-*/
-export function GetRawFundTxSignature(jsonObject: GetRawFundTxSignatureRequest): GetRawFundTxSignatureResponse;
+ * @param {GetRawFundTxSignatureRequest} jsonObject - request data.
+ * @return {GetRawFundTxSignatureResponse} - response data.
+ */
+export function GetRawFundTxSignature(
+  jsonObject: GetRawFundTxSignatureRequest,
+): GetRawFundTxSignatureResponse;
 
 /**
-* @param {GetRawRefundTxSignatureRequest} jsonObject - request data.
-* @return {GetRawRefundTxSignatureResponse} - response data.
-*/
-export function GetRawRefundTxSignature(jsonObject: GetRawRefundTxSignatureRequest): GetRawRefundTxSignatureResponse;
+ * @param {GetRawRefundTxSignatureRequest} jsonObject - request data.
+ * @return {GetRawRefundTxSignatureResponse} - response data.
+ */
+export function GetRawRefundTxSignature(
+  jsonObject: GetRawRefundTxSignatureRequest,
+): GetRawRefundTxSignatureResponse;
 
 /**
-* @param {SignCetRequest} jsonObject - request data.
-* @return {SignCetResponse} - response data.
-*/
+ * @param {SignCetRequest} jsonObject - request data.
+ * @return {SignCetResponse} - response data.
+ */
 export function SignCet(jsonObject: SignCetRequest): SignCetResponse;
 
 /**
-* @param {SignFundTransactionRequest} jsonObject - request data.
-* @return {SignFundTransactionResponse} - response data.
-*/
-export function SignFundTransaction(jsonObject: SignFundTransactionRequest): SignFundTransactionResponse;
+ * @param {SignFundTransactionRequest} jsonObject - request data.
+ * @return {SignFundTransactionResponse} - response data.
+ */
+export function SignFundTransaction(
+  jsonObject: SignFundTransactionRequest,
+): SignFundTransactionResponse;
 
 /**
-* @param {VerifyCetAdaptorSignatureRequest} jsonObject - request data.
-* @return {VerifyCetAdaptorSignatureResponse} - response data.
-*/
-export function VerifyCetAdaptorSignature(jsonObject: VerifyCetAdaptorSignatureRequest): VerifyCetAdaptorSignatureResponse;
+ * @param {VerifyCetAdaptorSignatureRequest} jsonObject - request data.
+ * @return {VerifyCetAdaptorSignatureResponse} - response data.
+ */
+export function VerifyCetAdaptorSignature(
+  jsonObject: VerifyCetAdaptorSignatureRequest,
+): VerifyCetAdaptorSignatureResponse;
 
 /**
-* @param {VerifyCetAdaptorSignatureMultiOracleRequest} jsonObject - request data.
-* @return {VerifyCetAdaptorSignatureResponse} - response data.
-*/
-export function VerifyCetAdaptorSignatureMultiOracle(jsonObject: VerifyCetAdaptorSignatureMultiOracleRequest): VerifyCetAdaptorSignatureResponse;
+ * @param {VerifyCetAdaptorSignatureMultiOracleRequest} jsonObject - request data.
+ * @return {VerifyCetAdaptorSignatureResponse} - response data.
+ */
+export function VerifyCetAdaptorSignatureMultiOracle(
+  jsonObject: VerifyCetAdaptorSignatureMultiOracleRequest,
+): VerifyCetAdaptorSignatureResponse;
 
 /**
-* @param {VerifyCetAdaptorSignaturesRequest} jsonObject - request data.
-* @return {VerifyCetAdaptorSignaturesResponse} - response data.
-*/
-export function VerifyCetAdaptorSignatures(jsonObject: VerifyCetAdaptorSignaturesRequest): VerifyCetAdaptorSignaturesResponse;
+ * @param {VerifyCetAdaptorSignaturesRequest} jsonObject - request data.
+ * @return {VerifyCetAdaptorSignaturesResponse} - response data.
+ */
+export function VerifyCetAdaptorSignatures(
+  jsonObject: VerifyCetAdaptorSignaturesRequest,
+): VerifyCetAdaptorSignaturesResponse;
 
 /**
-* @param {VerifyFundTxSignatureRequest} jsonObject - request data.
-* @return {VerifyFundTxSignatureResponse} - response data.
-*/
-export function VerifyFundTxSignature(jsonObject: VerifyFundTxSignatureRequest): VerifyFundTxSignatureResponse;
+ * @param {VerifyFundTxSignatureRequest} jsonObject - request data.
+ * @return {VerifyFundTxSignatureResponse} - response data.
+ */
+export function VerifyFundTxSignature(
+  jsonObject: VerifyFundTxSignatureRequest,
+): VerifyFundTxSignatureResponse;
 
 /**
-* @param {VerifyRefundTxSignatureRequest} jsonObject - request data.
-* @return {VerifyRefundTxSignatureResponse} - response data.
-*/
-export function VerifyRefundTxSignature(jsonObject: VerifyRefundTxSignatureRequest): VerifyRefundTxSignatureResponse;
+ * @param {VerifyRefundTxSignatureRequest} jsonObject - request data.
+ * @return {VerifyRefundTxSignatureResponse} - response data.
+ */
+export function VerifyRefundTxSignature(
+  jsonObject: VerifyRefundTxSignatureRequest,
+): VerifyRefundTxSignatureResponse;
 
 /** error class. */
 export class CfdDlcError extends Error {
@@ -459,7 +491,11 @@ export class CfdDlcError extends Error {
    * @param {InnerErrorResponse} errorInformation - Error information data.
    * @param {Error} cause - Cause of the error.
    */
-  constructor(message: string, errorInformation: InnerErrorResponse, cause: Error);
+  constructor(
+    message: string,
+    errorInformation: InnerErrorResponse,
+    cause: Error,
+  );
   /**
    * get error string.
    * @return {string} - string data.

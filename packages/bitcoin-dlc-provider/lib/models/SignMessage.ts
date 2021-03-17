@@ -6,6 +6,6 @@ export default class SignMessage {
     readonly fundTxSignatures: string[],
     readonly cetAdaptorPairs: AdaptorPair[],
     readonly refundSignature: string,
-    readonly utxoPublicKeys: string[]
+    readonly utxoPublicKeys: string[],
   ) {}
 }

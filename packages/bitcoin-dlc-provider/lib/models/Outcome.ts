@@ -4,7 +4,7 @@ export default class Outcome {
   constructor(
     readonly message: string,
     readonly local: Amount,
-    readonly remote: Amount
+    readonly remote: Amount,
   ) {}
 
   toJSON(): OutcomeJSON {
@@ -16,7 +16,7 @@ export default class Outcome {
   }
 
   static fromJSON(json: OutcomeJSON): Outcome {
-    let outcome = Object.create(Outcome.prototype);
+    const outcome = Object.create(Outcome.prototype);
     return Object.assign(outcome, json, {
       message: json.message,
       local: Amount.fromJSON(json.local),

@@ -11,13 +11,13 @@ export default class Wallet {
     externalChangeAddress: string,
     feePerByte: number,
     outputs: Output[],
-    fixedInputs: Input[]
+    fixedInputs: Input[],
   ) {
     return this.client.getMethod('buildSweepTransactionWithSetOutputs')(
       externalChangeAddress,
       feePerByte,
       outputs,
-      fixedInputs
+      fixedInputs,
     );
   }
 
@@ -25,13 +25,13 @@ export default class Wallet {
     externalChangeAddress: string,
     feePerByte: number,
     outputs: Output[],
-    fixedInputs: Input[]
+    fixedInputs: Input[],
   ) {
     return this.client.getMethod('sendSweepTransactionWithSetOutputs')(
       externalChangeAddress,
       feePerByte,
       outputs,
-      fixedInputs
+      fixedInputs,
     );
   }
 }

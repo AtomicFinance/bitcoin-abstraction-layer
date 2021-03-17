@@ -50,13 +50,13 @@ export default class Client extends Dlc {
   addProvider(provider: any) {
     if (!isFunction(provider.setClient)) {
       throw new (InvalidProviderError(
-        'Provider should have "setClient" method'
+        'Provider should have "setClient" method',
       ) as any)();
     }
 
     const duplicate = find(
       this._providers,
-      (_provider) => provider.constructor === _provider.constructor
+      (_provider) => provider.constructor === _provider.constructor,
     );
 
     if (duplicate) {
@@ -84,25 +84,26 @@ export default class Client extends Dlc {
   getProviderForMethod(method: any, requestor: any = false): Client {
     if (this._providers.concat(this.client._providers).length === 0) {
       throw new (NoProviderError(
-        'No provider provided. Add a provider to the client'
+        'No provider provided. Add a provider to the client',
       ) as any)();
     }
 
     let indexOfRequestor = requestor
-      ? findLastIndex(this._providers.concat(this.client._providers), function (
-          provider
-        ) {
-          return (
-            requestor.constructor === provider.constructor ||
-            (provider.getIdentifier &&
-              requestor.getIdentifier() === provider.getIdentifier())
-          );
-        })
+      ? findLastIndex(
+          this._providers.concat(this.client._providers),
+          function (provider) {
+            return (
+              requestor.constructor === provider.constructor ||
+              (provider.getIdentifier &&
+                requestor.getIdentifier() === provider.getIdentifier())
+            );
+          },
+        )
       : this._providers.concat(this.client._providers).length;
 
     if (indexOfRequestor === -1) indexOfRequestor = 0;
 
-    let provider = findLast(
+    const provider = findLast(
       this._providers.concat(this.client._providers),
       function (provider) {
         try {
@@ -115,12 +116,12 @@ export default class Client extends Dlc {
           }
         }
       },
-      indexOfRequestor - 1
+      indexOfRequestor - 1,
     );
 
     if (provider == null) {
       throw new (UnimplementedMethodError(
-        `Unimplemented method "${method}"`
+        `Unimplemented method "${method}"`,
       ) as any)();
     }
 

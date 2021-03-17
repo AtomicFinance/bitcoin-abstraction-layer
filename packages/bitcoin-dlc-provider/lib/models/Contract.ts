@@ -3,7 +3,7 @@ import PartyInputs, { PartyInputsJSON } from './PartyInputs';
 import OracleInfo from './OracleInfo';
 import OfferMessage, { OfferMessageJSON } from './OfferMessage';
 import AcceptMessage, { AcceptMessageJSON } from './AcceptMessage';
-import Payout, { PayoutJSON } from './Payout'
+import Payout, { PayoutJSON } from './Payout';
 import SignMessage from './SignMessage';
 import Amount, { AmountJSON } from './Amount';
 import { AdaptorPair, Messages } from '../@types/cfd-dlc-js';
@@ -107,12 +107,12 @@ export default class Contract {
       refundLocalSignature: this.refundLocalSignature,
       refundRemoteSignature: this.refundRemoteSignature,
       cetsHex: this.cetsHex,
-      cetAdaptorPairs: this.cetAdaptorPairs
+      cetAdaptorPairs: this.cetAdaptorPairs,
     });
   }
 
   static fromJSON(json: ContractJSON): Contract {
-    let contractMessage = Object.create(Contract.prototype);
+    const contractMessage = Object.create(Contract.prototype);
 
     const payouts: Payout[] = [];
 

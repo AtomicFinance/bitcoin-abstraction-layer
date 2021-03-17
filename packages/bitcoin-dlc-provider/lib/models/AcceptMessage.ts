@@ -1,4 +1,4 @@
-import { AdaptorPair } from '../@types/cfd-dlc-js'
+import { AdaptorPair } from '../@types/cfd-dlc-js';
 import PartyInputs, { PartyInputsJSON } from './PartyInputs';
 
 export default class AcceptMessage {
@@ -6,7 +6,7 @@ export default class AcceptMessage {
     readonly contractId: string,
     readonly remotePartyInputs: PartyInputs,
     readonly cetAdaptorPairs: AdaptorPair[],
-    readonly refundSignature: string
+    readonly refundSignature: string,
   ) {}
 
   toJSON(): AcceptMessageJSON {
@@ -19,7 +19,7 @@ export default class AcceptMessage {
   }
 
   static fromJSON(json: AcceptMessageJSON): AcceptMessage {
-    let outcome = Object.create(PartyInputs.prototype);
+    const outcome = Object.create(PartyInputs.prototype);
     return Object.assign(outcome, json, {
       contractId: json.contractId,
       remotePartyInputs: PartyInputs.fromJSON(json.remotePartyInputs),
