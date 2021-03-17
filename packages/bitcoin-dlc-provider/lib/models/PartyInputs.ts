@@ -3,7 +3,6 @@ import Utxo, { UtxoJSON } from './Utxo';
 export default class PartyInputs {
   constructor(
     readonly fundPublicKey: string,
-    readonly sweepPublicKey: string,
     readonly changeAddress: string,
     readonly finalAddress: string,
     readonly utxos: Utxo[]
@@ -25,7 +24,6 @@ export default class PartyInputs {
 
     return Object.assign({}, this, {
       fundPublicKey: this.fundPublicKey,
-      sweepPublicKey: this.sweepPublicKey,
       changeAddress: this.changeAddress,
       finalAddress: this.finalAddress,
       utxos: utxosJSON,
@@ -45,7 +43,6 @@ export default class PartyInputs {
 
     return Object.assign(partyInputs, json, {
       fundPublicKey: json.fundPublicKey,
-      sweepPublicKey: json.sweepPublicKey,
       changeAddress: json.changeAddress,
       finalAddress: json.finalAddress,
       utxos,
@@ -59,7 +56,6 @@ export default class PartyInputs {
 
 export interface PartyInputsJSON {
   fundPublicKey: string;
-  sweepPublicKey: string;
   changeAddress: string;
   finalAddress: string;
   utxos: UtxoJSON[];
