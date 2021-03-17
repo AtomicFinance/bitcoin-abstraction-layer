@@ -12,11 +12,11 @@
     "dist"
   ],
   "scripts": {
-    "build": "yarn run clean && yarn run compile",
-    "clean": "rimraf -rf ./dist",
-    "compile": "tsc -p tsconfig.build.json",
+    "build": "../../node_modules/.bin/tsc --project tsconfig.json",
     "prepublishOnly": "yarn run build",
-    "test": "yarn run build"
+    "test": "yarn run build",
+    "lint": "../../node_modules/.bin/eslint --ignore-path ../../.eslintignore  -c ../../.eslintrc.js .",
+    "lint:fix": "../../node_modules/.bin/eslint --fix --ignore-path ../../.eslintignore  -c ../../.eslintrc.js ."
   },
   "dependencies": {
     "@atomicfinance/provider": "^1.0.0-alpha.4",
@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@types/lodash": "^4.14.160",
-    "@types/node": "^10.12.18"
+    "@types/node": "^10.17.55"
   },
   "publishConfig": {
     "access": "public"

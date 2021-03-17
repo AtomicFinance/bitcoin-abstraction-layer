@@ -4,7 +4,7 @@ import BitcoinWalletProvider from '@atomicfinance/bitcoin-wallet-provider';
 const bitcoin = {
   BitcoinCfdProvider,
   BitcoinDlcProvider,
-  BitcoinWalletProvider
+  BitcoinWalletProvider,
 };
 
 export { bitcoin };

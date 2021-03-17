@@ -32,7 +32,7 @@ import {
   VerifyFundTxSignatureResponse,
   VerifyRefundTxSignatureRequest,
   VerifyRefundTxSignatureResponse,
-  Messages
+  Messages,
 } from './@types/cfd-dlc-js';
 
 import {
@@ -46,7 +46,7 @@ import {
   SignMessage,
   Contract,
   PayoutDetails,
-  MutualClosingMessage
+  MutualClosingMessage,
 } from './@types/@atomicfinance/bitcoin-dlc-provider';
 
 export default class Dlc {
@@ -61,8 +61,8 @@ export default class Dlc {
     payouts: PayoutDetails[],
     oracleInfo: OracleInfo,
     messagesList: Messages[],
-    startingIndex: number = 0,
-    fixedInputs: Input[] = []
+    startingIndex = 0,
+    fixedInputs: Input[] = [],
   ): Promise<OfferMessage> {
     return this.client.getMethod('initializeContractAndOffer')(
       input,
@@ -70,19 +70,19 @@ export default class Dlc {
       oracleInfo,
       messagesList,
       startingIndex,
-      fixedInputs
+      fixedInputs,
     );
   }
 
   async confirmContractOffer(
     offerMessage: OfferMessage,
-    startingIndex: number = 0,
-    fixedInputs: Input[] = []
+    startingIndex = 0,
+    fixedInputs: Input[] = [],
   ): Promise<AcceptMessage> {
     return this.client.getMethod('confirmContractOffer')(
       offerMessage,
       startingIndex,
-      fixedInputs
+      fixedInputs,
     );
   }
 
@@ -99,43 +99,55 @@ export default class Dlc {
   }
 
   async initiateEarlyExit(contractId: string, outputs: Output[]) {
-    return this.client.getMethod('initiateEarlyExit')(contractId, outputs)
+    return this.client.getMethod('initiateEarlyExit')(contractId, outputs);
   }
 
-  async finalizeEarlyExit(contractId: string, mutualClosingMessage: MutualClosingMessage) {
-    return this.client.getMethod('finalizeEarlyExit')(contractId, mutualClosingMessage)
+  async finalizeEarlyExit(
+    contractId: string,
+    mutualClosingMessage: MutualClosingMessage,
+  ) {
+    return this.client.getMethod('finalizeEarlyExit')(
+      contractId,
+      mutualClosingMessage,
+    );
   }
 
   async unilateralClose(
     outcomeIndex: number,
     oracleSignatures: string[],
-    contractId: string
+    contractId: string,
   ): Promise<string[]> {
     return this.client.getMethod('unilateralClose')(
       outcomeIndex,
       oracleSignatures,
-      contractId
+      contractId,
     );
   }
 
   async buildUnilateralClose(
     oracleSignature: string,
     outcomeIndex: number,
-    contractId: string
+    contractId: string,
   ): Promise<string[]> {
     return this.client.getMethod('buildUnilateralClose')(
       oracleSignature,
       outcomeIndex,
-      contractId
+      contractId,
     );
   }
 
-  async getFundingUtxoAddressesForOfferMessages (offerMessages: OfferMessage[]) {
-    return this.client.getMethod('getFundingUtxoAddressesForOfferMessages')(offerMessages)
+  async getFundingUtxoAddressesForOfferMessages(offerMessages: OfferMessage[]) {
+    return this.client.getMethod('getFundingUtxoAddressesForOfferMessages')(
+      offerMessages,
+    );
   }
 
-  async getFundingUtxoAddressesForAcceptMessages (acceptMessages: AcceptMessage[]) {
-    return this.client.getMethod('getFundingUtxoAddressesForAcceptMessages')(acceptMessages)
+  async getFundingUtxoAddressesForAcceptMessages(
+    acceptMessages: AcceptMessage[],
+  ) {
+    return this.client.getMethod('getFundingUtxoAddressesForAcceptMessages')(
+      acceptMessages,
+    );
   }
 
   hasDlc(contractId: string): boolean {
@@ -154,50 +166,98 @@ export default class Dlc {
     return this.client.getMethod('exportContracts')();
   }
 
-  deleteContract (contractId: string) {
-    return this.client.getMethod('deleteContract')(contractId)
+  deleteContract(contractId: string) {
+    return this.client.getMethod('deleteContract')(contractId);
   }
 
-  async importContractFromOfferMessage (offerMessage: OfferMessage, startingIndex: number) {
-    return this.client.getMethod('importContractFromOfferMessage')(offerMessage, startingIndex)
+  async importContractFromOfferMessage(
+    offerMessage: OfferMessage,
+    startingIndex: number,
+  ) {
+    return this.client.getMethod('importContractFromOfferMessage')(
+      offerMessage,
+      startingIndex,
+    );
   }
 
-  async importContractFromAcceptMessage (offerMessage: OfferMessage, acceptMessage: AcceptMessage, startingIndex: number) {
-    return this.client.getMethod('importContractFromAcceptMessage')(offerMessage, acceptMessage, startingIndex)
+  async importContractFromAcceptMessage(
+    offerMessage: OfferMessage,
+    acceptMessage: AcceptMessage,
+    startingIndex: number,
+  ) {
+    return this.client.getMethod('importContractFromAcceptMessage')(
+      offerMessage,
+      acceptMessage,
+      startingIndex,
+    );
   }
 
-  async importContractFromAcceptAndSignMessage (offerMessage: OfferMessage, acceptMessage: AcceptMessage, signMessage: SignMessage, startingIndex: number) {
-    return this.client.getMethod('importContractFromAcceptAndSignMessage')(offerMessage, acceptMessage, signMessage, startingIndex)
+  async importContractFromAcceptAndSignMessage(
+    offerMessage: OfferMessage,
+    acceptMessage: AcceptMessage,
+    signMessage: SignMessage,
+    startingIndex: number,
+  ) {
+    return this.client.getMethod('importContractFromAcceptAndSignMessage')(
+      offerMessage,
+      acceptMessage,
+      signMessage,
+      startingIndex,
+    );
   }
 
-  async importContractFromSignMessageAndCreateFinal (offerMessage: OfferMessage, acceptMessage: AcceptMessage, signMessage: SignMessage, startingIndex: number = 0) {
-    return this.client.getMethod('importContractFromSignMessageAndCreateFinal')(offerMessage, acceptMessage, signMessage, startingIndex)
+  async importContractFromSignMessageAndCreateFinal(
+    offerMessage: OfferMessage,
+    acceptMessage: AcceptMessage,
+    signMessage: SignMessage,
+    startingIndex = 0,
+  ) {
+    return this.client.getMethod('importContractFromSignMessageAndCreateFinal')(
+      offerMessage,
+      acceptMessage,
+      signMessage,
+      startingIndex,
+    );
   }
 
-  outputsToPayouts(outputs: GeneratedOutput[], oracleInfos: OracleInfo[], rValuesMessagesList: Messages[], localCollateral: Amount, remoteCollateral: Amount, payoutLocal: boolean): { payouts: PayoutDetails[], messagesList: Messages[] } {
-    return this.client.getMethod('outputsToPayouts')(outputs, oracleInfos, rValuesMessagesList, localCollateral, remoteCollateral, payoutLocal)
+  outputsToPayouts(
+    outputs: GeneratedOutput[],
+    oracleInfos: OracleInfo[],
+    rValuesMessagesList: Messages[],
+    localCollateral: Amount,
+    remoteCollateral: Amount,
+    payoutLocal: boolean,
+  ): { payouts: PayoutDetails[]; messagesList: Messages[] } {
+    return this.client.getMethod('outputsToPayouts')(
+      outputs,
+      oracleInfos,
+      rValuesMessagesList,
+      localCollateral,
+      remoteCollateral,
+      payoutLocal,
+    );
   }
 
   async AddSignatureToFundTransaction(
-    jsonObject: AddSignatureToFundTransactionRequest
+    jsonObject: AddSignatureToFundTransactionRequest,
   ): Promise<AddSignatureToFundTransactionResponse> {
     return this.client.getMethod('AddSignatureToFundTransaction')(jsonObject);
   }
 
   async CreateCetAdaptorSignature(
-    jsonObject: CreateCetAdaptorSignatureRequest
+    jsonObject: CreateCetAdaptorSignatureRequest,
   ): Promise<CreateCetAdaptorSignatureResponse> {
-    return this.client.getMethod('CreateCetAdaptorSignature')(jsonObject)
+    return this.client.getMethod('CreateCetAdaptorSignature')(jsonObject);
   }
 
   async CreateCetAdaptorSignatures(
-    jsonObject: CreateCetAdaptorSignaturesRequest
+    jsonObject: CreateCetAdaptorSignaturesRequest,
   ): Promise<CreateCetAdaptorSignaturesResponse> {
-    return this.client.getMethod('CreateCetAdaptorSignatures')(jsonObject)
+    return this.client.getMethod('CreateCetAdaptorSignatures')(jsonObject);
   }
 
   async AddSignaturesToRefundTx(
-    jsonObject: AddSignaturesToRefundTxRequest
+    jsonObject: AddSignaturesToRefundTxRequest,
   ): Promise<AddSignaturesToRefundTxResponse> {
     return this.client.getMethod('AddSignaturesToRefundTx')(jsonObject);
   }
@@ -207,73 +267,71 @@ export default class Dlc {
   }
 
   async CreateDlcTransactions(
-    jsonObject: CreateDlcTransactionsRequest
+    jsonObject: CreateDlcTransactionsRequest,
   ): Promise<CreateDlcTransactionsResponse> {
     return this.client.getMethod('CreateDlcTransactions')(jsonObject);
   }
 
   async CreateFundTransaction(
-    jsonObject: CreateFundTransactionRequest
+    jsonObject: CreateFundTransactionRequest,
   ): Promise<CreateFundTransactionResponse> {
     return this.client.getMethod('CreateFundTransaction')(jsonObject);
   }
 
   async CreateRefundTransaction(
-    jsonObject: CreateRefundTransactionRequest
+    jsonObject: CreateRefundTransactionRequest,
   ): Promise<CreateRefundTransactionResponse> {
     return this.client.getMethod('CreateRefundTransaction')(jsonObject);
   }
 
   async GetRawFundTxSignature(
-    jsonObject: GetRawFundTxSignatureRequest
+    jsonObject: GetRawFundTxSignatureRequest,
   ): Promise<GetRawFundTxSignatureResponse> {
     return this.client.getMethod('GetRawFundTxSignature')(jsonObject);
   }
 
   async GetRawRefundTxSignature(
-    jsonObject: GetRawRefundTxSignatureRequest
+    jsonObject: GetRawRefundTxSignatureRequest,
   ): Promise<GetRawRefundTxSignatureResponse> {
     return this.client.getMethod('GetRawRefundTxSignature')(jsonObject);
   }
 
-  async SignCetRequest(
-    jsonObject: SignCetRequest
-  ): Promise<SignCetResponse> {
-    return this.client.getMethod('SignCetRequest')(jsonObject)
+  async SignCetRequest(jsonObject: SignCetRequest): Promise<SignCetResponse> {
+    return this.client.getMethod('SignCetRequest')(jsonObject);
   }
 
   async SignFundTransaction(
-    jsonObject: SignFundTransactionRequest
+    jsonObject: SignFundTransactionRequest,
   ): Promise<SignFundTransactionResponse> {
     return this.client.getMethod('SignFundTransaction')(jsonObject);
   }
 
   async VerifyCetAdaptorSignature(
-    jsonObject: VerifyCetAdaptorSignatureRequest
+    jsonObject: VerifyCetAdaptorSignatureRequest,
   ): Promise<VerifyCetAdaptorSignatureResponse> {
-    return this.client.getMethod('VerifyCetAdaptorSignature')(jsonObject)
+    return this.client.getMethod('VerifyCetAdaptorSignature')(jsonObject);
   }
 
   async VerifyCetAdaptorSignaturesRequest(
-    jsonObject: VerifyCetAdaptorSignaturesRequest
+    jsonObject: VerifyCetAdaptorSignaturesRequest,
   ): Promise<VerifyCetAdaptorSignaturesResponse> {
-    return this.client.getMethod('VerifyCetAdaptorSignatures')(jsonObject)
+    return this.client.getMethod('VerifyCetAdaptorSignatures')(jsonObject);
   }
 
   async VerifyFundTxSignature(
-    jsonObject: VerifyFundTxSignatureRequest
+    jsonObject: VerifyFundTxSignatureRequest,
   ): Promise<VerifyFundTxSignatureResponse> {
     return this.client.getMethod('VerifyFundTxSignature')(jsonObject);
   }
 
   async VerifyRefundTxSignature(
-    jsonObject: VerifyRefundTxSignatureRequest
+    jsonObject: VerifyRefundTxSignatureRequest,
   ): Promise<VerifyRefundTxSignatureResponse> {
     return this.client.getMethod('VerifyRefundTxSignature')(jsonObject);
   }
 }
 
 interface GeneratedOutput {
-  payout: number,
-  groups: number[][]
+  payout: number;
+  groups: number[][];
 }

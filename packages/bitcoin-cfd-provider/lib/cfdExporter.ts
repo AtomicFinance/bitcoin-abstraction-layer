@@ -1,3 +1,3 @@
-import * as cfdJs from 'cfd-js'
+import * as cfdJs from 'cfd-js';
 
 export default cfdJs;

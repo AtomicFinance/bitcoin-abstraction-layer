@@ -33,7 +33,21 @@ export class Input {
   readonly satoshis: number;
   readonly value: number;
   readonly derivationPath: string;
-  constructor(txid: string, vout: number, address: string, label: string, scriptPubKey: string, amount: number, confirmations: number, spendable: boolean, solvable: boolean, safe: boolean, satoshis: number, value: number, derivationPath: string);
+  constructor(
+    txid: string,
+    vout: number,
+    address: string,
+    label: string,
+    scriptPubKey: string,
+    amount: number,
+    confirmations: number,
+    spendable: boolean,
+    solvable: boolean,
+    safe: boolean,
+    satoshis: number,
+    value: number,
+    derivationPath: string,
+  );
 }
 
 export class InputDetails {
@@ -43,7 +57,14 @@ export class InputDetails {
   readonly maturityTime: Date;
   readonly refundLockTime: number;
   readonly cetCsvDelay: number;
-  constructor(localCollateral: Amount, remoteCollateral: Amount, feeRate: number, maturityTime: Date, refundLockTime: number, cetCsvDelay: number);
+  constructor(
+    localCollateral: Amount,
+    remoteCollateral: Amount,
+    feeRate: number,
+    maturityTime: Date,
+    refundLockTime: number,
+    cetCsvDelay: number,
+  );
 }
 
 export class OutcomeDetails {
@@ -87,7 +108,13 @@ export class PartyInputs {
   readonly changeAddress: string;
   readonly finalAddress: string;
   readonly utxos: Utxo[];
-  constructor(fundPublicKey: string, sweepPublicKey: string, changeAddress: string, finalAddress: string, utxos: Utxo[]);
+  constructor(
+    fundPublicKey: string,
+    sweepPublicKey: string,
+    changeAddress: string,
+    finalAddress: string,
+    utxos: Utxo[],
+  );
   GetTotalInputAmount(): number;
   toJSON(): PartyInputsJSON;
   static fromJSON(json: PartyInputsJSON): PartyInputs;
@@ -113,7 +140,18 @@ export class OfferMessage {
   readonly feeRate: number;
   readonly cetCsvDelay: number;
   readonly refundLockTime: number;
-  constructor(contractId: string, localCollateral: Amount, remoteCollateral: Amount, maturityTime: Date, outcomes: Outcome[], oracleInfo: OracleInfo, localPartyInputs: PartyInputs, feeRate: number, cetCsvDelay: number, refundLockTime: number);
+  constructor(
+    contractId: string,
+    localCollateral: Amount,
+    remoteCollateral: Amount,
+    maturityTime: Date,
+    outcomes: Outcome[],
+    oracleInfo: OracleInfo,
+    localPartyInputs: PartyInputs,
+    feeRate: number,
+    cetCsvDelay: number,
+    refundLockTime: number,
+  );
   toJSON(): OfferMessageJSON;
   static fromJSON(json: OfferMessageJSON): OfferMessage;
   static reviver(key: string, value: any): any;
@@ -137,7 +175,12 @@ export class AcceptMessage {
   readonly remotePartyInputs: PartyInputs;
   readonly cetSignatures: string[];
   readonly refundSignature: string;
-  constructor(contractId: string, remotePartyInputs: PartyInputs, cetSignatures: string[], refundSignature: string);
+  constructor(
+    contractId: string,
+    remotePartyInputs: PartyInputs,
+    cetSignatures: string[],
+    refundSignature: string,
+  );
   toJSON(): AcceptMessageJSON;
   static fromJSON(json: AcceptMessageJSON): AcceptMessage;
   static reviver(key: string, value: any): any;
@@ -156,19 +199,25 @@ export class SignMessage {
   readonly cetSignatures: string[];
   readonly refundSignature: string;
   readonly utxoPublicKeys: string[];
-  constructor(contractId: string, fundTxSignatures: string[], cetSignatures: string[], refundSignature: string, utxoPublicKeys: string[]);
+  constructor(
+    contractId: string,
+    fundTxSignatures: string[],
+    cetSignatures: string[],
+    refundSignature: string,
+    utxoPublicKeys: string[],
+  );
 }
 
 export class Output {
   readonly address: string;
   readonly amount: Amount;
-  constructor(address: string, amount: Amount)
+  constructor(address: string, amount: Amount);
 }
 
 export class MutualClosingMessage {
   readonly outputs: Output[];
   readonly signature: string;
-  constructor(outputs: Output[], signature: string)
+  constructor(outputs: Output[], signature: string);
 }
 
 export class Contract {
@@ -236,7 +285,13 @@ export class Utxo {
   readonly amount: Amount;
   readonly address: string;
   readonly derivationPath: string;
-  constructor(txid: string, vout: number, amount: Amount, address: string, derivationPath: string);
+  constructor(
+    txid: string,
+    vout: number,
+    amount: Amount,
+    address: string,
+    derivationPath: string,
+  );
   toJSON(): UtxoJSON;
   static fromJSON(json: UtxoJSON): Utxo;
   static reviver(key: string, value: any): any;
@@ -248,5 +303,5 @@ export interface UtxoJSON {
   amount: AmountJSON;
   address: string;
   derivationPath: string;
-}  
+}
 // }

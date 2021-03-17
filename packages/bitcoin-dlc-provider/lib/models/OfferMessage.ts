@@ -1,9 +1,9 @@
 import Outcome, { OutcomeJSON } from './Outcome';
 import OracleInfo from './OracleInfo';
 import PartyInputs, { PartyInputsJSON } from './PartyInputs';
-import Payout, { PayoutJSON } from './Payout'
-import Amount, { AmountJSON } from './Amount'
-import { Messages } from '../@types/cfd-dlc-js'
+import Payout, { PayoutJSON } from './Payout';
+import Amount, { AmountJSON } from './Amount';
+import { Messages } from '../@types/cfd-dlc-js';
 
 export default class OfferMessage {
   constructor(
@@ -15,7 +15,7 @@ export default class OfferMessage {
     readonly oracleInfo: OracleInfo,
     readonly localPartyInputs: PartyInputs,
     readonly feeRate: number,
-    readonly refundLockTime: number
+    readonly refundLockTime: number,
   ) {}
 
   toJSON(): OfferMessageJSON {
@@ -39,7 +39,7 @@ export default class OfferMessage {
   }
 
   static fromJSON(json: OfferMessageJSON): OfferMessage {
-    let offerMessage = Object.create(OfferMessage.prototype);
+    const offerMessage = Object.create(OfferMessage.prototype);
 
     const payouts: Payout[] = [];
 

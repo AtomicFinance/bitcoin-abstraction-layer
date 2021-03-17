@@ -33,12 +33,12 @@ import {
   VerifyFundTxSignatureResponse,
   VerifyRefundTxSignatureRequest,
   VerifyRefundTxSignatureResponse,
-  Messages
+  Messages,
 } from './@types/cfd-dlc-js';
 import DlcParty from './models/DlcParty';
 import Contract from './models/Contract';
 
-import Amount from './models/Amount'
+import Amount from './models/Amount';
 import Input from './models/Input';
 import Output from './models/Output';
 import InputDetails from './models/InputDetails';
@@ -47,7 +47,7 @@ import OracleInfo from './models/OracleInfo';
 import OfferMessage from './models/OfferMessage';
 import AcceptMessage from './models/AcceptMessage';
 import SignMessage from './models/SignMessage';
-import Payout from './models/Payout'
+import Payout from './models/Payout';
 import Utxo from './models/Utxo';
 import { v4 as uuidv4 } from 'uuid';
 import { MutualClosingMessage } from '.';
@@ -82,31 +82,34 @@ export default class BitcoinDlcProvider extends Provider {
     payouts.forEach((payout) => {
       const { localAmount, remoteAmount } = payout;
       const newPayout = new Payout(localAmount, remoteAmount);
-      contract.payouts.push(newPayout)
-    })
+      contract.payouts.push(newPayout);
+    });
   }
 
   private findDlc(contractId: string): DlcParty {
     return this._dlcs.find((dlc) => dlc.contract.id === contractId);
   }
 
-  private updateDlcContractId(oldContractId: string, newContractId: string): boolean {
-    let updated = false
-    this._dlcs.forEach(dlc => {
+  private updateDlcContractId(
+    oldContractId: string,
+    newContractId: string,
+  ): boolean {
+    let updated = false;
+    this._dlcs.forEach((dlc) => {
       if (dlc.contract.id === oldContractId) {
-        dlc.contract.id = newContractId
-        updated = true
+        dlc.contract.id = newContractId;
+        updated = true;
       }
-    })
-    return updated
+    });
+    return updated;
   }
 
-  private deleteDlc (contractId: string) {
+  private deleteDlc(contractId: string) {
     this._dlcs.forEach((dlc, i) => {
       if (dlc.contract.id === contractId) {
-        this._dlcs.splice(i, 1)
+        this._dlcs.splice(i, 1);
       }
-    })
+    });
   }
 
   hasDlc(contractId: string): boolean {
@@ -134,38 +137,48 @@ export default class BitcoinDlcProvider extends Provider {
     return contracts;
   }
 
-  deleteContract (contractId: string) {
-    this.deleteDlc(contractId)
+  deleteContract(contractId: string) {
+    this.deleteDlc(contractId);
   }
 
   // Only Alice
-  async importContractFromOfferMessage (offerMessage: OfferMessage, startingIndex: number = 0) {
-    const { localCollateral, remoteCollateral, feeRate, refundLockTime, oracleInfo, messagesList } = offerMessage
+  async importContractFromOfferMessage(
+    offerMessage: OfferMessage,
+    startingIndex = 0,
+  ) {
+    const {
+      localCollateral,
+      remoteCollateral,
+      feeRate,
+      refundLockTime,
+      oracleInfo,
+      messagesList,
+    } = offerMessage;
 
     const input: InputDetails = {
       localCollateral,
       remoteCollateral,
       feeRate,
-      refundLockTime
-    }
+      refundLockTime,
+    };
 
-    const payouts: PayoutDetails[] = []
+    const payouts: PayoutDetails[] = [];
 
-    offerMessage.payouts.forEach(payout => {
-      const { local, remote } = payout
+    offerMessage.payouts.forEach((payout) => {
+      const { local, remote } = payout;
 
       payouts.push({
         localAmount: local,
-        remoteAmount: remote
-      })
-    })
+        remoteAmount: remote,
+      });
+    });
 
-    const fixedInputs: Input[] = []
+    const fixedInputs: Input[] = [];
 
-    offerMessage.localPartyInputs.utxos.forEach(utxo => {
-      const { txid, vout, address, amount, derivationPath } = utxo
+    offerMessage.localPartyInputs.utxos.forEach((utxo) => {
+      const { txid, vout, address, amount, derivationPath } = utxo;
 
-      const utxoAmount = amount.GetSatoshiAmount()
+      const utxoAmount = amount.GetSatoshiAmount();
 
       fixedInputs.push({
         txid,
@@ -180,25 +193,39 @@ export default class BitcoinDlcProvider extends Provider {
         solvable: false,
         safe: false,
         satoshis: 0,
-        value: 0
-      })
-    })
+        value: 0,
+      });
+    });
 
-    const initOfferMessage = await this.initializeContractAndOffer(input, payouts, oracleInfo, messagesList, startingIndex, fixedInputs)
-    const updateSuccess = this.updateDlcContractId(initOfferMessage.contractId, offerMessage.contractId)
+    const initOfferMessage = await this.initializeContractAndOffer(
+      input,
+      payouts,
+      oracleInfo,
+      messagesList,
+      startingIndex,
+      fixedInputs,
+    );
+    const updateSuccess = this.updateDlcContractId(
+      initOfferMessage.contractId,
+      offerMessage.contractId,
+    );
     if (!updateSuccess) {
-      throw Error('Dlc Contract ID did not update successfully')
+      throw Error('Dlc Contract ID did not update successfully');
     }
   }
 
   // Only Bob
-  async importContractFromAcceptMessage (offerMessage: OfferMessage, acceptMessage: AcceptMessage, startingIndex: number = 0) {
-    const fixedInputs: Input[] = []
+  async importContractFromAcceptMessage(
+    offerMessage: OfferMessage,
+    acceptMessage: AcceptMessage,
+    startingIndex = 0,
+  ) {
+    const fixedInputs: Input[] = [];
 
-    acceptMessage.remotePartyInputs.utxos.forEach(utxo => {
-      const { txid, vout, address, amount, derivationPath } = utxo
+    acceptMessage.remotePartyInputs.utxos.forEach((utxo) => {
+      const { txid, vout, address, amount, derivationPath } = utxo;
 
-      const utxoAmount = amount.GetSatoshiAmount()
+      const utxoAmount = amount.GetSatoshiAmount();
 
       fixedInputs.push({
         txid,
@@ -213,58 +240,92 @@ export default class BitcoinDlcProvider extends Provider {
         solvable: false,
         safe: false,
         satoshis: 0,
-        value: 0
-      })
-    })
+        value: 0,
+      });
+    });
 
-    const initAcceptMessage = await this.confirmContractOffer(offerMessage, startingIndex, fixedInputs)
-    const updateSuccess = this.updateDlcContractId(initAcceptMessage.contractId, acceptMessage.contractId)
+    const initAcceptMessage = await this.confirmContractOffer(
+      offerMessage,
+      startingIndex,
+      fixedInputs,
+    );
+    const updateSuccess = this.updateDlcContractId(
+      initAcceptMessage.contractId,
+      acceptMessage.contractId,
+    );
     if (!updateSuccess) {
-      throw Error('Dlc Contract ID did not update successfully')
+      throw Error('Dlc Contract ID did not update successfully');
     }
   }
 
   // Only Alice
-  async importContractFromAcceptAndSignMessage (offerMessage: OfferMessage, acceptMessage: AcceptMessage, signMessage: SignMessage, startingIndex: number = 0) {
-    await this.importContractFromOfferMessage(offerMessage, startingIndex)
+  async importContractFromAcceptAndSignMessage(
+    offerMessage: OfferMessage,
+    acceptMessage: AcceptMessage,
+    signMessage: SignMessage,
+    startingIndex = 0,
+  ) {
+    await this.importContractFromOfferMessage(offerMessage, startingIndex);
 
-    const initSignMessage = await this.signContract(acceptMessage)
+    const initSignMessage = await this.signContract(acceptMessage);
   }
 
   // Only Bob
-  async importContractFromSignMessageAndCreateFinal (offerMessage: OfferMessage, acceptMessage: AcceptMessage, signMessage: SignMessage, startingIndex: number = 0) {
-    await this.importContractFromAcceptMessage(offerMessage, acceptMessage, startingIndex)
+  async importContractFromSignMessageAndCreateFinal(
+    offerMessage: OfferMessage,
+    acceptMessage: AcceptMessage,
+    signMessage: SignMessage,
+    startingIndex = 0,
+  ) {
+    await this.importContractFromAcceptMessage(
+      offerMessage,
+      acceptMessage,
+      startingIndex,
+    );
     try {
-      await this.finalizeContract(signMessage)
-    } catch(e) {
-      console.log('error', e)
+      await this.finalizeContract(signMessage);
+    } catch (e) {
+      console.log('error', e);
     }
   }
 
-  outputsToPayouts(outputs: GeneratedOutput[], rValuesMessagesList: Messages[], localCollateral: Amount, remoteCollateral: Amount, payoutLocal: boolean): { payouts: PayoutDetails[], messagesList: Messages[] } {
-    const payouts: PayoutDetails[] = []
-    const messagesList: Messages[] =[]
+  outputsToPayouts(
+    outputs: GeneratedOutput[],
+    rValuesMessagesList: Messages[],
+    localCollateral: Amount,
+    remoteCollateral: Amount,
+    payoutLocal: boolean,
+  ): { payouts: PayoutDetails[]; messagesList: Messages[] } {
+    const payouts: PayoutDetails[] = [];
+    const messagesList: Messages[] = [];
 
     outputs.forEach((output: any) => {
-      const { payout, groups } = output
-      const payoutAmount: Amount = Amount.FromSatoshis(payout)
+      const { payout, groups } = output;
+      const payoutAmount: Amount = Amount.FromSatoshis(payout);
 
       groups.forEach((group: number[]) => {
-        const messages = []
+        const messages = [];
         for (let i = 0; i < group.length; i++) {
-          const digit: number = group[i]
-          messages.push(rValuesMessagesList[i].messages[digit])
+          const digit: number = group[i];
+          messages.push(rValuesMessagesList[i].messages[digit]);
         }
 
-        const localAmount = payoutLocal ? payoutAmount : localCollateral.AddAmount(remoteCollateral).CompareWith(payoutAmount)
-        const remoteAmount = payoutLocal ? localCollateral.AddAmount(remoteCollateral).CompareWith(payoutAmount) : payoutAmount
-        payouts.push({ localAmount, remoteAmount })
-        messagesList.push({ messages })
-      })
+        const localAmount = payoutLocal
+          ? payoutAmount
+          : localCollateral
+              .AddAmount(remoteCollateral)
+              .CompareWith(payoutAmount);
+        const remoteAmount = payoutLocal
+          ? localCollateral
+              .AddAmount(remoteCollateral)
+              .CompareWith(payoutAmount)
+          : payoutAmount;
+        payouts.push({ localAmount, remoteAmount });
+        messagesList.push({ messages });
+      });
+    });
 
-    })
-
-    return { payouts, messagesList }
+    return { payouts, messagesList };
   }
 
   async initializeContractAndOffer(
@@ -272,8 +333,8 @@ export default class BitcoinDlcProvider extends Provider {
     payouts: PayoutDetails[],
     oracleInfo: OracleInfo,
     messagesList: Messages[],
-    startingIndex: number = 0,
-    fixedInputs: Input[] = []
+    startingIndex = 0,
+    fixedInputs: Input[] = [],
   ): Promise<OfferMessage> {
     const contract = new Contract();
 
@@ -294,8 +355,8 @@ export default class BitcoinDlcProvider extends Provider {
 
   async confirmContractOffer(
     offerMessage: OfferMessage,
-    startingIndex: number = 0,
-    fixedInputs: Input[] = []
+    startingIndex = 0,
+    fixedInputs: Input[] = [],
   ): Promise<AcceptMessage> {
     const dlcParty = new DlcParty(this);
     this._dlcs.push(dlcParty);
@@ -305,7 +366,7 @@ export default class BitcoinDlcProvider extends Provider {
 
   async signContract(acceptMessage: AcceptMessage): Promise<SignMessage> {
     return this.findDlc(acceptMessage.contractId).OnAcceptMessage(
-      acceptMessage
+      acceptMessage,
     );
   }
 
@@ -321,49 +382,56 @@ export default class BitcoinDlcProvider extends Provider {
     return this.findDlc(contractId).InitiateEarlyExit(outputs);
   }
 
-  async finalizeEarlyExit(contractId: string, mutualClosingMessage: MutualClosingMessage) {
+  async finalizeEarlyExit(
+    contractId: string,
+    mutualClosingMessage: MutualClosingMessage,
+  ) {
     return this.findDlc(contractId).OnMutualClose(mutualClosingMessage);
   }
 
   async unilateralClose(
     outcomeIndex: number,
     oracleSignatures: string[],
-    contractId: string
+    contractId: string,
   ): Promise<string[]> {
     return this.findDlc(contractId).SignAndBroadcastCet(
       outcomeIndex,
-      oracleSignatures
+      oracleSignatures,
     );
   }
 
-  async getFundingUtxoAddressesForOfferMessages (offerMessages: OfferMessage[]) {
-    const fundingAddresses: string[] = []
-    const fundingUtxos: Utxo[] = []
-    offerMessages.forEach(offerMessage => {
-      offerMessage.localPartyInputs.utxos.forEach(utxo => {
-        if (fundingAddresses.indexOf(utxo.address) === -1) fundingAddresses.push(utxo.address)
-        fundingUtxos.push(utxo)
-      })
-    })
+  async getFundingUtxoAddressesForOfferMessages(offerMessages: OfferMessage[]) {
+    const fundingAddresses: string[] = [];
+    const fundingUtxos: Utxo[] = [];
+    offerMessages.forEach((offerMessage) => {
+      offerMessage.localPartyInputs.utxos.forEach((utxo) => {
+        if (fundingAddresses.indexOf(utxo.address) === -1)
+          fundingAddresses.push(utxo.address);
+        fundingUtxos.push(utxo);
+      });
+    });
 
-    return { addresses: fundingAddresses, utxos: fundingUtxos }
+    return { addresses: fundingAddresses, utxos: fundingUtxos };
   }
 
-  async getFundingUtxoAddressesForAcceptMessages (acceptMessages: AcceptMessage[]) {
-    const fundingAddresses: string[] = []
-    const fundingUtxos: Utxo[] = []
-    acceptMessages.forEach(acceptMessage => {
-      acceptMessage.remotePartyInputs.utxos.forEach(utxo => {
-        if (fundingAddresses.indexOf(utxo.address) === -1) fundingAddresses.push(utxo.address)
-        fundingUtxos.push(utxo)
-      })
-    })
+  async getFundingUtxoAddressesForAcceptMessages(
+    acceptMessages: AcceptMessage[],
+  ) {
+    const fundingAddresses: string[] = [];
+    const fundingUtxos: Utxo[] = [];
+    acceptMessages.forEach((acceptMessage) => {
+      acceptMessage.remotePartyInputs.utxos.forEach((utxo) => {
+        if (fundingAddresses.indexOf(utxo.address) === -1)
+          fundingAddresses.push(utxo.address);
+        fundingUtxos.push(utxo);
+      });
+    });
 
-    return { addresses: fundingAddresses, utxos: fundingUtxos }
+    return { addresses: fundingAddresses, utxos: fundingUtxos };
   }
 
   async AddSignatureToFundTransaction(
-    jsonObject: AddSignatureToFundTransactionRequest
+    jsonObject: AddSignatureToFundTransactionRequest,
   ): Promise<AddSignatureToFundTransactionResponse> {
     await this.CfdLoaded();
 
@@ -371,23 +439,23 @@ export default class BitcoinDlcProvider extends Provider {
   }
 
   async CreateCetAdaptorSignature(
-    jsonObject: CreateCetAdaptorSignatureRequest
+    jsonObject: CreateCetAdaptorSignatureRequest,
   ): Promise<CreateCetAdaptorSignatureResponse> {
     await this.CfdLoaded();
 
-    return this._cfdDlcJs.CreateCetAdaptorSignature(jsonObject)
+    return this._cfdDlcJs.CreateCetAdaptorSignature(jsonObject);
   }
 
   async CreateCetAdaptorSignatures(
-    jsonObject: CreateCetAdaptorSignaturesRequest
+    jsonObject: CreateCetAdaptorSignaturesRequest,
   ): Promise<CreateCetAdaptorSignaturesResponse> {
     await this.CfdLoaded();
 
-    return this._cfdDlcJs.CreateCetAdaptorSignatures(jsonObject)
+    return this._cfdDlcJs.CreateCetAdaptorSignatures(jsonObject);
   }
 
   async AddSignaturesToRefundTx(
-    jsonObject: AddSignaturesToRefundTxRequest
+    jsonObject: AddSignaturesToRefundTxRequest,
   ): Promise<AddSignaturesToRefundTxResponse> {
     await this.CfdLoaded();
 
@@ -401,7 +469,7 @@ export default class BitcoinDlcProvider extends Provider {
   }
 
   async CreateDlcTransactions(
-    jsonObject: CreateDlcTransactionsRequest
+    jsonObject: CreateDlcTransactionsRequest,
   ): Promise<CreateDlcTransactionsResponse> {
     await this.CfdLoaded();
 
@@ -409,7 +477,7 @@ export default class BitcoinDlcProvider extends Provider {
   }
 
   async CreateFundTransaction(
-    jsonObject: CreateFundTransactionRequest
+    jsonObject: CreateFundTransactionRequest,
   ): Promise<CreateFundTransactionResponse> {
     await this.CfdLoaded();
 
@@ -417,7 +485,7 @@ export default class BitcoinDlcProvider extends Provider {
   }
 
   async CreateRefundTransaction(
-    jsonObject: CreateRefundTransactionRequest
+    jsonObject: CreateRefundTransactionRequest,
   ): Promise<CreateRefundTransactionResponse> {
     await this.CfdLoaded();
 
@@ -425,7 +493,7 @@ export default class BitcoinDlcProvider extends Provider {
   }
 
   async GetRawFundTxSignature(
-    jsonObject: GetRawFundTxSignatureRequest
+    jsonObject: GetRawFundTxSignatureRequest,
   ): Promise<GetRawFundTxSignatureResponse> {
     await this.CfdLoaded();
 
@@ -433,39 +501,37 @@ export default class BitcoinDlcProvider extends Provider {
   }
 
   async GetRawRefundTxSignature(
-    jsonObject: GetRawRefundTxSignatureRequest
+    jsonObject: GetRawRefundTxSignatureRequest,
   ): Promise<GetRawRefundTxSignatureResponse> {
     await this.CfdLoaded();
 
     return this._cfdDlcJs.GetRawRefundTxSignature(jsonObject);
   }
 
-  async SignCet(
-    jsonObject: SignCetRequest
-  ): Promise<SignCetResponse> {
+  async SignCet(jsonObject: SignCetRequest): Promise<SignCetResponse> {
     await this.CfdLoaded();
 
-    return this._cfdDlcJs.SignCet(jsonObject)
+    return this._cfdDlcJs.SignCet(jsonObject);
   }
 
   async VerifyCetAdaptorSignature(
-    jsonObject: VerifyCetAdaptorSignatureRequest
+    jsonObject: VerifyCetAdaptorSignatureRequest,
   ): Promise<VerifyCetAdaptorSignatureResponse> {
     await this.CfdLoaded();
 
-    return this._cfdDlcJs.VerifyCetAdaptorSignature(jsonObject)
+    return this._cfdDlcJs.VerifyCetAdaptorSignature(jsonObject);
   }
 
   async VerifyCetAdaptorSignatures(
-    jsonObject: VerifyCetAdaptorSignaturesRequest
+    jsonObject: VerifyCetAdaptorSignaturesRequest,
   ): Promise<VerifyCetAdaptorSignaturesResponse> {
     await this.CfdLoaded();
 
-    return this._cfdDlcJs.VerifyCetAdaptorSignatures(jsonObject)
+    return this._cfdDlcJs.VerifyCetAdaptorSignatures(jsonObject);
   }
 
   async SignFundTransaction(
-    jsonObject: SignFundTransactionRequest
+    jsonObject: SignFundTransactionRequest,
   ): Promise<SignFundTransactionResponse> {
     await this.CfdLoaded();
 
@@ -473,7 +539,7 @@ export default class BitcoinDlcProvider extends Provider {
   }
 
   async VerifyFundTxSignature(
-    jsonObject: VerifyFundTxSignatureRequest
+    jsonObject: VerifyFundTxSignatureRequest,
   ): Promise<VerifyFundTxSignatureResponse> {
     await this.CfdLoaded();
 
@@ -481,7 +547,7 @@ export default class BitcoinDlcProvider extends Provider {
   }
 
   async VerifyRefundTxSignature(
-    jsonObject: VerifyRefundTxSignatureRequest
+    jsonObject: VerifyRefundTxSignatureRequest,
   ): Promise<VerifyRefundTxSignatureResponse> {
     await this.CfdLoaded();
 
@@ -490,6 +556,6 @@ export default class BitcoinDlcProvider extends Provider {
 }
 
 interface GeneratedOutput {
-  payout: number,
-  groups: number[][]
+  payout: number;
+  groups: number[][];
 }

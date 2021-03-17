@@ -202,7 +202,7 @@ describe('dlc provider', () => {
     expect(exitTx._raw.vout.length).to.equal(1)
   })
 
-  it('from outcomes with multiple r values', async () => {
+  it.skip('from outcomes with multiple r values', async () => {
     const localCollateral = Amount.FromSatoshis(100000000)
     const remoteCollateral = Amount.FromSatoshis(1000)
     const feeRate = 10

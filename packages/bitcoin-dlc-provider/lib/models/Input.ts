@@ -12,6 +12,6 @@ export default class Input {
     readonly safe: boolean,
     readonly satoshis: number,
     readonly value: number,
-    readonly derivationPath: string
+    readonly derivationPath: string,
   ) {}
 }

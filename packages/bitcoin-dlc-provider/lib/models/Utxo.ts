@@ -7,7 +7,7 @@ export default class Utxo {
     readonly amount: Amount,
     readonly address: string,
     readonly derivationPath: string,
-    readonly maxWitnessLength: number
+    readonly maxWitnessLength: number,
   ) {}
 
   toJSON(): UtxoJSON {
@@ -22,7 +22,7 @@ export default class Utxo {
   }
 
   static fromJSON(json: UtxoJSON): Utxo {
-    let utxo = Object.create(Utxo.prototype);
+    const utxo = Object.create(Utxo.prototype);
     return Object.assign(utxo, json, {
       txid: json.txid,
       vout: json.vout,

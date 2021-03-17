@@ -5,13 +5,13 @@ export default class PartyInputs {
     readonly fundPublicKey: string,
     readonly changeAddress: string,
     readonly finalAddress: string,
-    readonly utxos: Utxo[]
+    readonly utxos: Utxo[],
   ) {}
 
   public GetTotalInputAmount() {
     return this.utxos.reduce<number>(
       (prev, cur) => prev + cur.amount.GetSatoshiAmount(),
-      0
+      0,
     );
   }
 
@@ -31,7 +31,7 @@ export default class PartyInputs {
   }
 
   static fromJSON(json: PartyInputsJSON): PartyInputs {
-    let partyInputs = Object.create(PartyInputs.prototype);
+    const partyInputs = Object.create(PartyInputs.prototype);
     if (!json) return;
 
     const utxos: Utxo[] = [];
