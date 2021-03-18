@@ -34,6 +34,10 @@ export default class Wallet {
       fixedInputs,
     );
   }
+
+  async getUnusedAddress(change = false, numAddressPerCall = 100) {
+    return this.client.getMethod('getUnusedAddress')(change, numAddressPerCall);
+  }
 }
 
 interface Input {

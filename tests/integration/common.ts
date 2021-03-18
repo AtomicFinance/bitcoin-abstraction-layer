@@ -102,5 +102,7 @@ export {
   sleep,
   fundAddress,
   importAddresses,
-  mineBlock
+  mineBlock,
+  mockedBitcoinRpcProvider,
+  network
 }
