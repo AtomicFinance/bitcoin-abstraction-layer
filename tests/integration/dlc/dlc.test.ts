@@ -37,6 +37,9 @@ const bob = chains.bitcoinWithJs2.client
 
 describe('tlv integration', () => {
   it.only('should', async () => {
+    const aliceInput = await getInput(alice)
+    const bobInput = await getInput(bob)
+
     const oracle = new Oracle('olivia', 1)
     const oliviaInfo = oracle.GetOracleInfo()
 
@@ -84,7 +87,8 @@ describe('tlv integration', () => {
       offerCollateralSatoshis,
       feeRatePerVb,
       cetLocktime,
-      refundLocktime
+      refundLocktime,
+      [aliceInput]
     );
 
     console.log('offerMessage', offerMessage)

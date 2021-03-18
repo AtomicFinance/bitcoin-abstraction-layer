@@ -100,13 +100,15 @@ export default class DlcParty {
     checkUtxos = true,
   ) {
     const changeAddress = (
-      await this.client.getMethod('getUnusedAddress')(true)
+      await this.client.client.wallet.getUnusedAddress(true)
     ).address;
     const finalAddress = (
-      await this.client.getMethod('getUnusedAddress')(false)
+      await this.client.client.wallet.getUnusedAddress(false)
     ).address;
 
-    const fundingAddress = await this.client.getMethod('getUnusedAddress')(
+    console.log('this.client', this.client);
+
+    const fundingAddress = await this.client.client.wallet.getUnusedAddress(
       false,
     );
 
@@ -131,7 +133,7 @@ export default class DlcParty {
     // const finalAddress = addresses[0].address;
 
     const fundPrivateKeyPair = await this.client.getMethod('keyPair')(
-      fundingAddress[1].derivationPath,
+      fundingAddress.derivationPath,
     );
 
     this.fundPrivateKey = Buffer.from(fundPrivateKeyPair.__D).toString('hex');
