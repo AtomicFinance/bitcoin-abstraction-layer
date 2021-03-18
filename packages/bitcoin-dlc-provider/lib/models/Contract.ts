@@ -7,6 +7,7 @@ import Payout, { PayoutJSON } from './Payout';
 import SignMessage from './SignMessage';
 import Amount, { AmountJSON } from './Amount';
 import { AdaptorPair, Messages } from '../@types/cfd-dlc-js';
+import { ContractInfo, DlcOffer, DlcOfferV0 } from '@node-dlc/messaging';
 
 export default class Contract {
   id: string;
@@ -18,8 +19,8 @@ export default class Contract {
   localPartyInputs: PartyInputs;
   remotePartyInputs: PartyInputs;
   oracleInfo: OracleInfo;
-  cetCsvDelay: number;
-  refundLockTime: number;
+  // cetCsvDelay: number;
+  // refundLockTime: number;
   isLocalParty: boolean;
   fundTxHex: string;
   fundTxId: string;
@@ -31,6 +32,17 @@ export default class Contract {
   cetsHex: string[];
   cetAdaptorPairs: AdaptorPair[];
   startingIndex: number;
+
+  tempContractInfoId: string;
+  tempContractId: string;
+  contractId: string;
+
+  contractInfo: ContractInfo;
+  offerCollateralSatoshis: bigint;
+  acceptCollateralSatoshis: bigint;
+  feeRatePerVb: bigint;
+  cetLocktime: number;
+  refundLocktime: number;
 
   constructor() {
     this.payouts = [];
@@ -46,10 +58,23 @@ export default class Contract {
     contract.oracleInfo = offerMessage.oracleInfo;
     contract.localPartyInputs = offerMessage.localPartyInputs;
     contract.feeRate = offerMessage.feeRate;
-    contract.refundLockTime = offerMessage.refundLockTime;
+    contract.refundLocktime = offerMessage.refundLockTime;
     contract.isLocalParty = false;
     contract.messagesList = offerMessage.messagesList;
     return contract;
+  }
+
+  public GetDlcOfferMessage(): DlcOffer {
+    const dlcOffer = new DlcOfferV0();
+    dlcOffer.contractFlags = Buffer.from('00', 'hex');
+    dlcOffer.chainHash = Buffer.from(
+      '06226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910f',
+      'hex',
+    ); // TODO: replace this with const network = await this.client.getMethod('getConnectedNetwork')();
+    dlcOffer.contractInfo = this.contractInfo;
+    // dlcOffer.fundingPubKey =
+
+    return dlcOffer;
   }
 
   public GetOfferMessage(): OfferMessage {
@@ -62,7 +87,7 @@ export default class Contract {
       oracleInfo: this.oracleInfo,
       localPartyInputs: this.localPartyInputs,
       feeRate: this.feeRate,
-      refundLockTime: this.refundLockTime,
+      refundLockTime: this.refundLocktime,
       messagesList: this.messagesList,
       toJSON: OfferMessage.prototype.toJSON,
     };
@@ -96,8 +121,8 @@ export default class Contract {
       localPartyInputs: this.localPartyInputs?.toJSON(),
       remotePartyInputs: this.remotePartyInputs?.toJSON(),
       oracleInfo: this.oracleInfo,
-      cetCsvDelay: this.cetCsvDelay,
-      refundLockTime: this.refundLockTime,
+      // cetCsvDelay: this.cetCsvDelay,
+      refundLockTime: this.refundLocktime,
       isLocalParty: this.isLocalParty,
       fundTxHex: this.fundTxHex,
       fundTxId: this.fundTxId,
@@ -148,7 +173,7 @@ export interface ContractJSON {
   localPartyInputs: PartyInputsJSON;
   remotePartyInputs: PartyInputsJSON;
   oracleInfo: OracleInfo;
-  cetCsvDelay: number;
+  // cetCsvDelay: number;
   refundLockTime: number;
   isLocalParty: boolean;
   fundTxHex: string;

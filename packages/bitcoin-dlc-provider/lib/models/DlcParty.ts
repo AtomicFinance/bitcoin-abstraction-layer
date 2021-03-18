@@ -36,6 +36,7 @@ import OfferMessage from './OfferMessage';
 import PartyInputs from './PartyInputs';
 import SignMessage from './SignMessage';
 import Utxo from './Utxo';
+import { DlcOffer, DlcAccept, DlcSign, FundingInput } from "@node-dlc/messaging";
 
 const ESTIMATED_SIZE = 312;
 
@@ -61,17 +62,17 @@ export default class DlcParty {
 
   public async InitiateContract(
     initialContract: Contract,
-    startingIndex: number,
-    fixedInputs: Input[],
-  ): Promise<OfferMessage> {
+    // startingIndex: number,
+    fixedInputs: FundingInput[],
+  ): Promise<DlcOffer> {
     this.contract = initialContract;
     await this.Initialize(
-      this.contract.localCollateral,
-      startingIndex,
+      this.contract.offerCollateralSatoshis,
+      // startingIndex,
       fixedInputs,
     );
     this.contract.localPartyInputs = this.partyInputs;
-    return this.contract.GetOfferMessage();
+    return this.contract.GetDlcOfferMessage();
   }
 
   public async ImportContract(initialContract: Contract, startingIndex = 0) {
@@ -88,9 +89,9 @@ export default class DlcParty {
   }
 
   private async Initialize(
-    collateral: Amount,
-    startingIndex: number,
-    fixedInputs: Input[],
+    collateral: bigint,
+    // startingIndex: number,
+    fixedInputs: FundingInput[],
     checkUtxos = true,
   ) {
     const addresses = await this.client.getMethod('getAddresses')(

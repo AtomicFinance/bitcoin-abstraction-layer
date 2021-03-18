@@ -1,5 +1,6 @@
 import Provider from '@atomicfinance/provider';
 import { sleep } from '@liquality/utils';
+import { sha256 } from '@liquality/crypto';
 import {
   AddSignatureToFundTransactionRequest,
   AddSignatureToFundTransactionResponse,
@@ -51,6 +52,7 @@ import Payout from './models/Payout';
 import Utxo from './models/Utxo';
 import { v4 as uuidv4 } from 'uuid';
 import { MutualClosingMessage } from '.';
+import { ContractInfo, FundingInput, DlcOffer } from '@node-dlc/messaging';
 
 export default class BitcoinDlcProvider extends Provider {
   _network: any;
@@ -71,19 +73,19 @@ export default class BitcoinDlcProvider extends Provider {
     }
   }
 
-  private setInitialInputs(contract: Contract, input: InputDetails) {
-    contract.localCollateral = input.localCollateral;
-    contract.remoteCollateral = input.remoteCollateral;
-    contract.feeRate = input.feeRate;
-    contract.refundLockTime = input.refundLockTime;
-  }
+  // private setInitialInputs(contract: Contract, input: InputDetails) {
+  //   contract.localCollateral = input.localCollateral;
+  //   contract.remoteCollateral = input.remoteCollateral;
+  //   contract.feeRate = input.feeRate;
+  //   contract.refundLockTime = input.refundLockTime;
+  // }
 
   private setPayouts(contract: Contract, payouts: PayoutDetails[]) {
-    payouts.forEach((payout) => {
-      const { localAmount, remoteAmount } = payout;
-      const newPayout = new Payout(localAmount, remoteAmount);
-      contract.payouts.push(newPayout);
-    });
+    // payouts.forEach((payout) => {
+    //   const { localAmount, remoteAmount } = payout;
+    //   const newPayout = new Payout(localAmount, remoteAmount);
+    //   contract.payouts.push(newPayout);
+    // });
   }
 
   private findDlc(contractId: string): DlcParty {
@@ -328,31 +330,61 @@ export default class BitcoinDlcProvider extends Provider {
     return { payouts, messagesList };
   }
 
+  /**
+   * Deserializes an contract_descriptor_v0 message
+   * @param contractInfo ContractInfo TLV (V0 or V1)
+   * @param offerCollateralSatoshis Amount DLC Initiator is putting into the contract
+   * @param feeRatePerVb Fee rate in satoshi per virtual byte that both sides use to compute fees in funding tx
+   * @param cetLocktime The nLockTime to be put on CETs
+   * @param refundLocktime The nLockTime to be put on the refund transaction
+   * @returns {Promise<DlcOffer>}
+   */
   async initializeContractAndOffer(
-    input: InputDetails,
-    payouts: PayoutDetails[],
-    oracleInfo: OracleInfo,
-    messagesList: Messages[],
-    startingIndex = 0,
-    fixedInputs: Input[] = [],
-  ): Promise<OfferMessage> {
+    contractInfo: ContractInfo,
+    offerCollateralSatoshis: bigint,
+    feeRatePerVb: bigint,
+    cetLocktime: number,
+    refundLocktime: number,
+    fixedInputs?: FundingInput[],
+    // input: InputDetails,
+    // payouts: PayoutDetails[],
+    // oracleInfo: OracleInfo,
+    // messagesList: Messages[],
+    // startingIndex = 0,
+    // fixedInputs: Input[] = [],
+  ): Promise<DlcOffer> {
     const contract = new Contract();
 
-    contract.id = uuidv4();
-    contract.oracleInfo = oracleInfo;
-    contract.startingIndex = startingIndex;
-    contract.messagesList = messagesList;
+    contract.tempContractInfoId = sha256(contractInfo.serialize());
 
-    this.setInitialInputs(contract, input);
+    // contract.id = uuidv4();
+    // contract.oracleInfo = oracleInfo;
+    // contract.startingIndex = startingIndex;
+    // contract.messagesList = messagesList;
 
-    this.setPayouts(contract, payouts);
+    // this.setInitialInputs(contract, input);
+
+    contract.contractInfo = contractInfo;
+    contract.offerCollateralSatoshis = offerCollateralSatoshis;
+
+    contract.acceptCollateralSatoshis =
+      contractInfo.totalCollateral - offerCollateralSatoshis;
+
+    contract.feeRatePerVb = feeRatePerVb;
+    contract.cetLocktime = cetLocktime;
+    contract.refundLocktime = refundLocktime;
+
+    // this.setPayouts(contract, payouts);
 
     const dlcParty = new DlcParty(this);
     this._dlcs.push(dlcParty);
 
-    return dlcParty.InitiateContract(contract, startingIndex, fixedInputs);
+    return dlcParty.InitiateContract(contract, fixedInputs);
   }
 
+  /*
+   * Should receive OfferMessage TLV
+   */
   async confirmContractOffer(
     offerMessage: OfferMessage,
     startingIndex = 0,
