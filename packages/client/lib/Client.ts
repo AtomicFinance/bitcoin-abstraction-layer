@@ -90,7 +90,7 @@ export default class Client extends Dlc {
 
     let indexOfRequestor = requestor
       ? findLastIndex(
-          this._providers.concat(this.client._providers),
+          this.client._providers.concat(this._providers),
           function (provider) {
             return (
               requestor.constructor === provider.constructor ||
@@ -99,12 +99,12 @@ export default class Client extends Dlc {
             );
           },
         )
-      : this._providers.concat(this.client._providers).length;
+      : this.client._providers.concat(this._providers).length;
 
     if (indexOfRequestor === -1) indexOfRequestor = 0;
 
     const provider = findLast(
-      this._providers.concat(this.client._providers),
+      this.client._providers.concat(this._providers),
       function (provider) {
         try {
           return isFunction((provider as any)[method]);
