@@ -66,13 +66,18 @@ export default class Contract {
 
   public GetDlcOfferMessage(): DlcOffer {
     const dlcOffer = new DlcOfferV0();
+
     dlcOffer.contractFlags = Buffer.from('00', 'hex');
     dlcOffer.chainHash = Buffer.from(
       '06226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910f',
       'hex',
     ); // TODO: replace this with const network = await this.client.getMethod('getConnectedNetwork')();
+
     dlcOffer.contractInfo = this.contractInfo;
-    // dlcOffer.fundingPubKey =
+    dlcOffer.fundingPubKey = Buffer.from(
+      this.localPartyInputs.fundPublicKey,
+      'hex',
+    );
 
     return dlcOffer;
   }
