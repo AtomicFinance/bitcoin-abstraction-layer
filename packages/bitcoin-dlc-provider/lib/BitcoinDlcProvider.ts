@@ -52,7 +52,16 @@ import Payout from './models/Payout';
 import Utxo from './models/Utxo';
 import { v4 as uuidv4 } from 'uuid';
 import { MutualClosingMessage } from '.';
-import { ContractInfo, FundingInput, DlcOffer } from '@node-dlc/messaging';
+import {
+  ContractInfo,
+  FundingInput,
+  FundingInputV0,
+  DlcOffer,
+  MessageType,
+} from '@node-dlc/messaging';
+import { Tx } from '@node-dlc/core';
+import { StreamReader } from '@node-lightning/bufio';
+import * as bitcoin from 'bitcoinjs-lib';
 
 export default class BitcoinDlcProvider extends Provider {
   _network: any;
@@ -585,6 +594,19 @@ export default class BitcoinDlcProvider extends Provider {
 
     return this._cfdDlcJs.VerifyRefundTxSignature(jsonObject);
   }
+
+  async fundingInputToUtxo(_input: FundingInput): Promise<Utxo> {
+    if (_input.type !== MessageType.FundingInputV0) throw Error('Wrong type');
+    const input = _input as FundingInputV0;
+    const prevTx = Tx.parse(StreamReader.fromBuffer(input.prevTx));
+    const prevTxOut = prevTx.outputs[input.prevTxVout];
+    const scriptPubKey = prevTxOut.scriptPubKey.serialize().toString('hex');
+    const address = bitcoin.address.fromOutputScript(
+      prevTxOut.scriptPubKey.serialize(),
+    );
+  }
+
+  async utxoToFundingInput(utxo: Utxo): Promise<FundingInput> {}
 }
 
 interface GeneratedOutput {

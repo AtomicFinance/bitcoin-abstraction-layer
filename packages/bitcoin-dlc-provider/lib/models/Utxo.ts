@@ -4,16 +4,18 @@ export default class Utxo {
   constructor(
     readonly txid: string,
     readonly vout: number,
+    readonly value: number,
     readonly amount: Amount,
     readonly address: string,
-    readonly derivationPath: string,
-    readonly maxWitnessLength: number,
+    readonly derivationPath?: string,
+    readonly maxWitnessLength?: number,
   ) {}
 
   toJSON(): UtxoJSON {
     return Object.assign({}, this, {
       txid: this.txid,
       vout: this.vout,
+      value: this.value,
       amount: this.amount.toJSON(),
       address: this.address,
       derivationPath: this.derivationPath,

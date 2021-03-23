@@ -224,6 +224,7 @@ export default class DlcParty {
       utxoSet.push({
         txid: utxo.txid,
         vout: utxo.vout,
+        value: utxo.value,
         amount: Amount.FromSatoshis(utxo.value),
         address: utxo.address,
         derivationPath: utxo.derivationPath,
@@ -266,10 +267,11 @@ export default class DlcParty {
           utxos.push({
             txid: vinTx.hash,
             vout: j,
+            value: Amount.FromBitcoin(vout.value).GetSatoshiAmount(),
             amount: Amount.FromBitcoin(vout.value),
             address: fundingAddress,
             derivationPath: addresses[0].derivationPath,
-            maxWitnessLength: 1000000,
+            maxWitnessLength: 108,
             toJSON: Utxo.prototype.toJSON,
           });
         }
