@@ -4,11 +4,11 @@ export default class Utxo {
   constructor(
     readonly txid: string,
     readonly vout: number,
-    readonly value: number,
+    readonly value: number, // In BTC (not sats)
     readonly amount: Amount,
     readonly address: string,
+    readonly maxWitnessLength: number,
     readonly derivationPath?: string,
-    readonly maxWitnessLength?: number,
   ) {}
 
   toJSON(): UtxoJSON {

@@ -30,7 +30,7 @@ import AcceptMessage from './AcceptMessage';
 import Amount from './Amount';
 import Contract from './Contract';
 import MutualClosingMessage from './MutualClosingMessage';
-import Input from './Input';
+// import Input from './Input';
 import Output from './Output';
 import OfferMessage from './OfferMessage';
 import PartyInputs from './PartyInputs';
@@ -68,7 +68,7 @@ export default class DlcParty {
   public async InitiateContract(
     initialContract: Contract,
     // startingIndex: number,
-    fixedInputs: Input[],
+    fixedInputs: Utxo[],
   ): Promise<DlcOffer> {
     this.contract = initialContract;
     await this.Initialize(
@@ -96,7 +96,7 @@ export default class DlcParty {
   private async Initialize(
     collateral: bigint,
     // startingIndex: number,
-    fixedInputs: Input[],
+    fixedInputs: Utxo[],
     checkUtxos = true,
   ) {
     const changeAddress = (
@@ -189,7 +189,7 @@ export default class DlcParty {
     this.partyInputs = inputs;
   }
 
-  private async GetUtxosForAmount(amount: bigint, fixedInputs: Input[]) {
+  private async GetUtxosForAmount(amount: bigint, fixedInputs: Utxo[]) {
     if (amount === BigInt(0)) {
       return [];
     }

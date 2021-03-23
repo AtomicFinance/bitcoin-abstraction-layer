@@ -62,6 +62,7 @@ import {
 import { Tx } from '@node-dlc/core';
 import { StreamReader } from '@node-lightning/bufio';
 import * as bitcoin from 'bitcoinjs-lib';
+import { decodeRawTransaction } from '@liquality/bitcoin-utils';
 
 export default class BitcoinDlcProvider extends Provider {
   _network: any;
@@ -595,7 +596,8 @@ export default class BitcoinDlcProvider extends Provider {
     return this._cfdDlcJs.VerifyRefundTxSignature(jsonObject);
   }
 
-  async fundingInputToUtxo(_input: FundingInput): Promise<Utxo> {
+  // async fundingInputToUtxo(_input: FundingInput): Promise<Utxo> {
+  async fundingInputToUtxo(_input: FundingInput) {
     if (_input.type !== MessageType.FundingInputV0) throw Error('Wrong type');
     const input = _input as FundingInputV0;
     const prevTx = Tx.parse(StreamReader.fromBuffer(input.prevTx));
@@ -604,9 +606,24 @@ export default class BitcoinDlcProvider extends Provider {
     const address = bitcoin.address.fromOutputScript(
       prevTxOut.scriptPubKey.serialize(),
     );
+
+    const addressObject = await this.getMethod('findAddress')(address);
+    console.log('addressObject', addressObject);
   }
 
-  async utxoToFundingInput(utxo: Utxo): Promise<FundingInput> {}
+  // async utxoToFundingInput(utxo: Utxo): Promise<FundingInput> {}
+  async utxoToFundingInput(utxo: Utxo) {
+    const network = await this.getMethod('getConnectedNetwork')();
+
+    const input = new FundingInputV0();
+    input.prevTxVout = utxo.vout;
+
+    const txRaw = await this.getMethod('getRawTransactionByHash')(utxo.txid);
+    const tx = await decodeRawTransaction(txRaw, network);
+
+    console.log('txraw', txRaw);
+    console.log('tx', tx);
+  }
 }
 
 interface GeneratedOutput {

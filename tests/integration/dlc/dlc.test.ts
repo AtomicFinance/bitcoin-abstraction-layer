@@ -35,8 +35,16 @@ const network = chain.network
 
 const bob = chains.bitcoinWithJs2.client
 
-describe('tlv integration', () => {
+describe('stuff', () => {
   it.only('should', async () => {
+    const aliceInput = await getInput(alice)
+    console.log('aliceINput', aliceInput)
+    // const tx = await alice.getMethod('getTransactionByHash')(txid)
+  })
+})
+
+describe('tlv integration', () => {
+  it('should', async () => {
     const aliceInput = await getInput(alice)
     const bobInput = await getInput(bob)
 
@@ -346,19 +354,26 @@ async function getInput(client: Client): Promise<Input> {
 
   const vout = tx.vout.find((vout: any) => vout.scriptPubKey.addresses[0] === unusedAddress)
 
+  const input: Utxo = {
+    txid: tx.txid,
+    vout: vout.n,
+    value: new BN(vout.value).times(1e8).toNumber(),
+    address: unusedAddress,
+  }
+
   const input: Input = {
     txid: tx.txid,
     vout: vout.n,
     address: unusedAddress,
     label: '',
     scriptPubKey: vout.scriptPubKey.hex,
-    amount: new BN(vout.value).times(1e8).toNumber(),
-    confirmations: 1,
-    spendable: true,
-    solvable: true,
-    safe: true,
+    amount: vout.value,
+    // confirmations: 1,
+    // spendable: true,
+    // solvable: true,
+    // safe: true,
     satoshis: new BN(vout.value).times(1e8).toNumber(),
-    value: new BN(vout.value).times(1e8).toNumber(),
+    value: vout.value,
     derivationPath
   }
 
