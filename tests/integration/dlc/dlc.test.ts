@@ -29,7 +29,7 @@ import {
   ContractDescriptorV1,
   RoundingIntervalsV0,
 } from '@node-dlc/messaging';
-import { CoveredCall } from '@node-dlc/core';
+import { CoveredCall, groupByIgnoringDigits } from '@node-dlc/core';
 import { sha256 } from '@liquality/crypto';
 
 import * as base2Output from '../outputs/base2.json';
@@ -182,7 +182,21 @@ describe('tlv integration', () => {
       roundingIntervals,
     );
 
-    console.log(payouts);
+    const groups = [];
+    payouts.forEach((p) => {
+      groups.push({
+        payout: p.payout,
+        groups: groupByIgnoringDigits(p.indexFrom, p.indexTo, 2, 20),
+      });
+    });
+
+    console.log(groups);
+    console.log(
+      `# of CETS: ${groups.reduce(
+        (acc, group) => acc + group.groups.length,
+        0,
+      )}`,
+    );
   });
 });
 
