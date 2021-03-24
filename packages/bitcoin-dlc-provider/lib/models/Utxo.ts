@@ -1,5 +1,10 @@
 import Amount, { AmountJSON } from './Amount';
+import Input from './Input';
 
+/**
+ * Class for interfacing with utxos in CFD DLC JS
+ * https://github.com/atomicfinance/cfd-dlc-js.git#v0.0.15
+ */
 export default class Utxo {
   constructor(
     readonly txid: string,
@@ -10,7 +15,21 @@ export default class Utxo {
     readonly maxWitnessLength: number,
   ) {}
 
-  toJSON(): UtxoJSON {
+  public toInput(): Input {
+    return {
+      txid: this.txid,
+      vout: this.vout,
+      address: this.address,
+      amount: this.amount.GetBitcoinAmount(),
+      value: this.amount.GetBitcoinAmount(),
+      satoshis: this.amount.GetSatoshiAmount(),
+      derivationPath: this.derivationPath,
+      maxWitnessLength: this.maxWitnessLength,
+      toUtxo: Input.prototype.toUtxo,
+    };
+  }
+
+  public toJSON(): UtxoJSON {
     return Object.assign({}, this, {
       txid: this.txid,
       vout: this.vout,
