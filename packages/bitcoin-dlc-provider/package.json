@@ -29,7 +29,8 @@
     "uuid": "^8.3.0",
     "@node-lightning/bufio": "0.21.1",
     "@node-lightning/bitcoin": "0.21.1",
-    "bitcoinjs-lib": "5.2.0"
+    "bitcoinjs-lib": "5.2.0",
+    "randombytes": "2.1.0"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.160",

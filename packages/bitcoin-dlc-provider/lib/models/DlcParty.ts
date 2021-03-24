@@ -229,6 +229,7 @@ export default class DlcParty {
         derivationPath: utxo.derivationPath,
         maxWitnessLength: utxo.maxWitnessLength,
         toJSON: Utxo.prototype.toJSON,
+        toInput: Utxo.prototype.toInput,
       });
     }
 
@@ -271,6 +272,7 @@ export default class DlcParty {
             derivationPath: addresses[0].derivationPath,
             maxWitnessLength: 1000000,
             toJSON: Utxo.prototype.toJSON,
+            toInput: Utxo.prototype.toInput,
           });
         }
       }

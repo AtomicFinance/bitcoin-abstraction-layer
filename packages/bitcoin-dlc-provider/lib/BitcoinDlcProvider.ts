@@ -52,7 +52,18 @@ import Payout from './models/Payout';
 import Utxo from './models/Utxo';
 import { v4 as uuidv4 } from 'uuid';
 import { MutualClosingMessage } from '.';
-import { ContractInfo, FundingInput, DlcOffer } from '@node-dlc/messaging';
+import {
+  ContractInfo,
+  FundingInput,
+  DlcOffer,
+  FundingInputV0,
+  MessageType,
+} from '@node-dlc/messaging';
+import { Tx, TxBuilder, Sequence } from '@node-dlc/bitcoin';
+import { decodeRawTransaction } from '@liquality/bitcoin-utils';
+import { StreamReader } from '@node-lightning/bufio';
+import * as bitcoin from 'bitcoinjs-lib';
+import randomBytes from 'randombytes';
 
 export default class BitcoinDlcProvider extends Provider {
   _network: any;
@@ -584,6 +595,56 @@ export default class BitcoinDlcProvider extends Provider {
     await this.CfdLoaded();
 
     return this._cfdDlcJs.VerifyRefundTxSignature(jsonObject);
+  }
+
+  async fundingInputToInput(_input: FundingInput): Promise<Input> {
+    if (_input.type !== MessageType.FundingInputV0) throw Error('Wrong type');
+    const network = await this.getMethod('getConnectedNetwork')();
+    const input = _input as FundingInputV0;
+    const prevTx = input.prevTx;
+    const prevTxOut = prevTx.outputs[input.prevTxVout];
+    const scriptPubKey = prevTxOut.scriptPubKey.serialize().slice(1);
+    const address = bitcoin.address.fromOutputScript(scriptPubKey, network);
+    const { derivationPath } = await this.getMethod('findAddress')([address]);
+
+    return {
+      txid: prevTx.txId.toString(),
+      vout: input.prevTxVout,
+      address,
+      amount: prevTxOut.value.bitcoin,
+      value: prevTxOut.value.bitcoin,
+      satoshis: Number(prevTxOut.value.sats),
+      derivationPath,
+      maxWitnessLength: input.maxWitnessLen,
+      redeemScript: input.redeemScript
+        ? input.redeemScript.toString('hex')
+        : '',
+      scriptPubKey: scriptPubKey.toString('hex'),
+      inputSerialId: input.inputSerialId,
+      toUtxo: Input.prototype.toUtxo,
+    };
+  }
+
+  async inputToFundingInput(input: Input): Promise<FundingInput> {
+    const fundingInput = new FundingInputV0();
+    fundingInput.prevTxVout = input.vout;
+
+    const txRaw = await this.getMethod('getRawTransactionByHash')(input.txid);
+    const tx = Tx.parse(StreamReader.fromHex(txRaw));
+
+    fundingInput.prevTx = tx;
+    fundingInput.sequence = Sequence.default();
+    fundingInput.maxWitnessLen = input.maxWitnessLength
+      ? input.maxWitnessLength
+      : 108;
+    fundingInput.redeemScript = input.redeemScript
+      ? Buffer.from(input.redeemScript, 'hex')
+      : Buffer.from('', 'hex');
+    fundingInput.inputSerialId = input.inputSerialId
+      ? input.inputSerialId
+      : randomBytes(4).reduce((acc, num, i) => acc + num ** i, 0);
+
+    return fundingInput;
   }
 }
 

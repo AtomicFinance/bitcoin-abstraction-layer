@@ -28,6 +28,7 @@ import {
   ContractInfoV1,
   ContractDescriptorV1,
   RoundingIntervalsV0,
+  FundingInputV0,
 } from '@node-dlc/messaging';
 import { CoveredCall, groupByIgnoringDigits } from '@node-dlc/core';
 import { sha256 } from '@liquality/crypto';
@@ -39,6 +40,49 @@ const alice = chain.client;
 const network = chain.network;
 
 const bob = chains.bitcoinWithJs2.client;
+
+describe('inputToFundingInput', () => {
+  it('should convert between types', async () => {
+    const actualInput: Input = await getInput(alice);
+    const actualFundingInput: FundingInputV0 = await alice.finance.getMethod(
+      'inputToFundingInput',
+    )(actualInput);
+
+    const input: Input = await alice.finance.getMethod('fundingInputToInput')(
+      actualFundingInput,
+    );
+    const fundingInput: FundingInputV0 = await alice.finance.getMethod(
+      'inputToFundingInput',
+    )(input);
+
+    expect(actualInput.txid).to.equal(input.txid);
+    expect(actualInput.vout).to.equal(input.vout);
+    expect(actualInput.address).to.equal(input.address);
+    expect(actualInput.amount).to.equal(input.amount);
+    expect(actualInput.satoshis).to.equal(input.satoshis);
+    expect(actualInput.value).to.equal(input.value);
+    expect(actualInput.derivationPath).to.equal(input.derivationPath);
+    expect(actualInput.maxWitnessLength).to.equal(input.maxWitnessLength);
+    expect(actualInput.redeemScript).to.equal(input.redeemScript);
+
+    expect(actualFundingInput.inputSerialId).to.equal(
+      fundingInput.inputSerialId,
+    );
+    expect(actualFundingInput.prevTx.serialize()).to.deep.equal(
+      fundingInput.prevTx.serialize(),
+    );
+    expect(actualFundingInput.prevTxVout).to.equal(fundingInput.prevTxVout);
+    expect(actualFundingInput.sequence.value).to.equal(
+      fundingInput.sequence.value,
+    );
+    expect(actualFundingInput.maxWitnessLen).to.equal(
+      fundingInput.maxWitnessLen,
+    );
+    expect(actualFundingInput.redeemScript).to.deep.equal(
+      fundingInput.redeemScript,
+    );
+  });
+});
 
 describe('tlv integration', () => {
   it('should', async () => {
@@ -108,7 +152,7 @@ describe('tlv integration', () => {
     console.log('offerMessage', offerMessage);
   });
 
-  it.only('should create a covered call contract', async () => {
+  it('should create a covered call contract', async () => {
     const aliceInput = await getInput(alice);
     const bobInput = await getInput(bob);
 
@@ -554,16 +598,14 @@ async function getInput(client: Client): Promise<Input> {
     txid: tx.txid,
     vout: vout.n,
     address: unusedAddress,
-    label: '',
     scriptPubKey: vout.scriptPubKey.hex,
-    amount: new BN(vout.value).times(1e8).toNumber(),
-    confirmations: 1,
-    spendable: true,
-    solvable: true,
-    safe: true,
+    amount: vout.value,
     satoshis: new BN(vout.value).times(1e8).toNumber(),
-    value: new BN(vout.value).times(1e8).toNumber(),
+    value: vout.value,
     derivationPath,
+    maxWitnessLength: 108,
+    redeemScript: '',
+    toUtxo: Input.prototype.toUtxo,
   };
 
   return input;
