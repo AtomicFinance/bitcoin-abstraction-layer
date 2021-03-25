@@ -33,6 +33,8 @@ import {
 } from '@node-dlc/messaging';
 import { CoveredCall, groupByIgnoringDigits } from '@node-dlc/core';
 import { sha256 } from '@liquality/crypto';
+import * as fs from 'fs';
+import * as base64 from 'base64-js';
 
 import * as base2Output from '../outputs/base2.json';
 
@@ -227,10 +229,33 @@ describe('tlv integration', () => {
       [aliceInput],
     );
 
-    const acceptMessage = await bob.finance.dlc.confirmContractOffer(
-      offerMessage,
-      [bobInput],
+    console.timeEnd('offer-get-time');
+
+    console.time('accept-time');
+    const {
+      dlcAccept,
+    } = await bob.finance.dlc.confirmContractOffer(offerMessage, [bobInput]);
+    console.time('accept-time-serialize');
+
+    fs.writeFile(
+      'file-output/accept-hex.txt',
+      dlcAccept.serialize().toString('hex'),
+      function (err) {
+        if (err) return console.log(err);
+        console.log('DlcAccept > accept-hex.txt');
+      },
     );
+
+    fs.writeFile(
+      'file-output/accept-base64.txt',
+      base64.fromByteArray(dlcAccept.serialize()),
+      function (err) {
+        if (err) return console.log(err);
+        console.log('DlcAccept > accept-base64.txt');
+      },
+    );
+
+    console.timeEnd('accept-time-serialize');
 
     // generate payouts (used for accept)
     const payouts = CoveredCall.computePayouts(
@@ -254,6 +279,7 @@ describe('tlv integration', () => {
         0,
       )}`,
     );
+    console.timeEnd('accept-time');
   });
 });
 

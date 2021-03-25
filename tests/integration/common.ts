@@ -14,7 +14,9 @@ import BitcoinWalletProvider from '../../packages/bitcoin-wallet-provider/lib';
 import { generateMnemonic } from 'bip39';
 import config from './config';
 import * as cfdJs from 'cfd-js';
-import * as cfdDlcJs from 'cfd-dlc-js';
+import { getWrappedCfdDlcJs } from './utils/WrappedCfdDlcJs';
+
+const cfdDlcJs = getWrappedCfdDlcJs();
 
 const sleep = utils.sleep;
 
