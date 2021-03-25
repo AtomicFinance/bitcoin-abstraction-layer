@@ -27,6 +27,7 @@ const CONSTANTS = {
 
 const { network, rpc } = config.bitcoin;
 
+// eslint-disable-next-line @typescript-eslint/no-empty-function
 console.warn = () => {}; // Silence warnings
 
 function mockedBitcoinRpcProvider() {
