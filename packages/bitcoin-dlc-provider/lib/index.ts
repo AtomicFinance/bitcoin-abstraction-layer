@@ -1,5 +1,3 @@
-export { default as Contract } from './models/Contract';
-
 export { default as AcceptMessage } from './models/AcceptMessage';
 export { default as Amount } from './models/Amount';
 export { default as Input } from './models/Input';
@@ -15,5 +13,7 @@ export { default as InputDetails } from './models/InputDetails';
 export { default as OutcomeDetails } from './models/OutcomeDetails';
 
 export { default as PayoutDetails } from './models/PayoutDetails';
+
+export * from './@types/@liquality/types';
 
 export { default } from './BitcoinDlcProvider';

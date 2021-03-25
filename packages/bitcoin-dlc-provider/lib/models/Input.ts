@@ -21,7 +21,7 @@ export default class Input {
     readonly vout: number,
     readonly address: string,
     readonly amount: number, // in BTC
-    readonly value: number, // in BTC
+    readonly value: number, // in sats
     readonly satoshis: number, // in sats
     readonly derivationPath?: string,
     readonly maxWitnessLength?: number,
@@ -38,7 +38,7 @@ export default class Input {
   toUtxo(): Utxo {
     let amount: Amount;
     if (this.value) {
-      amount = Amount.FromBitcoin(this.value);
+      amount = Amount.FromSatoshis(this.value);
     } else if (this.amount) {
       amount = Amount.FromBitcoin(this.amount);
     } else if (this.satoshis) {

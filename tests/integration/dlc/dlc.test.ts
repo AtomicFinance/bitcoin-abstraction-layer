@@ -14,6 +14,7 @@ import PayoutDetails from '../../../packages/bitcoin-dlc-provider/lib/models/Pay
 import Input from '../../../packages/bitcoin-dlc-provider/lib/models/Input';
 import Output from '../../../packages/bitcoin-dlc-provider/lib/models/Output';
 import Oracle from '../models/Oracle';
+import { bitcoin } from '../../../packages/bitcoin-dlc-provider/lib/@types/@liquality/types';
 import { math } from 'bip-schnorr';
 import { sleep } from '@liquality/utils';
 import {
@@ -40,6 +41,14 @@ const alice = chain.client;
 const network = chain.network;
 
 const bob = chains.bitcoinWithJs2.client;
+
+describe('getUtxosForAmount', () => {
+  it.only('should return input format correctly', async () => {
+    // const actualInput: Input = await getInput(alice);
+    const aliceInput = await getInputUsingGetInputsForAmount(alice);
+    console.log('aliceInput', aliceInput);
+  });
+});
 
 describe('inputToFundingInput', () => {
   it('should convert between types', async () => {
@@ -579,6 +588,32 @@ describe('dlc provider', () => {
   });
 });
 
+async function getInputUsingGetInputsForAmount(
+  client: Client,
+): Promise<InputsForAmountResponse> {
+  const {
+    address: unusedAddress,
+    derivationPath,
+  } = await client.wallet.getUnusedAddress();
+
+  await client.getMethod('jsonrpc')('importaddress', unusedAddress, '', false);
+
+  await fundAddress(unusedAddress);
+
+  const targets: bitcoin.OutputTarget[] = [
+    {
+      address: BurnAddress,
+      value: 1 * 1e8,
+    },
+  ];
+
+  const inputsForAmount: InputsForAmountResponse = client.getMethod(
+    'getInputsForAmount',
+  )(targets, 10, []);
+
+  return inputsForAmount;
+}
+
 async function getInput(client: Client): Promise<Input> {
   const {
     address: unusedAddress,
@@ -615,3 +650,21 @@ interface GeneratedOutput {
   payout: number;
   groups: number[][];
 }
+
+interface Change {
+  value: number;
+}
+
+interface Output {
+  value: number;
+  id?: string;
+}
+
+interface InputsForAmountResponse {
+  inputs: Input[];
+  change: Change;
+  outputs: Output[];
+  fee: number;
+}
+
+const BurnAddress = 'bcrt1qxcjufgh2jarkp2qkx68azh08w9v5gah8u6es8s';
