@@ -43,8 +43,7 @@ const network = chain.network;
 const bob = chains.bitcoinWithJs2.client;
 
 describe('getUtxosForAmount', () => {
-  it.only('should return input format correctly', async () => {
-    // const actualInput: Input = await getInput(alice);
+  it('should return input format correctly', async () => {
     const aliceInput = await getInputUsingGetInputsForAmount(alice);
     console.log('aliceInput', aliceInput);
   });
@@ -135,14 +134,10 @@ describe('tlv integration', () => {
       },
     ];
 
-    const contractInfo = new ContractInfoV1();
+    const contractInfo = new ContractInfoV0();
     contractInfo.totalCollateral = BigInt(100001000);
-    contractInfo.contractOraclePairs = [
-      {
-        contractDescriptor,
-        oracleInfo,
-      },
-    ];
+    contractInfo.contractDescriptor = contractDescriptor;
+    contractInfo.oracleInfo = oracleInfo;
 
     const offerCollateralSatoshis = BigInt(100000000);
     const feeRatePerVb = BigInt(10);
@@ -158,10 +153,14 @@ describe('tlv integration', () => {
       [aliceInput],
     );
 
-    console.log('offerMessage', offerMessage);
+    const acceptMessage = await bob.finance.dlc.confirmContractOffer(
+      offerMessage,
+      [bobInput],
+    );
   });
 
-  it('should create a covered call contract', async () => {
+  it.only('should create a covered call contract', async () => {
+    console.time('offer-get-time');
     const aliceInput = await getInput(alice);
     const bobInput = await getInput(bob);
 
@@ -221,11 +220,16 @@ describe('tlv integration', () => {
 
     const offerMessage = await alice.finance.dlc.initializeContractAndOffer(
       contractInfo,
-      totalCollateral,
+      totalCollateral - BigInt(2000),
       feeRatePerVb,
       cetLocktime,
       refundLocktime,
       [aliceInput],
+    );
+
+    const acceptMessage = await bob.finance.dlc.confirmContractOffer(
+      offerMessage,
+      [bobInput],
     );
 
     // generate payouts (used for accept)
@@ -243,7 +247,7 @@ describe('tlv integration', () => {
       });
     });
 
-    console.log(groups);
+    console.log('groups', groups);
     console.log(
       `# of CETS: ${groups.reduce(
         (acc, group) => acc + group.groups.length,

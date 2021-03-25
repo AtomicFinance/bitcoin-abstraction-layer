@@ -33,6 +33,8 @@ import {
   VerifyFundTxSignatureResponse,
   VerifyRefundTxSignatureRequest,
   VerifyRefundTxSignatureResponse,
+  AdaptorPair,
+  PayoutRequest,
   Messages,
 } from './@types/cfd-dlc-js';
 
@@ -50,13 +52,28 @@ import {
   DlcOfferV0,
   DlcAcceptV0,
   DlcSign,
+  DlcTransactions,
+  DlcTransactionsV0,
   DlcSignV0,
+  ContractInfoV0,
+  ContractInfoV1,
+  ContractDescriptorV0,
+  ContractDescriptorV1,
+  PayoutFunctionV0,
+  HyperbolaPayoutCurvePiece,
+  OracleEventV0,
+  DigitDecompositionEventDescriptorV0,
+  CetAdaptorSignaturesV0,
+  NegotiationFieldsV0,
 } from '@node-dlc/messaging';
-import { Tx, Sequence } from '@node-dlc/bitcoin';
+import { Tx, Sequence, Script } from '@node-dlc/bitcoin';
 import { StreamReader } from '@node-lightning/bufio';
+import { sha256, hash160 } from '@node-lightning/crypto';
 import * as bitcoinjs from 'bitcoinjs-lib';
 import { bitcoin, wallet, Address } from './@types/@liquality/types';
 import { generateSerialId } from './utils/Utils';
+import { CoveredCall, groupByIgnoringDigits } from '@node-dlc/core';
+import { math } from 'bip-schnorr';
 
 const ESTIMATED_SIZE = 312;
 
@@ -176,6 +193,358 @@ export default class BitcoinDlcProvider extends Provider {
   }
 
   /**
+   * TODO: Add GetPayoutFromOutcomes
+   *
+   * private GetPayoutsFromOutcomes(
+   *   contractDescriptor: ContractDescriptorV0,
+   *   totalCollateral: bigint,
+   * ): PayoutRequest[] {}
+   */
+
+  private GetPayoutsFromPayoutFunction(
+    _dlcOffer: DlcOffer,
+    contractDescriptor: ContractDescriptorV1,
+    totalCollateral: bigint,
+  ): GetPayoutsResponse {
+    if (_dlcOffer.type !== MessageType.DlcOfferV0)
+      throw Error('DlcOffer must be V0');
+    const dlcOffer = _dlcOffer as DlcOfferV0;
+    if (contractDescriptor.payoutFunction.type !== MessageType.PayoutFunctionV0)
+      throw Error('PayoutFunction must be V0');
+    const payoutFunction = contractDescriptor.payoutFunction as PayoutFunctionV0;
+    if (payoutFunction.pieces.length === 0)
+      throw Error('PayoutFunction must have at least once PayoutCurvePiece');
+    if (payoutFunction.pieces.length > 1)
+      throw Error('More than one PayoutCurvePiece not supported');
+    const payoutCurvePiece = payoutFunction.pieces[0].payoutCurvePiece;
+    if (!(payoutCurvePiece instanceof HyperbolaPayoutCurvePiece))
+      throw Error('Must be HyperbolaPayoutCurvePiece');
+    if (payoutCurvePiece.b !== BigInt(0) || payoutCurvePiece.c !== BigInt(0))
+      throw Error('b and c HyperbolaPayoutCurvePiece values must be 0');
+
+    const roundingIntervals = contractDescriptor.roundingIntervals;
+    const cetPayouts = CoveredCall.computePayouts(
+      payoutFunction,
+      totalCollateral,
+      roundingIntervals,
+    );
+
+    const groups = [];
+    cetPayouts.forEach((p) => {
+      groups.push({
+        payout: p.payout,
+        groups: groupByIgnoringDigits(p.indexFrom, p.indexTo, 2, 20),
+      });
+    });
+
+    const rValuesMessagesList = this.GenerateMessages(dlcOffer.contractInfo);
+
+    const { payouts, messagesList } = this.outputsToPayouts(
+      groups,
+      rValuesMessagesList,
+      dlcOffer.offerCollateralSatoshis,
+      dlcOffer.contractInfo.totalCollateral - dlcOffer.offerCollateralSatoshis,
+      true,
+    );
+
+    return { payouts, messagesList };
+  }
+
+  private GetPayouts(_dlcOffer: DlcOffer): GetPayoutsResponse {
+    if (_dlcOffer.type !== MessageType.DlcOfferV0)
+      throw Error('DlcOffer must be V0');
+    const dlcOffer = _dlcOffer as DlcOfferV0;
+    switch (dlcOffer.contractInfo.type) {
+      case MessageType.ContractInfoV0:
+        // eslint-disable-next-line no-case-declarations
+        const contractInfo = dlcOffer.contractInfo as ContractInfoV0;
+        switch (contractInfo.contractDescriptor.type) {
+          case MessageType.ContractDescriptorV0:
+            throw Error('ContractDescriptorV0 not yet supported');
+          case MessageType.ContractDescriptorV1:
+            return this.GetPayoutsFromPayoutFunction(
+              dlcOffer,
+              contractInfo.contractDescriptor as ContractDescriptorV1,
+              contractInfo.totalCollateral,
+            );
+          default:
+            throw Error('ConractDescriptor must be V0 or V1');
+        }
+      case MessageType.ContractInfoV1:
+        throw Error('MultiOracle not yet supported');
+      default:
+        throw Error('ContractInfo must be V0 or V1');
+    }
+  }
+
+  private async CreateDlcTxs(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+  ): Promise<CreateDlcTxsResponse> {
+    if (
+      _dlcOffer.type !== MessageType.DlcOfferV0 ||
+      _dlcAccept.type !== MessageType.DlcAcceptV0
+    ) {
+      throw Error('DlcOffer and DlcAccept must be V0');
+    }
+    const dlcOffer = _dlcOffer as DlcOfferV0;
+    const dlcAccept = _dlcAccept as DlcAcceptV0;
+
+    const localFundPubkey = dlcOffer.fundingPubKey.toString('hex');
+    const remoteFundPubkey = dlcAccept.fundingPubKey.toString('hex');
+    const localFinalScriptPubkey = dlcOffer.payoutSPK.toString('hex');
+    const remoteFinalScriptPubkey = dlcAccept.payoutSPK.toString('hex');
+    const localChangeScriptPubkey = dlcOffer.changeSPK.toString('hex');
+    const remoteChangeScriptPubkey = dlcAccept.changeSPK.toString('hex');
+
+    const localInputs: Utxo[] = await Promise.all(
+      dlcOffer.fundingInputs.map(async (fundingInput) => {
+        const input = await this.fundingInputToInput(fundingInput);
+        return input.toUtxo();
+      }),
+    );
+
+    const remoteInputs: Utxo[] = await Promise.all(
+      dlcAccept.fundingInputs.map(async (fundingInput) => {
+        const input = await this.fundingInputToInput(fundingInput);
+        return input.toUtxo();
+      }),
+    );
+
+    const localInputAmount = localInputs.reduce<number>(
+      (prev, cur) => prev + cur.amount.GetSatoshiAmount(),
+      0,
+    );
+
+    const remoteInputAmount = remoteInputs.reduce<number>(
+      (prev, cur) => prev + cur.amount.GetSatoshiAmount(),
+      0,
+    );
+
+    const { payouts, messagesList } = this.GetPayouts(dlcOffer);
+
+    const dlcTxRequest: CreateDlcTransactionsRequest = {
+      payouts,
+      localFundPubkey,
+      localFinalScriptPubkey,
+      remoteFundPubkey,
+      remoteFinalScriptPubkey,
+      localInputAmount,
+      localCollateralAmount: dlcOffer.offerCollateralSatoshis,
+      remoteInputAmount,
+      remoteCollateralAmount: dlcAccept.acceptCollateralSatoshis,
+      refundLocktime: dlcOffer.refundLocktime,
+      localInputs,
+      remoteInputs,
+      localChangeScriptPubkey,
+      remoteChangeScriptPubkey,
+      feeRate: Number(dlcOffer.feeRatePerVb),
+    };
+
+    const dlcTxs = await this.CreateDlcTransactions(dlcTxRequest);
+
+    const dlcTransactions = new DlcTransactionsV0();
+    dlcTransactions.fundTx = Tx.parse(StreamReader.fromHex(dlcTxs.fundTxHex));
+    dlcTransactions.fundTxOutAmount =
+      dlcTransactions.fundTx.outputs[0].value.sats;
+    dlcTransactions.refundTx = Tx.parse(
+      StreamReader.fromHex(dlcTxs.refundTxHex),
+    );
+    dlcTransactions.cets = dlcTxs.cetsHex.map((cetHex) => {
+      return Tx.parse(StreamReader.fromHex(cetHex));
+    });
+
+    return { dlcTransactions, messagesList };
+  }
+
+  private GenerateEnumMessages(oracleEvent: OracleEventV0): Messages[] {
+    throw Error('Only DigitDecomposition Oracle Events supported');
+  }
+
+  private GenerateDigitDecompositionMessages(
+    oracleEvent: OracleEventV0,
+  ): Messages[] {
+    const oracleNonces = oracleEvent.oracleNonces;
+    const eventDescriptor = oracleEvent.eventDescriptor as DigitDecompositionEventDescriptorV0;
+
+    const messagesList: Messages[] = [];
+    oracleEvent.oracleNonces.forEach((nonce) => {
+      const messages = [];
+      for (let i = 0; i < eventDescriptor.base; i++) {
+        const m = math
+          .taggedHash('DLC/oracle/attestation/v0', i.toString())
+          .toString('hex');
+        messages.push(m);
+      }
+      messagesList.push({ messages });
+    });
+
+    return messagesList;
+  }
+
+  private GenerateMessages(_contractInfo: ContractInfo): Messages[] {
+    if (_contractInfo.type !== MessageType.ContractInfoV0)
+      throw Error('ContractInfo must be V0');
+    const contractInfo = _contractInfo as ContractInfoV0;
+    const oracleEvent = contractInfo.oracleInfo.announcement.oracleEvent;
+
+    switch (oracleEvent.eventDescriptor.type) {
+      case MessageType.EnumEventDescriptorV0:
+        return this.GenerateEnumMessages(oracleEvent);
+      case MessageType.DigitDecompositionEventDescriptorV0:
+        return this.GenerateDigitDecompositionMessages(oracleEvent);
+      default:
+        throw Error('EventDescriptor must be Enum or DigitDecomposition');
+    }
+  }
+
+  private async CreateCetAdaptorAndRefundSigs(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcTxs: DlcTransactions,
+    messagesList: Messages[],
+    isLocalParty: boolean,
+  ): Promise<CreateCetAdaptorAndRefundSigsResponse> {
+    if (_dlcOffer.type !== MessageType.DlcOfferV0)
+      throw Error('DlcOffer must be V0');
+    if (_dlcOffer.type !== MessageType.DlcOfferV0)
+      throw Error('DlcAccept must be V0');
+    if (_dlcTxs.type !== MessageType.DlcTransactionsV0)
+      throw Error('DlcTransactions must be V0');
+    const dlcOffer = _dlcOffer as DlcOfferV0;
+    const dlcAccept = _dlcAccept as DlcAcceptV0;
+    const dlcTxs = _dlcTxs as DlcTransactionsV0;
+    const network = await this.getMethod('getConnectedNetwork')();
+
+    const cetsHex = dlcTxs.cets.map((cet) => cet.serialize().toString('hex'));
+
+    const fundingSPK = Script.p2wpkhLock(
+      hash160(isLocalParty ? dlcOffer.fundingPubKey : dlcAccept.fundingPubKey),
+    )
+      .serialize()
+      .slice(1);
+
+    const fundingAddress: string = bitcoinjs.address.fromOutputScript(
+      fundingSPK,
+      network,
+    );
+
+    const { derivationPath } = await this.getMethod('findAddress')([
+      fundingAddress,
+    ]);
+
+    const fundPrivateKeyPair = await this.client.getMethod('keyPair')(
+      derivationPath,
+    );
+
+    const fundPrivateKey = Buffer.from(fundPrivateKeyPair.__D).toString('hex');
+
+    if (dlcOffer.contractInfo.type !== MessageType.ContractInfoV0)
+      throw Error('ContractInfo must be V0');
+    const contractInfo = dlcOffer.contractInfo as ContractInfoV0;
+    const oracleAnnouncement = contractInfo.oracleInfo.announcement;
+
+    const chunk = 100;
+    const adaptorPairs: AdaptorPair[] = [];
+    const adaptorSigRequestPromises: Promise<AdaptorSignatureJobResponse>[] = [];
+
+    for (let i = 0, j = messagesList.length; i < j; i += chunk) {
+      const tempMessagesList = messagesList.slice(i, i + chunk);
+      const tempCetsHex = cetsHex.slice(i, i + chunk);
+
+      const cetSignRequest: CreateCetAdaptorSignaturesRequest = {
+        messagesList: tempMessagesList,
+        cetsHex: tempCetsHex,
+        privkey: fundPrivateKey,
+        fundTxId: dlcTxs.fundTx.txId.toString(),
+        localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
+        remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
+        fundInputAmount: dlcTxs.fundTxOutAmount,
+        oraclePubkey: oracleAnnouncement.oraclePubkey.toString('hex'),
+        oracleRValues: oracleAnnouncement.oracleEvent.oracleNonces.map(
+          (nonce) => nonce.toString('hex'),
+        ),
+      };
+
+      adaptorSigRequestPromises.push(
+        (async () => {
+          const response = await this.CreateCetAdaptorSignatures(
+            cetSignRequest,
+          );
+          return { index: i, response };
+        })(),
+      );
+    }
+
+    (await Promise.all(adaptorSigRequestPromises))
+      .sort((a, b) => a.index - b.index)
+      .forEach((r) => {
+        adaptorPairs.push(...r.response.adaptorPairs);
+      });
+
+    const refundSignRequest: GetRawRefundTxSignatureRequest = {
+      refundTxHex: dlcTxs.refundTx.serialize().toString('hex'),
+      privkey: fundPrivateKey,
+      fundTxId: dlcTxs.fundTx.txId.toString(),
+      localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
+      remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
+      fundInputAmount: dlcTxs.fundTxOutAmount,
+    };
+
+    const sigs: ISig[] = adaptorPairs.map((adaptorPair) => {
+      return {
+        encryptedSig: Buffer.from(adaptorPair.signature, 'hex'),
+        dleqProof: Buffer.from(adaptorPair.proof, 'hex'),
+      };
+    });
+
+    const cetSignatures = new CetAdaptorSignaturesV0();
+    cetSignatures.sigs = sigs;
+
+    const refundSignature = Buffer.from(
+      (await this.GetRawRefundTxSignature(refundSignRequest)).hex,
+      'hex',
+    );
+
+    return { cetSignatures, refundSignature };
+  }
+
+  outputsToPayouts(
+    outputs: GeneratedOutput[],
+    rValuesMessagesList: Messages[],
+    localCollateral: bigint,
+    remoteCollateral: bigint,
+    payoutLocal: boolean,
+  ): { payouts: PayoutRequest[]; messagesList: Messages[] } {
+    const payouts: PayoutRequest[] = [];
+    const messagesList: Messages[] = [];
+
+    outputs.forEach((output: any) => {
+      const { payout, groups } = output;
+      const payoutAmount: bigint = payout;
+
+      groups.forEach((group: number[]) => {
+        const messages = [];
+        for (let i = 0; i < group.length; i++) {
+          const digit: number = group[i];
+          messages.push(rValuesMessagesList[i].messages[digit]);
+        }
+
+        const local = payoutLocal
+          ? payoutAmount
+          : localCollateral + remoteCollateral - payoutAmount;
+        const remote = payoutLocal
+          ? localCollateral + remoteCollateral - payoutAmount
+          : payoutAmount;
+        payouts.push({ local, remote });
+        messagesList.push({ messages });
+      });
+    });
+
+    return { payouts, messagesList };
+  }
+
+  /**
    * Deserializes an contract_descriptor_v0 message
    * @param contractInfo ContractInfo TLV (V0 or V1)
    * @param offerCollateralSatoshis Amount DLC Initiator is putting into the contract
@@ -192,6 +561,8 @@ export default class BitcoinDlcProvider extends Provider {
     refundLocktime: number,
     fixedInputs?: Input[],
   ): Promise<DlcOffer> {
+    const network = await this.getMethod('getConnectedNetwork')();
+
     const dlcOffer = new DlcOfferV0();
 
     const {
@@ -237,12 +608,70 @@ export default class BitcoinDlcProvider extends Provider {
   }
 
   async confirmContractOffer(
-    dlcOffer: DlcOffer,
+    _dlcOffer: DlcOffer,
     fixedInputs?: Input[],
-  ): Promise<DlcAccept> {
+  ): Promise<ConfirmContractOfferResponse> {
+    if (_dlcOffer.type !== MessageType.DlcOfferV0)
+      throw Error('DlcOffer must be V0');
+    const dlcOffer = _dlcOffer as DlcOfferV0;
+    const network = await this.getMethod('getConnectedNetwork')();
+
+    const acceptCollateralSatoshis =
+      dlcOffer.contractInfo.totalCollateral - dlcOffer.offerCollateralSatoshis;
+
+    const {
+      fundingPubKey,
+      payoutSPK,
+      payoutSerialId,
+      fundingInputs: _fundingInputs,
+      changeSPK,
+      changeSerialId,
+    } = await this.Initialize(
+      acceptCollateralSatoshis,
+      dlcOffer.feeRatePerVb,
+      fixedInputs,
+    );
+
+    _fundingInputs.forEach((input) => {
+      if (input.type !== MessageType.FundingInputV0)
+        throw Error('FundingInput must be V0');
+    });
+    const fundingInputs: FundingInputV0[] = _fundingInputs.map(
+      (input) => input as FundingInputV0,
+    );
+
     const dlcAccept = new DlcAcceptV0();
 
-    return dlcAccept;
+    dlcAccept.tempContractId = sha256(dlcOffer.serialize());
+    dlcAccept.acceptCollateralSatoshis = acceptCollateralSatoshis;
+    dlcAccept.fundingPubKey = fundingPubKey;
+    dlcAccept.payoutSPK = payoutSPK;
+    dlcAccept.payoutSerialId = payoutSerialId;
+    dlcAccept.fundingInputs = fundingInputs;
+    dlcAccept.changeSPK = changeSPK;
+    dlcAccept.changeSerialId = changeSerialId;
+
+    const { dlcTransactions, messagesList } = await this.CreateDlcTxs(
+      dlcOffer,
+      dlcAccept,
+    );
+
+    const {
+      cetSignatures,
+      refundSignature,
+    } = await this.CreateCetAdaptorAndRefundSigs(
+      dlcOffer,
+      dlcAccept,
+      dlcTransactions,
+      messagesList,
+      false,
+    );
+
+    dlcAccept.cetSignatures = cetSignatures;
+    dlcAccept.refundSignature = refundSignature;
+    dlcAccept.negotiationFields = new NegotiationFieldsV0();
+
+    return { dlcAccept, dlcTransactions };
   }
 
   async signContract(
@@ -436,14 +865,20 @@ export default class BitcoinDlcProvider extends Provider {
     const prevTxOut = prevTx.outputs[input.prevTxVout];
     const scriptPubKey = prevTxOut.scriptPubKey.serialize().slice(1);
     const address = bitcoinjs.address.fromOutputScript(scriptPubKey, network);
-    const { derivationPath } = await this.getMethod('findAddress')([address]);
+    const inputAddress: Address = await this.getMethod('findAddress')([
+      address,
+    ]);
+    let derivationPath: string;
+    if (inputAddress) {
+      derivationPath = inputAddress.derivationPath;
+    }
 
     return {
       txid: prevTx.txId.toString(),
       vout: input.prevTxVout,
       address,
       amount: prevTxOut.value.bitcoin,
-      value: prevTxOut.value.bitcoin,
+      value: Number(prevTxOut.value.sats),
       satoshis: Number(prevTxOut.value.sats),
       derivationPath,
       maxWitnessLength: input.maxWitnessLen,
@@ -492,5 +927,35 @@ export interface InitializeResponse {
   changeSPK: Buffer;
   changeSerialId: bigint;
 }
+
+export interface ConfirmContractOfferResponse {
+  dlcAccept: DlcAccept;
+  dlcTransactions: DlcTransactions;
+}
+
+export interface GetPayoutsResponse {
+  payouts: PayoutRequest[];
+  messagesList: Messages[];
+}
+
+export interface CreateDlcTxsResponse {
+  dlcTransactions: DlcTransactions;
+  messagesList: Messages[];
+}
+
+interface ISig {
+  encryptedSig: Buffer;
+  dleqProof: Buffer;
+}
+
+export interface CreateCetAdaptorAndRefundSigsResponse {
+  cetSignatures: CetAdaptorSignaturesV0;
+  refundSignature: Buffer;
+}
+
+type AdaptorSignatureJobResponse = {
+  index: number;
+  response: CreateCetAdaptorSignaturesResponse;
+};
 
 const BurnAddress = 'bcrt1qxcjufgh2jarkp2qkx68azh08w9v5gah8u6es8s';

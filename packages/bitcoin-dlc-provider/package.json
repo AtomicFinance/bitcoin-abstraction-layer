@@ -31,7 +31,8 @@
     "@node-lightning/bitcoin": "0.21.1",
     "@node-lightning/crypto": "0.21.1",
     "bitcoinjs-lib": "5.2.0",
-    "randombytes": "2.1.0"
+    "randombytes": "2.1.0",
+    "bip-schnorr": "0.6.2"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.160",
