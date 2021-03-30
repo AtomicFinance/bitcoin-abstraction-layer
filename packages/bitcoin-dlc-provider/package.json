@@ -26,7 +26,10 @@
     "bignumber.js": "9.0.1",
     "is-node": "github:matthewjablack/is-node",
     "lodash": "^4.17.20",
-    "uuid": "^8.3.0"
+    "uuid": "^8.3.0",
+    "@node-lightning/bufio": "0.21.1",
+    "@node-lightning/bitcoin": "0.21.1",
+    "bitcoinjs-lib": "5.2.0"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.160",

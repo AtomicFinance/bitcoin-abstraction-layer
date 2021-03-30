@@ -1,5 +1,6 @@
 import Provider from '@atomicfinance/provider';
 import { sleep } from '@liquality/utils';
+import { sha256 } from '@liquality/crypto';
 import {
   AddSignatureToFundTransactionRequest,
   AddSignatureToFundTransactionResponse,
@@ -51,6 +52,7 @@ import Payout from './models/Payout';
 import Utxo from './models/Utxo';
 import { v4 as uuidv4 } from 'uuid';
 import { MutualClosingMessage } from '.';
+import { ContractInfo, FundingInput, DlcOffer } from '@node-dlc/messaging';
 
 export default class BitcoinDlcProvider extends Provider {
   _network: any;
@@ -71,19 +73,19 @@ export default class BitcoinDlcProvider extends Provider {
     }
   }
 
-  private setInitialInputs(contract: Contract, input: InputDetails) {
-    contract.localCollateral = input.localCollateral;
-    contract.remoteCollateral = input.remoteCollateral;
-    contract.feeRate = input.feeRate;
-    contract.refundLockTime = input.refundLockTime;
-  }
+  // private setInitialInputs(contract: Contract, input: InputDetails) {
+  //   contract.localCollateral = input.localCollateral;
+  //   contract.remoteCollateral = input.remoteCollateral;
+  //   contract.feeRate = input.feeRate;
+  //   contract.refundLockTime = input.refundLockTime;
+  // }
 
   private setPayouts(contract: Contract, payouts: PayoutDetails[]) {
-    payouts.forEach((payout) => {
-      const { localAmount, remoteAmount } = payout;
-      const newPayout = new Payout(localAmount, remoteAmount);
-      contract.payouts.push(newPayout);
-    });
+    // payouts.forEach((payout) => {
+    //   const { localAmount, remoteAmount } = payout;
+    //   const newPayout = new Payout(localAmount, remoteAmount);
+    //   contract.payouts.push(newPayout);
+    // });
   }
 
   private findDlc(contractId: string): DlcParty {
@@ -118,11 +120,11 @@ export default class BitcoinDlcProvider extends Provider {
     });
   }
 
-  async importContract(contract: Contract, startingIndex: number) {
-    const dlcParty = new DlcParty(this);
-    this._dlcs.push(dlcParty);
-    await dlcParty.ImportContract(contract, startingIndex);
-  }
+  // async importContract(contract: Contract, startingIndex: number) {
+  //   const dlcParty = new DlcParty(this);
+  //   this._dlcs.push(dlcParty);
+  //   await dlcParty.ImportContract(contract, startingIndex);
+  // }
 
   exportContract(contractId: string): Contract {
     return this.findDlc(contractId).contract;
@@ -141,153 +143,153 @@ export default class BitcoinDlcProvider extends Provider {
     this.deleteDlc(contractId);
   }
 
-  // Only Alice
-  async importContractFromOfferMessage(
-    offerMessage: OfferMessage,
-    startingIndex = 0,
-  ) {
-    const {
-      localCollateral,
-      remoteCollateral,
-      feeRate,
-      refundLockTime,
-      oracleInfo,
-      messagesList,
-    } = offerMessage;
+  // // Only Alice
+  // async importContractFromOfferMessage(
+  //   offerMessage: OfferMessage,
+  //   startingIndex = 0,
+  // ) {
+  //   const {
+  //     localCollateral,
+  //     remoteCollateral,
+  //     feeRate,
+  //     refundLockTime,
+  //     oracleInfo,
+  //     messagesList,
+  //   } = offerMessage;
 
-    const input: InputDetails = {
-      localCollateral,
-      remoteCollateral,
-      feeRate,
-      refundLockTime,
-    };
+  //   const input: InputDetails = {
+  //     localCollateral,
+  //     remoteCollateral,
+  //     feeRate,
+  //     refundLockTime,
+  //   };
 
-    const payouts: PayoutDetails[] = [];
+  //   const payouts: PayoutDetails[] = [];
 
-    offerMessage.payouts.forEach((payout) => {
-      const { local, remote } = payout;
+  //   offerMessage.payouts.forEach((payout) => {
+  //     const { local, remote } = payout;
 
-      payouts.push({
-        localAmount: local,
-        remoteAmount: remote,
-      });
-    });
+  //     payouts.push({
+  //       localAmount: local,
+  //       remoteAmount: remote,
+  //     });
+  //   });
 
-    const fixedInputs: Input[] = [];
+  //   const fixedInputs: Input[] = [];
 
-    offerMessage.localPartyInputs.utxos.forEach((utxo) => {
-      const { txid, vout, address, amount, derivationPath } = utxo;
+  //   offerMessage.localPartyInputs.utxos.forEach((utxo) => {
+  //     const { txid, vout, address, amount, derivationPath } = utxo;
 
-      const utxoAmount = amount.GetSatoshiAmount();
+  //     const utxoAmount = amount.GetSatoshiAmount();
 
-      fixedInputs.push({
-        txid,
-        vout,
-        address,
-        amount: utxoAmount,
-        derivationPath,
-        label: '',
-        scriptPubKey: '',
-        confirmations: 0,
-        spendable: false,
-        solvable: false,
-        safe: false,
-        satoshis: 0,
-        value: 0,
-      });
-    });
+  //     fixedInputs.push({
+  //       txid,
+  //       vout,
+  //       address,
+  //       amount: utxoAmount,
+  //       derivationPath,
+  //       label: '',
+  //       scriptPubKey: '',
+  //       confirmations: 0,
+  //       spendable: false,
+  //       solvable: false,
+  //       safe: false,
+  //       satoshis: 0,
+  //       value: 0,
+  //     });
+  //   });
 
-    const initOfferMessage = await this.initializeContractAndOffer(
-      input,
-      payouts,
-      oracleInfo,
-      messagesList,
-      startingIndex,
-      fixedInputs,
-    );
-    const updateSuccess = this.updateDlcContractId(
-      initOfferMessage.contractId,
-      offerMessage.contractId,
-    );
-    if (!updateSuccess) {
-      throw Error('Dlc Contract ID did not update successfully');
-    }
-  }
+  //   const initOfferMessage = await this.initializeContractAndOffer(
+  //     input,
+  //     payouts,
+  //     oracleInfo,
+  //     messagesList,
+  //     startingIndex,
+  //     fixedInputs,
+  //   );
+  //   const updateSuccess = this.updateDlcContractId(
+  //     initOfferMessage.contractId,
+  //     offerMessage.contractId,
+  //   );
+  //   if (!updateSuccess) {
+  //     throw Error('Dlc Contract ID did not update successfully');
+  //   }
+  // }
 
-  // Only Bob
-  async importContractFromAcceptMessage(
-    offerMessage: OfferMessage,
-    acceptMessage: AcceptMessage,
-    startingIndex = 0,
-  ) {
-    const fixedInputs: Input[] = [];
+  // // Only Bob
+  // async importContractFromAcceptMessage(
+  //   offerMessage: OfferMessage,
+  //   acceptMessage: AcceptMessage,
+  //   startingIndex = 0,
+  // ) {
+  //   const fixedInputs: Input[] = [];
 
-    acceptMessage.remotePartyInputs.utxos.forEach((utxo) => {
-      const { txid, vout, address, amount, derivationPath } = utxo;
+  //   acceptMessage.remotePartyInputs.utxos.forEach((utxo) => {
+  //     const { txid, vout, address, amount, derivationPath } = utxo;
 
-      const utxoAmount = amount.GetSatoshiAmount();
+  //     const utxoAmount = amount.GetSatoshiAmount();
 
-      fixedInputs.push({
-        txid,
-        vout,
-        address,
-        amount: utxoAmount,
-        derivationPath,
-        label: '',
-        scriptPubKey: '',
-        confirmations: 0,
-        spendable: false,
-        solvable: false,
-        safe: false,
-        satoshis: 0,
-        value: 0,
-      });
-    });
+  //     fixedInputs.push({
+  //       txid,
+  //       vout,
+  //       address,
+  //       amount: utxoAmount,
+  //       derivationPath,
+  //       label: '',
+  //       scriptPubKey: '',
+  //       confirmations: 0,
+  //       spendable: false,
+  //       solvable: false,
+  //       safe: false,
+  //       satoshis: 0,
+  //       value: 0,
+  //     });
+  //   });
 
-    const initAcceptMessage = await this.confirmContractOffer(
-      offerMessage,
-      startingIndex,
-      fixedInputs,
-    );
-    const updateSuccess = this.updateDlcContractId(
-      initAcceptMessage.contractId,
-      acceptMessage.contractId,
-    );
-    if (!updateSuccess) {
-      throw Error('Dlc Contract ID did not update successfully');
-    }
-  }
+  //   const initAcceptMessage = await this.confirmContractOffer(
+  //     offerMessage,
+  //     startingIndex,
+  //     fixedInputs,
+  //   );
+  //   const updateSuccess = this.updateDlcContractId(
+  //     initAcceptMessage.contractId,
+  //     acceptMessage.contractId,
+  //   );
+  //   if (!updateSuccess) {
+  //     throw Error('Dlc Contract ID did not update successfully');
+  //   }
+  // }
 
-  // Only Alice
-  async importContractFromAcceptAndSignMessage(
-    offerMessage: OfferMessage,
-    acceptMessage: AcceptMessage,
-    signMessage: SignMessage,
-    startingIndex = 0,
-  ) {
-    await this.importContractFromOfferMessage(offerMessage, startingIndex);
+  // // Only Alice
+  // async importContractFromAcceptAndSignMessage(
+  //   offerMessage: OfferMessage,
+  //   acceptMessage: AcceptMessage,
+  //   signMessage: SignMessage,
+  //   startingIndex = 0,
+  // ) {
+  //   await this.importContractFromOfferMessage(offerMessage, startingIndex);
 
-    const initSignMessage = await this.signContract(acceptMessage);
-  }
+  //   const initSignMessage = await this.signContract(acceptMessage);
+  // }
 
-  // Only Bob
-  async importContractFromSignMessageAndCreateFinal(
-    offerMessage: OfferMessage,
-    acceptMessage: AcceptMessage,
-    signMessage: SignMessage,
-    startingIndex = 0,
-  ) {
-    await this.importContractFromAcceptMessage(
-      offerMessage,
-      acceptMessage,
-      startingIndex,
-    );
-    try {
-      await this.finalizeContract(signMessage);
-    } catch (e) {
-      console.log('error', e);
-    }
-  }
+  // // Only Bob
+  // async importContractFromSignMessageAndCreateFinal(
+  //   offerMessage: OfferMessage,
+  //   acceptMessage: AcceptMessage,
+  //   signMessage: SignMessage,
+  //   startingIndex = 0,
+  // ) {
+  //   await this.importContractFromAcceptMessage(
+  //     offerMessage,
+  //     acceptMessage,
+  //     startingIndex,
+  //   );
+  //   try {
+  //     await this.finalizeContract(signMessage);
+  //   } catch (e) {
+  //     console.log('error', e);
+  //   }
+  // }
 
   outputsToPayouts(
     outputs: GeneratedOutput[],
@@ -328,77 +330,107 @@ export default class BitcoinDlcProvider extends Provider {
     return { payouts, messagesList };
   }
 
+  /**
+   * Deserializes an contract_descriptor_v0 message
+   * @param contractInfo ContractInfo TLV (V0 or V1)
+   * @param offerCollateralSatoshis Amount DLC Initiator is putting into the contract
+   * @param feeRatePerVb Fee rate in satoshi per virtual byte that both sides use to compute fees in funding tx
+   * @param cetLocktime The nLockTime to be put on CETs
+   * @param refundLocktime The nLockTime to be put on the refund transaction
+   * @returns {Promise<DlcOffer>}
+   */
   async initializeContractAndOffer(
-    input: InputDetails,
-    payouts: PayoutDetails[],
-    oracleInfo: OracleInfo,
-    messagesList: Messages[],
-    startingIndex = 0,
-    fixedInputs: Input[] = [],
-  ): Promise<OfferMessage> {
+    contractInfo: ContractInfo,
+    offerCollateralSatoshis: bigint,
+    feeRatePerVb: bigint,
+    cetLocktime: number,
+    refundLocktime: number,
+    fixedInputs?: Input[],
+    // input: InputDetails,
+    // payouts: PayoutDetails[],
+    // oracleInfo: OracleInfo,
+    // messagesList: Messages[],
+    // startingIndex = 0,
+    // fixedInputs: Input[] = [],
+  ): Promise<DlcOffer> {
     const contract = new Contract();
 
-    contract.id = uuidv4();
-    contract.oracleInfo = oracleInfo;
-    contract.startingIndex = startingIndex;
-    contract.messagesList = messagesList;
+    contract.tempContractInfoId = sha256(contractInfo.serialize());
 
-    this.setInitialInputs(contract, input);
+    // contract.id = uuidv4();
+    // contract.oracleInfo = oracleInfo;
+    // contract.startingIndex = startingIndex;
+    // contract.messagesList = messagesList;
 
-    this.setPayouts(contract, payouts);
+    // this.setInitialInputs(contract, input);
+
+    contract.contractInfo = contractInfo;
+    contract.offerCollateralSatoshis = offerCollateralSatoshis;
+
+    contract.acceptCollateralSatoshis =
+      contractInfo.totalCollateral - offerCollateralSatoshis;
+
+    contract.feeRatePerVb = feeRatePerVb;
+    contract.cetLocktime = cetLocktime;
+    contract.refundLocktime = refundLocktime;
+
+    // this.setPayouts(contract, payouts);
 
     const dlcParty = new DlcParty(this);
     this._dlcs.push(dlcParty);
 
-    return dlcParty.InitiateContract(contract, startingIndex, fixedInputs);
+    return dlcParty.InitiateContract(contract, fixedInputs);
   }
 
-  async confirmContractOffer(
-    offerMessage: OfferMessage,
-    startingIndex = 0,
-    fixedInputs: Input[] = [],
-  ): Promise<AcceptMessage> {
-    const dlcParty = new DlcParty(this);
-    this._dlcs.push(dlcParty);
+  // /*
+  //  * Should receive OfferMessage TLV
+  //  */
+  // async confirmContractOffer(
+  //   offerMessage: OfferMessage,
+  //   startingIndex = 0,
+  //   fixedInputs: Input[] = [],
+  // ): Promise<AcceptMessage> {
+  //   const dlcParty = new DlcParty(this);
+  //   this._dlcs.push(dlcParty);
 
-    return dlcParty.OnOfferMessage(offerMessage, startingIndex, fixedInputs);
-  }
+  //   return dlcParty.OnOfferMessage(offerMessage, startingIndex, fixedInputs);
+  // }
 
-  async signContract(acceptMessage: AcceptMessage): Promise<SignMessage> {
-    return this.findDlc(acceptMessage.contractId).OnAcceptMessage(
-      acceptMessage,
-    );
-  }
+  // async signContract(acceptMessage: AcceptMessage): Promise<SignMessage> {
+  //   return this.findDlc(acceptMessage.contractId).OnAcceptMessage(
+  //     acceptMessage,
+  //   );
+  // }
 
-  async finalizeContract(signMessage: SignMessage): Promise<string> {
-    return this.findDlc(signMessage.contractId).OnSignMessage(signMessage);
-  }
+  // async finalizeContract(signMessage: SignMessage): Promise<string> {
+  //   return this.findDlc(signMessage.contractId).OnSignMessage(signMessage);
+  // }
 
-  async refund(contractId: string) {
-    return this.findDlc(contractId).Refund();
-  }
+  // async refund(contractId: string) {
+  //   return this.findDlc(contractId).Refund();
+  // }
 
-  async initiateEarlyExit(contractId: string, outputs: Output[]) {
-    return this.findDlc(contractId).InitiateEarlyExit(outputs);
-  }
+  // async initiateEarlyExit(contractId: string, outputs: Output[]) {
+  //   return this.findDlc(contractId).InitiateEarlyExit(outputs);
+  // }
 
-  async finalizeEarlyExit(
-    contractId: string,
-    mutualClosingMessage: MutualClosingMessage,
-  ) {
-    return this.findDlc(contractId).OnMutualClose(mutualClosingMessage);
-  }
+  // async finalizeEarlyExit(
+  //   contractId: string,
+  //   mutualClosingMessage: MutualClosingMessage,
+  // ) {
+  //   return this.findDlc(contractId).OnMutualClose(mutualClosingMessage);
+  // }
 
-  async unilateralClose(
-    outcomeIndex: number,
-    oracleSignatures: string[],
-    contractId: string,
-  ): Promise<string[]> {
-    return this.findDlc(contractId).SignAndBroadcastCet(
-      outcomeIndex,
-      oracleSignatures,
-    );
-  }
+  // async unilateralClose(
+  //   outcomeIndex: number,
+  //   oracleSignatures: string[],
+  //   contractId: string,
+  // ): Promise<string[]> {
+  //   return this.findDlc(contractId).SignAndBroadcastCet(
+  //     outcomeIndex,
+  //     oracleSignatures,
+  //   );
+  // }
 
   async getFundingUtxoAddressesForOfferMessages(offerMessages: OfferMessage[]) {
     const fundingAddresses: string[] = [];

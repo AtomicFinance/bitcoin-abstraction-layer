@@ -16,6 +16,16 @@ import Output from '../../../packages/bitcoin-dlc-provider/lib/models/Output';
 import Oracle from '../models/Oracle'
 import { math } from 'bip-schnorr';
 import { sleep } from '@liquality/utils'
+import {
+  ContractInfoV0,
+  ContractDescriptorV0,
+  OracleInfoV0,
+  OracleAnnouncementV0,
+  OracleEventV0,
+  OracleAttestationV0,
+  EnumEventDescriptorV0
+} from "@node-dlc/messaging";
+import { sha256 } from '@liquality/crypto';
 
 import * as base2Output from '../outputs/base2.json'
 
@@ -24,6 +34,66 @@ const alice = chain.client
 const network = chain.network
 
 const bob = chains.bitcoinWithJs2.client
+
+describe('tlv integration', () => {
+  it.only('should', async () => {
+    const aliceInput = await getInput(alice)
+    const bobInput = await getInput(bob)
+
+    const oracle = new Oracle('olivia', 1)
+    const oliviaInfo = oracle.GetOracleInfo()
+
+    const eventDescriptor = new EnumEventDescriptorV0();
+    eventDescriptor.outcomes = [ 'YES', 'NO' ];
+
+    const event = new OracleEventV0();
+    event.oracleNonces = oliviaInfo.rValues.map(rValue => Buffer.from(rValue, 'hex'));
+    event.eventMaturityEpoch = 1622175850
+    event.eventDescriptor = eventDescriptor;
+    event.eventId = 'YES-OR-NO'
+
+    const announcement = new OracleAnnouncementV0();
+    announcement.announcementSig = Buffer.from(oracle.GetSignature(sha256(event.serialize())), 'hex')
+    announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
+    announcement.oracleEvent = event;
+
+    const oracleInfo = new OracleInfoV0();
+    oracleInfo.announcement = announcement;
+
+    const contractDescriptor = new ContractDescriptorV0();
+    contractDescriptor.outcomes = [
+      {
+        outcome: math.taggedHash('DLC/oracle/attestation/v0', 'WIN'),
+        localPayout: BigInt(100001000)
+      },
+      {
+        outcome: math.taggedHash('DLC/oracle/attestation/v0', 'LOSE'),
+        localPayout: BigInt(100001000)
+      }
+    ]
+
+    const contractInfo = new ContractInfoV0();
+    contractInfo.totalCollateral = BigInt(100001000);
+    contractInfo.contractDescriptor = contractDescriptor;
+    contractInfo.oracleInfo = oracleInfo;
+
+    const offerCollateralSatoshis = BigInt(100000000);
+    const feeRatePerVb = BigInt(10);
+    const cetLocktime = 1622175850;
+    const refundLocktime = 1622175850;
+
+    const offerMessage = await alice.finance.dlc.initializeContractAndOffer(
+      contractInfo,
+      offerCollateralSatoshis,
+      feeRatePerVb,
+      cetLocktime,
+      refundLocktime,
+      [aliceInput]
+    );
+
+    console.log('offerMessage', offerMessage)
+  })
+})
 
 describe('dlc provider', () => {
   it('unilateralClose', async () => {
