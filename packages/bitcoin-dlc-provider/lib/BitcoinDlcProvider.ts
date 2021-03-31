@@ -244,7 +244,12 @@ export default class BitcoinDlcProvider extends Provider {
       payoutGroups.push({
         payout: p.payout,
         // groups: groupByIgnoringDigits(p.indexFrom, p.indexTo, 2, 18),
-        groups: groupByIgnoringDigits(p.indexFrom, p.indexTo, 2, 1), // TODO update this for base
+        groups: groupByIgnoringDigits(
+          p.indexFrom,
+          p.indexTo,
+          2,
+          contractDescriptor.numDigits,
+        ), // TODO update this for base
       });
     });
 
@@ -807,7 +812,7 @@ export default class BitcoinDlcProvider extends Provider {
     hyperbolaPayoutCurvePiece: HyperbolaPayoutCurvePiece,
     oracleAttestation: OracleAttestationV0,
     outcome: bigint,
-  ): Promise<number> {
+  ): Promise<FindOutcomeResponse> {
     if (_dlcOffer.type !== MessageType.DlcOfferV0)
       throw Error('DlcOffer must be V0');
     const dlcOffer = _dlcOffer as DlcOfferV0;
@@ -815,6 +820,7 @@ export default class BitcoinDlcProvider extends Provider {
     const hyperbolaCurve = HyperbolaPayoutCurve.fromPayoutCurvePiece(
       hyperbolaPayoutCurvePiece,
     );
+    console.log('outcome', outcome);
     const payout = hyperbolaCurve.getPayout(outcome);
 
     const { payoutGroups } = this.GetPayouts(dlcOffer);
@@ -853,20 +859,28 @@ export default class BitcoinDlcProvider extends Provider {
     console.log('payoutGroups', payoutGroups[0]);
 
     let index = 0;
+    let groupIndex = -1;
+    let groupLength = 0;
     for (const payoutGroup of payoutGroups) {
       if (payoutGroup.payout === roundedPayout) {
-        index += payoutGroup.groups.findIndex((group) => {
+        groupIndex = payoutGroup.groups.findIndex((group) => {
           console.log('group', group);
           console.log('group.length', group.length);
           return group.every((msg, i) => msg === outcomesFormatted[i]);
         });
+        index += groupIndex;
+        console.log('payoutGroup.groups', payoutGroup.groups);
+        console.log('groupIndex', groupIndex);
+        groupLength = payoutGroup.groups[groupIndex].length;
         break;
       } else {
         index += payoutGroup.groups.length;
       }
     }
 
-    return index;
+    if (groupIndex === -1) throw Error('incorrect group index');
+
+    return { index, groupLength };
   }
 
   async FindOutcomeIndexFromPayoutFunction(
@@ -874,7 +888,7 @@ export default class BitcoinDlcProvider extends Provider {
     contractDescriptor: ContractDescriptorV1,
     eventDescriptor: DigitDecompositionEventDescriptorV0,
     oracleAttestation: OracleAttestationV0,
-  ): Promise<number> {
+  ): Promise<FindOutcomeResponse> {
     const _payoutFunction = contractDescriptor.payoutFunction;
     if (_payoutFunction.type !== MessageType.PayoutFunctionV0)
       throw Error('PayoutFunction must be V0');
@@ -911,7 +925,7 @@ export default class BitcoinDlcProvider extends Provider {
   async FindOutcomeIndex(
     _dlcOffer: DlcOffer,
     oracleAttestation: OracleAttestationV0,
-  ): Promise<number> {
+  ): Promise<FindOutcomeResponse> {
     if (_dlcOffer.type !== MessageType.DlcOfferV0)
       throw Error('DlcOffer must be V0');
     const dlcOffer = _dlcOffer as DlcOfferV0;
@@ -961,12 +975,10 @@ export default class BitcoinDlcProvider extends Provider {
     const dlcSign = _dlcSign as DlcSignV0;
     const dlcTxs = _dlcTxs as DlcTransactionsV0;
 
-    const outcomeIndex = await this.FindOutcomeIndex(
+    const { index: outcomeIndex, groupLength } = await this.FindOutcomeIndex(
       dlcOffer,
       oracleAttestation,
     );
-
-    console.log('outcomeIndex', outcomeIndex);
 
     const network = await this.getMethod('getConnectedNetwork')();
 
@@ -991,20 +1003,12 @@ export default class BitcoinDlcProvider extends Provider {
 
     const fundPrivateKey = Buffer.from(fundPrivateKeyPair.__D).toString('hex');
 
-    console.log(
-      'oracle',
-      oracleAttestation.signatures.map((sig) => sig.toString('hex')),
-    );
+    const sliceIndex = -(oracleAttestation.signatures.length - groupLength);
 
-    console.log('dlcTxs.cets.length', dlcTxs.cets.length);
-    console.log(
-      'dlcSign.cetSignatures.sigs',
-      dlcSign.cetSignatures.sigs.length,
-    );
-    console.log(
-      'dlcAccept.cetSignatures.sigs',
-      dlcAccept.cetSignatures.sigs.length,
-    );
+    const oracleSignatures =
+      sliceIndex === 0
+        ? oracleAttestation.signatures
+        : oracleAttestation.signatures.slice(0, sliceIndex);
 
     const signCetRequest: SignCetRequest = {
       cetHex: dlcTxs.cets[outcomeIndex].serialize().toString('hex'),
@@ -1012,9 +1016,7 @@ export default class BitcoinDlcProvider extends Provider {
       fundTxId: dlcTxs.fundTx.txId.toString(),
       localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
       remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
-      oracleSignatures: oracleAttestation.signatures.map((sig) =>
-        sig.toString('hex'),
-      ),
+      oracleSignatures: oracleSignatures.map((sig) => sig.toString('hex')),
       fundInputAmount: dlcTxs.fundTxOutAmount,
       adaptorSignature: isLocalParty
         ? dlcAccept.cetSignatures.sigs[outcomeIndex].encryptedSig.toString(
@@ -1022,8 +1024,6 @@ export default class BitcoinDlcProvider extends Provider {
           )
         : dlcSign.cetSignatures.sigs[outcomeIndex].encryptedSig.toString('hex'),
     };
-
-    console.log('signCetRequest', signCetRequest);
 
     const finalCet = (await this.SignCet(signCetRequest)).hex;
     console.log('finalCet', finalCet);
@@ -1057,6 +1057,8 @@ export default class BitcoinDlcProvider extends Provider {
   ): { payouts: PayoutRequest[]; messagesList: Messages[] } {
     const payouts: PayoutRequest[] = [];
     const messagesList: Messages[] = [];
+
+    console.log('rValuesMessagesList', rValuesMessagesList);
 
     outputs.forEach((output: any) => {
       const { payout, groups } = output;
@@ -1704,6 +1706,11 @@ export interface CreateCetAdaptorAndRefundSigsResponse {
 interface PayoutGroup {
   payout: bigint;
   groups: number[][];
+}
+
+interface FindOutcomeResponse {
+  index: number;
+  groupLength: number;
 }
 
 const BurnAddress = 'bcrt1qxcjufgh2jarkp2qkx68azh08w9v5gah8u6es8s';

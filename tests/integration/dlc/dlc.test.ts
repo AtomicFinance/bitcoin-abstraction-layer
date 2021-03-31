@@ -163,11 +163,13 @@ describe('tlv integration', () => {
   });
 
   it.only('should create a covered call contract', async () => {
+    const numDigits = 18;
+
     console.time('offer-get-time');
     const aliceInput = await getInput(alice);
     const bobInput = await getInput(bob);
 
-    const oracle = new Oracle('olivia', 1);
+    const oracle = new Oracle('olivia', numDigits);
     const oliviaInfo = oracle.GetOracleInfo();
 
     const eventDescriptor = new DigitDecompositionEventDescriptorV0();
@@ -175,7 +177,7 @@ describe('tlv integration', () => {
     eventDescriptor.isSigned = false;
     eventDescriptor.unit = 'BTC-USD';
     eventDescriptor.precision = 0;
-    eventDescriptor.nbDigits = 1;
+    eventDescriptor.nbDigits = numDigits;
 
     const event = new OracleEventV0();
     event.oracleNonces = oliviaInfo.rValues.map((rValue) =>
@@ -204,19 +206,19 @@ describe('tlv integration', () => {
     oracleInfo.announcement = announcement;
 
     const { payoutFunction, totalCollateral } = CoveredCall.buildPayoutFunction(
-      3900n,
+      4000n,
       1000000n,
       2,
-      18,
+      numDigits,
     );
     console.log('payoutFunction', payoutFunction);
 
-    const intervals = [{ beginInterval: 0n, roundingMod: 50n }];
+    const intervals = [{ beginInterval: 0n, roundingMod: 500n }];
     const roundingIntervals = new RoundingIntervalsV0();
     roundingIntervals.intervals = intervals;
 
     const contractDescriptor = new ContractDescriptorV1();
-    contractDescriptor.numDigits = 20;
+    contractDescriptor.numDigits = 3;
     contractDescriptor.payoutFunction = payoutFunction;
     contractDescriptor.roundingIntervals = roundingIntervals;
 
@@ -290,7 +292,7 @@ describe('tlv integration', () => {
     console.log('fundtx', fundTx);
 
     // get oracle to create attestation
-    const outcome = 21000;
+    const outcome = 2000;
 
     const { base, nbDigits } = eventDescriptor;
 
@@ -304,6 +306,11 @@ describe('tlv integration', () => {
         .toString('hex');
       sigs.push(Buffer.from(oracle.GetSignature(m, i + 1), 'hex'));
     }
+    console.log(
+      'sigs',
+      sigs.map((sig) => sig.toString('hex')),
+    );
+    console.log('oliviaInfo.publicKey', oliviaInfo.publicKey);
 
     const oracleAttestation = new OracleAttestationV0();
     oracleAttestation.eventId = 'btc/usd';
