@@ -459,6 +459,16 @@ export default class BitcoinDlcProvider extends Provider {
     const adaptorPairs: AdaptorPair[] = [];
     const adaptorSigRequestPromises: Promise<AdaptorSignatureJobResponse>[] = [];
 
+    console.log('cetsHex[27787]', cetsHex[27787]);
+    console.log(
+      `oracleAnnouncement.oracleEvent.oracleNonces.map(
+      (nonce) => nonce.toString('hex'),
+    )`,
+      oracleAnnouncement.oracleEvent.oracleNonces.map((nonce) =>
+        nonce.toString('hex'),
+      ),
+    );
+
     for (let i = 0, j = messagesList.length; i < j; i += chunk) {
       const tempMessagesList = messagesList.slice(i, i + chunk);
       const tempCetsHex = cetsHex.slice(i, i + chunk);
@@ -501,6 +511,8 @@ export default class BitcoinDlcProvider extends Provider {
       remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
       fundInputAmount: dlcTxs.fundTxOutAmount,
     };
+
+    console.log('adaptorPairs[27787]', adaptorPairs[27787]);
 
     const sigs: ISig[] = adaptorPairs.map((adaptorPair) => {
       return {
