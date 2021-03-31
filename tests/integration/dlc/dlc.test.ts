@@ -167,7 +167,7 @@ describe('tlv integration', () => {
     const aliceInput = await getInput(alice);
     const bobInput = await getInput(bob);
 
-    const oracle = new Oracle('olivia', 1);
+    const oracle = new Oracle('olivia', 2);
     const oliviaInfo = oracle.GetOracleInfo();
 
     const eventDescriptor = new DigitDecompositionEventDescriptorV0();
@@ -175,7 +175,7 @@ describe('tlv integration', () => {
     eventDescriptor.isSigned = false;
     eventDescriptor.unit = 'BTC-USD';
     eventDescriptor.precision = 0;
-    eventDescriptor.nbDigits = 1;
+    eventDescriptor.nbDigits = 2;
 
     const event = new OracleEventV0();
     event.oracleNonces = oliviaInfo.rValues.map((rValue) =>

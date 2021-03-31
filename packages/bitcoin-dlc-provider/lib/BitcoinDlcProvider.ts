@@ -244,7 +244,7 @@ export default class BitcoinDlcProvider extends Provider {
       payoutGroups.push({
         payout: p.payout,
         // groups: groupByIgnoringDigits(p.indexFrom, p.indexTo, 2, 18),
-        groups: groupByIgnoringDigits(p.indexFrom, p.indexTo, 2, 1), // TODO update this for base
+        groups: groupByIgnoringDigits(p.indexFrom, p.indexTo, 2, 2), // TODO update this for base
       });
     });
 
