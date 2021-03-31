@@ -390,9 +390,7 @@ export default class BitcoinDlcProvider extends Provider {
     oracleNonces.forEach(() => {
       const messages = [];
       for (let i = 0; i < eventDescriptor.base; i++) {
-        const m = math
-          .taggedHash('DLC/oracle/attestation/v0', i.toString())
-          .toString('hex');
+        const m = i.toString();
         messages.push(m);
       }
       messagesList.push({ messages });

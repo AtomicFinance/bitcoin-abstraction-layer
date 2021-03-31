@@ -42,7 +42,7 @@ export default class Oracle {
       message,
       nonceOrAux: this.kValues[significantDigit - 1],
       isNonce: true,
-      // isHashed: true,
+      isHashed: true,
     };
 
     return cfdjs.SchnorrSign(signRequest).hex;
