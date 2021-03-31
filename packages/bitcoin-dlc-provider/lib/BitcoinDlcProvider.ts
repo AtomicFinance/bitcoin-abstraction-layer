@@ -456,8 +456,7 @@ export default class BitcoinDlcProvider extends Provider {
     const oracleAnnouncement = contractInfo.oracleInfo.announcement;
 
     const chunk = 100;
-    const adaptorPairs: AdaptorPair[] = [];
-    const adaptorSigRequestPromises: Promise<AdaptorSignatureJobResponse>[] = [];
+    const adaptorSigRequestPromises: Promise<AdaptorPair[]>[] = [];
 
     console.log('cetsHex[27787]', cetsHex[27787]);
     console.log(
@@ -492,16 +491,14 @@ export default class BitcoinDlcProvider extends Provider {
           const response = await this.CreateCetAdaptorSignatures(
             cetSignRequest,
           );
-          return { index: i, response };
+          return response.adaptorPairs;
         })(),
       );
     }
 
-    (await Promise.all(adaptorSigRequestPromises))
-      .sort((a, b) => a.index - b.index)
-      .forEach((r) => {
-        adaptorPairs.push(...r.response.adaptorPairs);
-      });
+    const adaptorPairs: AdaptorPair[] = (
+      await Promise.all(adaptorSigRequestPromises)
+    ).flat();
 
     const refundSignRequest: GetRawRefundTxSignatureRequest = {
       refundTxHex: dlcTxs.refundTx.serialize().toString('hex'),
@@ -1701,11 +1698,6 @@ export interface CreateCetAdaptorAndRefundSigsResponse {
   cetSignatures: CetAdaptorSignaturesV0;
   refundSignature: Buffer;
 }
-
-type AdaptorSignatureJobResponse = {
-  index: number;
-  response: CreateCetAdaptorSignaturesResponse;
-};
 
 interface PayoutGroup {
   payout: bigint;
