@@ -177,7 +177,6 @@ export default class BitcoinDlcProvider extends Provider {
     if (fundingAddress.address === payoutAddress.address)
       throw Error('Address reuse');
 
-    // Need to get funding inputs
     const inputs: Input[] = await this.GetInputsForAmount(
       collateral,
       feeRatePerVb,
@@ -214,6 +213,7 @@ export default class BitcoinDlcProvider extends Provider {
   private GetPayoutsFromPayoutFunction(
     _dlcOffer: DlcOffer,
     contractDescriptor: ContractDescriptorV1,
+    eventDescriptor: DigitDecompositionEventDescriptorV0,
     totalCollateral: bigint,
   ): GetPayoutsResponse {
     if (_dlcOffer.type !== MessageType.DlcOfferV0)
@@ -239,21 +239,16 @@ export default class BitcoinDlcProvider extends Provider {
       roundingIntervals,
     );
 
-    const contractInfo = dlcOffer.contractInfo as ContractInfoV0;
-    const eventDescriptor = contractInfo.oracleInfo.announcement.oracleEvent
-      .eventDescriptor as DigitDecompositionEventDescriptorV0;
-
     const payoutGroups: PayoutGroup[] = [];
     cetPayouts.forEach((p) => {
       payoutGroups.push({
         payout: p.payout,
-        // groups: groupByIgnoringDigits(p.indexFrom, p.indexTo, 2, 18),
         groups: groupByIgnoringDigits(
           p.indexFrom,
           p.indexTo,
           eventDescriptor.base,
           contractDescriptor.numDigits,
-        ), // TODO update this for base
+        ),
       });
     });
 
@@ -282,9 +277,13 @@ export default class BitcoinDlcProvider extends Provider {
           case MessageType.ContractDescriptorV0:
             throw Error('ContractDescriptorV0 not yet supported');
           case MessageType.ContractDescriptorV1:
+            // eslint-disable-next-line no-case-declarations
+            const oracleInfo = contractInfo.oracleInfo;
             return this.GetPayoutsFromPayoutFunction(
               dlcOffer,
               contractInfo.contractDescriptor as ContractDescriptorV1,
+              oracleInfo.announcement.oracleEvent
+                .eventDescriptor as DigitDecompositionEventDescriptorV0,
               contractInfo.totalCollateral,
             );
           default:
@@ -388,7 +387,7 @@ export default class BitcoinDlcProvider extends Provider {
     const eventDescriptor = oracleEvent.eventDescriptor as DigitDecompositionEventDescriptorV0;
 
     const messagesList: Messages[] = [];
-    oracleNonces.forEach((nonce) => {
+    oracleNonces.forEach(() => {
       const messages = [];
       for (let i = 0; i < eventDescriptor.base; i++) {
         const m = math
