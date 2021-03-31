@@ -34,7 +34,33 @@ import {
   VerifyRefundTxSignatureResponse,
   Messages,
 } from './@types/cfd-dlc-js';
-
+import {
+  ContractInfo,
+  FundingInput,
+  DlcOffer,
+  FundingInputV0,
+  MessageType,
+  DlcAccept,
+  DlcOfferV0,
+  DlcAcceptV0,
+  DlcSign,
+  DlcTransactions,
+  DlcTransactionsV0,
+  DlcSignV0,
+  ContractInfoV0,
+  ContractInfoV1,
+  ContractDescriptorV0,
+  ContractDescriptorV1,
+  PayoutFunctionV0,
+  HyperbolaPayoutCurvePiece,
+  OracleEventV0,
+  DigitDecompositionEventDescriptorV0,
+  CetAdaptorSignaturesV0,
+  NegotiationFieldsV0,
+  ScriptWitnessV0,
+  FundingSignaturesV0,
+  OracleAttestationV0,
+} from '@node-dlc/messaging';
 import {
   Amount,
   Input,
@@ -57,45 +83,81 @@ export default class Dlc {
   }
 
   async initializeContractAndOffer(
-    input: InputDetails,
-    payouts: PayoutDetails[],
-    oracleInfo: OracleInfo,
-    messagesList: Messages[],
-    startingIndex = 0,
-    fixedInputs: Input[] = [],
+    contractInfo: ContractInfo,
+    offerCollateralSatoshis: bigint,
+    feeRatePerVb: bigint,
+    cetLocktime: number,
+    refundLocktime: number,
+    fixedInputs?: Input[],
   ): Promise<OfferMessage> {
     return this.client.getMethod('initializeContractAndOffer')(
-      input,
-      payouts,
-      oracleInfo,
-      messagesList,
-      startingIndex,
+      contractInfo,
+      offerCollateralSatoshis,
+      feeRatePerVb,
+      cetLocktime,
+      refundLocktime,
       fixedInputs,
     );
   }
 
   async confirmContractOffer(
-    offerMessage: OfferMessage,
-    startingIndex = 0,
-    fixedInputs: Input[] = [],
-  ): Promise<AcceptMessage> {
-    return this.client.getMethod('confirmContractOffer')(
-      offerMessage,
-      startingIndex,
-      fixedInputs,
+    dlcOffer: DlcOffer,
+    fixedInputs?: Input[],
+  ): Promise<ConfirmContractOfferResponse> {
+    return this.client.getMethod('confirmContractOffer')(dlcOffer, fixedInputs);
+  }
+
+  async signContract(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+  ): Promise<SignContractResponse> {
+    return this.client.getMethod('signContract')(dlcOffer, dlcAccept);
+  }
+
+  async finalizeContract(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    dlcSign: DlcSign,
+    dlcTransactions: DlcTransactions,
+  ): Promise<string> {
+    return this.client.getMethod('finalizeContract')(
+      dlcOffer,
+      dlcAccept,
+      dlcSign,
+      dlcTransactions,
     );
   }
 
-  async signContract(acceptMessage: AcceptMessage): Promise<SignMessage> {
-    return this.client.getMethod('signContract')(acceptMessage);
+  async execute(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    dlcSign: DlcSign,
+    dlcTransactions: DlcTransactions,
+    oracleAttestation: OracleAttestationV0,
+    isLocalParty: boolean,
+  ) {
+    return this.client.getMethod('execute')(
+      dlcOffer,
+      dlcAccept,
+      dlcSign,
+      dlcTransactions,
+      oracleAttestation,
+      isLocalParty,
+    );
   }
 
-  async finalizeContract(signMessage: SignMessage): Promise<string> {
-    return this.client.getMethod('finalizeContract')(signMessage);
-  }
-
-  async refund(contractId: string) {
-    return this.client.getMethod('refund')(contractId);
+  async refund(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    dlcSign: DlcSign,
+    dlcTransactions: DlcTransactions,
+  ) {
+    return this.client.getMethod('refund')(
+      dlcOffer,
+      dlcAccept,
+      dlcSign,
+      dlcTransactions,
+    );
   }
 
   async initiateEarlyExit(contractId: string, outputs: Output[]) {
@@ -334,4 +396,14 @@ export default class Dlc {
 interface GeneratedOutput {
   payout: number;
   groups: number[][];
+}
+
+export interface ConfirmContractOfferResponse {
+  dlcAccept: DlcAccept;
+  dlcTransactions: DlcTransactions;
+}
+
+export interface SignContractResponse {
+  dlcSign: DlcSign;
+  dlcTransactions: DlcTransactions;
 }
