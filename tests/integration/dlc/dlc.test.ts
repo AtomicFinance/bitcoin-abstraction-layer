@@ -164,6 +164,7 @@ describe('tlv integration', () => {
 
   it.only('should create a covered call contract', async () => {
     const numDigits = 17;
+    const oracleBase = 2;
 
     console.time('offer-get-time');
     const aliceInput = await getInput(alice);
@@ -173,7 +174,7 @@ describe('tlv integration', () => {
     const oliviaInfo = oracle.GetOracleInfo();
 
     const eventDescriptor = new DigitDecompositionEventDescriptorV0();
-    eventDescriptor.base = 2;
+    eventDescriptor.base = oracleBase;
     eventDescriptor.isSigned = false;
     eventDescriptor.unit = 'BTC-USD';
     eventDescriptor.precision = 0;
@@ -208,7 +209,7 @@ describe('tlv integration', () => {
     const { payoutFunction, totalCollateral } = CoveredCall.buildPayoutFunction(
       4000n,
       1000000n,
-      2,
+      oracleBase,
       numDigits,
     );
     console.log('payoutFunction', payoutFunction);
@@ -218,7 +219,7 @@ describe('tlv integration', () => {
     roundingIntervals.intervals = intervals;
 
     const contractDescriptor = new ContractDescriptorV1();
-    contractDescriptor.numDigits = 3;
+    contractDescriptor.numDigits = numDigits;
     contractDescriptor.payoutFunction = payoutFunction;
     contractDescriptor.roundingIntervals = roundingIntervals;
 
@@ -231,7 +232,7 @@ describe('tlv integration', () => {
     const cetLocktime = 1617170572;
     const refundLocktime = 1617170572;
 
-    const dlcOffer = await alice.finance.dlc.initializeContractAndOffer(
+    const dlcOffer = await alice.finance.dlc.createDlcOffer(
       contractInfo,
       totalCollateral - BigInt(2000),
       feeRatePerVb,
@@ -246,7 +247,7 @@ describe('tlv integration', () => {
     const {
       dlcAccept,
       dlcTransactions,
-    } = await bob.finance.dlc.confirmContractOffer(dlcOffer, [bobInput]);
+    } = await bob.finance.dlc.acceptDlcOffer(dlcOffer, [bobInput]);
     console.time('accept-time-serialize');
 
     fs.writeFile(
@@ -271,14 +272,14 @@ describe('tlv integration', () => {
     console.timeEnd('accept-time');
 
     console.time('sign-time');
-    const { dlcSign } = await alice.finance.dlc.signContract(
+    const { dlcSign } = await alice.finance.dlc.signDlcAccept(
       dlcOffer,
       dlcAccept,
     );
     console.timeEnd('sign-time');
     console.log('dlcSign', dlcSign);
 
-    const _dlcTxs = await bob.finance.dlc.finalizeContract(
+    const _dlcTxs = await bob.finance.dlc.finalizeDlcSign(
       dlcOffer,
       dlcAccept,
       dlcSign,
@@ -336,7 +337,12 @@ describe('tlv integration', () => {
     payouts.forEach((p) => {
       groups.push({
         payout: p.payout,
-        groups: groupByIgnoringDigits(p.indexFrom, p.indexTo, 2, 20),
+        groups: groupByIgnoringDigits(
+          p.indexFrom,
+          p.indexTo,
+          oracleBase,
+          numDigits,
+        ),
       });
     });
 

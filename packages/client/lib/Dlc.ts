@@ -82,7 +82,7 @@ export default class Dlc {
     this.client = client;
   }
 
-  async initializeContractAndOffer(
+  async createDlcOffer(
     contractInfo: ContractInfo,
     offerCollateralSatoshis: bigint,
     feeRatePerVb: bigint,
@@ -90,7 +90,7 @@ export default class Dlc {
     refundLocktime: number,
     fixedInputs?: Input[],
   ): Promise<OfferMessage> {
-    return this.client.getMethod('initializeContractAndOffer')(
+    return this.client.getMethod('createDlcOffer')(
       contractInfo,
       offerCollateralSatoshis,
       feeRatePerVb,
@@ -100,27 +100,27 @@ export default class Dlc {
     );
   }
 
-  async confirmContractOffer(
+  async acceptDlcOffer(
     dlcOffer: DlcOffer,
     fixedInputs?: Input[],
   ): Promise<ConfirmContractOfferResponse> {
-    return this.client.getMethod('confirmContractOffer')(dlcOffer, fixedInputs);
+    return this.client.getMethod('acceptDlcOffer')(dlcOffer, fixedInputs);
   }
 
-  async signContract(
+  async signDlcAccept(
     dlcOffer: DlcOffer,
     dlcAccept: DlcAccept,
   ): Promise<SignContractResponse> {
-    return this.client.getMethod('signContract')(dlcOffer, dlcAccept);
+    return this.client.getMethod('signDlcAccept')(dlcOffer, dlcAccept);
   }
 
-  async finalizeContract(
+  async finalizeDlcSign(
     dlcOffer: DlcOffer,
     dlcAccept: DlcAccept,
     dlcSign: DlcSign,
     dlcTransactions: DlcTransactions,
   ): Promise<string> {
-    return this.client.getMethod('finalizeContract')(
+    return this.client.getMethod('finalizeDlcSign')(
       dlcOffer,
       dlcAccept,
       dlcSign,

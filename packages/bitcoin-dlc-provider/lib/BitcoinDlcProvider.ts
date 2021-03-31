@@ -239,6 +239,10 @@ export default class BitcoinDlcProvider extends Provider {
       roundingIntervals,
     );
 
+    const contractInfo = dlcOffer.contractInfo as ContractInfoV0;
+    const eventDescriptor = contractInfo.oracleInfo.announcement.oracleEvent
+      .eventDescriptor as DigitDecompositionEventDescriptorV0;
+
     const payoutGroups: PayoutGroup[] = [];
     cetPayouts.forEach((p) => {
       payoutGroups.push({
@@ -247,7 +251,7 @@ export default class BitcoinDlcProvider extends Provider {
         groups: groupByIgnoringDigits(
           p.indexFrom,
           p.indexTo,
-          2,
+          eventDescriptor.base,
           contractDescriptor.numDigits,
         ), // TODO update this for base
       });
@@ -1007,7 +1011,7 @@ export default class BitcoinDlcProvider extends Provider {
     const payouts: PayoutRequest[] = [];
     const messagesList: Messages[] = [];
 
-    outputs.forEach((output: any) => {
+    outputs.forEach((output: PayoutGroup) => {
       const { payout, groups } = output;
       const payoutAmount: bigint = payout;
 
@@ -1041,7 +1045,7 @@ export default class BitcoinDlcProvider extends Provider {
    * @param refundLocktime The nLockTime to be put on the refund transaction
    * @returns {Promise<DlcOffer>}
    */
-  async initializeContractAndOffer(
+  async createDlcOffer(
     contractInfo: ContractInfo,
     offerCollateralSatoshis: bigint,
     feeRatePerVb: bigint,
@@ -1093,7 +1097,7 @@ export default class BitcoinDlcProvider extends Provider {
     return dlcOffer;
   }
 
-  async confirmContractOffer(
+  async acceptDlcOffer(
     _dlcOffer: DlcOffer,
     fixedInputs?: Input[],
   ): Promise<ConfirmContractOfferResponse> {
@@ -1159,7 +1163,7 @@ export default class BitcoinDlcProvider extends Provider {
     return { dlcAccept, dlcTransactions };
   }
 
-  async signContract(
+  async signDlcAccept(
     _dlcOffer: DlcOffer,
     _dlcAccept: DlcAccept,
   ): Promise<SignContractResponse> {
@@ -1219,7 +1223,7 @@ export default class BitcoinDlcProvider extends Provider {
     return { dlcSign, dlcTransactions };
   }
 
-  async finalizeContract(
+  async finalizeDlcSign(
     _dlcOffer: DlcOffer,
     _dlcAccept: DlcAccept,
     _dlcSign: DlcSign,
@@ -1351,14 +1355,6 @@ export default class BitcoinDlcProvider extends Provider {
       oracleAttestation,
       isLocalParty,
     );
-  }
-
-  async unilateralClose(
-    outcomeIndex: number,
-    oracleSignatures: string[],
-    contractId: string,
-  ): Promise<string> {
-    return '';
   }
 
   async getFundingUtxoAddressesForOfferMessages(offerMessages: OfferMessage[]) {
