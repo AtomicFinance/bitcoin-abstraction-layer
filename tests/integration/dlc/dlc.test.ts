@@ -343,7 +343,7 @@ describe('tlv integration', () => {
       )}`,
     );
 
-    await bob.finance.dlc.execute(
+    const cet = await bob.finance.dlc.execute(
       dlcOffer,
       dlcAccept,
       dlcSign,
@@ -351,6 +351,11 @@ describe('tlv integration', () => {
       oracleAttestation,
       false,
     );
+    console.log('cet', cet.serialize().toString('hex'));
+    const cetTx = await bob.chain.sendRawTransaction(
+      cet.serialize().toString('hex'),
+    );
+    console.log('cetTx', cetTx);
     // const testRefund = await bob.finance.dlc.refund(
     //   dlcOffer,
     //   dlcAccept,

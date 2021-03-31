@@ -947,7 +947,7 @@ export default class BitcoinDlcProvider extends Provider {
     _dlcTxs: DlcTransactions,
     oracleAttestation: OracleAttestationV0,
     isLocalParty: boolean,
-  ): Promise<void> {
+  ): Promise<Tx> {
     if (_dlcOffer.type !== MessageType.DlcOfferV0)
       throw Error('DlcOffer must be V0');
     if (_dlcOffer.type !== MessageType.DlcOfferV0)
@@ -1027,6 +1027,8 @@ export default class BitcoinDlcProvider extends Provider {
 
     const finalCet = (await this.SignCet(signCetRequest)).hex;
     console.log('finalCet', finalCet);
+
+    return Tx.parse(StreamReader.fromHex(finalCet));
 
     // dlcOffer.contractInfo
 
@@ -1378,7 +1380,7 @@ export default class BitcoinDlcProvider extends Provider {
     _dlcTransactions: DlcTransactions,
     oracleAttestation: OracleAttestationV0,
     isLocalParty: boolean,
-  ): Promise<void> {
+  ): Promise<Tx> {
     if (_dlcOffer.type !== MessageType.DlcOfferV0)
       throw Error('DlcOffer must be V0');
     if (_dlcAccept.type !== MessageType.DlcAcceptV0)
@@ -1395,7 +1397,7 @@ export default class BitcoinDlcProvider extends Provider {
     console.log('execute-1');
 
     // const cet =
-    await this.FindAndSignCet(
+    return this.FindAndSignCet(
       dlcOffer,
       dlcAccept,
       dlcSign,
