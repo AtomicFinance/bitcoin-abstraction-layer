@@ -463,16 +463,6 @@ export default class BitcoinDlcProvider extends Provider {
     const chunk = 100;
     const adaptorSigRequestPromises: Promise<AdaptorPair[]>[] = [];
 
-    console.log('cetsHex[27787]', cetsHex[27787]);
-    console.log(
-      `oracleAnnouncement.oracleEvent.oracleNonces.map(
-      (nonce) => nonce.toString('hex'),
-    )`,
-      oracleAnnouncement.oracleEvent.oracleNonces.map((nonce) =>
-        nonce.toString('hex'),
-      ),
-    );
-
     for (let i = 0, j = messagesList.length; i < j; i += chunk) {
       const tempMessagesList = messagesList.slice(i, i + chunk);
       const tempCetsHex = cetsHex.slice(i, i + chunk);
@@ -513,8 +503,6 @@ export default class BitcoinDlcProvider extends Provider {
       remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
       fundInputAmount: dlcTxs.fundTxOutAmount,
     };
-
-    console.log('adaptorPairs[27787]', adaptorPairs[27787]);
 
     const sigs: ISig[] = adaptorPairs.map((adaptorPair) => {
       return {
@@ -820,7 +808,6 @@ export default class BitcoinDlcProvider extends Provider {
     const hyperbolaCurve = HyperbolaPayoutCurve.fromPayoutCurvePiece(
       hyperbolaPayoutCurvePiece,
     );
-    console.log('outcome', outcome);
     const payout = hyperbolaCurve.getPayout(outcome);
 
     const { payoutGroups } = this.GetPayouts(dlcOffer);
@@ -833,30 +820,15 @@ export default class BitcoinDlcProvider extends Provider {
       (interval) => payout.toNumber() > Number(interval.beginInterval),
     );
 
-    console.log('outcome', outcome);
-    console.log('payout', payout.toNumber());
-
     let roundedPayout = await roundPayout(payout, interval.roundingMod);
 
-    console.log('oracleAttestation.outcomes', oracleAttestation.outcomes);
     const outcomesFormatted = oracleAttestation.outcomes.map((outcome) =>
       parseInt(outcome),
-    );
-
-    console.log('roundedPayout', roundedPayout);
-    console.log('outcomesFormatted', outcomesFormatted);
-
-    console.log(
-      'dlcOffer.totalcolalteral',
-      dlcOffer.contractInfo.totalCollateral,
     );
 
     if (roundedPayout > dlcOffer.contractInfo.totalCollateral) {
       roundedPayout = dlcOffer.contractInfo.totalCollateral;
     }
-
-    console.log('roundedPayout', roundedPayout);
-    console.log('payoutGroups', payoutGroups[0]);
 
     let index = 0;
     let groupIndex = -1;
@@ -864,13 +836,9 @@ export default class BitcoinDlcProvider extends Provider {
     for (const payoutGroup of payoutGroups) {
       if (payoutGroup.payout === roundedPayout) {
         groupIndex = payoutGroup.groups.findIndex((group) => {
-          console.log('group', group);
-          console.log('group.length', group.length);
           return group.every((msg, i) => msg === outcomesFormatted[i]);
         });
         index += groupIndex;
-        console.log('payoutGroup.groups', payoutGroup.groups);
-        console.log('groupIndex', groupIndex);
         groupLength = payoutGroup.groups[groupIndex].length;
         break;
       } else {
@@ -898,7 +866,6 @@ export default class BitcoinDlcProvider extends Provider {
     const outcome: number = [...oracleAttestation.outcomes]
       .reverse()
       .reduce((acc, val, i) => acc + Number(val) * base ** i, 0);
-    console.log('outcome', outcome);
 
     const piecesSorted = payoutFunction.pieces.sort(
       (a, b) => Number(b.endpoint) - Number(a.endpoint),
@@ -1026,26 +993,8 @@ export default class BitcoinDlcProvider extends Provider {
     };
 
     const finalCet = (await this.SignCet(signCetRequest)).hex;
-    console.log('finalCet', finalCet);
 
     return Tx.parse(StreamReader.fromHex(finalCet));
-
-    // dlcOffer.contractInfo
-
-    // HyperbolaPayoutCurve()
-
-    // const { payoutGroups } = this.GetPayouts(dlcOffer);
-
-    // const outcomes = oracleAttestation.outcomes.map((outcome) =>
-    //   parseInt(outcome),
-    // );
-
-    // const index = -1;
-    // payoutGroups.forEach((payoutGroup, i) => {
-    // payoutGroup.groups.forEach((group, j) => {
-    //   index++;
-    // });
-    // });
   }
 
   outputsToPayouts(
@@ -1057,8 +1006,6 @@ export default class BitcoinDlcProvider extends Provider {
   ): { payouts: PayoutRequest[]; messagesList: Messages[] } {
     const payouts: PayoutRequest[] = [];
     const messagesList: Messages[] = [];
-
-    console.log('rValuesMessagesList', rValuesMessagesList);
 
     outputs.forEach((output: any) => {
       const { payout, groups } = output;
@@ -1396,9 +1343,6 @@ export default class BitcoinDlcProvider extends Provider {
     const dlcSign = _dlcSign as DlcSignV0;
     const dlcTransactions = _dlcTransactions as DlcTransactionsV0;
 
-    console.log('execute-1');
-
-    // const cet =
     return this.FindAndSignCet(
       dlcOffer,
       dlcAccept,
@@ -1407,36 +1351,6 @@ export default class BitcoinDlcProvider extends Provider {
       oracleAttestation,
       isLocalParty,
     );
-
-    // get outcomeIndex
-    // const signCetRequest: SignCetRequest = {
-    //   cetHex: this.contract.cetsHex[outcomeIndex],
-    //   fundPrivkey: this.fundPrivateKey,
-    //   fundTxId: this.contract.fundTxId,
-    //   localFundPubkey: this.contract.localPartyInputs.fundPublicKey,
-    //   remoteFundPubkey: this.contract.remotePartyInputs.fundPublicKey,
-    //   oracleSignatures,
-    //   fundInputAmount: this.contract.fundTxOutAmount.GetSatoshiAmount(),
-    //   adaptorSignature: this.contract.cetAdaptorPairs[outcomeIndex].signature,
-    // };
-    // const finalCet = (await this.client.SignCet(signCetRequest)).hex;
-    // let cetTxHash;
-    // try {
-    //   cetTxHash = await this.client.getMethod('sendRawTransaction')(finalCet);
-    // } catch (e) {
-    //   const cetTxid = decodeRawTransaction(finalCet).txid;
-    //   try {
-    //     cetTxHash = (
-    //       await this.client.getMethod('getTransactionByHash')(cetTxid)
-    //     ).hash;
-    //     console.log('Cet Tx already created');
-    //   } catch (e) {
-    //     throw Error(
-    //       `Failed to sendRawTransaction cetHex and tx has not been previously broadcast. cetHex: ${finalCet}`,
-    //     );
-    //   }
-    // }
-    // return cetTxHash;
   }
 
   async unilateralClose(

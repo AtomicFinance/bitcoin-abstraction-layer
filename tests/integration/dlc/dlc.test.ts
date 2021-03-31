@@ -163,7 +163,7 @@ describe('tlv integration', () => {
   });
 
   it.only('should create a covered call contract', async () => {
-    const numDigits = 18;
+    const numDigits = 17;
 
     console.time('offer-get-time');
     const aliceInput = await getInput(alice);
@@ -292,7 +292,7 @@ describe('tlv integration', () => {
     console.log('fundtx', fundTx);
 
     // get oracle to create attestation
-    const outcome = 2000;
+    const outcome = 6000;
 
     const { base, nbDigits } = eventDescriptor;
 
