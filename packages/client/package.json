@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/client",
   "umdName": "Client",
-  "version": "1.0.0",
+  "version": "2.0.0-alpha.0",
   "description": "> TODO: description",
   "author": "Matthew Black <mblackmblackmblack@gmail.com>",
   "homepage": "",
