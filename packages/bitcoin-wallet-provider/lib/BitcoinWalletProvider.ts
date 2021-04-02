@@ -6,18 +6,19 @@ import {
   selectCoins,
 } from '@liquality/bitcoin-utils';
 import * as bitcoin from 'bitcoinjs-lib';
+import { BitcoinNetwork } from '@atomicfinance/bitcoin-networks';
 
 const FEE_PER_BYTE_FALLBACK = 5;
-const ADDRESS_GAP = 20
-const NONCHANGE_ADDRESS = 0
-const CHANGE_ADDRESS = 1
-const NONCHANGE_OR_CHANGE_ADDRESS = 2
+const ADDRESS_GAP = 20;
+const NONCHANGE_ADDRESS = 0;
+const CHANGE_ADDRESS = 1;
+const NONCHANGE_OR_CHANGE_ADDRESS = 2;
 
 export default class BitcoinWalletProvider extends Provider {
-  _network: any;
+  _network: BitcoinNetwork;
   _unusedAddressesBlacklist: any;
 
-  constructor(network: any) {
+  constructor(network: BitcoinNetwork) {
     super('BitcoinWalletProvider');
 
     this._network = network;
@@ -39,96 +40,122 @@ export default class BitcoinWalletProvider extends Provider {
   }
 
   getUnusedAddressesBlacklist() {
-    return this._unusedAddressesBlacklist
+    return this._unusedAddressesBlacklist;
   }
 
   setUnusedAddressesBlacklist(unusedAddressesBlacklist) {
-    this._unusedAddressesBlacklist = unusedAddressesBlacklist
+    this._unusedAddressesBlacklist = unusedAddressesBlacklist;
   }
 
   async getUnusedAddress(change = false, numAddressPerCall = 100) {
-    const addressType = change ? CHANGE_ADDRESS : NONCHANGE_ADDRESS
-    const key = change ? 'change' : 'nonChange'
+    const addressType = change ? CHANGE_ADDRESS : NONCHANGE_ADDRESS;
+    const key = change ? 'change' : 'nonChange';
 
-    const address = await this._getUsedUnusedAddresses(numAddressPerCall, addressType)
-      .then(({ unusedAddress }) => unusedAddress[key])
+    const address = await this._getUsedUnusedAddresses(
+      numAddressPerCall,
+      addressType,
+    ).then(({ unusedAddress }) => unusedAddress[key]);
     this._unusedAddressesBlacklist[address.address] = true;
 
-    return address 
+    return address;
   }
 
   async _getUsedUnusedAddresses(numAddressPerCall = 100, addressType) {
-    const usedAddresses = []
-    const addressCountMap = { change: 0, nonChange: 0 }
-    const unusedAddressMap = { change: null, nonChange: null }
+    const usedAddresses = [];
+    const addressCountMap = { change: 0, nonChange: 0 };
+    const unusedAddressMap = { change: null, nonChange: null };
 
-    let addrList
-    let addressIndex = 0
-    let changeAddresses = []
-    let nonChangeAddresses = []
+    let addrList;
+    let addressIndex = 0;
+    let changeAddresses = [];
+    let nonChangeAddresses = [];
 
     /* eslint-disable no-unmodified-loop-condition */
     while (
-      (addressType === NONCHANGE_OR_CHANGE_ADDRESS && (
-        addressCountMap.change < ADDRESS_GAP || addressCountMap.nonChange < ADDRESS_GAP)
-      ) ||
-      (addressType === NONCHANGE_ADDRESS && addressCountMap.nonChange < ADDRESS_GAP) ||
+      (addressType === NONCHANGE_OR_CHANGE_ADDRESS &&
+        (addressCountMap.change < ADDRESS_GAP ||
+          addressCountMap.nonChange < ADDRESS_GAP)) ||
+      (addressType === NONCHANGE_ADDRESS &&
+        addressCountMap.nonChange < ADDRESS_GAP) ||
       (addressType === CHANGE_ADDRESS && addressCountMap.change < ADDRESS_GAP)
     ) {
       /* eslint-enable no-unmodified-loop-condition */
-      addrList = []
+      addrList = [];
 
-      if ((addressType === NONCHANGE_OR_CHANGE_ADDRESS || addressType === CHANGE_ADDRESS) &&
-           addressCountMap.change < ADDRESS_GAP) {
+      if (
+        (addressType === NONCHANGE_OR_CHANGE_ADDRESS ||
+          addressType === CHANGE_ADDRESS) &&
+        addressCountMap.change < ADDRESS_GAP
+      ) {
         // Scanning for change addr
-        changeAddresses = await this.getMethod('getAddresses')(addressIndex, numAddressPerCall, true)
-        addrList = addrList.concat(changeAddresses)
+        changeAddresses = await this.getMethod('getAddresses')(
+          addressIndex,
+          numAddressPerCall,
+          true,
+        );
+        addrList = addrList.concat(changeAddresses);
       } else {
-        changeAddresses = []
+        changeAddresses = [];
       }
 
-      if ((addressType === NONCHANGE_OR_CHANGE_ADDRESS || addressType === NONCHANGE_ADDRESS) &&
-           addressCountMap.nonChange < ADDRESS_GAP) {
+      if (
+        (addressType === NONCHANGE_OR_CHANGE_ADDRESS ||
+          addressType === NONCHANGE_ADDRESS) &&
+        addressCountMap.nonChange < ADDRESS_GAP
+      ) {
         // Scanning for non change addr
-        nonChangeAddresses = await this.getMethod('getAddresses')(addressIndex, numAddressPerCall, false)
-        addrList = addrList.concat(nonChangeAddresses)
+        nonChangeAddresses = await this.getMethod('getAddresses')(
+          addressIndex,
+          numAddressPerCall,
+          false,
+        );
+        addrList = addrList.concat(nonChangeAddresses);
       }
 
-      const transactionCounts = await this.getMethod('getAddressTransactionCounts')(addrList)
+      const transactionCounts = await this.getMethod(
+        'getAddressTransactionCounts',
+      )(addrList);
 
-      for (let address of addrList) {
-        const isUsed = transactionCounts[address] > 0 || this._unusedAddressesBlacklist[address.address]
-        const isChangeAddress = changeAddresses.find(a => address.equals(a))
-        const key = isChangeAddress ? 'change' : 'nonChange'
+      for (const address of addrList) {
+        const isUsed =
+          transactionCounts[address] > 0 ||
+          this._unusedAddressesBlacklist[address.address];
+        const isChangeAddress = changeAddresses.find((a) => address.equals(a));
+        const key = isChangeAddress ? 'change' : 'nonChange';
 
         if (isUsed) {
-          usedAddresses.push(address)
-          addressCountMap[key] = 0
-          unusedAddressMap[key] = null
+          usedAddresses.push(address);
+          addressCountMap[key] = 0;
+          unusedAddressMap[key] = null;
         } else {
-          addressCountMap[key]++
+          addressCountMap[key]++;
 
           if (!unusedAddressMap[key]) {
-            unusedAddressMap[key] = address
+            unusedAddressMap[key] = address;
           }
         }
       }
 
-      addressIndex += numAddressPerCall
+      addressIndex += numAddressPerCall;
     }
 
-    let firstUnusedAddress
-    const indexNonChange = unusedAddressMap.nonChange ? unusedAddressMap.nonChange.index : Infinity
-    const indexChange = unusedAddressMap.change ? unusedAddressMap.change.index : Infinity
+    let firstUnusedAddress;
+    const indexNonChange = unusedAddressMap.nonChange
+      ? unusedAddressMap.nonChange.index
+      : Infinity;
+    const indexChange = unusedAddressMap.change
+      ? unusedAddressMap.change.index
+      : Infinity;
 
-    if (indexNonChange <= indexChange) firstUnusedAddress = unusedAddressMap.nonChange
-    else firstUnusedAddress = unusedAddressMap.change
+    if (indexNonChange <= indexChange)
+      firstUnusedAddress = unusedAddressMap.nonChange;
+    else firstUnusedAddress = unusedAddressMap.change;
 
     return {
       usedAddresses,
       unusedAddress: unusedAddressMap,
-      firstUnusedAddress
-    }
+      firstUnusedAddress,
+    };
   }
 
   async sendSweepTransactionWithSetOutputs(
