@@ -36,6 +36,7 @@ import { CoveredCall, groupByIgnoringDigits } from '@node-dlc/core';
 import { sha256 } from '@liquality/crypto';
 import * as fs from 'fs';
 import * as base64 from 'base64-js';
+import { Psbt } from 'bitcoinjs-lib';
 
 import * as base2Output from '../outputs/base2.json';
 
@@ -166,6 +167,31 @@ describe('tlv integration', () => {
     const numDigits = 17;
     const oracleBase = 2;
 
+    const aliceNonChangeAddresses: Address = await alice.wallet.getAddresses(
+      0,
+      10,
+      false,
+    );
+    const aliceChangeAddresses: Address = await alice.wallet.getAddresses(
+      0,
+      10,
+      true,
+    );
+
+    const aliceAddresses = [
+      ...aliceNonChangeAddresses,
+      ...aliceChangeAddresses,
+    ];
+
+    for (let i = 0; i < aliceAddresses.length; i++) {
+      await alice.getMethod('jsonrpc')(
+        'importaddress',
+        aliceAddresses[i].address,
+        '',
+        false,
+      );
+    }
+
     console.time('offer-get-time');
     const aliceInput = await getInput(alice);
     const bobInput = await getInput(bob);
@@ -212,7 +238,6 @@ describe('tlv integration', () => {
       oracleBase,
       numDigits,
     );
-    console.log('payoutFunction', payoutFunction);
 
     const intervals = [{ beginInterval: 0n, roundingMod: 500n }];
     const roundingIntervals = new RoundingIntervalsV0();
@@ -272,33 +297,29 @@ describe('tlv integration', () => {
     console.timeEnd('accept-time');
 
     console.time('sign-time');
-    const { dlcSign } = await alice.finance.dlc.signDlcAccept(
-      dlcOffer,
-      dlcAccept,
-    );
+    const {
+      dlcSign,
+      dlcTransactions: dlcTxs,
+    } = await alice.finance.dlc.signDlcAccept(dlcOffer, dlcAccept);
     console.timeEnd('sign-time');
-    console.log('dlcSign', dlcSign);
 
-    const _dlcTxs = await bob.finance.dlc.finalizeDlcSign(
+    const fundTx = await bob.finance.dlc.finalizeDlcSign(
       dlcOffer,
       dlcAccept,
       dlcSign,
       dlcTransactions,
     );
-    const dlcTxs = _dlcTxs as DlcTransactionsV0;
-    console.log('dlcTxs', dlcTxs.fundTx.serialize().toString('hex'));
-    const fundTx = await bob.chain.sendRawTransaction(
-      dlcTxs.fundTx.serialize().toString('hex'),
+    const fundTxId = await bob.chain.sendRawTransaction(
+      fundTx.serialize().toString('hex'),
     );
-    console.log('fundtx', fundTx);
+    console.log('fundTxId', fundTxId);
 
     // get oracle to create attestation
-    const outcome = 6000;
+    const outcome = 3000;
 
     const { base, nbDigits } = eventDescriptor;
 
     const outcomes = outcome.toString(base).padStart(nbDigits, '0').split('');
-    console.log('outcomes', outcomes);
 
     const sigs: Buffer[] = [];
     for (let i = 0; i < nbDigits; i++) {
@@ -307,11 +328,6 @@ describe('tlv integration', () => {
         .toString('hex');
       sigs.push(Buffer.from(oracle.GetSignature(m, i + 1), 'hex'));
     }
-    console.log(
-      'sigs',
-      sigs.map((sig) => sig.toString('hex')),
-    );
-    console.log('oliviaInfo.publicKey', oliviaInfo.publicKey);
 
     const oracleAttestation = new OracleAttestationV0();
     oracleAttestation.eventId = 'btc/usd';
@@ -347,8 +363,6 @@ describe('tlv integration', () => {
     });
 
     console.log('groups', groups);
-    // console.log('groups', groups[0]);
-    // console.log('groups', groups[1]);
     console.log(
       `# of CETS: ${groups.reduce(
         (acc, group) => acc + group.groups.length,
@@ -369,6 +383,7 @@ describe('tlv integration', () => {
       cet.serialize().toString('hex'),
     );
     console.log('cetTx', cetTx);
+
     // const testRefund = await bob.finance.dlc.refund(
     //   dlcOffer,
     //   dlcAccept,
@@ -376,6 +391,37 @@ describe('tlv integration', () => {
     //   dlcTxs,
     // );
     // console.log('testRefund', testRefund.refundTx.serialize().toString('hex'));
+
+    // alice.getMethod('getBalance')()
+
+    // const balance = await alice.chain.getBalance(aliceAddresses);
+    // console.log('balance ', balance);
+
+    // const psbt: Psbt = await alice.finance.dlc.close(
+    //   dlcOffer,
+    //   dlcAccept,
+    //   dlcSign,
+    //   dlcTxs,
+    //   10000n,
+    //   true,
+    // );
+
+    // console.log('psbt', psbt.toBase64());
+
+    // const psbt2: Psbt = await bob.finance.dlc.close(
+    //   dlcOffer,
+    //   dlcAccept,
+    //   dlcSign,
+    //   dlcTxs,
+    //   10000n,
+    //   false,
+    //   psbt,
+    // );
+
+    // console.log(
+    //   'psbt2.extractTransaction().toHex()',
+    //   psbt2.extractTransaction().toHex(),
+    // );
   });
 });
 
