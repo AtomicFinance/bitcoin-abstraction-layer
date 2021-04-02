@@ -1026,9 +1026,14 @@ export default class BitcoinDlcProvider extends Provider {
     const network = await this.getConnectedNetwork();
     const psbt = new Psbt({ network });
 
+    const fundingPubKeys =
+      Buffer.compare(dlcOffer.fundingPubKey, dlcAccept.fundingPubKey) === -1
+        ? [dlcOffer.fundingPubKey, dlcAccept.fundingPubKey]
+        : [dlcAccept.fundingPubKey, dlcOffer.fundingPubKey];
+
     const p2ms = payments.p2ms({
       m: 2,
-      pubkeys: [dlcOffer.fundingPubKey, dlcAccept.fundingPubKey],
+      pubkeys: fundingPubKeys,
       network,
     });
 

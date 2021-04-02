@@ -1,50 +1,13 @@
 import 'mocha';
 import { expect } from 'chai';
-import {
-  chains,
-  fundAddress,
-  mockedBitcoinRpcProvider,
-  network,
-  getInput,
-} from '../common';
+import { chains, fundAddress, getInput } from '../common';
 import Client from '@liquality/client';
-import {
-  bitcoin,
-  wallet,
-  Address,
-} from '../../../packages/bitcoin-dlc-provider/lib/@types/@liquality/types';
-// import InputDetails from '../../../packages/bitcoin-dlc-provider/lib/models/InputDetails';
-// import PayoutDetails from '../../../packages/bitcoin-dlc-provider/lib/models/PayoutDetails';
+import { bitcoin } from '../../../packages/bitcoin-dlc-provider/lib/@types/@liquality/types';
 import Input from '../../../packages/bitcoin-dlc-provider/lib/models/Input';
-// import Output from '../../../packages/bitcoin-dlc-provider/lib/models/Output';
-import Oracle from '../models/Oracle';
-import { math } from 'bip-schnorr';
-import { sleep } from '@liquality/utils';
-import {
-  ContractInfoV0,
-  ContractDescriptorV0,
-  OracleInfoV0,
-  OracleAnnouncementV0,
-  OracleEventV0,
-  OracleAttestationV0,
-  EnumEventDescriptorV0,
-  DigitDecompositionEventDescriptorV0,
-  ContractInfoV1,
-  ContractDescriptorV1,
-  RoundingIntervalsV0,
-  FundingInputV0,
-  DlcTransactionsV0,
-} from '@node-dlc/messaging';
-import { CoveredCall, groupByIgnoringDigits } from '@node-dlc/core';
-import { sha256 } from '@liquality/crypto';
-import * as fs from 'fs';
-import * as base64 from 'base64-js';
-import { Psbt } from 'bitcoinjs-lib';
+import { FundingInputV0 } from '@node-dlc/messaging';
 
 const chain = chains.bitcoinWithJs;
 const alice = chain.client;
-
-const bob = chains.bitcoinWithJs2.client;
 
 describe('utxos', () => {
   describe('getUtxosForAmount', () => {
@@ -100,10 +63,7 @@ describe('utxos', () => {
 async function getInputUsingGetInputsForAmount(
   client: Client,
 ): Promise<InputsForAmountResponse> {
-  const {
-    address: unusedAddress,
-    derivationPath,
-  } = await client.wallet.getUnusedAddress();
+  const { address: unusedAddress } = await client.wallet.getUnusedAddress();
 
   await client.getMethod('jsonrpc')('importaddress', unusedAddress, '', false);
 

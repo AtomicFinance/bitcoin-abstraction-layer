@@ -30,7 +30,7 @@ const CONSTANTS = {
   BITCOIN_ADDRESS_DEFAULT_BALANCE: 2 * 1e8,
 };
 
-const { network, rpc } = config.bitcoin;
+const { network, tsNetwork, rpc } = config.bitcoin;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 console.warn = () => {}; // Silence warnings
@@ -60,8 +60,10 @@ bitcoinWithNode.addProvider(
   ),
 );
 bitcoinWithNode.finance.addProvider(new BitcoinCfdProvider(network, cfdJs));
-bitcoinWithNode.finance.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
-bitcoinWithNode.finance.addProvider(new BitcoinWalletProvider(network));
+bitcoinWithNode.finance.addProvider(
+  new BitcoinDlcProvider(tsNetwork, cfdDlcJs),
+);
+bitcoinWithNode.finance.addProvider(new BitcoinWalletProvider(tsNetwork));
 
 const bitcoinWithJs = new Client();
 const bitcoinWithJsFinance = new FinanceClient(bitcoinWithJs);
@@ -71,8 +73,8 @@ bitcoinWithJs.addProvider(
   new BitcoinJsWalletProvider(network, generateMnemonic(256), 'bech32'),
 );
 bitcoinWithJs.finance.addProvider(new BitcoinCfdProvider(network, cfdJs));
-bitcoinWithJs.finance.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
-bitcoinWithJs.finance.addProvider(new BitcoinWalletProvider(network));
+bitcoinWithJs.finance.addProvider(new BitcoinDlcProvider(tsNetwork, cfdDlcJs));
+bitcoinWithJs.finance.addProvider(new BitcoinWalletProvider(tsNetwork));
 
 const bitcoinWithJs2 = new Client();
 const bitcoinWithJsFinance2 = new FinanceClient(bitcoinWithJs2);
@@ -82,8 +84,8 @@ bitcoinWithJs2.addProvider(
   new BitcoinJsWalletProvider(network, generateMnemonic(256), 'bech32'),
 );
 bitcoinWithJs2.finance.addProvider(new BitcoinCfdProvider(network, cfdJs));
-bitcoinWithJs2.finance.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
-bitcoinWithJs2.finance.addProvider(new BitcoinWalletProvider(network));
+bitcoinWithJs2.finance.addProvider(new BitcoinDlcProvider(tsNetwork, cfdDlcJs));
+bitcoinWithJs2.finance.addProvider(new BitcoinWalletProvider(tsNetwork));
 
 const chains = {
   bitcoinWithNode: {
