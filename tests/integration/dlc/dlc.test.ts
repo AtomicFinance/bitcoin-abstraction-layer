@@ -1,12 +1,8 @@
 import 'mocha';
-import chai, { expect } from 'chai';
-import chaiAsPromised from 'chai-as-promised';
-import BN from 'bignumber.js';
+import { expect } from 'chai';
 import _ from 'lodash';
 import { chains, getInput } from '../common';
 import Oracle from '../models/Oracle';
-import { math } from 'bip-schnorr';
-import { sleep } from '@liquality/utils';
 import {
   ContractInfoV0,
   OracleInfoV0,
@@ -22,7 +18,6 @@ import {
   DlcTransactions,
 } from '@node-dlc/messaging';
 import { CoveredCall, groupByIgnoringDigits } from '@node-dlc/core';
-import { sha256 } from '@liquality/crypto';
 import * as fs from 'fs';
 import * as base64 from 'base64-js';
 import { Psbt } from 'bitcoinjs-lib';

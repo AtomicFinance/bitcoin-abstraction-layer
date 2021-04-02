@@ -10,7 +10,7 @@ import {
 } from '@node-dlc/messaging';
 import Oracle from '../models/Oracle';
 import { math } from 'bip-schnorr';
-import { CoveredCall, groupByIgnoringDigits } from '@node-dlc/core';
+import { CoveredCall } from '@node-dlc/core';
 
 export function generateContractInfo(
   oracle: Oracle,
