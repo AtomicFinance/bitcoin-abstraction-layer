@@ -11,6 +11,9 @@ import { Client as FinanceClient } from '../../packages/client/lib';
 import BitcoinCfdProvider from '../../packages/bitcoin-cfd-provider/lib';
 import BitcoinDlcProvider from '../../packages/bitcoin-dlc-provider/lib';
 import BitcoinWalletProvider from '../../packages/bitcoin-wallet-provider/lib';
+import Input from '../../packages/bitcoin-dlc-provider/lib/models/Input';
+import BN from 'bignumber.js';
+import { decodeRawTransaction } from '@liquality/bitcoin-utils';
 import { generateMnemonic } from 'bip39';
 import config from './config';
 import * as cfdJs from 'cfd-js';
@@ -128,6 +131,38 @@ async function mineBlock() {
   }
 }
 
+async function getInput(client: Client): Promise<Input> {
+  const {
+    address: unusedAddress,
+    derivationPath,
+  } = await client.wallet.getUnusedAddress();
+
+  await client.getMethod('jsonrpc')('importaddress', unusedAddress, '', false);
+
+  const txRaw = await fundAddress(unusedAddress);
+  const tx = await decodeRawTransaction(txRaw._raw.hex, network);
+
+  const vout = tx.vout.find(
+    (vout: any) => vout.scriptPubKey.addresses[0] === unusedAddress,
+  );
+
+  const input: Input = {
+    txid: tx.txid,
+    vout: vout.n,
+    address: unusedAddress,
+    scriptPubKey: vout.scriptPubKey.hex,
+    amount: vout.value,
+    satoshis: new BN(vout.value).times(1e8).toNumber(),
+    value: vout.value,
+    derivationPath,
+    maxWitnessLength: 108,
+    redeemScript: '',
+    toUtxo: Input.prototype.toUtxo,
+  };
+
+  return input;
+}
+
 interface Chain {
   id: string;
   name: string;
@@ -144,5 +179,6 @@ export {
   importAddresses,
   mineBlock,
   mockedBitcoinRpcProvider,
+  getInput,
   network,
 };

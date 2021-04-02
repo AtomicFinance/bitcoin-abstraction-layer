@@ -79,14 +79,15 @@ import {
 } from '@node-dlc/core';
 import { asyncForEach } from './utils/Utils';
 import { HyperbolaPayoutCurve } from '@node-dlc/core';
+import { BitcoinNetwork } from '@atomicfinance/bitcoin-networks';
 
 const ESTIMATED_SIZE = 312;
 
 export default class BitcoinDlcProvider extends Provider {
-  _network: any;
+  _network: BitcoinNetwork;
   _cfdDlcJs: any;
 
-  constructor(network: any, cfdDlcJs?: any) {
+  constructor(network: BitcoinNetwork, cfdDlcJs?: any) {
     super('BitcoinDlcProvider');
 
     this._network = network;
@@ -128,7 +129,6 @@ export default class BitcoinDlcProvider extends Provider {
     ];
     let inputs: Input[];
     try {
-      console.log('targets', targets);
       const inputsForAmount: wallet.InputsForAmountResponse = await this.getMethod(
         'getInputsForAmount',
       )(targets, Number(feeRatePerVb), fixedInputs);
@@ -149,7 +149,7 @@ export default class BitcoinDlcProvider extends Provider {
     feeRatePerVb: bigint,
     fixedInputs: Input[],
   ): Promise<InitializeResponse> {
-    const network = await this.getMethod('getConnectedNetwork')();
+    const network = await this.getConnectedNetwork();
     const payoutAddress: Address = await this.client.wallet.getUnusedAddress(
       false,
     );
@@ -423,7 +423,7 @@ export default class BitcoinDlcProvider extends Provider {
     const dlcOffer = _dlcOffer as DlcOfferV0;
     const dlcAccept = _dlcAccept as DlcAcceptV0;
     const dlcTxs = _dlcTxs as DlcTransactionsV0;
-    const network = await this.getMethod('getConnectedNetwork')();
+    const network = await this.getConnectedNetwork();
 
     const cetsHex = dlcTxs.cets.map((cet) => cet.serialize().toString('hex'));
 
@@ -642,7 +642,7 @@ export default class BitcoinDlcProvider extends Provider {
           privkey: inputPrivKeys[index],
           prevTxId: input.txid,
           prevVout: input.vout,
-          amount: input.value,
+          amount: input.satoshis,
         };
 
         return (await this.GetRawFundTxSignature(fundTxSignRequest)).hex;
@@ -964,7 +964,7 @@ export default class BitcoinDlcProvider extends Provider {
     dlcAccept: DlcAcceptV0,
     isLocalParty: boolean,
   ): Promise<string> {
-    const network = await this.getMethod('getConnectedNetwork')();
+    const network = await this.getConnectedNetwork();
 
     const fundingSPK = Script.p2wpkhLock(
       hash160(isLocalParty ? dlcOffer.fundingPubKey : dlcAccept.fundingPubKey),
@@ -1023,7 +1023,7 @@ export default class BitcoinDlcProvider extends Provider {
     isLocalParty: boolean,
     inputs?: Input[],
   ): Promise<Psbt> {
-    const network = await this.getMethod('getConnectedNetwork')();
+    const network = await this.getConnectedNetwork();
     const psbt = new Psbt({ network });
 
     const p2ms = payments.p2ms({
@@ -1130,6 +1130,9 @@ export default class BitcoinDlcProvider extends Provider {
     refundLocktime: number,
     fixedInputs?: Input[],
   ): Promise<DlcOffer> {
+    contractInfo.validate();
+    const network = await this.getConnectedNetwork();
+
     const dlcOffer = new DlcOfferV0();
 
     const {
@@ -1154,10 +1157,7 @@ export default class BitcoinDlcProvider extends Provider {
     );
 
     dlcOffer.contractFlags = Buffer.from('00', 'hex');
-    dlcOffer.chainHash = Buffer.from(
-      '06226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910f', // TODO update this
-      'hex',
-    );
+    dlcOffer.chainHash = network.chainHash;
     dlcOffer.contractInfo = contractInfo;
     dlcOffer.fundingPubKey = fundingPubKey;
     dlcOffer.payoutSPK = payoutSPK;
@@ -1185,6 +1185,7 @@ export default class BitcoinDlcProvider extends Provider {
     fixedInputs?: Input[],
   ): Promise<AcceptDlcOfferResponse> {
     const { dlcOffer } = checkTypes({ _dlcOffer });
+    dlcOffer.contractInfo.validate();
 
     const acceptCollateralSatoshis =
       dlcOffer.contractInfo.totalCollateral - dlcOffer.offerCollateralSatoshis;
@@ -1646,7 +1647,7 @@ export default class BitcoinDlcProvider extends Provider {
 
   async fundingInputToInput(_input: FundingInput): Promise<Input> {
     if (_input.type !== MessageType.FundingInputV0) throw Error('Wrong type');
-    const network = await this.getMethod('getConnectedNetwork')();
+    const network = await this.getConnectedNetwork();
     const input = _input as FundingInputV0;
     const prevTx = input.prevTx;
     const prevTxOut = prevTx.outputs[input.prevTxVout];
@@ -1665,7 +1666,7 @@ export default class BitcoinDlcProvider extends Provider {
       vout: input.prevTxVout,
       address: _address,
       amount: prevTxOut.value.bitcoin,
-      value: Number(prevTxOut.value.sats),
+      value: prevTxOut.value.bitcoin,
       satoshis: Number(prevTxOut.value.sats),
       derivationPath,
       maxWitnessLength: input.maxWitnessLen,
@@ -1698,6 +1699,10 @@ export default class BitcoinDlcProvider extends Provider {
       : generateSerialId();
 
     return fundingInput;
+  }
+
+  async getConnectedNetwork(): Promise<BitcoinNetwork> {
+    return this._network;
   }
 }
 

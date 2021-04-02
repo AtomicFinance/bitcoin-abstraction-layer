@@ -37,12 +37,12 @@ export default class Input {
 
   toUtxo(): Utxo {
     let amount: Amount;
-    if (this.value) {
-      amount = Amount.FromSatoshis(this.value);
+    if (this.satoshis) {
+      amount = Amount.FromSatoshis(this.satoshis);
     } else if (this.amount) {
       amount = Amount.FromBitcoin(this.amount);
-    } else if (this.satoshis) {
-      amount = Amount.FromSatoshis(this.satoshis);
+    } else if (this.value) {
+      amount = Amount.FromBitcoin(this.value);
     }
 
     return {
