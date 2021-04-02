@@ -1,15 +1,17 @@
-import BitcoinNetworks from '@liquality/bitcoin-networks'
+import BitcoinNetworks from '@liquality/bitcoin-networks';
+import * as TsBitcoinNetworks from '../../packages/bitcoin-networks/lib';
 
 export default {
   bitcoin: {
     rpc: {
       host: 'http://localhost:18443',
       username: 'bitcoin',
-      password: 'local321'
+      password: 'local321',
     },
     network: BitcoinNetworks.bitcoin_regtest,
+    tsNetwork: BitcoinNetworks.bitcoin_regtest,
     value: 1000000,
-    mineBlocks: true
+    mineBlocks: true,
   },
-  timeout: 240000 // No timeout
-}
+  timeout: 240000, // No timeout
+};
