@@ -16,6 +16,9 @@ import {
   DlcAccept,
   DlcSign,
   DlcTransactions,
+  DlcOfferV0,
+  DlcAcceptV0,
+  DlcSignV0,
 } from '@node-dlc/messaging';
 import { CoveredCall, groupByIgnoringDigits } from '@node-dlc/core';
 import * as fs from 'fs';
@@ -226,6 +229,21 @@ describe('dlc provider', () => {
         0,
       )}`,
     );
+  });
+
+  it('serializes and deserializes all messages', async () => {
+    const newDlcOffer = DlcOffer.deserialize(dlcOffer.serialize());
+    const newDlcAccept = DlcAccept.deserialize(dlcAccept.serialize());
+    const newDlcSign = DlcSign.deserialize(dlcSign.serialize());
+
+    const dlcOfferV0 = dlcOffer as DlcOfferV0;
+    const dlcAcceptV0 = dlcAccept as DlcAcceptV0;
+    const dlcSignV0 = dlcSign as DlcSignV0;
+
+    expect(newDlcOffer.chainHash).to.deep.equal(dlcOfferV0.chainHash);
+    expect(newDlcOffer.fundingPubKey).to.deep.equal(dlcOfferV0.fundingPubKey);
+    expect(newDlcAccept.fundingPubKey).to.deep.equal(dlcAcceptV0.fundingPubKey);
+    expect(newDlcSign.refundSignature).to.deep.equal(dlcSignV0.refundSignature);
   });
 
   /**
