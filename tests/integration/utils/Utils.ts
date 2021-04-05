@@ -1,4 +1,4 @@
-import * as cfdjs from "cfd-js";
+import * as cfdjs from 'cfd-js';
 
 export function CreateKeyPair() {
   const reqJson: cfdjs.CreateKeyPairRequest = {

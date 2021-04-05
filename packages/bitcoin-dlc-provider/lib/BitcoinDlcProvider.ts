@@ -33,35 +33,64 @@ import {
   VerifyFundTxSignatureResponse,
   VerifyRefundTxSignatureRequest,
   VerifyRefundTxSignatureResponse,
+  AdaptorPair,
+  PayoutRequest,
   Messages,
 } from './@types/cfd-dlc-js';
-import DlcParty from './models/DlcParty';
-import Contract from './models/Contract';
 
-import Amount from './models/Amount';
 import Input from './models/Input';
-import Output from './models/Output';
-import InputDetails from './models/InputDetails';
-import PayoutDetails from './models/PayoutDetails';
-import OracleInfo from './models/OracleInfo';
-import OfferMessage from './models/OfferMessage';
-import AcceptMessage from './models/AcceptMessage';
-import SignMessage from './models/SignMessage';
-import Payout from './models/Payout';
 import Utxo from './models/Utxo';
-import { v4 as uuidv4 } from 'uuid';
-import { MutualClosingMessage } from '.';
+import {
+  ContractInfo,
+  FundingInput,
+  DlcOffer,
+  FundingInputV0,
+  MessageType,
+  DlcAccept,
+  DlcOfferV0,
+  DlcAcceptV0,
+  DlcSign,
+  DlcTransactions,
+  DlcTransactionsV0,
+  DlcSignV0,
+  ContractInfoV0,
+  ContractDescriptorV1,
+  PayoutFunctionV0,
+  HyperbolaPayoutCurvePiece,
+  OracleEventV0,
+  DigitDecompositionEventDescriptorV0,
+  CetAdaptorSignaturesV0,
+  NegotiationFieldsV0,
+  ScriptWitnessV0,
+  FundingSignaturesV0,
+  OracleAttestationV0,
+} from '@node-dlc/messaging';
+import { Tx, Sequence, Script } from '@node-dlc/bitcoin';
+import { StreamReader } from '@node-lightning/bufio';
+import { sha256, hash160, xor } from '@node-lightning/crypto';
+import { address, Psbt, payments, ECPairInterface } from 'bitcoinjs-lib';
+import { bitcoin, wallet, Address } from './@types/@liquality/types';
+import { generateSerialId, checkTypes, outputsToPayouts } from './utils/Utils';
+import {
+  CoveredCall,
+  groupByIgnoringDigits,
+  roundPayout,
+  DualClosingTxFinalizer,
+} from '@node-dlc/core';
+import { asyncForEach } from './utils/Utils';
+import { HyperbolaPayoutCurve } from '@node-dlc/core';
+import { BitcoinNetwork } from '@atomicfinance/bitcoin-networks';
+
+const ESTIMATED_SIZE = 312;
 
 export default class BitcoinDlcProvider extends Provider {
-  _network: any;
+  _network: BitcoinNetwork;
   _cfdDlcJs: any;
-  _dlcs: DlcParty[];
 
-  constructor(network: any, cfdDlcJs?: any) {
+  constructor(network: BitcoinNetwork, cfdDlcJs?: any) {
     super('BitcoinDlcProvider');
 
     this._network = network;
-    this._dlcs = [] as DlcParty[];
     this._cfdDlcJs = cfdDlcJs;
   }
 
@@ -71,363 +100,1408 @@ export default class BitcoinDlcProvider extends Provider {
     }
   }
 
-  private setInitialInputs(contract: Contract, input: InputDetails) {
-    contract.localCollateral = input.localCollateral;
-    contract.remoteCollateral = input.remoteCollateral;
-    contract.feeRate = input.feeRate;
-    contract.refundLockTime = input.refundLockTime;
-  }
+  private async GetPrivKeysForInputs(inputs: Input[]): Promise<string[]> {
+    const privKeys: string[] = [];
 
-  private setPayouts(contract: Contract, payouts: PayoutDetails[]) {
-    payouts.forEach((payout) => {
-      const { localAmount, remoteAmount } = payout;
-      const newPayout = new Payout(localAmount, remoteAmount);
-      contract.payouts.push(newPayout);
-    });
-  }
-
-  private findDlc(contractId: string): DlcParty {
-    return this._dlcs.find((dlc) => dlc.contract.id === contractId);
-  }
-
-  private updateDlcContractId(
-    oldContractId: string,
-    newContractId: string,
-  ): boolean {
-    let updated = false;
-    this._dlcs.forEach((dlc) => {
-      if (dlc.contract.id === oldContractId) {
-        dlc.contract.id = newContractId;
-        updated = true;
-      }
-    });
-    return updated;
-  }
-
-  private deleteDlc(contractId: string) {
-    this._dlcs.forEach((dlc, i) => {
-      if (dlc.contract.id === contractId) {
-        this._dlcs.splice(i, 1);
-      }
-    });
-  }
-
-  hasDlc(contractId: string): boolean {
-    return this._dlcs.some((dlc) => {
-      dlc.contract.id === contractId;
-    });
-  }
-
-  async importContract(contract: Contract, startingIndex: number) {
-    const dlcParty = new DlcParty(this);
-    this._dlcs.push(dlcParty);
-    await dlcParty.ImportContract(contract, startingIndex);
-  }
-
-  exportContract(contractId: string): Contract {
-    return this.findDlc(contractId).contract;
-  }
-
-  exportContracts(): Contract[] {
-    const contracts: Contract[] = [];
-    for (let i = 0; i < this._dlcs.length; i++) {
-      const dlc = this._dlcs[i];
-      contracts.push(dlc.contract);
+    for (let i = 0; i < inputs.length; i++) {
+      const input = inputs[i];
+      const keyPair = await this.client.getMethod('keyPair')(
+        input.derivationPath,
+      );
+      const privKey = Buffer.from(keyPair.__D).toString('hex');
+      privKeys.push(privKey);
     }
-    return contracts;
+
+    return privKeys;
   }
 
-  deleteContract(contractId: string) {
-    this.deleteDlc(contractId);
+  async GetInputsForAmount(
+    amount: bigint,
+    feeRatePerVb: bigint,
+    fixedInputs: Input[] = [],
+  ): Promise<Input[]> {
+    if (amount === BigInt(0)) return [];
+    const targets: bitcoin.OutputTarget[] = [
+      {
+        address: BurnAddress,
+        value: Number(amount) + ESTIMATED_SIZE * (Number(feeRatePerVb) - 1),
+      },
+    ];
+    let inputs: Input[];
+    try {
+      const inputsForAmount: wallet.InputsForAmountResponse = await this.getMethod(
+        'getInputsForAmount',
+      )(targets, Number(feeRatePerVb), fixedInputs);
+      inputs = inputsForAmount.inputs;
+    } catch (e) {
+      if (fixedInputs.length === 0) {
+        throw Error('Not enough balance getInputsForAmount');
+      } else {
+        inputs = fixedInputs;
+      }
+    }
+
+    return inputs;
   }
 
-  // Only Alice
-  async importContractFromOfferMessage(
-    offerMessage: OfferMessage,
-    startingIndex = 0,
-  ) {
-    const {
-      localCollateral,
-      remoteCollateral,
-      feeRate,
-      refundLockTime,
-      oracleInfo,
-      messagesList,
-    } = offerMessage;
+  private async Initialize(
+    collateral: bigint,
+    feeRatePerVb: bigint,
+    fixedInputs: Input[],
+  ): Promise<InitializeResponse> {
+    const network = await this.getConnectedNetwork();
+    const payoutAddress: Address = await this.client.wallet.getUnusedAddress(
+      false,
+    );
+    const payoutSPK: Buffer = address.toOutputScript(
+      payoutAddress.address,
+      network,
+    );
+    const changeAddress: Address = await this.client.wallet.getUnusedAddress(
+      true,
+    );
+    const changeSPK: Buffer = address.toOutputScript(
+      changeAddress.address,
+      network,
+    );
 
-    const input: InputDetails = {
-      localCollateral,
-      remoteCollateral,
-      feeRate,
-      refundLockTime,
+    const fundingAddress: Address = await this.client.wallet.getUnusedAddress(
+      false,
+    );
+    const fundingPubKey: Buffer = Buffer.from(fundingAddress.publicKey, 'hex');
+
+    if (fundingAddress.address === payoutAddress.address)
+      throw Error('Address reuse');
+
+    const inputs: Input[] = await this.GetInputsForAmount(
+      collateral,
+      feeRatePerVb,
+      fixedInputs,
+    );
+    const fundingInputs: FundingInput[] = await Promise.all(
+      inputs.map(async (input) => {
+        return this.inputToFundingInput(input);
+      }),
+    );
+
+    const payoutSerialId: bigint = generateSerialId();
+    const changeSerialId: bigint = generateSerialId();
+
+    return {
+      fundingPubKey,
+      payoutSPK,
+      payoutSerialId,
+      fundingInputs,
+      changeSPK,
+      changeSerialId,
+    };
+  }
+
+  /**
+   * TODO: Add GetPayoutFromOutcomes
+   *
+   * private GetPayoutsFromOutcomes(
+   *   contractDescriptor: ContractDescriptorV0,
+   *   totalCollateral: bigint,
+   * ): PayoutRequest[] {}
+   */
+
+  private GetPayoutsFromPayoutFunction(
+    _dlcOffer: DlcOffer,
+    contractDescriptor: ContractDescriptorV1,
+    eventDescriptor: DigitDecompositionEventDescriptorV0,
+    totalCollateral: bigint,
+  ): GetPayoutsResponse {
+    if (_dlcOffer.type !== MessageType.DlcOfferV0)
+      throw Error('DlcOffer must be V0');
+    const dlcOffer = _dlcOffer as DlcOfferV0;
+    if (contractDescriptor.payoutFunction.type !== MessageType.PayoutFunctionV0)
+      throw Error('PayoutFunction must be V0');
+    const payoutFunction = contractDescriptor.payoutFunction as PayoutFunctionV0;
+    if (payoutFunction.pieces.length === 0)
+      throw Error('PayoutFunction must have at least once PayoutCurvePiece');
+    if (payoutFunction.pieces.length > 1)
+      throw Error('More than one PayoutCurvePiece not supported');
+    const payoutCurvePiece = payoutFunction.pieces[0].payoutCurvePiece;
+    if (!(payoutCurvePiece instanceof HyperbolaPayoutCurvePiece))
+      throw Error('Must be HyperbolaPayoutCurvePiece');
+    if (payoutCurvePiece.b !== BigInt(0) || payoutCurvePiece.c !== BigInt(0))
+      throw Error('b and c HyperbolaPayoutCurvePiece values must be 0');
+
+    const roundingIntervals = contractDescriptor.roundingIntervals;
+    const cetPayouts = CoveredCall.computePayouts(
+      payoutFunction,
+      totalCollateral,
+      roundingIntervals,
+    );
+
+    const payoutGroups: PayoutGroup[] = [];
+    cetPayouts.forEach((p) => {
+      payoutGroups.push({
+        payout: p.payout,
+        groups: groupByIgnoringDigits(
+          p.indexFrom,
+          p.indexTo,
+          eventDescriptor.base,
+          contractDescriptor.numDigits,
+        ),
+      });
+    });
+
+    const rValuesMessagesList = this.GenerateMessages(dlcOffer.contractInfo);
+
+    const { payouts, messagesList } = outputsToPayouts(
+      payoutGroups,
+      rValuesMessagesList,
+      dlcOffer.offerCollateralSatoshis,
+      dlcOffer.contractInfo.totalCollateral - dlcOffer.offerCollateralSatoshis,
+      true,
+    );
+
+    return { payouts, payoutGroups, messagesList };
+  }
+
+  private GetPayouts(_dlcOffer: DlcOffer): GetPayoutsResponse {
+    const { dlcOffer } = checkTypes({ _dlcOffer });
+    switch (dlcOffer.contractInfo.type) {
+      case MessageType.ContractInfoV0:
+        // eslint-disable-next-line no-case-declarations
+        const contractInfo = dlcOffer.contractInfo as ContractInfoV0;
+        switch (contractInfo.contractDescriptor.type) {
+          case MessageType.ContractDescriptorV0:
+            throw Error('ContractDescriptorV0 not yet supported');
+          case MessageType.ContractDescriptorV1:
+            // eslint-disable-next-line no-case-declarations
+            const oracleInfo = contractInfo.oracleInfo;
+            return this.GetPayoutsFromPayoutFunction(
+              dlcOffer,
+              contractInfo.contractDescriptor as ContractDescriptorV1,
+              oracleInfo.announcement.oracleEvent
+                .eventDescriptor as DigitDecompositionEventDescriptorV0,
+              contractInfo.totalCollateral,
+            );
+          default:
+            throw Error('ConractDescriptor must be V0 or V1');
+        }
+      case MessageType.ContractInfoV1:
+        throw Error('MultiOracle not yet supported');
+      default:
+        throw Error('ContractInfo must be V0 or V1');
+    }
+  }
+
+  private async CreateDlcTxs(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+  ): Promise<CreateDlcTxsResponse> {
+    const { dlcOffer, dlcAccept } = checkTypes({
+      _dlcOffer,
+      _dlcAccept,
+    });
+
+    const localFundPubkey = dlcOffer.fundingPubKey.toString('hex');
+    const remoteFundPubkey = dlcAccept.fundingPubKey.toString('hex');
+    const localFinalScriptPubkey = dlcOffer.payoutSPK.toString('hex');
+    const remoteFinalScriptPubkey = dlcAccept.payoutSPK.toString('hex');
+    const localChangeScriptPubkey = dlcOffer.changeSPK.toString('hex');
+    const remoteChangeScriptPubkey = dlcAccept.changeSPK.toString('hex');
+
+    const localInputs: Utxo[] = await Promise.all(
+      dlcOffer.fundingInputs.map(async (fundingInput) => {
+        const input = await this.fundingInputToInput(fundingInput);
+        return input.toUtxo();
+      }),
+    );
+
+    const remoteInputs: Utxo[] = await Promise.all(
+      dlcAccept.fundingInputs.map(async (fundingInput) => {
+        const input = await this.fundingInputToInput(fundingInput);
+        return input.toUtxo();
+      }),
+    );
+
+    const localInputAmount = localInputs.reduce<number>(
+      (prev, cur) => prev + cur.amount.GetSatoshiAmount(),
+      0,
+    );
+
+    const remoteInputAmount = remoteInputs.reduce<number>(
+      (prev, cur) => prev + cur.amount.GetSatoshiAmount(),
+      0,
+    );
+
+    const { payouts, messagesList } = this.GetPayouts(dlcOffer);
+
+    const dlcTxRequest: CreateDlcTransactionsRequest = {
+      payouts,
+      localFundPubkey,
+      localFinalScriptPubkey,
+      remoteFundPubkey,
+      remoteFinalScriptPubkey,
+      localInputAmount,
+      localCollateralAmount: dlcOffer.offerCollateralSatoshis,
+      remoteInputAmount,
+      remoteCollateralAmount: dlcAccept.acceptCollateralSatoshis,
+      refundLocktime: dlcOffer.refundLocktime,
+      localInputs,
+      remoteInputs,
+      localChangeScriptPubkey,
+      remoteChangeScriptPubkey,
+      feeRate: Number(dlcOffer.feeRatePerVb),
     };
 
-    const payouts: PayoutDetails[] = [];
+    const dlcTxs = await this.CreateDlcTransactions(dlcTxRequest);
 
-    offerMessage.payouts.forEach((payout) => {
-      const { local, remote } = payout;
-
-      payouts.push({
-        localAmount: local,
-        remoteAmount: remote,
-      });
+    const dlcTransactions = new DlcTransactionsV0();
+    dlcTransactions.fundTx = Tx.parse(StreamReader.fromHex(dlcTxs.fundTxHex));
+    dlcTransactions.fundTxOutAmount =
+      dlcTransactions.fundTx.outputs[0].value.sats;
+    dlcTransactions.refundTx = Tx.parse(
+      StreamReader.fromHex(dlcTxs.refundTxHex),
+    );
+    dlcTransactions.cets = dlcTxs.cetsHex.map((cetHex) => {
+      return Tx.parse(StreamReader.fromHex(cetHex));
     });
 
-    const fixedInputs: Input[] = [];
-
-    offerMessage.localPartyInputs.utxos.forEach((utxo) => {
-      const { txid, vout, address, amount, derivationPath } = utxo;
-
-      const utxoAmount = amount.GetSatoshiAmount();
-
-      fixedInputs.push({
-        txid,
-        vout,
-        address,
-        amount: utxoAmount,
-        derivationPath,
-        label: '',
-        scriptPubKey: '',
-        confirmations: 0,
-        spendable: false,
-        solvable: false,
-        safe: false,
-        satoshis: 0,
-        value: 0,
-      });
-    });
-
-    const initOfferMessage = await this.initializeContractAndOffer(
-      input,
-      payouts,
-      oracleInfo,
-      messagesList,
-      startingIndex,
-      fixedInputs,
-    );
-    const updateSuccess = this.updateDlcContractId(
-      initOfferMessage.contractId,
-      offerMessage.contractId,
-    );
-    if (!updateSuccess) {
-      throw Error('Dlc Contract ID did not update successfully');
-    }
+    return { dlcTransactions, messagesList };
   }
 
-  // Only Bob
-  async importContractFromAcceptMessage(
-    offerMessage: OfferMessage,
-    acceptMessage: AcceptMessage,
-    startingIndex = 0,
-  ) {
-    const fixedInputs: Input[] = [];
-
-    acceptMessage.remotePartyInputs.utxos.forEach((utxo) => {
-      const { txid, vout, address, amount, derivationPath } = utxo;
-
-      const utxoAmount = amount.GetSatoshiAmount();
-
-      fixedInputs.push({
-        txid,
-        vout,
-        address,
-        amount: utxoAmount,
-        derivationPath,
-        label: '',
-        scriptPubKey: '',
-        confirmations: 0,
-        spendable: false,
-        solvable: false,
-        safe: false,
-        satoshis: 0,
-        value: 0,
-      });
-    });
-
-    const initAcceptMessage = await this.confirmContractOffer(
-      offerMessage,
-      startingIndex,
-      fixedInputs,
-    );
-    const updateSuccess = this.updateDlcContractId(
-      initAcceptMessage.contractId,
-      acceptMessage.contractId,
-    );
-    if (!updateSuccess) {
-      throw Error('Dlc Contract ID did not update successfully');
-    }
+  private GenerateEnumMessages(oracleEvent: OracleEventV0): Messages[] {
+    throw Error('Only DigitDecomposition Oracle Events supported');
   }
 
-  // Only Alice
-  async importContractFromAcceptAndSignMessage(
-    offerMessage: OfferMessage,
-    acceptMessage: AcceptMessage,
-    signMessage: SignMessage,
-    startingIndex = 0,
-  ) {
-    await this.importContractFromOfferMessage(offerMessage, startingIndex);
+  private GenerateDigitDecompositionMessages(
+    oracleEvent: OracleEventV0,
+  ): Messages[] {
+    const oracleNonces = oracleEvent.oracleNonces;
+    const eventDescriptor = oracleEvent.eventDescriptor as DigitDecompositionEventDescriptorV0;
 
-    const initSignMessage = await this.signContract(acceptMessage);
-  }
-
-  // Only Bob
-  async importContractFromSignMessageAndCreateFinal(
-    offerMessage: OfferMessage,
-    acceptMessage: AcceptMessage,
-    signMessage: SignMessage,
-    startingIndex = 0,
-  ) {
-    await this.importContractFromAcceptMessage(
-      offerMessage,
-      acceptMessage,
-      startingIndex,
-    );
-    try {
-      await this.finalizeContract(signMessage);
-    } catch (e) {
-      console.log('error', e);
-    }
-  }
-
-  outputsToPayouts(
-    outputs: GeneratedOutput[],
-    rValuesMessagesList: Messages[],
-    localCollateral: Amount,
-    remoteCollateral: Amount,
-    payoutLocal: boolean,
-  ): { payouts: PayoutDetails[]; messagesList: Messages[] } {
-    const payouts: PayoutDetails[] = [];
     const messagesList: Messages[] = [];
-
-    outputs.forEach((output: any) => {
-      const { payout, groups } = output;
-      const payoutAmount: Amount = Amount.FromSatoshis(payout);
-
-      groups.forEach((group: number[]) => {
-        const messages = [];
-        for (let i = 0; i < group.length; i++) {
-          const digit: number = group[i];
-          messages.push(rValuesMessagesList[i].messages[digit]);
-        }
-
-        const localAmount = payoutLocal
-          ? payoutAmount
-          : localCollateral
-              .AddAmount(remoteCollateral)
-              .CompareWith(payoutAmount);
-        const remoteAmount = payoutLocal
-          ? localCollateral
-              .AddAmount(remoteCollateral)
-              .CompareWith(payoutAmount)
-          : payoutAmount;
-        payouts.push({ localAmount, remoteAmount });
-        messagesList.push({ messages });
-      });
+    oracleNonces.forEach(() => {
+      const messages = [];
+      for (let i = 0; i < eventDescriptor.base; i++) {
+        const m = i.toString();
+        messages.push(m);
+      }
+      messagesList.push({ messages });
     });
 
-    return { payouts, messagesList };
+    return messagesList;
   }
 
-  async initializeContractAndOffer(
-    input: InputDetails,
-    payouts: PayoutDetails[],
-    oracleInfo: OracleInfo,
+  private GenerateMessages(_contractInfo: ContractInfo): Messages[] {
+    if (_contractInfo.type !== MessageType.ContractInfoV0)
+      throw Error('ContractInfo must be V0');
+    const contractInfo = _contractInfo as ContractInfoV0;
+    const oracleEvent = contractInfo.oracleInfo.announcement.oracleEvent;
+
+    switch (oracleEvent.eventDescriptor.type) {
+      case MessageType.EnumEventDescriptorV0:
+        return this.GenerateEnumMessages(oracleEvent);
+      case MessageType.DigitDecompositionEventDescriptorV0:
+        return this.GenerateDigitDecompositionMessages(oracleEvent);
+      default:
+        throw Error('EventDescriptor must be Enum or DigitDecomposition');
+    }
+  }
+
+  private async CreateCetAdaptorAndRefundSigs(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcTxs: DlcTransactions,
     messagesList: Messages[],
-    startingIndex = 0,
-    fixedInputs: Input[] = [],
-  ): Promise<OfferMessage> {
-    const contract = new Contract();
+    isLocalParty: boolean,
+  ): Promise<CreateCetAdaptorAndRefundSigsResponse> {
+    const { dlcOffer, dlcAccept, dlcTxs } = checkTypes({
+      _dlcOffer,
+      _dlcAccept,
+      _dlcTxs,
+    });
+    const network = await this.getConnectedNetwork();
 
-    contract.id = uuidv4();
-    contract.oracleInfo = oracleInfo;
-    contract.startingIndex = startingIndex;
-    contract.messagesList = messagesList;
+    const cetsHex = dlcTxs.cets.map((cet) => cet.serialize().toString('hex'));
 
-    this.setInitialInputs(contract, input);
+    const fundingSPK = Script.p2wpkhLock(
+      hash160(isLocalParty ? dlcOffer.fundingPubKey : dlcAccept.fundingPubKey),
+    )
+      .serialize()
+      .slice(1);
 
-    this.setPayouts(contract, payouts);
-
-    const dlcParty = new DlcParty(this);
-    this._dlcs.push(dlcParty);
-
-    return dlcParty.InitiateContract(contract, startingIndex, fixedInputs);
-  }
-
-  async confirmContractOffer(
-    offerMessage: OfferMessage,
-    startingIndex = 0,
-    fixedInputs: Input[] = [],
-  ): Promise<AcceptMessage> {
-    const dlcParty = new DlcParty(this);
-    this._dlcs.push(dlcParty);
-
-    return dlcParty.OnOfferMessage(offerMessage, startingIndex, fixedInputs);
-  }
-
-  async signContract(acceptMessage: AcceptMessage): Promise<SignMessage> {
-    return this.findDlc(acceptMessage.contractId).OnAcceptMessage(
-      acceptMessage,
+    const fundingAddress: string = address.fromOutputScript(
+      fundingSPK,
+      network,
     );
-  }
 
-  async finalizeContract(signMessage: SignMessage): Promise<string> {
-    return this.findDlc(signMessage.contractId).OnSignMessage(signMessage);
-  }
+    const { derivationPath } = await this.getMethod('findAddress')([
+      fundingAddress,
+    ]);
 
-  async refund(contractId: string) {
-    return this.findDlc(contractId).Refund();
-  }
-
-  async initiateEarlyExit(contractId: string, outputs: Output[]) {
-    return this.findDlc(contractId).InitiateEarlyExit(outputs);
-  }
-
-  async finalizeEarlyExit(
-    contractId: string,
-    mutualClosingMessage: MutualClosingMessage,
-  ) {
-    return this.findDlc(contractId).OnMutualClose(mutualClosingMessage);
-  }
-
-  async unilateralClose(
-    outcomeIndex: number,
-    oracleSignatures: string[],
-    contractId: string,
-  ): Promise<string[]> {
-    return this.findDlc(contractId).SignAndBroadcastCet(
-      outcomeIndex,
-      oracleSignatures,
+    const fundPrivateKeyPair = await this.client.getMethod('keyPair')(
+      derivationPath,
     );
+
+    const fundPrivateKey = Buffer.from(fundPrivateKeyPair.__D).toString('hex');
+
+    if (dlcOffer.contractInfo.type !== MessageType.ContractInfoV0)
+      throw Error('ContractInfo must be V0');
+    const contractInfo = dlcOffer.contractInfo as ContractInfoV0;
+    const oracleAnnouncement = contractInfo.oracleInfo.announcement;
+
+    const chunk = 100;
+    const adaptorSigRequestPromises: Promise<AdaptorPair[]>[] = [];
+
+    for (let i = 0, j = messagesList.length; i < j; i += chunk) {
+      const tempMessagesList = messagesList.slice(i, i + chunk);
+      const tempCetsHex = cetsHex.slice(i, i + chunk);
+
+      const cetSignRequest: CreateCetAdaptorSignaturesRequest = {
+        messagesList: tempMessagesList,
+        cetsHex: tempCetsHex,
+        privkey: fundPrivateKey,
+        fundTxId: dlcTxs.fundTx.txId.toString(),
+        localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
+        remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
+        fundInputAmount: dlcTxs.fundTxOutAmount,
+        oraclePubkey: oracleAnnouncement.oraclePubkey.toString('hex'),
+        oracleRValues: oracleAnnouncement.oracleEvent.oracleNonces.map(
+          (nonce) => nonce.toString('hex'),
+        ),
+      };
+
+      adaptorSigRequestPromises.push(
+        (async () => {
+          const response = await this.CreateCetAdaptorSignatures(
+            cetSignRequest,
+          );
+          return response.adaptorPairs;
+        })(),
+      );
+    }
+
+    const adaptorPairs: AdaptorPair[] = (
+      await Promise.all(adaptorSigRequestPromises)
+    ).flat();
+
+    const refundSignRequest: GetRawRefundTxSignatureRequest = {
+      refundTxHex: dlcTxs.refundTx.serialize().toString('hex'),
+      privkey: fundPrivateKey,
+      fundTxId: dlcTxs.fundTx.txId.toString(),
+      localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
+      remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
+      fundInputAmount: dlcTxs.fundTxOutAmount,
+    };
+
+    const sigs: ISig[] = adaptorPairs.map((adaptorPair) => {
+      return {
+        encryptedSig: Buffer.from(adaptorPair.signature, 'hex'),
+        dleqProof: Buffer.from(adaptorPair.proof, 'hex'),
+      };
+    });
+
+    const cetSignatures = new CetAdaptorSignaturesV0();
+    cetSignatures.sigs = sigs;
+
+    const refundSignature = Buffer.from(
+      (await this.GetRawRefundTxSignature(refundSignRequest)).hex,
+      'hex',
+    );
+
+    return { cetSignatures, refundSignature };
   }
 
-  async getFundingUtxoAddressesForOfferMessages(offerMessages: OfferMessage[]) {
-    const fundingAddresses: string[] = [];
-    const fundingUtxos: Utxo[] = [];
-    offerMessages.forEach((offerMessage) => {
-      offerMessage.localPartyInputs.utxos.forEach((utxo) => {
-        if (fundingAddresses.indexOf(utxo.address) === -1)
-          fundingAddresses.push(utxo.address);
-        fundingUtxos.push(utxo);
+  private async VerifyCetAdaptorAndRefundSigs(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcSign: DlcSign,
+    _dlcTxs: DlcTransactions,
+    messagesList: Messages[],
+    isLocalParty: boolean,
+  ): Promise<void> {
+    const { dlcOffer, dlcAccept, dlcSign, dlcTxs } = checkTypes({
+      _dlcOffer,
+      _dlcAccept,
+      _dlcSign,
+      _dlcTxs,
+    });
+
+    const cetsHex = dlcTxs.cets.map((cet) => cet.serialize().toString('hex'));
+
+    if (dlcOffer.contractInfo.type !== MessageType.ContractInfoV0)
+      throw Error('ContractInfo must be V0');
+    const contractInfo = dlcOffer.contractInfo as ContractInfoV0;
+    const oracleAnnouncement = contractInfo.oracleInfo.announcement;
+
+    const chunk = 100;
+    const sigsValidity: Promise<boolean>[] = [];
+
+    for (let i = 0, j = messagesList.length; i < j; i += chunk) {
+      const tempMessagesList = messagesList.slice(i, i + chunk);
+      const tempCetsHex = cetsHex.slice(i, i + chunk);
+      const tempSigs = isLocalParty
+        ? dlcAccept.cetSignatures.sigs.slice(i, i + chunk)
+        : dlcSign.cetSignatures.sigs.slice(i, i + chunk);
+      const tempAdaptorPairs = tempSigs.map((sig) => {
+        return {
+          signature: sig.encryptedSig.toString('hex'),
+          proof: sig.dleqProof.toString('hex'),
+        };
+      });
+
+      const verifyCetAdaptorSignaturesRequest: VerifyCetAdaptorSignaturesRequest = {
+        cetsHex: tempCetsHex,
+        messagesList: tempMessagesList,
+        oraclePubkey: oracleAnnouncement.oraclePubkey.toString('hex'),
+        oracleRValues: oracleAnnouncement.oracleEvent.oracleNonces.map(
+          (nonce) => nonce.toString('hex'),
+        ),
+        adaptorPairs: tempAdaptorPairs,
+        localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
+        remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
+        fundTxId: dlcTxs.fundTx.txId.toString(),
+        fundInputAmount: dlcTxs.fundTxOutAmount,
+        verifyRemote: isLocalParty,
+      };
+
+      sigsValidity.push(
+        (async () => {
+          const response = await this.VerifyCetAdaptorSignatures(
+            verifyCetAdaptorSignaturesRequest,
+          );
+          return response.valid;
+        })(),
+      );
+    }
+
+    let areSigsValid = (await Promise.all(sigsValidity)).every((b) => b);
+
+    const verifyRefundSigRequest: VerifyRefundTxSignatureRequest = {
+      refundTxHex: dlcTxs.refundTx.serialize().toString('hex'),
+      signature: isLocalParty
+        ? dlcAccept.refundSignature.toString('hex')
+        : dlcSign.refundSignature.toString('hex'),
+      localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
+      remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
+      fundTxId: dlcTxs.fundTx.txId.toString(),
+      fundInputAmount: dlcTxs.fundTxOutAmount,
+      verifyRemote: isLocalParty,
+    };
+
+    areSigsValid =
+      areSigsValid &&
+      (await this.VerifyRefundTxSignature(verifyRefundSigRequest)).valid;
+
+    if (!areSigsValid) {
+      throw new Error('Invalid signatures received');
+    }
+  }
+
+  private async CreateFundingSigs(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcTxs: DlcTransactions,
+    isLocalParty: boolean,
+  ): Promise<FundingSignaturesV0> {
+    const { dlcOffer, dlcAccept, dlcTxs } = checkTypes({
+      _dlcOffer,
+      _dlcAccept,
+      _dlcTxs,
+    });
+
+    const fundingInputs = isLocalParty
+      ? dlcOffer.fundingInputs
+      : dlcAccept.fundingInputs;
+
+    const inputs: Input[] = await Promise.all(
+      fundingInputs.map(async (fundingInput) => {
+        return this.fundingInputToInput(fundingInput);
+      }),
+    );
+
+    const inputPrivKeys = await this.GetPrivKeysForInputs(inputs);
+
+    const fundTxSigs = await Promise.all(
+      inputs.map(async (input, index) => {
+        const fundTxSignRequest: GetRawFundTxSignatureRequest = {
+          fundTxHex: dlcTxs.fundTx.serialize().toString('hex'),
+          privkey: inputPrivKeys[index],
+          prevTxId: input.txid,
+          prevVout: input.vout,
+          amount: input.satoshis,
+        };
+
+        return (await this.GetRawFundTxSignature(fundTxSignRequest)).hex;
+      }),
+    );
+
+    const inputPubKeys = await Promise.all(
+      inputPrivKeys.map(async (privkey) => {
+        const reqPrivKey = {
+          privkey,
+          isCompressed: true,
+        };
+
+        return (await this.getMethod('GetPubkeyFromPrivkey')(reqPrivKey))
+          .pubkey;
+      }),
+    );
+
+    const witnessElements: ScriptWitnessV0[][] = [];
+    for (let i = 0; i < fundTxSigs.length; i++) {
+      const sigWitness = new ScriptWitnessV0();
+      sigWitness.witness = Buffer.from(fundTxSigs[i], 'hex');
+      const pubKeyWitness = new ScriptWitnessV0();
+      pubKeyWitness.witness = Buffer.from(inputPubKeys[i], 'hex');
+      witnessElements.push([sigWitness, pubKeyWitness]);
+    }
+
+    const fundingSignatures = new FundingSignaturesV0();
+    fundingSignatures.witnessElements = witnessElements;
+
+    return fundingSignatures;
+  }
+
+  private async VerifyFundingSigs(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcSign: DlcSign,
+    _dlcTxs: DlcTransactions,
+    isLocalParty: boolean,
+  ): Promise<void> {
+    const { dlcOffer, dlcAccept, dlcSign, dlcTxs } = checkTypes({
+      _dlcOffer,
+      _dlcAccept,
+      _dlcSign,
+      _dlcTxs,
+    });
+
+    const sigsValidity: Promise<boolean>[] = [];
+    for (let i = 0; i < dlcSign.fundingSignatures.witnessElements.length; i++) {
+      const witnessElement = dlcSign.fundingSignatures.witnessElements[i];
+      const signature = witnessElement[0].witness.toString('hex');
+      const pubkey = witnessElement[1].witness.toString('hex');
+
+      const fundingInput = isLocalParty
+        ? (dlcAccept.fundingInputs[i] as FundingInputV0)
+        : (dlcOffer.fundingInputs[i] as FundingInputV0);
+
+      const verifyFundSigRequest: VerifyFundTxSignatureRequest = {
+        fundTxHex: dlcTxs.fundTx.serialize().toString('hex'),
+        signature,
+        pubkey,
+        prevTxId: fundingInput.prevTx.txId.toString(),
+        prevVout: fundingInput.prevTxVout,
+        fundInputAmount:
+          fundingInput.prevTx.outputs[fundingInput.prevTxVout].value.sats,
+      };
+
+      sigsValidity.push(
+        (async () => {
+          const response = await this.VerifyFundTxSignature(
+            verifyFundSigRequest,
+          );
+          return response.valid;
+        })(),
+      );
+    }
+
+    const areSigsValid = (await Promise.all(sigsValidity)).every((b) => b);
+
+    if (!areSigsValid) {
+      throw new Error('Invalid signatures received');
+    }
+  }
+
+  private async CreateFundingTx(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcSign: DlcSign,
+    _dlcTxs: DlcTransactions,
+    fundingSignatures: FundingSignaturesV0,
+  ): Promise<Tx> {
+    const { dlcOffer, dlcAccept, dlcSign, dlcTxs } = checkTypes({
+      _dlcOffer,
+      _dlcAccept,
+      _dlcSign,
+      _dlcTxs,
+    });
+
+    const witnessElements = [
+      ...dlcSign.fundingSignatures.witnessElements,
+      ...fundingSignatures.witnessElements,
+    ];
+    const fundingInputs = [
+      ...dlcOffer.fundingInputs,
+      ...dlcAccept.fundingInputs,
+    ];
+
+    let fundTxHex = dlcTxs.fundTx.serialize().toString('hex');
+
+    await asyncForEach(
+      witnessElements,
+      async (witnessElement: ScriptWitnessV0, i: number) => {
+        const signature = witnessElement[0].witness.toString('hex');
+        const pubkey = witnessElement[1].witness.toString('hex');
+
+        const fundingInput = fundingInputs[i] as FundingInputV0;
+
+        const addSignRequest: AddSignatureToFundTransactionRequest = {
+          fundTxHex,
+          signature,
+          prevTxId: fundingInput.prevTx.txId.toString(),
+          prevVout: fundingInput.prevTxVout,
+          pubkey,
+        };
+        fundTxHex = (await this.AddSignatureToFundTransaction(addSignRequest))
+          .hex;
+      },
+    );
+
+    const fundTx = Tx.parse(StreamReader.fromHex(fundTxHex));
+
+    return fundTx;
+  }
+
+  async FindOutcomeIndexFromHyperbolaPayoutCurvePiece(
+    _dlcOffer: DlcOffer,
+    contractDescriptor: ContractDescriptorV1,
+    hyperbolaPayoutCurvePiece: HyperbolaPayoutCurvePiece,
+    oracleAttestation: OracleAttestationV0,
+    outcome: bigint,
+  ): Promise<FindOutcomeResponse> {
+    const { dlcOffer } = checkTypes({ _dlcOffer });
+
+    const hyperbolaCurve = HyperbolaPayoutCurve.fromPayoutCurvePiece(
+      hyperbolaPayoutCurvePiece,
+    );
+    const payout = hyperbolaCurve.getPayout(outcome);
+
+    const { payoutGroups } = this.GetPayouts(dlcOffer);
+
+    const intervalsSorted = contractDescriptor.roundingIntervals.intervals.sort(
+      (a, b) => Number(b.beginInterval) - Number(a.beginInterval),
+    );
+
+    const interval = intervalsSorted.find(
+      (interval) => payout.toNumber() > Number(interval.beginInterval),
+    );
+
+    let roundedPayout = await roundPayout(payout, interval.roundingMod);
+
+    const outcomesFormatted = oracleAttestation.outcomes.map((outcome) =>
+      parseInt(outcome),
+    );
+
+    if (roundedPayout > dlcOffer.contractInfo.totalCollateral) {
+      roundedPayout = dlcOffer.contractInfo.totalCollateral;
+    }
+
+    let index = 0;
+    let groupIndex = -1;
+    let groupLength = 0;
+    for (const payoutGroup of payoutGroups) {
+      if (payoutGroup.payout === roundedPayout) {
+        groupIndex = payoutGroup.groups.findIndex((group) => {
+          return group.every((msg, i) => msg === outcomesFormatted[i]);
+        });
+        index += groupIndex;
+        groupLength = payoutGroup.groups[groupIndex].length;
+        break;
+      } else {
+        index += payoutGroup.groups.length;
+      }
+    }
+
+    if (groupIndex === -1) throw Error('incorrect group index');
+
+    return { index, groupLength };
+  }
+
+  async FindOutcomeIndexFromPayoutFunction(
+    dlcOffer: DlcOffer,
+    contractDescriptor: ContractDescriptorV1,
+    eventDescriptor: DigitDecompositionEventDescriptorV0,
+    oracleAttestation: OracleAttestationV0,
+  ): Promise<FindOutcomeResponse> {
+    const _payoutFunction = contractDescriptor.payoutFunction;
+    if (_payoutFunction.type !== MessageType.PayoutFunctionV0)
+      throw Error('PayoutFunction must be V0');
+    const payoutFunction = _payoutFunction as PayoutFunctionV0;
+    const base = eventDescriptor.base;
+
+    const outcome: number = [...oracleAttestation.outcomes]
+      .reverse()
+      .reduce((acc, val, i) => acc + Number(val) * base ** i, 0);
+
+    const piecesSorted = payoutFunction.pieces.sort(
+      (a, b) => Number(b.endpoint) - Number(a.endpoint),
+    );
+
+    const piece = piecesSorted.find((piece) => outcome < piece.endpoint);
+
+    switch (piece.payoutCurvePiece.type) {
+      case MessageType.PolynomialPayoutCurvePiece:
+        throw Error('Polynomial Curve Piece not yet supported');
+      case MessageType.HyperbolaPayoutCurvePiece:
+        return this.FindOutcomeIndexFromHyperbolaPayoutCurvePiece(
+          dlcOffer,
+          contractDescriptor,
+          piece.payoutCurvePiece as HyperbolaPayoutCurvePiece,
+          oracleAttestation,
+          BigInt(outcome),
+        );
+      default:
+        throw Error('Must be Hyperbola or Polynomial curve piece');
+    }
+  }
+
+  async FindOutcomeIndex(
+    _dlcOffer: DlcOffer,
+    oracleAttestation: OracleAttestationV0,
+  ): Promise<FindOutcomeResponse> {
+    const { dlcOffer } = checkTypes({ _dlcOffer });
+    switch (dlcOffer.contractInfo.type) {
+      case MessageType.ContractInfoV0:
+        // eslint-disable-next-line no-case-declarations
+        const contractInfo = dlcOffer.contractInfo as ContractInfoV0;
+        switch (contractInfo.contractDescriptor.type) {
+          case MessageType.ContractDescriptorV0:
+            throw Error('ContractDescriptorV0 not yet supported');
+          case MessageType.ContractDescriptorV1:
+            return this.FindOutcomeIndexFromPayoutFunction(
+              dlcOffer,
+              contractInfo.contractDescriptor as ContractDescriptorV1,
+              contractInfo.oracleInfo.announcement.oracleEvent
+                .eventDescriptor as DigitDecompositionEventDescriptorV0,
+              oracleAttestation,
+            );
+          default:
+            throw Error('ConractDescriptor must be V0 or V1');
+        }
+      case MessageType.ContractInfoV1:
+        throw Error('MultiOracle not yet supported');
+      default:
+        throw Error('ContractInfo must be V0 or V1');
+    }
+  }
+
+  async FindAndSignCet(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcSign: DlcSign,
+    _dlcTxs: DlcTransactions,
+    oracleAttestation: OracleAttestationV0,
+    isLocalParty: boolean,
+  ): Promise<Tx> {
+    const { dlcOffer, dlcAccept, dlcSign, dlcTxs } = checkTypes({
+      _dlcOffer,
+      _dlcAccept,
+      _dlcSign,
+      _dlcTxs,
+    });
+
+    const { index: outcomeIndex, groupLength } = await this.FindOutcomeIndex(
+      dlcOffer,
+      oracleAttestation,
+    );
+
+    const fundPrivateKey = await this.GetFundPrivateKey(
+      dlcOffer,
+      dlcAccept,
+      isLocalParty,
+    );
+
+    const sliceIndex = -(oracleAttestation.signatures.length - groupLength);
+
+    const oracleSignatures =
+      sliceIndex === 0
+        ? oracleAttestation.signatures
+        : oracleAttestation.signatures.slice(0, sliceIndex);
+
+    const signCetRequest: SignCetRequest = {
+      cetHex: dlcTxs.cets[outcomeIndex].serialize().toString('hex'),
+      fundPrivkey: fundPrivateKey,
+      fundTxId: dlcTxs.fundTx.txId.toString(),
+      localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
+      remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
+      oracleSignatures: oracleSignatures.map((sig) => sig.toString('hex')),
+      fundInputAmount: dlcTxs.fundTxOutAmount,
+      adaptorSignature: isLocalParty
+        ? dlcAccept.cetSignatures.sigs[outcomeIndex].encryptedSig.toString(
+            'hex',
+          )
+        : dlcSign.cetSignatures.sigs[outcomeIndex].encryptedSig.toString('hex'),
+    };
+
+    const finalCet = (await this.SignCet(signCetRequest)).hex;
+
+    return Tx.parse(StreamReader.fromHex(finalCet));
+  }
+
+  private async GetFundAddress(
+    dlcOffer: DlcOfferV0,
+    dlcAccept: DlcAcceptV0,
+    isLocalParty: boolean,
+  ): Promise<string> {
+    const network = await this.getConnectedNetwork();
+
+    const fundingSPK = Script.p2wpkhLock(
+      hash160(isLocalParty ? dlcOffer.fundingPubKey : dlcAccept.fundingPubKey),
+    )
+      .serialize()
+      .slice(1);
+
+    const fundingAddress: string = address.fromOutputScript(
+      fundingSPK,
+      network,
+    );
+
+    return fundingAddress;
+  }
+
+  private async GetFundKeyPair(
+    dlcOffer: DlcOfferV0,
+    dlcAccept: DlcAcceptV0,
+    isLocalParty: boolean,
+  ): Promise<ECPairInterface> {
+    const fundingAddress = await this.GetFundAddress(
+      dlcOffer,
+      dlcAccept,
+      isLocalParty,
+    );
+
+    const { derivationPath } = await this.client.getMethod('getWalletAddress')(
+      fundingAddress,
+    );
+    const keyPair: ECPairInterface = await this.client.getMethod('keyPair')(
+      derivationPath,
+    );
+
+    return keyPair;
+  }
+
+  private async GetFundPrivateKey(
+    dlcOffer: DlcOfferV0,
+    dlcAccept: DlcAcceptV0,
+    isLocalParty: boolean,
+  ): Promise<string> {
+    const fundPrivateKeyPair: ECPairInterface = await this.GetFundKeyPair(
+      dlcOffer,
+      dlcAccept,
+      isLocalParty,
+    );
+
+    return Buffer.from(fundPrivateKeyPair.privateKey).toString('hex');
+  }
+
+  async BuildCloseTx(
+    dlcOffer: DlcOfferV0,
+    dlcAccept: DlcAcceptV0,
+    dlcTxs: DlcTransactionsV0,
+    initiatorPayoutSatoshis: bigint,
+    isLocalParty: boolean,
+    inputs?: Input[],
+  ): Promise<Psbt> {
+    const network = await this.getConnectedNetwork();
+    const psbt = new Psbt({ network });
+
+    const fundingPubKeys =
+      Buffer.compare(dlcOffer.fundingPubKey, dlcAccept.fundingPubKey) === -1
+        ? [dlcOffer.fundingPubKey, dlcAccept.fundingPubKey]
+        : [dlcAccept.fundingPubKey, dlcOffer.fundingPubKey];
+
+    const p2ms = payments.p2ms({
+      m: 2,
+      pubkeys: fundingPubKeys,
+      network,
+    });
+
+    const paymentVariant = payments.p2wsh({
+      redeem: p2ms,
+      network,
+    });
+
+    psbt.addInput({
+      hash: dlcTxs.fundTx.txId.serialize(),
+      index: 0,
+      sequence: 0,
+      witnessUtxo: {
+        script: paymentVariant.output,
+        value: Number(dlcTxs.fundTxOutAmount),
+      },
+      witnessScript: paymentVariant.redeem.output,
+    });
+
+    const pubkeys: Buffer[] = await Promise.all(
+      inputs.map(async (input) => {
+        const address: Address = await this.client.getMethod(
+          'getWalletAddress',
+        )(input.address);
+        return Buffer.from(address.publicKey, 'hex');
+      }),
+    );
+
+    inputs.forEach((input, i) => {
+      const paymentVariant = payments.p2wpkh({ pubkey: pubkeys[i], network });
+
+      psbt.addInput({
+        hash: input.txid,
+        index: input.vout,
+        sequence: 0,
+        witnessUtxo: {
+          script: paymentVariant.output,
+          value: input.value,
+        },
       });
     });
 
-    return { addresses: fundingAddresses, utxos: fundingUtxos };
-  }
+    const fundingInputs: FundingInput[] = await Promise.all(
+      inputs.map(async (input) => {
+        return this.inputToFundingInput(input);
+      }),
+    );
 
-  async getFundingUtxoAddressesForAcceptMessages(
-    acceptMessages: AcceptMessage[],
-  ) {
-    const fundingAddresses: string[] = [];
-    const fundingUtxos: Utxo[] = [];
-    acceptMessages.forEach((acceptMessage) => {
-      acceptMessage.remotePartyInputs.utxos.forEach((utxo) => {
-        if (fundingAddresses.indexOf(utxo.address) === -1)
-          fundingAddresses.push(utxo.address);
-        fundingUtxos.push(utxo);
-      });
+    const finalizer = new DualClosingTxFinalizer(
+      fundingInputs,
+      dlcOffer.payoutSPK,
+      dlcAccept.payoutSPK,
+      dlcOffer.feeRatePerVb,
+    );
+
+    const closeInputAmount = BigInt(
+      inputs.reduce((acc, val) => acc + val.value, 0),
+    );
+
+    const offerPayoutValue: bigint = isLocalParty
+      ? closeInputAmount +
+        initiatorPayoutSatoshis -
+        finalizer.offerInitiatorFees
+      : dlcOffer.contractInfo.totalCollateral - initiatorPayoutSatoshis;
+
+    const acceptPayoutValue: bigint = isLocalParty
+      ? dlcOffer.contractInfo.totalCollateral - initiatorPayoutSatoshis
+      : closeInputAmount +
+        initiatorPayoutSatoshis -
+        finalizer.offerInitiatorFees;
+
+    psbt.addOutput({
+      value: Number(offerPayoutValue),
+      address: address.fromOutputScript(dlcOffer.payoutSPK, network),
     });
 
-    return { addresses: fundingAddresses, utxos: fundingUtxos };
+    psbt.addOutput({
+      value: Number(acceptPayoutValue),
+      address: address.fromOutputScript(dlcAccept.payoutSPK, network),
+    });
+
+    return psbt;
+  }
+
+  /**
+   * Create DLC Offer Message
+   * @param contractInfo ContractInfo TLV (V0 or V1)
+   * @param offerCollateralSatoshis Amount DLC Initiator is putting into the contract
+   * @param feeRatePerVb Fee rate in satoshi per virtual byte that both sides use to compute fees in funding tx
+   * @param cetLocktime The nLockTime to be put on CETs
+   * @param refundLocktime The nLockTime to be put on the refund transaction
+   * @returns {Promise<DlcOffer>}
+   */
+  async createDlcOffer(
+    contractInfo: ContractInfo,
+    offerCollateralSatoshis: bigint,
+    feeRatePerVb: bigint,
+    cetLocktime: number,
+    refundLocktime: number,
+    fixedInputs?: Input[],
+  ): Promise<DlcOffer> {
+    contractInfo.validate();
+    const network = await this.getConnectedNetwork();
+
+    const dlcOffer = new DlcOfferV0();
+
+    const {
+      fundingPubKey,
+      payoutSPK,
+      payoutSerialId,
+      fundingInputs: _fundingInputs,
+      changeSPK,
+      changeSerialId,
+    } = await this.Initialize(
+      offerCollateralSatoshis,
+      feeRatePerVb,
+      fixedInputs,
+    );
+
+    _fundingInputs.forEach((input) => {
+      if (input.type !== MessageType.FundingInputV0)
+        throw Error('FundingInput must be V0');
+    });
+    const fundingInputs: FundingInputV0[] = _fundingInputs.map(
+      (input) => input as FundingInputV0,
+    );
+
+    dlcOffer.contractFlags = Buffer.from('00', 'hex');
+    dlcOffer.chainHash = network.chainHash;
+    dlcOffer.contractInfo = contractInfo;
+    dlcOffer.fundingPubKey = fundingPubKey;
+    dlcOffer.payoutSPK = payoutSPK;
+    dlcOffer.payoutSerialId = payoutSerialId;
+    dlcOffer.offerCollateralSatoshis = offerCollateralSatoshis;
+    dlcOffer.fundingInputs = fundingInputs;
+    dlcOffer.changeSPK = changeSPK;
+    dlcOffer.changeSerialId = changeSerialId;
+    dlcOffer.fundOutputSerialId = generateSerialId();
+    dlcOffer.feeRatePerVb = feeRatePerVb;
+    dlcOffer.cetLocktime = cetLocktime;
+    dlcOffer.refundLocktime = refundLocktime;
+
+    return dlcOffer;
+  }
+
+  /**
+   * Accept DLC Offer
+   * @param _dlcOffer Dlc Offer Message
+   * @param fixedInputs Optional inputs to use for Funding Inputs
+   * @returns {Promise<AcceptDlcOfferResponse}
+   */
+  async acceptDlcOffer(
+    _dlcOffer: DlcOffer,
+    fixedInputs?: Input[],
+  ): Promise<AcceptDlcOfferResponse> {
+    const { dlcOffer } = checkTypes({ _dlcOffer });
+    dlcOffer.contractInfo.validate();
+
+    const acceptCollateralSatoshis =
+      dlcOffer.contractInfo.totalCollateral - dlcOffer.offerCollateralSatoshis;
+
+    const {
+      fundingPubKey,
+      payoutSPK,
+      payoutSerialId,
+      fundingInputs: _fundingInputs,
+      changeSPK,
+      changeSerialId,
+    } = await this.Initialize(
+      acceptCollateralSatoshis,
+      dlcOffer.feeRatePerVb,
+      fixedInputs,
+    );
+
+    _fundingInputs.forEach((input) => {
+      if (input.type !== MessageType.FundingInputV0)
+        throw Error('FundingInput must be V0');
+    });
+    const fundingInputs: FundingInputV0[] = _fundingInputs.map(
+      (input) => input as FundingInputV0,
+    );
+
+    const dlcAccept = new DlcAcceptV0();
+
+    dlcAccept.tempContractId = sha256(dlcOffer.serialize());
+    dlcAccept.acceptCollateralSatoshis = acceptCollateralSatoshis;
+    dlcAccept.fundingPubKey = fundingPubKey;
+    dlcAccept.payoutSPK = payoutSPK;
+    dlcAccept.payoutSerialId = payoutSerialId;
+    dlcAccept.fundingInputs = fundingInputs;
+    dlcAccept.changeSPK = changeSPK;
+    dlcAccept.changeSerialId = changeSerialId;
+
+    const { dlcTransactions, messagesList } = await this.CreateDlcTxs(
+      dlcOffer,
+      dlcAccept,
+    );
+
+    const {
+      cetSignatures,
+      refundSignature,
+    } = await this.CreateCetAdaptorAndRefundSigs(
+      dlcOffer,
+      dlcAccept,
+      dlcTransactions,
+      messagesList,
+      false,
+    );
+
+    dlcAccept.cetSignatures = cetSignatures;
+    dlcAccept.refundSignature = refundSignature;
+    dlcAccept.negotiationFields = new NegotiationFieldsV0();
+
+    return { dlcAccept, dlcTransactions };
+  }
+
+  /**
+   * Sign Dlc Accept Message
+   * @param _dlcOffer Dlc Offer Message
+   * @param _dlcAccept Dlc Accept Message
+   * @returns {Promise<SignDlcAcceptResponse}
+   */
+  async signDlcAccept(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+  ): Promise<SignDlcAcceptResponse> {
+    const { dlcOffer, dlcAccept } = checkTypes({
+      _dlcOffer,
+      _dlcAccept,
+    });
+
+    const dlcSign = new DlcSignV0();
+
+    const { dlcTransactions, messagesList } = await this.CreateDlcTxs(
+      dlcOffer,
+      dlcAccept,
+    );
+
+    await this.VerifyCetAdaptorAndRefundSigs(
+      dlcOffer,
+      dlcAccept,
+      dlcSign,
+      dlcTransactions,
+      messagesList,
+      true,
+    );
+
+    const {
+      cetSignatures,
+      refundSignature,
+    } = await this.CreateCetAdaptorAndRefundSigs(
+      dlcOffer,
+      dlcAccept,
+      dlcTransactions,
+      messagesList,
+      true,
+    );
+
+    const fundingSignatures = await this.CreateFundingSigs(
+      dlcOffer,
+      dlcAccept,
+      dlcTransactions,
+      true,
+    );
+
+    const dlcTxs = dlcTransactions as DlcTransactionsV0;
+
+    const contractId = xor(
+      dlcTxs.fundTx.txId.serialize(),
+      dlcAccept.tempContractId,
+    );
+
+    dlcSign.contractId = contractId;
+    dlcSign.cetSignatures = cetSignatures;
+    dlcSign.refundSignature = refundSignature;
+    dlcSign.fundingSignatures = fundingSignatures;
+
+    return { dlcSign, dlcTransactions };
+  }
+
+  /**
+   * Finalize Dlc Sign
+   * @param _dlcOffer Dlc Offer Message
+   * @param _dlcAccept Dlc Accept Message
+   * @param _dlcSign Dlc Sign Message
+   * @param _dlcTxs Dlc Transactions Message
+   * @returns {Promise<Tx>}
+   */
+  async finalizeDlcSign(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcSign: DlcSign,
+    _dlcTxs: DlcTransactions,
+  ): Promise<Tx> {
+    const { dlcOffer, dlcAccept, dlcSign, dlcTxs } = checkTypes({
+      _dlcOffer,
+      _dlcAccept,
+      _dlcSign,
+      _dlcTxs,
+    });
+
+    const { messagesList } = await this.GetPayouts(dlcOffer);
+
+    await this.VerifyCetAdaptorAndRefundSigs(
+      dlcOffer,
+      dlcAccept,
+      dlcSign,
+      dlcTxs,
+      messagesList,
+      false,
+    );
+
+    await this.VerifyFundingSigs(dlcOffer, dlcAccept, dlcSign, dlcTxs, false);
+
+    const fundingSignatures = await this.CreateFundingSigs(
+      dlcOffer,
+      dlcAccept,
+      dlcTxs,
+      false,
+    );
+
+    const fundTx = await this.CreateFundingTx(
+      dlcOffer,
+      dlcAccept,
+      dlcSign,
+      dlcTxs,
+      fundingSignatures,
+    );
+
+    return fundTx;
+  }
+
+  /**
+   * Execute DLC
+   * @param _dlcOffer Dlc Offer Message
+   * @param _dlcAccept Dlc Accept Message
+   * @param _dlcSign Dlc Sign Message
+   * @param _dlcTxs Dlc Transactions Message
+   * @param oracleAttestation Oracle Attestations TLV (V0)
+   * @param isLocalParty Whether party is Dlc Offerer
+   * @returns {Promise<Tx>}
+   */
+  async execute(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcSign: DlcSign,
+    _dlcTxs: DlcTransactions,
+    oracleAttestation: OracleAttestationV0,
+    isLocalParty: boolean,
+  ): Promise<Tx> {
+    const { dlcOffer, dlcAccept, dlcSign, dlcTxs } = checkTypes({
+      _dlcOffer,
+      _dlcAccept,
+      _dlcSign,
+      _dlcTxs,
+    });
+
+    return this.FindAndSignCet(
+      dlcOffer,
+      dlcAccept,
+      dlcSign,
+      dlcTxs,
+      oracleAttestation,
+      isLocalParty,
+    );
+  }
+
+  /**
+   * Refund DLC
+   * @param _dlcOffer Dlc Offer Message
+   * @param _dlcAccept Dlc Accept Message
+   * @param _dlcSign Dlc Sign Message
+   * @param _dlcTxs Dlc Transactions message
+   * @returns {Promise<Tx>}
+   */
+  async refund(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcSign: DlcSign,
+    _dlcTxs: DlcTransactions,
+  ): Promise<Tx> {
+    const { dlcOffer, dlcAccept, dlcSign, dlcTxs } = checkTypes({
+      _dlcOffer,
+      _dlcAccept,
+      _dlcSign,
+      _dlcTxs,
+    });
+
+    const signatures =
+      Buffer.compare(dlcOffer.fundingPubKey, dlcAccept.fundingPubKey) === -1
+        ? [
+            dlcSign.refundSignature.toString('hex'),
+            dlcAccept.refundSignature.toString('hex'),
+          ]
+        : [
+            dlcAccept.refundSignature.toString('hex'),
+            dlcSign.refundSignature.toString('hex'),
+          ];
+
+    const addSigsToRefundTxRequest: AddSignaturesToRefundTxRequest = {
+      refundTxHex: dlcTxs.refundTx.serialize().toString('hex'),
+      signatures,
+      fundTxId: dlcTxs.fundTx.txId.toString(),
+      localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
+      remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
+    };
+
+    const refundHex = (
+      await this.AddSignaturesToRefundTx(addSigsToRefundTxRequest)
+    ).hex;
+
+    return Tx.parse(StreamReader.fromHex(refundHex));
+  }
+
+  /**
+   * Generate PSBT for closing DLC with Mutual Consent
+   * If no PSBT provided, assume initiator
+   * If PSBT provided, assume reciprocator
+   * @param _dlcOffer DlcOffer TLV (V0)
+   * @param _dlcAccept DlcAccept TLV (V0)
+   * @param _dlcTxs DlcTransactions TLV (V0)
+   * @param initiatorPayoutSatoshis Amount initiator expects as a payout
+   * @param isLocalParty Whether offerer or not
+   * @param _psbt Partially Signed Bitcoin Transaction
+   * @param _inputs Optionally specified closing inputs
+   * @returns {Promise<Psbt>}
+   */
+  async close(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcTxs: DlcTransactions,
+    initiatorPayoutSatoshis: bigint,
+    isLocalParty: boolean,
+    _psbt?: Psbt,
+    _inputs?: Input[],
+  ): Promise<Psbt> {
+    const { dlcOffer, dlcAccept, dlcTxs } = checkTypes({
+      _dlcOffer,
+      _dlcAccept,
+      _dlcTxs,
+    });
+
+    const fundPrivateKeyPair = await this.GetFundKeyPair(
+      dlcOffer,
+      dlcAccept,
+      isLocalParty,
+    );
+
+    let psbt: Psbt;
+    if (_psbt) {
+      // Reciprocate if PSBT passed in
+      psbt = _psbt.clone();
+
+      psbt.signInput(0, fundPrivateKeyPair);
+      psbt.validateSignaturesOfInput(0);
+      psbt.finalizeAllInputs();
+    } else {
+      // Initiate and build PSBT
+      let inputs: Input[] = _inputs;
+      if ((_inputs && _inputs.length === 0) || !_inputs) {
+        inputs = await this.GetInputsForAmount(
+          BigInt(20000),
+          dlcOffer.feeRatePerVb,
+          _inputs,
+        );
+      }
+
+      psbt = await this.BuildCloseTx(
+        dlcOffer,
+        dlcAccept,
+        dlcTxs,
+        initiatorPayoutSatoshis,
+        isLocalParty,
+        inputs,
+      );
+
+      psbt.signInput(0, fundPrivateKeyPair);
+      psbt.validateSignaturesOfInput(0);
+
+      for (let i = 1; i < inputs.length + 1; i++) {
+        const wallet: Address = await this.getMethod('getWalletAddress')(
+          inputs[i - 1].address,
+        );
+        const keyPair = await this.getMethod('keyPair')(wallet.derivationPath);
+        psbt.signInput(i, keyPair);
+        psbt.validateSignaturesOfInput(i);
+      }
+    }
+
+    return psbt;
   }
 
   async AddSignatureToFundTransaction(
@@ -553,9 +1627,116 @@ export default class BitcoinDlcProvider extends Provider {
 
     return this._cfdDlcJs.VerifyRefundTxSignature(jsonObject);
   }
+
+  async fundingInputToInput(_input: FundingInput): Promise<Input> {
+    if (_input.type !== MessageType.FundingInputV0) throw Error('Wrong type');
+    const network = await this.getConnectedNetwork();
+    const input = _input as FundingInputV0;
+    const prevTx = input.prevTx;
+    const prevTxOut = prevTx.outputs[input.prevTxVout];
+    const scriptPubKey = prevTxOut.scriptPubKey.serialize().slice(1);
+    const _address = address.fromOutputScript(scriptPubKey, network);
+    const inputAddress: Address = await this.getMethod('findAddress')([
+      _address,
+    ]);
+    let derivationPath: string;
+    if (inputAddress) {
+      derivationPath = inputAddress.derivationPath;
+    }
+
+    return {
+      txid: prevTx.txId.toString(),
+      vout: input.prevTxVout,
+      address: _address,
+      amount: prevTxOut.value.bitcoin,
+      value: prevTxOut.value.bitcoin,
+      satoshis: Number(prevTxOut.value.sats),
+      derivationPath,
+      maxWitnessLength: input.maxWitnessLen,
+      redeemScript: input.redeemScript
+        ? input.redeemScript.toString('hex')
+        : '',
+      scriptPubKey: scriptPubKey.toString('hex'),
+      inputSerialId: input.inputSerialId,
+      toUtxo: Input.prototype.toUtxo,
+    };
+  }
+
+  async inputToFundingInput(input: Input): Promise<FundingInput> {
+    const fundingInput = new FundingInputV0();
+    fundingInput.prevTxVout = input.vout;
+
+    const txRaw = await this.getMethod('getRawTransactionByHash')(input.txid);
+    const tx = Tx.parse(StreamReader.fromHex(txRaw));
+
+    fundingInput.prevTx = tx;
+    fundingInput.sequence = Sequence.default();
+    fundingInput.maxWitnessLen = input.maxWitnessLength
+      ? input.maxWitnessLength
+      : 108;
+    fundingInput.redeemScript = input.redeemScript
+      ? Buffer.from(input.redeemScript, 'hex')
+      : Buffer.from('', 'hex');
+    fundingInput.inputSerialId = input.inputSerialId
+      ? input.inputSerialId
+      : generateSerialId();
+
+    return fundingInput;
+  }
+
+  async getConnectedNetwork(): Promise<BitcoinNetwork> {
+    return this._network;
+  }
 }
 
-interface GeneratedOutput {
-  payout: number;
+export interface InitializeResponse {
+  fundingPubKey: Buffer;
+  payoutSPK: Buffer;
+  payoutSerialId: bigint;
+  fundingInputs: FundingInput[];
+  changeSPK: Buffer;
+  changeSerialId: bigint;
+}
+
+export interface AcceptDlcOfferResponse {
+  dlcAccept: DlcAccept;
+  dlcTransactions: DlcTransactions;
+}
+
+export interface SignDlcAcceptResponse {
+  dlcSign: DlcSign;
+  dlcTransactions: DlcTransactions;
+}
+
+export interface GetPayoutsResponse {
+  payouts: PayoutRequest[];
+  payoutGroups: PayoutGroup[];
+  messagesList: Messages[];
+}
+
+export interface CreateDlcTxsResponse {
+  dlcTransactions: DlcTransactions;
+  messagesList: Messages[];
+}
+
+interface ISig {
+  encryptedSig: Buffer;
+  dleqProof: Buffer;
+}
+
+export interface CreateCetAdaptorAndRefundSigsResponse {
+  cetSignatures: CetAdaptorSignaturesV0;
+  refundSignature: Buffer;
+}
+
+interface PayoutGroup {
+  payout: bigint;
   groups: number[][];
 }
+
+interface FindOutcomeResponse {
+  index: number;
+  groupLength: number;
+}
+
+const BurnAddress = 'bcrt1qxcjufgh2jarkp2qkx68azh08w9v5gah8u6es8s';
