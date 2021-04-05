@@ -2,7 +2,7 @@
   "name": "@atomicfinance/bundle",
   "umdName": "Bundle",
   "version": "2.0.0-alpha.0",
-  "description": "> TODO: description",
+  "description": "CAL Finance Bundle Provider",
   "author": "Atomic Finance <info@atomic.finance>",
   "homepage": "",
   "license": "ISC",

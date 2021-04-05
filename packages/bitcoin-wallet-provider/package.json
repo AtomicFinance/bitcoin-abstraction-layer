@@ -2,7 +2,7 @@
   "name": "@atomicfinance/bitcoin-wallet-provider",
   "umdName": "BitcoinWalletProvider",
   "version": "2.0.0-alpha.0",
-  "description": "> TODO: description",
+  "description": "CAL Finance Bitcoin Wallet Provider",
   "author": "Atomic Finance <info@atomic.finance>",
   "homepage": "",
   "license": "ISC",
