@@ -20,8 +20,8 @@
   },
   "dependencies": {
     "@liquality/errors": "^0.7.1",
-    "@node-dlc/bitcoin": "0.1.1",
-    "@node-dlc/messaging": "0.1.1",
+    "@node-dlc/bitcoin": "0.1.2",
+    "@node-dlc/messaging": "0.1.2",
     "lodash": "^4.17.20"
   },
   "devDependencies": {
