@@ -1,9 +1,9 @@
 {
   "name": "@atomicfinance/bitcoin-networks",
   "umdName": "BitcoinNetworks",
-  "version": "1.0.0-alpha.4",
-  "description": "Bitcoin Networks",
-  "author": "Matthew Black <mblackmblackmblack@gmail.com>",
+  "version": "2.0.0-alpha.0",
+  "description": "CAL Finance Bitcoin Networks Provider",
+  "author": "Atomic Finance <info@atomic.finance>",
   "homepage": "",
   "license": "ISC",
   "main": "dist/index",
