@@ -3,7 +3,7 @@
   "umdName": "BitcoinNetworks",
   "version": "2.0.0-alpha.0",
   "description": "Bitcoin Networks",
-  "author": "Matthew Black <mblackmblackmblack@gmail.com>",
+  "author": "Atomic Finance <info@atomic.finance>",
   "homepage": "",
   "license": "ISC",
   "main": "dist/index",
