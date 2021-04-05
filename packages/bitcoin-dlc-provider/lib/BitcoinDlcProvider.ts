@@ -222,8 +222,9 @@ export default class BitcoinDlcProvider extends Provider {
       throw Error('PayoutFunction must have at least once PayoutCurvePiece');
     if (payoutFunction.pieces.length > 1)
       throw Error('More than one PayoutCurvePiece not supported');
-    const payoutCurvePiece = payoutFunction.pieces[0].payoutCurvePiece;
-    if (!(payoutCurvePiece instanceof HyperbolaPayoutCurvePiece))
+    const payoutCurvePiece = payoutFunction.pieces[0]
+      .payoutCurvePiece as HyperbolaPayoutCurvePiece;
+    if (payoutCurvePiece.type !== MessageType.HyperbolaPayoutCurvePiece)
       throw Error('Must be HyperbolaPayoutCurvePiece');
     if (payoutCurvePiece.b !== BigInt(0) || payoutCurvePiece.c !== BigInt(0))
       throw Error('b and c HyperbolaPayoutCurvePiece values must be 0');
