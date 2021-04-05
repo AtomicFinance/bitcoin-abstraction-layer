@@ -24,6 +24,8 @@
 /packages/**/lib/models/*.js
 /packages/**/lib/utils/*.js
 
+/file-output/*.txt
+
 lerna-debug.log
 .vscode
 yarn-error.log
