@@ -1,0 +1,31 @@
+{
+  "name": "@atomicfinance/bitcoin-networks",
+  "umdName": "BitcoinNetworks",
+  "version": "1.0.0-alpha.4",
+  "description": "Bitcoin Networks",
+  "author": "Matthew Black <mblackmblackmblack@gmail.com>",
+  "homepage": "",
+  "license": "ISC",
+  "main": "dist/index",
+  "types": "lib/index",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "../../node_modules/.bin/tsc --project tsconfig.json",
+    "prepublishOnly": "yarn run build",
+    "test": "yarn run build",
+    "lint": "../../node_modules/.bin/eslint --ignore-path ../../.eslintignore  -c ../../.eslintrc.js .",
+    "lint:fix": "../../node_modules/.bin/eslint --fix --ignore-path ../../.eslintignore  -c ../../.eslintrc.js ."
+  },
+  "dependencies": {
+    "@liquality/bitcoin-networks": "0.10.3",
+    "bitcoinjs-lib": "5.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^14.14.25"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
