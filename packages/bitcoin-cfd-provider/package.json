@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/bitcoin-cfd-provider",
   "umdName": "BitcoinCfdProvider",
-  "version": "2.0.0-alpha.0",
+  "version": "2.0.0-alpha.1",
   "description": "CAL Finance Bitcoin Cfd Provider",
   "author": "Atomic Finance <info@atomic.finance>",
   "homepage": "",
@@ -19,7 +19,7 @@
     "lint:fix": "../../node_modules/.bin/eslint --fix --ignore-path ../../.eslintignore  -c ../../.eslintrc.js ."
   },
   "dependencies": {
-    "@atomicfinance/provider": "^2.0.0-alpha.0",
+    "@atomicfinance/provider": "^2.0.0-alpha.1",
     "@liquality/provider": "^0.7.1",
     "@liquality/utils": "^0.7.1",
     "is-node": "github:matthewjablack/is-node",

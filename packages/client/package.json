@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/client",
   "umdName": "Client",
-  "version": "2.0.0-alpha.0",
+  "version": "2.0.0-alpha.1",
   "description": "CAL Finance Client Provider",
   "author": "Atomic Finance <info@atomic.finance>",
   "homepage": "",
@@ -20,9 +20,9 @@
   },
   "dependencies": {
     "@liquality/errors": "^0.7.1",
-    "lodash": "^4.17.20",
     "@node-dlc/bitcoin": "0.1.1",
-    "@node-dlc/messaging": "0.1.1"
+    "@node-dlc/messaging": "0.1.1",
+    "lodash": "^4.17.20"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.160"
