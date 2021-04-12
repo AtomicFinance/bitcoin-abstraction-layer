@@ -1,5 +1,5 @@
 import { Network as BitcoinJsLibNetwork } from 'bitcoinjs-lib';
-import { Network } from './@types/@liquality/types';
+import { Network } from './types/@liquality/types';
 import * as networks from '@liquality/bitcoin-networks';
 
 export interface BitcoinNetwork extends Network, BitcoinJsLibNetwork {}

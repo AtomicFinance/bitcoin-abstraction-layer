@@ -2,7 +2,7 @@ import 'mocha';
 import { expect } from 'chai';
 import { chains, fundAddress, getInput } from '../common';
 import Client from '@liquality/client';
-import { bitcoin } from '../../../packages/bitcoin-dlc-provider/lib/@types/@liquality/types';
+import { bitcoin } from '../../../packages/bitcoin-dlc-provider/lib/types/@liquality/types';
 import Input from '../../../packages/bitcoin-dlc-provider/lib/models/Input';
 import { FundingInputV0 } from '@node-dlc/messaging';
 

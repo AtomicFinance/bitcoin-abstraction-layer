@@ -6,8 +6,7 @@
   "author": "Atomic Finance <info@atomic.finance>",
   "homepage": "",
   "license": "ISC",
-  "main": "dist/index",
-  "types": "lib/@types",
+  "main": "dist/index.js",
   "files": [
     "dist"
   ],
