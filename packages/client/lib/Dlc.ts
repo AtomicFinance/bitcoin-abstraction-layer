@@ -52,6 +52,16 @@ export default class Dlc {
   }
 
   /**
+   * Check whether wallet is offerer of DlcOffer or DlcAccept
+   * @param dlcOffer Dlc Offer Message
+   * @param dlcAccept Dlc Accept Message
+   * @returns {Promise<boolean>}
+   */
+  async isOfferer(dlcOffer: DlcOffer, dlcAccept: DlcAccept): Promise<boolean> {
+    return this.client.getMethod('isOfferer')(dlcOffer, dlcAccept);
+  }
+
+  /**
    * Create DLC Offer Message
    * @param contractInfo ContractInfo TLV (V0 or V1)
    * @param offerCollateralSatoshis Amount DLC Initiator is putting into the contract
@@ -133,7 +143,7 @@ export default class Dlc {
    * @param dlcSign Dlc Sign Message
    * @param dlcTxs Dlc Transactions Message
    * @param oracleAttestation Oracle Attestations TLV (V0)
-   * @param isLocalParty Whether party is Dlc Offerer
+   * @param isOfferer Whether party is Dlc Offerer
    * @returns {Promise<Tx>}
    */
   async execute(
@@ -142,7 +152,7 @@ export default class Dlc {
     dlcSign: DlcSign,
     dlcTxs: DlcTransactions,
     oracleAttestation: OracleAttestationV0,
-    isLocalParty: boolean,
+    isOfferer: boolean,
   ): Promise<Tx> {
     return this.client.getMethod('execute')(
       dlcOffer,
@@ -150,7 +160,7 @@ export default class Dlc {
       dlcSign,
       dlcTxs,
       oracleAttestation,
-      isLocalParty,
+      isOfferer,
     );
   }
 
@@ -184,7 +194,7 @@ export default class Dlc {
    * @param dlcAccept DlcAccept TLV (V0)
    * @param dlcTxs DlcTransactions TLV (V0)
    * @param initiatorPayoutSatoshis Amount initiator expects as a payout
-   * @param isLocalParty Whether offerer or not
+   * @param isOfferer Whether offerer or not
    * @param psbt Partially Signed Bitcoin Transaction
    * @param inputs Optionally specified closing inputs
    * @returns {Promise<Psbt>}
@@ -194,7 +204,7 @@ export default class Dlc {
     dlcAccept: DlcAccept,
     dlcTxs: DlcTransactions,
     initiatorPayoutSatoshis: bigint,
-    isLocalParty: boolean,
+    isOfferer: boolean,
     psbt?: Psbt,
     inputs?: IInput[],
   ): Promise<Psbt> {
@@ -203,7 +213,7 @@ export default class Dlc {
       dlcAccept,
       dlcTxs,
       initiatorPayoutSatoshis,
-      isLocalParty,
+      isOfferer,
       psbt,
       inputs,
     );

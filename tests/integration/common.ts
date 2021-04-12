@@ -87,6 +87,17 @@ bitcoinWithJs2.finance.addProvider(new BitcoinCfdProvider(network, cfdJs));
 bitcoinWithJs2.finance.addProvider(new BitcoinDlcProvider(tsNetwork, cfdDlcJs));
 bitcoinWithJs2.finance.addProvider(new BitcoinWalletProvider(tsNetwork));
 
+const bitcoinWithJs3 = new Client();
+const bitcoinWithJsFinance3 = new FinanceClient(bitcoinWithJs3);
+bitcoinWithJs3.finance = bitcoinWithJsFinance3;
+bitcoinWithJs3.addProvider(mockedBitcoinRpcProvider());
+bitcoinWithJs3.addProvider(
+  new BitcoinJsWalletProvider(network, generateMnemonic(256), 'bech32'),
+);
+bitcoinWithJs3.finance.addProvider(new BitcoinCfdProvider(network, cfdJs));
+bitcoinWithJs3.finance.addProvider(new BitcoinDlcProvider(tsNetwork, cfdDlcJs));
+bitcoinWithJs3.finance.addProvider(new BitcoinWalletProvider(tsNetwork));
+
 const chains = {
   bitcoinWithNode: {
     id: 'Bitcoin Node',
@@ -105,6 +116,12 @@ const chains = {
     id: 'Bitcoin Js',
     name: 'bitcoin',
     client: bitcoinWithJs2,
+    network: network,
+  },
+  bitcoinWithJs3: {
+    id: 'Bitcoin Js',
+    name: 'bitcoin',
+    client: bitcoinWithJs3,
     network: network,
   },
 };
