@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/bundle",
   "umdName": "Bundle",
-  "version": "2.0.0-alpha.2",
+  "version": "2.0.0-alpha.3",
   "description": "CAL Finance Bundle Provider",
   "author": "Atomic Finance <info@atomic.finance>",
   "homepage": "",
@@ -18,10 +18,10 @@
     "lint:fix": "../../node_modules/.bin/eslint --fix --ignore-path ../../.eslintignore  -c ../../.eslintrc.js ."
   },
   "dependencies": {
-    "@atomicfinance/bitcoin-cfd-provider": "^2.0.0-alpha.2",
-    "@atomicfinance/bitcoin-dlc-provider": "^2.0.0-alpha.2",
-    "@atomicfinance/bitcoin-wallet-provider": "^2.0.0-alpha.2",
-    "@atomicfinance/client": "^2.0.0-alpha.2",
+    "@atomicfinance/bitcoin-cfd-provider": "^2.0.0-alpha.3",
+    "@atomicfinance/bitcoin-dlc-provider": "^2.0.0-alpha.3",
+    "@atomicfinance/bitcoin-wallet-provider": "^2.0.0-alpha.3",
+    "@atomicfinance/client": "^2.0.0-alpha.3",
     "lodash": "^4.17.20"
   },
   "devDependencies": {
