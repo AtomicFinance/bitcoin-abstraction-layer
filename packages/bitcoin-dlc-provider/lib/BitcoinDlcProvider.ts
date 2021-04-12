@@ -65,7 +65,7 @@ import {
   FundingSignaturesV0,
   OracleAttestationV0,
 } from '@node-dlc/messaging';
-import { Tx, Sequence, Script } from '@node-dlc/bitcoin';
+import { Tx, Sequence, Script } from '@node-lightning/bitcoin';
 import { StreamReader } from '@node-lightning/bufio';
 import { sha256, hash160, xor } from '@node-lightning/crypto';
 import { address, Psbt, payments, ECPairInterface } from 'bitcoinjs-lib';
@@ -354,14 +354,14 @@ export default class BitcoinDlcProvider extends Provider {
     const dlcTxs = await this.CreateDlcTransactions(dlcTxRequest);
 
     const dlcTransactions = new DlcTransactionsV0();
-    dlcTransactions.fundTx = Tx.parse(StreamReader.fromHex(dlcTxs.fundTxHex));
+    dlcTransactions.fundTx = Tx.decode(StreamReader.fromHex(dlcTxs.fundTxHex));
     dlcTransactions.fundTxOutAmount =
       dlcTransactions.fundTx.outputs[0].value.sats;
-    dlcTransactions.refundTx = Tx.parse(
+    dlcTransactions.refundTx = Tx.decode(
       StreamReader.fromHex(dlcTxs.refundTxHex),
     );
     dlcTransactions.cets = dlcTxs.cetsHex.map((cetHex) => {
-      return Tx.parse(StreamReader.fromHex(cetHex));
+      return Tx.decode(StreamReader.fromHex(cetHex));
     });
 
     return { dlcTransactions, messagesList };
@@ -757,7 +757,7 @@ export default class BitcoinDlcProvider extends Provider {
       },
     );
 
-    const fundTx = Tx.parse(StreamReader.fromHex(fundTxHex));
+    const fundTx = Tx.decode(StreamReader.fromHex(fundTxHex));
 
     return fundTx;
   }
@@ -935,7 +935,7 @@ export default class BitcoinDlcProvider extends Provider {
 
     const finalCet = (await this.SignCet(signCetRequest)).hex;
 
-    return Tx.parse(StreamReader.fromHex(finalCet));
+    return Tx.decode(StreamReader.fromHex(finalCet));
   }
 
   private async GetFundAddress(
@@ -1436,7 +1436,7 @@ export default class BitcoinDlcProvider extends Provider {
       await this.AddSignaturesToRefundTx(addSigsToRefundTxRequest)
     ).hex;
 
-    return Tx.parse(StreamReader.fromHex(refundHex));
+    return Tx.decode(StreamReader.fromHex(refundHex));
   }
 
   /**
@@ -1680,7 +1680,7 @@ export default class BitcoinDlcProvider extends Provider {
     fundingInput.prevTxVout = input.vout;
 
     const txRaw = await this.getMethod('getRawTransactionByHash')(input.txid);
-    const tx = Tx.parse(StreamReader.fromHex(txRaw));
+    const tx = Tx.decode(StreamReader.fromHex(txRaw));
 
     fundingInput.prevTx = tx;
     fundingInput.sequence = Sequence.default();

@@ -42,7 +42,7 @@ import {
   OracleAttestationV0,
 } from '@node-dlc/messaging';
 import { Psbt } from 'bitcoinjs-lib';
-import { Tx } from '@node-dlc/bitcoin';
+import { Tx } from '@node-lightning/bitcoin';
 
 export default class Dlc {
   client: Client;
