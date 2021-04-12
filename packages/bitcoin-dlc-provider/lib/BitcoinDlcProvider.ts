@@ -1187,6 +1187,9 @@ export default class BitcoinDlcProvider extends Provider {
       fixedInputs,
     );
 
+    if (Buffer.compare(dlcOffer.fundingPubKey, fundingPubKey) === 0)
+      throw Error('DlcOffer and DlcAccept FundingPubKey cannot be the same');
+
     _fundingInputs.forEach((input) => {
       if (input.type !== MessageType.FundingInputV0)
         throw Error('FundingInput must be V0');
@@ -1253,6 +1256,8 @@ export default class BitcoinDlcProvider extends Provider {
       _dlcOffer,
       _dlcAccept,
     });
+    if (Buffer.compare(dlcOffer.fundingPubKey, dlcAccept.fundingPubKey) === 0)
+      throw Error('DlcOffer and DlcAccept FundingPubKey cannot be the same');
 
     const dlcSign = new DlcSignV0();
 
