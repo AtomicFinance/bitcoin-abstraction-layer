@@ -411,7 +411,7 @@ export default class BitcoinDlcProvider extends Provider {
     _dlcAccept: DlcAccept,
     _dlcTxs: DlcTransactions,
     messagesList: Messages[],
-    isLocalParty: boolean,
+    isOfferer: boolean,
   ): Promise<CreateCetAdaptorAndRefundSigsResponse> {
     const { dlcOffer, dlcAccept, dlcTxs } = checkTypes({
       _dlcOffer,
@@ -423,7 +423,7 @@ export default class BitcoinDlcProvider extends Provider {
     const cetsHex = dlcTxs.cets.map((cet) => cet.serialize().toString('hex'));
 
     const fundingSPK = Script.p2wpkhLock(
-      hash160(isLocalParty ? dlcOffer.fundingPubKey : dlcAccept.fundingPubKey),
+      hash160(isOfferer ? dlcOffer.fundingPubKey : dlcAccept.fundingPubKey),
     )
       .serialize()
       .slice(1);
@@ -516,7 +516,7 @@ export default class BitcoinDlcProvider extends Provider {
     _dlcSign: DlcSign,
     _dlcTxs: DlcTransactions,
     messagesList: Messages[],
-    isLocalParty: boolean,
+    isOfferer: boolean,
   ): Promise<void> {
     const { dlcOffer, dlcAccept, dlcSign, dlcTxs } = checkTypes({
       _dlcOffer,
@@ -538,7 +538,7 @@ export default class BitcoinDlcProvider extends Provider {
     for (let i = 0, j = messagesList.length; i < j; i += chunk) {
       const tempMessagesList = messagesList.slice(i, i + chunk);
       const tempCetsHex = cetsHex.slice(i, i + chunk);
-      const tempSigs = isLocalParty
+      const tempSigs = isOfferer
         ? dlcAccept.cetSignatures.sigs.slice(i, i + chunk)
         : dlcSign.cetSignatures.sigs.slice(i, i + chunk);
       const tempAdaptorPairs = tempSigs.map((sig) => {
@@ -560,7 +560,7 @@ export default class BitcoinDlcProvider extends Provider {
         remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
         fundTxId: dlcTxs.fundTx.txId.toString(),
         fundInputAmount: dlcTxs.fundTxOutAmount,
-        verifyRemote: isLocalParty,
+        verifyRemote: isOfferer,
       };
 
       sigsValidity.push(
@@ -577,14 +577,14 @@ export default class BitcoinDlcProvider extends Provider {
 
     const verifyRefundSigRequest: VerifyRefundTxSignatureRequest = {
       refundTxHex: dlcTxs.refundTx.serialize().toString('hex'),
-      signature: isLocalParty
+      signature: isOfferer
         ? dlcAccept.refundSignature.toString('hex')
         : dlcSign.refundSignature.toString('hex'),
       localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
       remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
       fundTxId: dlcTxs.fundTx.txId.toString(),
       fundInputAmount: dlcTxs.fundTxOutAmount,
-      verifyRemote: isLocalParty,
+      verifyRemote: isOfferer,
     };
 
     areSigsValid =
@@ -600,7 +600,7 @@ export default class BitcoinDlcProvider extends Provider {
     _dlcOffer: DlcOffer,
     _dlcAccept: DlcAccept,
     _dlcTxs: DlcTransactions,
-    isLocalParty: boolean,
+    isOfferer: boolean,
   ): Promise<FundingSignaturesV0> {
     const { dlcOffer, dlcAccept, dlcTxs } = checkTypes({
       _dlcOffer,
@@ -608,7 +608,7 @@ export default class BitcoinDlcProvider extends Provider {
       _dlcTxs,
     });
 
-    const fundingInputs = isLocalParty
+    const fundingInputs = isOfferer
       ? dlcOffer.fundingInputs
       : dlcAccept.fundingInputs;
 
@@ -666,7 +666,7 @@ export default class BitcoinDlcProvider extends Provider {
     _dlcAccept: DlcAccept,
     _dlcSign: DlcSign,
     _dlcTxs: DlcTransactions,
-    isLocalParty: boolean,
+    isOfferer: boolean,
   ): Promise<void> {
     const { dlcOffer, dlcAccept, dlcSign, dlcTxs } = checkTypes({
       _dlcOffer,
@@ -681,7 +681,7 @@ export default class BitcoinDlcProvider extends Provider {
       const signature = witnessElement[0].witness.toString('hex');
       const pubkey = witnessElement[1].witness.toString('hex');
 
-      const fundingInput = isLocalParty
+      const fundingInput = isOfferer
         ? (dlcAccept.fundingInputs[i] as FundingInputV0)
         : (dlcOffer.fundingInputs[i] as FundingInputV0);
 
@@ -891,7 +891,7 @@ export default class BitcoinDlcProvider extends Provider {
     _dlcSign: DlcSign,
     _dlcTxs: DlcTransactions,
     oracleAttestation: OracleAttestationV0,
-    isLocalParty: boolean,
+    isOfferer: boolean,
   ): Promise<Tx> {
     const { dlcOffer, dlcAccept, dlcSign, dlcTxs } = checkTypes({
       _dlcOffer,
@@ -908,7 +908,7 @@ export default class BitcoinDlcProvider extends Provider {
     const fundPrivateKey = await this.GetFundPrivateKey(
       dlcOffer,
       dlcAccept,
-      isLocalParty,
+      isOfferer,
     );
 
     const sliceIndex = -(oracleAttestation.signatures.length - groupLength);
@@ -926,7 +926,7 @@ export default class BitcoinDlcProvider extends Provider {
       remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
       oracleSignatures: oracleSignatures.map((sig) => sig.toString('hex')),
       fundInputAmount: dlcTxs.fundTxOutAmount,
-      adaptorSignature: isLocalParty
+      adaptorSignature: isOfferer
         ? dlcAccept.cetSignatures.sigs[outcomeIndex].encryptedSig.toString(
             'hex',
           )
@@ -941,12 +941,12 @@ export default class BitcoinDlcProvider extends Provider {
   private async GetFundAddress(
     dlcOffer: DlcOfferV0,
     dlcAccept: DlcAcceptV0,
-    isLocalParty: boolean,
+    isOfferer: boolean,
   ): Promise<string> {
     const network = await this.getConnectedNetwork();
 
     const fundingSPK = Script.p2wpkhLock(
-      hash160(isLocalParty ? dlcOffer.fundingPubKey : dlcAccept.fundingPubKey),
+      hash160(isOfferer ? dlcOffer.fundingPubKey : dlcAccept.fundingPubKey),
     )
       .serialize()
       .slice(1);
@@ -962,12 +962,12 @@ export default class BitcoinDlcProvider extends Provider {
   private async GetFundKeyPair(
     dlcOffer: DlcOfferV0,
     dlcAccept: DlcAcceptV0,
-    isLocalParty: boolean,
+    isOfferer: boolean,
   ): Promise<ECPairInterface> {
     const fundingAddress = await this.GetFundAddress(
       dlcOffer,
       dlcAccept,
-      isLocalParty,
+      isOfferer,
     );
 
     const { derivationPath } = await this.client.getMethod('getWalletAddress')(
@@ -983,12 +983,12 @@ export default class BitcoinDlcProvider extends Provider {
   private async GetFundPrivateKey(
     dlcOffer: DlcOfferV0,
     dlcAccept: DlcAcceptV0,
-    isLocalParty: boolean,
+    isOfferer: boolean,
   ): Promise<string> {
     const fundPrivateKeyPair: ECPairInterface = await this.GetFundKeyPair(
       dlcOffer,
       dlcAccept,
-      isLocalParty,
+      isOfferer,
     );
 
     return Buffer.from(fundPrivateKeyPair.privateKey).toString('hex');
@@ -999,7 +999,7 @@ export default class BitcoinDlcProvider extends Provider {
     dlcAccept: DlcAcceptV0,
     dlcTxs: DlcTransactionsV0,
     initiatorPayoutSatoshis: bigint,
-    isLocalParty: boolean,
+    isOfferer: boolean,
     inputs?: Input[],
   ): Promise<Psbt> {
     const network = await this.getConnectedNetwork();
@@ -1072,13 +1072,13 @@ export default class BitcoinDlcProvider extends Provider {
       inputs.reduce((acc, val) => acc + val.value, 0),
     );
 
-    const offerPayoutValue: bigint = isLocalParty
+    const offerPayoutValue: bigint = isOfferer
       ? closeInputAmount +
         initiatorPayoutSatoshis -
         finalizer.offerInitiatorFees
       : dlcOffer.contractInfo.totalCollateral - initiatorPayoutSatoshis;
 
-    const acceptPayoutValue: bigint = isLocalParty
+    const acceptPayoutValue: bigint = isOfferer
       ? dlcOffer.contractInfo.totalCollateral - initiatorPayoutSatoshis
       : closeInputAmount +
         initiatorPayoutSatoshis -
@@ -1095,6 +1095,49 @@ export default class BitcoinDlcProvider extends Provider {
     });
 
     return psbt;
+  }
+
+  /**
+   * Check whether wallet is offerer of DlcOffer or DlcAccept
+   * @param dlcOffer Dlc Offer Message
+   * @param dlcAccept Dlc Accept Message
+   * @returns {Promise<boolean>}
+   */
+  async isOfferer(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+  ): Promise<boolean> {
+    const { dlcOffer, dlcAccept } = checkTypes({
+      _dlcOffer,
+      _dlcAccept,
+    });
+    const network = await this.getConnectedNetwork();
+
+    const offerFundingSPK = Script.p2wpkhLock(hash160(dlcOffer.fundingPubKey))
+      .serialize()
+      .slice(1);
+    const acceptFundingSPK = Script.p2wpkhLock(hash160(dlcAccept.fundingPubKey))
+      .serialize()
+      .slice(1);
+
+    const offerFundingAddress: string = address.fromOutputScript(
+      offerFundingSPK,
+      network,
+    );
+
+    const acceptFundingAddress: string = address.fromOutputScript(
+      acceptFundingSPK,
+      network,
+    );
+
+    let walletAddress: Address = await this.getMethod('findAddress')([
+      offerFundingAddress,
+    ]);
+    if (walletAddress) return true;
+    walletAddress = await this.getMethod('findAddress')([acceptFundingAddress]);
+    if (walletAddress) return false;
+
+    throw Error('Wallet Address not found for DlcOffer or DlcAccept');
   }
 
   /**
@@ -1369,7 +1412,7 @@ export default class BitcoinDlcProvider extends Provider {
    * @param _dlcSign Dlc Sign Message
    * @param _dlcTxs Dlc Transactions Message
    * @param oracleAttestation Oracle Attestations TLV (V0)
-   * @param isLocalParty Whether party is Dlc Offerer
+   * @param isOfferer Whether party is Dlc Offerer
    * @returns {Promise<Tx>}
    */
   async execute(
@@ -1378,7 +1421,7 @@ export default class BitcoinDlcProvider extends Provider {
     _dlcSign: DlcSign,
     _dlcTxs: DlcTransactions,
     oracleAttestation: OracleAttestationV0,
-    isLocalParty: boolean,
+    isOfferer: boolean,
   ): Promise<Tx> {
     const { dlcOffer, dlcAccept, dlcSign, dlcTxs } = checkTypes({
       _dlcOffer,
@@ -1393,7 +1436,7 @@ export default class BitcoinDlcProvider extends Provider {
       dlcSign,
       dlcTxs,
       oracleAttestation,
-      isLocalParty,
+      isOfferer,
     );
   }
 
@@ -1452,7 +1495,7 @@ export default class BitcoinDlcProvider extends Provider {
    * @param _dlcAccept DlcAccept TLV (V0)
    * @param _dlcTxs DlcTransactions TLV (V0)
    * @param initiatorPayoutSatoshis Amount initiator expects as a payout
-   * @param isLocalParty Whether offerer or not
+   * @param isOfferer Whether offerer or not
    * @param _psbt Partially Signed Bitcoin Transaction
    * @param _inputs Optionally specified closing inputs
    * @returns {Promise<Psbt>}
@@ -1462,7 +1505,7 @@ export default class BitcoinDlcProvider extends Provider {
     _dlcAccept: DlcAccept,
     _dlcTxs: DlcTransactions,
     initiatorPayoutSatoshis: bigint,
-    isLocalParty: boolean,
+    isOfferer: boolean,
     _psbt?: Psbt,
     _inputs?: Input[],
   ): Promise<Psbt> {
@@ -1475,7 +1518,7 @@ export default class BitcoinDlcProvider extends Provider {
     const fundPrivateKeyPair = await this.GetFundKeyPair(
       dlcOffer,
       dlcAccept,
-      isLocalParty,
+      isOfferer,
     );
 
     let psbt: Psbt;
@@ -1502,7 +1545,7 @@ export default class BitcoinDlcProvider extends Provider {
         dlcAccept,
         dlcTxs,
         initiatorPayoutSatoshis,
-        isLocalParty,
+        isOfferer,
         inputs,
       );
 

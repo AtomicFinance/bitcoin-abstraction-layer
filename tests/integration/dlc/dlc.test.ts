@@ -45,6 +45,7 @@ const chain = chains.bitcoinWithJs;
 const alice = chain.client;
 
 const bob = chains.bitcoinWithJs2.client;
+const carol = chains.bitcoinWithJs3.client;
 
 describe('dlc provider', () => {
   const numDigits = 17;
@@ -55,6 +56,7 @@ describe('dlc provider', () => {
   let dlcTransactions: DlcTransactions;
   let oracleAttestation: OracleAttestationV0;
   let aliceAddresses: string[] = [];
+  let oracle: Oracle;
 
   before(async () => {
     const aliceNonChangeAddresses: string[] = (
@@ -81,7 +83,7 @@ describe('dlc provider', () => {
     const aliceInput = await getInput(alice);
     const bobInput = await getInput(bob);
 
-    const oracle = new Oracle('olivia', numDigits);
+    oracle = new Oracle('olivia', numDigits);
 
     const { contractInfo, totalCollateral } = generateContractInfo(
       oracle,
@@ -112,194 +114,187 @@ describe('dlc provider', () => {
     dlcAccept = acceptDlcOfferResponse.dlcAccept;
     dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
     console.timeEnd('accept-time');
-
-    console.time('sign-time');
-    const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.finance.dlc.signDlcAccept(
-      dlcOffer,
-      dlcAccept,
-    );
-    dlcSign = signDlcAcceptResponse.dlcSign;
-    console.timeEnd('sign-time');
-
-    const fundTx = await bob.finance.dlc.finalizeDlcSign(
-      dlcOffer,
-      dlcAccept,
-      dlcSign,
-      dlcTransactions,
-    );
-    const fundTxId = await bob.chain.sendRawTransaction(
-      fundTx.serialize().toString('hex'),
-    );
-
-    const outcome = 3000;
-    oracleAttestation = generateOracleAttestation(
-      outcome,
-      oracle,
-      oracleBase,
-      numDigits,
-    );
   });
 
-  it('execute', async () => {
-    const cet = await bob.finance.dlc.execute(
-      dlcOffer,
-      dlcAccept,
-      dlcSign,
-      dlcTransactions,
-      oracleAttestation,
-      false,
-    );
-    const cetTxId = await bob.chain.sendRawTransaction(
-      cet.serialize().toString('hex'),
-    );
-    const cetTx = await alice.getMethod('getTransactionByHash')(cetTxId);
-    expect(cetTx._raw.vin.length).to.equal(1);
-  });
+  describe('actions', () => {
+    beforeEach(async () => {
+      console.time('sign-time');
+      const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.finance.dlc.signDlcAccept(
+        dlcOffer,
+        dlcAccept,
+      );
+      dlcSign = signDlcAcceptResponse.dlcSign;
+      console.timeEnd('sign-time');
 
-  it('refund', async () => {
-    const refund = await bob.finance.dlc.refund(
-      dlcOffer,
-      dlcAccept,
-      dlcSign,
-      dlcTransactions,
-    );
-    const refundTxId = await bob.chain.sendRawTransaction(
-      refund.serialize().toString('hex'),
-    );
-    const refundTx = await alice.getMethod('getTransactionByHash')(refundTxId);
-    expect(refundTx._raw.vout.length).to.equal(2);
-    expect(refundTx._raw.vin.length).to.equal(1);
-  });
+      const fundTx = await bob.finance.dlc.finalizeDlcSign(
+        dlcOffer,
+        dlcAccept,
+        dlcSign,
+        dlcTransactions,
+      );
+      const fundTxId = await bob.chain.sendRawTransaction(
+        fundTx.serialize().toString('hex'),
+      );
 
-  it('close', async () => {
-    const alicePsbt: Psbt = await alice.finance.dlc.close(
-      dlcOffer,
-      dlcAccept,
-      dlcTransactions,
-      10000n,
-      true,
-    );
-
-    const bobPsbt: Psbt = await bob.finance.dlc.close(
-      dlcOffer,
-      dlcAccept,
-      dlcTransactions,
-      10000n,
-      false,
-      alicePsbt,
-    );
-
-    const closeTxId = await bob.chain.sendRawTransaction(
-      bobPsbt.extractTransaction().toHex(),
-    );
-    const closeTx = await alice.getMethod('getTransactionByHash')(closeTxId);
-    expect(closeTx._raw.vin.length).to.equal(2);
-  });
-
-  it('compute payouts', async () => {
-    const numDigits = 17;
-    const oracleBase = 2;
-
-    const { payoutFunction, totalCollateral } = CoveredCall.buildPayoutFunction(
-      4000n,
-      1000000n,
-      oracleBase,
-      numDigits,
-    );
-
-    const intervals = [{ beginInterval: 0n, roundingMod: 500n }];
-    const roundingIntervals = new RoundingIntervalsV0();
-    roundingIntervals.intervals = intervals;
-
-    const payouts = CoveredCall.computePayouts(
-      payoutFunction,
-      totalCollateral,
-      roundingIntervals,
-    );
-
-    const groups = [];
-    payouts.forEach((p) => {
-      groups.push({
-        payout: p.payout,
-        groups: groupByIgnoringDigits(
-          p.indexFrom,
-          p.indexTo,
-          oracleBase,
-          numDigits,
-        ),
-      });
+      const outcome = 3000;
+      oracleAttestation = generateOracleAttestation(
+        outcome,
+        oracle,
+        oracleBase,
+        numDigits,
+      );
     });
 
-    console.log('groups', groups);
-    console.log(
-      `# of CETS: ${groups.reduce(
-        (acc, group) => acc + group.groups.length,
-        0,
-      )}`,
-    );
+    it('execute', async () => {
+      const cet = await bob.finance.dlc.execute(
+        dlcOffer,
+        dlcAccept,
+        dlcSign,
+        dlcTransactions,
+        oracleAttestation,
+        false,
+      );
+      const cetTxId = await bob.chain.sendRawTransaction(
+        cet.serialize().toString('hex'),
+      );
+      const cetTx = await alice.getMethod('getTransactionByHash')(cetTxId);
+      expect(cetTx._raw.vin.length).to.equal(1);
+    });
+
+    it('refund', async () => {
+      const refund = await bob.finance.dlc.refund(
+        dlcOffer,
+        dlcAccept,
+        dlcSign,
+        dlcTransactions,
+      );
+      const refundTxId = await bob.chain.sendRawTransaction(
+        refund.serialize().toString('hex'),
+      );
+      const refundTx = await alice.getMethod('getTransactionByHash')(
+        refundTxId,
+      );
+      expect(refundTx._raw.vout.length).to.equal(2);
+      expect(refundTx._raw.vin.length).to.equal(1);
+    });
+
+    it('close', async () => {
+      const alicePsbt: Psbt = await alice.finance.dlc.close(
+        dlcOffer,
+        dlcAccept,
+        dlcTransactions,
+        10000n,
+        true,
+      );
+
+      const bobPsbt: Psbt = await bob.finance.dlc.close(
+        dlcOffer,
+        dlcAccept,
+        dlcTransactions,
+        10000n,
+        false,
+        alicePsbt,
+      );
+
+      const closeTxId = await bob.chain.sendRawTransaction(
+        bobPsbt.extractTransaction().toHex(),
+      );
+      const closeTx = await alice.getMethod('getTransactionByHash')(closeTxId);
+      expect(closeTx._raw.vin.length).to.equal(2);
+    });
+
+    it('compute payouts', async () => {
+      const numDigits = 17;
+      const oracleBase = 2;
+
+      const {
+        payoutFunction,
+        totalCollateral,
+      } = CoveredCall.buildPayoutFunction(
+        4000n,
+        1000000n,
+        oracleBase,
+        numDigits,
+      );
+
+      const intervals = [{ beginInterval: 0n, roundingMod: 500n }];
+      const roundingIntervals = new RoundingIntervalsV0();
+      roundingIntervals.intervals = intervals;
+
+      const payouts = CoveredCall.computePayouts(
+        payoutFunction,
+        totalCollateral,
+        roundingIntervals,
+      );
+
+      const groups = [];
+      payouts.forEach((p) => {
+        groups.push({
+          payout: p.payout,
+          groups: groupByIgnoringDigits(
+            p.indexFrom,
+            p.indexTo,
+            oracleBase,
+            numDigits,
+          ),
+        });
+      });
+
+      console.log('groups', groups);
+      console.log(
+        `# of CETS: ${groups.reduce(
+          (acc, group) => acc + group.groups.length,
+          0,
+        )}`,
+      );
+    });
+
+    it('serializes and deserializes all messages', async () => {
+      const newDlcOffer = DlcOffer.deserialize(dlcOffer.serialize());
+      const newDlcAccept = DlcAccept.deserialize(dlcAccept.serialize());
+      const newDlcSign = DlcSign.deserialize(dlcSign.serialize());
+
+      const dlcOfferV0 = dlcOffer as DlcOfferV0;
+      const dlcAcceptV0 = dlcAccept as DlcAcceptV0;
+      const dlcSignV0 = dlcSign as DlcSignV0;
+
+      expect(newDlcOffer.chainHash).to.deep.equal(dlcOfferV0.chainHash);
+      expect(newDlcOffer.fundingPubKey).to.deep.equal(dlcOfferV0.fundingPubKey);
+      expect(newDlcAccept.fundingPubKey).to.deep.equal(
+        dlcAcceptV0.fundingPubKey,
+      );
+      expect(newDlcSign.refundSignature).to.deep.equal(
+        dlcSignV0.refundSignature,
+      );
+    });
   });
 
-  it('serializes and deserializes all messages', async () => {
-    const newDlcOffer = DlcOffer.deserialize(dlcOffer.serialize());
-    const newDlcAccept = DlcAccept.deserialize(dlcAccept.serialize());
-    const newDlcSign = DlcSign.deserialize(dlcSign.serialize());
+  describe('validation', () => {
+    it('throws if dlcoffer fundingpubkey equal to dlcaccept fundingpubkey', async () => {
+      const _dlcAccept = dlcAccept as DlcAcceptV0;
+      const _dlcOffer = dlcOffer as DlcOfferV0;
 
-    const dlcOfferV0 = dlcOffer as DlcOfferV0;
-    const dlcAcceptV0 = dlcAccept as DlcAcceptV0;
-    const dlcSignV0 = dlcSign as DlcSignV0;
+      _dlcAccept.fundingPubKey = _dlcOffer.fundingPubKey;
 
-    expect(newDlcOffer.chainHash).to.deep.equal(dlcOfferV0.chainHash);
-    expect(newDlcOffer.fundingPubKey).to.deep.equal(dlcOfferV0.fundingPubKey);
-    expect(newDlcAccept.fundingPubKey).to.deep.equal(dlcAcceptV0.fundingPubKey);
-    expect(newDlcSign.refundSignature).to.deep.equal(dlcSignV0.refundSignature);
+      expect(
+        alice.finance.dlc.signDlcAccept(_dlcOffer, _dlcAccept),
+      ).to.be.eventually.rejectedWith(Error);
+    });
   });
-});
 
-describe('validation', () => {
-  it('throws if dlcoffer fundingpubkey equal to dlcaccept fundingpubkey', async () => {
-    const numDigits = 18;
-    const oracleBase = 2;
-
-    console.time('offer-get-time');
-    const aliceInput = await getInput(alice);
-
-    const oracle = new Oracle('olivia', numDigits);
-
-    const { contractInfo, totalCollateral } = generateContractInfo(
-      oracle,
-      numDigits,
-      oracleBase,
-    );
-
-    const feeRatePerVb = BigInt(10);
-    const cetLocktime = 1617170572;
-    const refundLocktime = 1617170572;
-
-    const _dlcOffer = await alice.finance.dlc.createDlcOffer(
-      contractInfo,
-      totalCollateral - BigInt(2000),
-      feeRatePerVb,
-      cetLocktime,
-      refundLocktime,
-      [aliceInput],
-    );
-    const dlcOffer = _dlcOffer as DlcOfferV0;
-    console.timeEnd('offer-get-time');
-
-    console.time('accept-time');
-    const acceptDlcOfferResponse: AcceptDlcOfferResponse = await alice.finance.dlc.acceptDlcOffer(
-      dlcOffer,
-      [aliceInput],
-    );
-    const dlcAccept = acceptDlcOfferResponse.dlcAccept as DlcAcceptV0;
-    const dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
-    console.timeEnd('accept-time');
-
-    dlcAccept.fundingPubKey = dlcOffer.fundingPubKey;
-
-    expect(
-      alice.finance.dlc.signDlcAccept(dlcOffer, dlcAccept),
-    ).to.be.eventually.rejectedWith(Error);
+  describe('isOfferer', () => {
+    it('should determine if party is offerer', async () => {
+      const aliceIsOfferer = await alice.finance.dlc.isOfferer(
+        dlcOffer,
+        dlcAccept,
+      );
+      const bobIsOfferer = await bob.finance.dlc.isOfferer(dlcOffer, dlcAccept);
+      expect(aliceIsOfferer).to.equal(true);
+      expect(bobIsOfferer).to.equal(false);
+      expect(
+        carol.finance.dlc.isOfferer(dlcOffer, dlcAccept),
+      ).to.be.eventually.rejectedWith(Error);
+    });
   });
 });
 
@@ -378,7 +373,6 @@ describe('external test vectors', () => {
       refundLocktime,
       [aliceInput],
     );
-
     console.timeEnd('offer-get-time');
 
     console.time('accept-time');
@@ -386,27 +380,6 @@ describe('external test vectors', () => {
       dlcAccept,
       dlcTransactions,
     } = await bob.finance.dlc.acceptDlcOffer(dlcOffer, [bobInput]);
-    console.time('accept-time-serialize');
-
-    fs.writeFile(
-      'file-output/accept-hex.txt',
-      dlcAccept.serialize().toString('hex'),
-      function (err) {
-        if (err) return console.log(err);
-        console.log('DlcAccept > accept-hex.txt');
-      },
-    );
-
-    fs.writeFile(
-      'file-output/accept-base64.txt',
-      base64.fromByteArray(dlcAccept.serialize()),
-      function (err) {
-        if (err) return console.log(err);
-        console.log('DlcAccept > accept-base64.txt');
-      },
-    );
-
-    console.timeEnd('accept-time-serialize');
     console.timeEnd('accept-time');
 
     console.time('sign-time');
