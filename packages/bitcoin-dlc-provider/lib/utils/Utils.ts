@@ -13,7 +13,7 @@ import {
   DlcTransactionsV0,
   DlcSignV0,
 } from '@node-dlc/messaging';
-import { PayoutRequest, Messages } from '../@types/cfd-dlc-js';
+import { PayoutRequest, Messages } from '../types/cfd-dlc-js';
 
 export async function asyncForEach(array: any, callback: any) {
   for (let index = 0; index < array.length; index++) {

@@ -139,7 +139,7 @@ import {
   VerifySignResponse,
   VerifySignatureRequest,
   VerifySignatureResponse,
-} from './@types/cfd-js';
+} from './types/cfd-js';
 import * as isNode from 'is-node';
 
 export default class BitcoinCfdProvider extends Provider {

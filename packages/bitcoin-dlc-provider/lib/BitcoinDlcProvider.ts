@@ -36,7 +36,7 @@ import {
   AdaptorPair,
   PayoutRequest,
   Messages,
-} from './@types/cfd-dlc-js';
+} from './types/cfd-dlc-js';
 
 import Input from './models/Input';
 import Utxo from './models/Utxo';
@@ -69,7 +69,7 @@ import { Tx, Sequence, Script } from '@node-dlc/bitcoin';
 import { StreamReader } from '@node-lightning/bufio';
 import { sha256, hash160, xor } from '@node-lightning/crypto';
 import { address, Psbt, payments, ECPairInterface } from 'bitcoinjs-lib';
-import { bitcoin, wallet, Address } from './@types/@liquality/types';
+import { bitcoin, wallet, Address } from './types/@liquality/types';
 import { generateSerialId, checkTypes, outputsToPayouts } from './utils/Utils';
 import {
   CoveredCall,
@@ -1222,11 +1222,21 @@ export default class BitcoinDlcProvider extends Provider {
       false,
     );
 
+    if (dlcTransactions.type !== MessageType.DlcTransactionsV0)
+      throw Error('DlcTransactions must be V0');
+    const _dlcTransactions = dlcTransactions as DlcTransactionsV0;
+
+    const contractId = xor(
+      _dlcTransactions.fundTx.txId.serialize(),
+      dlcAccept.tempContractId,
+    );
+    _dlcTransactions.contractId = contractId;
+
     dlcAccept.cetSignatures = cetSignatures;
     dlcAccept.refundSignature = refundSignature;
     dlcAccept.negotiationFields = new NegotiationFieldsV0();
 
-    return { dlcAccept, dlcTransactions };
+    return { dlcAccept, dlcTransactions: _dlcTransactions };
   }
 
   /**
@@ -1285,12 +1295,14 @@ export default class BitcoinDlcProvider extends Provider {
       dlcAccept.tempContractId,
     );
 
+    dlcTxs.contractId = contractId;
+
     dlcSign.contractId = contractId;
     dlcSign.cetSignatures = cetSignatures;
     dlcSign.refundSignature = refundSignature;
     dlcSign.fundingSignatures = fundingSignatures;
 
-    return { dlcSign, dlcTransactions };
+    return { dlcSign, dlcTransactions: dlcTxs };
   }
 
   /**

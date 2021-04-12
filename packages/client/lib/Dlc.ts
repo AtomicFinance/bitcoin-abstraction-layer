@@ -32,7 +32,7 @@ import {
   VerifyFundTxSignatureResponse,
   VerifyRefundTxSignatureRequest,
   VerifyRefundTxSignatureResponse,
-} from './@types/cfd-dlc-js';
+} from './types/cfd-dlc-js';
 import {
   ContractInfo,
   DlcOffer,
@@ -41,7 +41,6 @@ import {
   DlcTransactions,
   OracleAttestationV0,
 } from '@node-dlc/messaging';
-import { Input } from './@types/@atomicfinance/bitcoin-dlc-provider';
 import { Psbt } from 'bitcoinjs-lib';
 import { Tx } from '@node-dlc/bitcoin';
 
@@ -67,7 +66,7 @@ export default class Dlc {
     feeRatePerVb: bigint,
     cetLocktime: number,
     refundLocktime: number,
-    fixedInputs?: Input[],
+    fixedInputs?: IInput[],
   ): Promise<DlcOffer> {
     return this.client.getMethod('createDlcOffer')(
       contractInfo,
@@ -87,7 +86,7 @@ export default class Dlc {
    */
   async acceptDlcOffer(
     dlcOffer: DlcOffer,
-    fixedInputs?: Input[],
+    fixedInputs?: IInput[],
   ): Promise<AcceptDlcOfferResponse> {
     return this.client.getMethod('acceptDlcOffer')(dlcOffer, fixedInputs);
   }
@@ -197,7 +196,7 @@ export default class Dlc {
     initiatorPayoutSatoshis: bigint,
     isLocalParty: boolean,
     psbt?: Psbt,
-    inputs?: Input[],
+    inputs?: IInput[],
   ): Promise<Psbt> {
     return this.client.getMethod('close')(
       dlcOffer,
@@ -311,4 +310,23 @@ export interface AcceptDlcOfferResponse {
 export interface SignDlcAcceptResponse {
   dlcSign: DlcSign;
   dlcTransactions: DlcTransactions;
+}
+
+export interface IInput {
+  txid: string;
+  vout: number;
+  address: string;
+  amount: number; // in BTC
+  value: number; // in sats
+  satoshis: number; // in sats
+  derivationPath?: string;
+  maxWitnessLength?: number;
+  redeemScript?: string;
+  inputSerialId?: bigint;
+  scriptPubKey?: string;
+  label?: string;
+  confirmations?: number;
+  spendable?: boolean;
+  solvable?: boolean;
+  safe?: boolean;
 }
