@@ -22,7 +22,7 @@ export default class BitcoinWalletProvider extends Provider {
     super('BitcoinWalletProvider');
 
     this._network = network;
-    this._unusedAddressesBlacklist = [];
+    this._unusedAddressesBlacklist = {};
   }
 
   async buildSweepTransactionWithSetOutputs(
