@@ -80,6 +80,7 @@ import {
 import { asyncForEach } from './utils/Utils';
 import { HyperbolaPayoutCurve } from '@node-dlc/core';
 import { BitcoinNetwork } from '@atomicfinance/bitcoin-networks';
+import BigNumber from 'bignumber.js';
 
 const ESTIMATED_SIZE = 312;
 
