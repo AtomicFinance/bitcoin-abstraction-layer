@@ -774,7 +774,14 @@ export default class BitcoinDlcProvider extends Provider {
     const hyperbolaCurve = HyperbolaPayoutCurve.fromPayoutCurvePiece(
       hyperbolaPayoutCurvePiece,
     );
-    const payout = hyperbolaCurve.getPayout(outcome);
+
+    const clampBN = (val: BigNumber) =>
+      BigNumber.max(
+        0,
+        BigNumber.min(val, dlcOffer.contractInfo.totalCollateral.toString()),
+      );
+
+    const payout = clampBN(hyperbolaCurve.getPayout(outcome));
 
     const { payoutGroups } = this.GetPayouts(dlcOffer);
 
@@ -786,7 +793,7 @@ export default class BitcoinDlcProvider extends Provider {
       (interval) => payout.toNumber() > Number(interval.beginInterval),
     );
 
-    let roundedPayout = await roundPayout(payout, interval.roundingMod);
+    const roundedPayout = roundPayout(payout, interval.roundingMod);
 
     const outcomesFormatted = oracleAttestation.outcomes.map((outcome) =>
       parseInt(outcome),
