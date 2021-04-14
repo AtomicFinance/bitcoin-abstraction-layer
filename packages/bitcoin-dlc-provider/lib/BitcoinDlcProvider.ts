@@ -794,15 +794,15 @@ export default class BitcoinDlcProvider extends Provider {
       (interval) => payout.toNumber() > Number(interval.beginInterval),
     );
 
-    const roundedPayout = roundPayout(payout, interval.roundingMod);
+    const roundedPayout = BigInt(
+      clampBN(
+        new BigNumber(roundPayout(payout, interval.roundingMod).toString()),
+      ).toString(),
+    );
 
     const outcomesFormatted = oracleAttestation.outcomes.map((outcome) =>
       parseInt(outcome),
     );
-
-    if (roundedPayout > dlcOffer.contractInfo.totalCollateral) {
-      roundedPayout = dlcOffer.contractInfo.totalCollateral;
-    }
 
     let index = 0;
     let groupIndex = -1;
@@ -812,6 +812,11 @@ export default class BitcoinDlcProvider extends Provider {
         groupIndex = payoutGroup.groups.findIndex((group) => {
           return group.every((msg, i) => msg === outcomesFormatted[i]);
         });
+        if (groupIndex === -1)
+          throw Error(
+            'Failed to Find OutcomeIndex From HyperbolaPayoutCurvePiece. \
+Payout Group found but incorrect group index',
+          );
         index += groupIndex;
         groupLength = payoutGroup.groups[groupIndex].length;
         break;
@@ -820,7 +825,11 @@ export default class BitcoinDlcProvider extends Provider {
       }
     }
 
-    if (groupIndex === -1) throw Error('incorrect group index');
+    if (groupIndex === -1)
+      throw Error(
+        'Failed to Find OutcomeIndex From HyperbolaPayoutCurvePiece. \
+Payout Group not found',
+      );
 
     return { index, groupLength };
   }
