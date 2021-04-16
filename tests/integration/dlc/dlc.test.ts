@@ -341,13 +341,13 @@ describe('external test vectors', () => {
     oracleInfo.announcement = announcement;
 
     const { payoutFunction, totalCollateral } = CoveredCall.buildPayoutFunction(
-      4000n,
-      1000000n,
+      60000n,
+      100000000n,
       oracleBase,
       numDigits,
     );
 
-    const intervals = [{ beginInterval: 0n, roundingMod: 500n }];
+    const intervals = [{ beginInterval: 0n, roundingMod: 50000n }];
     const roundingIntervals = new RoundingIntervalsV0();
     roundingIntervals.intervals = intervals;
 

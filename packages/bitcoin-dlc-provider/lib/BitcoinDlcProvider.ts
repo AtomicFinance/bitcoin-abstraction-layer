@@ -80,6 +80,7 @@ import {
 import { asyncForEach } from './utils/Utils';
 import { HyperbolaPayoutCurve } from '@node-dlc/core';
 import { BitcoinNetwork } from '@atomicfinance/bitcoin-networks';
+import BigNumber from 'bignumber.js';
 
 const ESTIMATED_SIZE = 312;
 
@@ -774,7 +775,14 @@ export default class BitcoinDlcProvider extends Provider {
     const hyperbolaCurve = HyperbolaPayoutCurve.fromPayoutCurvePiece(
       hyperbolaPayoutCurvePiece,
     );
-    const payout = hyperbolaCurve.getPayout(outcome);
+
+    const clampBN = (val: BigNumber) =>
+      BigNumber.max(
+        0,
+        BigNumber.min(val, dlcOffer.contractInfo.totalCollateral.toString()),
+      );
+
+    const payout = clampBN(hyperbolaCurve.getPayout(outcome));
 
     const { payoutGroups } = this.GetPayouts(dlcOffer);
 
@@ -786,15 +794,15 @@ export default class BitcoinDlcProvider extends Provider {
       (interval) => payout.toNumber() > Number(interval.beginInterval),
     );
 
-    let roundedPayout = await roundPayout(payout, interval.roundingMod);
+    const roundedPayout = BigInt(
+      clampBN(
+        new BigNumber(roundPayout(payout, interval.roundingMod).toString()),
+      ).toString(),
+    );
 
     const outcomesFormatted = oracleAttestation.outcomes.map((outcome) =>
       parseInt(outcome),
     );
-
-    if (roundedPayout > dlcOffer.contractInfo.totalCollateral) {
-      roundedPayout = dlcOffer.contractInfo.totalCollateral;
-    }
 
     let index = 0;
     let groupIndex = -1;
@@ -804,6 +812,11 @@ export default class BitcoinDlcProvider extends Provider {
         groupIndex = payoutGroup.groups.findIndex((group) => {
           return group.every((msg, i) => msg === outcomesFormatted[i]);
         });
+        if (groupIndex === -1)
+          throw Error(
+            'Failed to Find OutcomeIndex From HyperbolaPayoutCurvePiece. \
+Payout Group found but incorrect group index',
+          );
         index += groupIndex;
         groupLength = payoutGroup.groups[groupIndex].length;
         break;
@@ -812,7 +825,11 @@ export default class BitcoinDlcProvider extends Provider {
       }
     }
 
-    if (groupIndex === -1) throw Error('incorrect group index');
+    if (groupIndex === -1)
+      throw Error(
+        'Failed to Find OutcomeIndex From HyperbolaPayoutCurvePiece. \
+Payout Group not found',
+      );
 
     return { index, groupLength };
   }
