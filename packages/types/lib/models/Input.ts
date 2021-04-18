@@ -1,5 +1,6 @@
-import { Amount } from '..';
+import Amount from './Amount';
 import Utxo from './Utxo';
+import { bitcoin as bT } from '@liquality/types';
 
 /**
  * Class for interfacing with inputs/utxos in Liquality ChainAbstractionLayer
@@ -22,7 +23,6 @@ export default class Input {
     readonly address: string,
     readonly amount: number, // in BTC
     readonly value: number, // in sats
-    readonly satoshis: number, // in sats
     readonly derivationPath?: string,
     readonly maxWitnessLength?: number,
     readonly redeemScript?: string,
@@ -37,12 +37,10 @@ export default class Input {
 
   toUtxo(): Utxo {
     let amount: Amount;
-    if (this.satoshis) {
-      amount = Amount.FromSatoshis(this.satoshis);
+    if (this.value) {
+      amount = Amount.FromSatoshis(this.value);
     } else if (this.amount) {
       amount = Amount.FromBitcoin(this.amount);
-    } else if (this.value) {
-      amount = Amount.FromBitcoin(this.value);
     }
 
     return {
@@ -54,6 +52,19 @@ export default class Input {
       maxWitnessLength: this.maxWitnessLength ? this.maxWitnessLength : 108,
       toJSON: Utxo.prototype.toJSON,
       toInput: Utxo.prototype.toInput,
+    };
+  }
+
+  static fromUTXO(utxo: bT.UTXO): Input {
+    const amount: Amount = Amount.FromSatoshis(utxo.value);
+
+    return {
+      txid: utxo.txid,
+      vout: utxo.vout,
+      address: utxo.address,
+      value: utxo.value,
+      amount: amount.GetBitcoinAmount(),
+      toUtxo: Input.prototype.toUtxo,
     };
   }
 }

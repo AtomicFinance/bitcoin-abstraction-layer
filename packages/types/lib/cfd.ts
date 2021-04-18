@@ -1,5 +1,264 @@
 /* eslint-disable max-len */
 /* eslint-disable indent */
+
+import { TxInRequest, TxOutRequest } from './common';
+
+export interface CfdProvider {
+  AddMultisigSign(
+    jsonObject: AddMultisigSignRequest,
+  ): Promise<AddMultisigSignResponse>;
+
+  AddPubkeyHashSign(
+    jsonObject: AddPubkeyHashSignRequest,
+  ): Promise<AddPubkeyHashSignResponse>;
+
+  AddRawTransaction(
+    jsonObject: AddRawTransactionRequest,
+  ): Promise<AddRawTransactionResponse>;
+
+  AddScriptHashSign(
+    jsonObject: AddScriptHashSignRequest,
+  ): Promise<AddScriptHashSignResponse>;
+
+  AddSign(jsonObject: AddSignRequest): Promise<AddSignResponse>;
+
+  AppendDescriptorChecksum(
+    jsonObject: AppendDescriptorChecksumRequest,
+  ): Promise<AppendDescriptorChecksumResponse>;
+
+  BlindRawTransaction(
+    jsonObject: BlindRawTransactionRequest,
+  ): Promise<BlindRawTransactionResponse>;
+
+  CalculateEcSignature(
+    jsonObject: CalculateEcSignatureRequest,
+  ): Promise<CalculateEcSignatureResponse>;
+
+  ConvertAes(jsonObject: ConvertAesRequest): Promise<ConvertAesResponse>;
+
+  ConvertEntropyToMnemonic(
+    jsonObject: ConvertEntropyToMnemonicRequest,
+  ): Promise<ConvertEntropyToMnemonicResponse>;
+
+  ConvertMnemonicToSeed(
+    jsonObject: ConvertMnemonicToSeedRequest,
+  ): Promise<ConvertMnemonicToSeedResponse>;
+
+  CreateAddress(
+    jsonObject: CreateAddressRequest,
+  ): Promise<CreateAddressResponse>;
+
+  CreateDescriptor(
+    jsonObject: CreateDescriptorRequest,
+  ): Promise<CreateDescriptorResponse>;
+
+  CreateExtkey(jsonObject: CreateExtkeyRequest): Promise<CreateExtkeyResponse>;
+
+  CreateExtkeyFromParent(
+    jsonObject: CreateExtkeyFromParentRequest,
+  ): Promise<CreateExtkeyFromParentResponse>;
+
+  CreateExtkeyFromParentKey(
+    jsonObject: CreateExtkeyFromParentKeyRequest,
+  ): Promise<CreateExtkeyFromParentKeyResponse>;
+
+  CreateExtkeyFromParentPath(
+    jsonObject: CreateExtkeyFromParentPathRequest,
+  ): Promise<CreateExtkeyFromParentPathResponse>;
+
+  CreateExtkeyFromSeed(
+    jsonObject: CreateExtkeyFromSeedRequest,
+  ): Promise<CreateExtkeyFromSeedResponse>;
+
+  CreateExtPubkey(
+    jsonObject: CreateExtPubkeyRequest,
+  ): Promise<CreateExtPubkeyResponse>;
+
+  CreateKeyPair(
+    jsonObject: CreateKeyPairRequest,
+  ): Promise<CreateKeyPairResponse>;
+
+  CreateMultisigScriptSig(
+    jsonObject: CreateMultisigScriptSigRequest,
+  ): Promise<CreateMultisigScriptSigResponse>;
+
+  CreateScript(jsonObject: CreateScriptRequest): Promise<CreateScriptResponse>;
+
+  DecodeBase58(jsonObject: DecodeBase58Request): Promise<DecodeBase58Response>;
+
+  DecodeDerSignatureToRaw(
+    jsonObject: DecodeDerSignatureToRawRequest,
+  ): Promise<DecodeDerSignatureToRawResponse>;
+
+  DecodeRawTransaction(
+    jsonObject: DecodeRawTransactionRequest,
+  ): Promise<DecodeRawTransactionResponse>;
+
+  ElementsAddRawTransaction(
+    jsonObject: ElementsAddRawTransactionRequest,
+  ): Promise<ElementsAddRawTransactionResponse>;
+
+  CreateDestroyAmount(
+    jsonObject: CreateDestroyAmountRequest,
+  ): Promise<CreateDestroyAmountResponse>;
+
+  CreatePegInAddress(
+    jsonObject: CreatePegInAddressRequest,
+  ): Promise<CreatePegInAddressResponse>;
+
+  CreateRawPegin(
+    jsonObject: CreateRawPeginRequest,
+  ): Promise<CreateRawPeginResponse>;
+
+  CreateRawPegout(
+    jsonObject: CreateRawPegoutRequest,
+  ): Promise<CreateRawPegoutResponse>;
+
+  ElementsCreateRawTransaction(
+    jsonObject: ElementsCreateRawTransactionRequest,
+  ): Promise<ElementsCreateRawTransactionResponse>;
+
+  ElementsDecodeRawTransaction(
+    jsonObject: ElementsDecodeRawTransactionRequest,
+  ): Promise<ElementsDecodeRawTransactionResponse>;
+
+  GetConfidentialAddress(
+    jsonObject: GetConfidentialAddressRequest,
+  ): Promise<GetConfidentialAddressResponse>;
+
+  GetUnblindedAddress(
+    jsonObject: GetUnblindedAddressRequest,
+  ): Promise<GetUnblindedAddressResponse>;
+
+  SetRawIssueAsset(
+    jsonObject: SetRawIssueAssetRequest,
+  ): Promise<SetRawIssueAssetResponse>;
+
+  SetRawReissueAsset(
+    jsonObject: SetRawReissueAssetRequest,
+  ): Promise<SetRawReissueAssetResponse>;
+
+  UnblindRawTransaction(
+    jsonObject: UnblindRawTransactionRequest,
+  ): Promise<UnblindRawTransactionResponse>;
+
+  EncodeBase58(jsonObject: EncodeBase58Request): Promise<EncodeBase58Response>;
+
+  EncodeSignatureByDer(
+    jsonObject: EncodeSignatureByDerRequest,
+  ): Promise<EncodeSignatureByDerResponse>;
+
+  EstimateFee(jsonObject: EstimateFeeRequest): Promise<EstimateFeeResponse>;
+
+  FundRawTransaction(
+    jsonObject: FundRawTransactionRequest,
+  ): Promise<FundRawTransactionResponse>;
+
+  GetAddressInfo(
+    jsonObject: GetAddressInfoRequest,
+  ): Promise<GetAddressInfoResponse>;
+
+  GetAddressesFromMultisig(
+    jsonObject: GetAddressesFromMultisigRequest,
+  ): Promise<GetAddressesFromMultisigResponse>;
+
+  GetCommitment(
+    jsonObject: GetCommitmentRequest,
+  ): Promise<GetCommitmentResponse>;
+
+  GetCompressedPubkey(
+    jsonObject: GetCompressedPubkeyRequest,
+  ): Promise<GetCompressedPubkeyResponse>;
+
+  GetDefaultBlindingKey(
+    jsonObject: GetDefaultBlindingKeyRequest,
+  ): Promise<GetDefaultBlindingKeyResponse>;
+
+  GetExtkeyInfo(
+    jsonObject: GetExtkeyInfoRequest,
+  ): Promise<GetExtkeyInfoResponse>;
+
+  GetIssuanceBlindingKey(
+    jsonObject: GetIssuanceBlindingKeyRequest,
+  ): Promise<GetIssuanceBlindingKeyResponse>;
+
+  GetMnemonicWordlist(
+    jsonObject: GetMnemonicWordlistRequest,
+  ): Promise<GetMnemonicWordlistResponse>;
+
+  GetPrivkeyFromExtkey(
+    jsonObject: GetPrivkeyFromExtkeyRequest,
+  ): Promise<GetPrivkeyFromExtkeyResponse>;
+
+  GetPrivkeyFromWif(
+    jsonObject: GetPrivkeyFromWifRequest,
+  ): Promise<GetPrivkeyFromWifResponse>;
+
+  GetPrivkeyWif(
+    jsonObject: GetPrivkeyWifRequest,
+  ): Promise<GetPrivkeyWifResponse>;
+
+  GetPubkeyFromExtkey(
+    jsonObject: GetPubkeyFromExtkeyRequest,
+  ): Promise<GetPubkeyFromExtkeyResponse>;
+
+  GetPubkeyFromPrivkey(
+    jsonObject: GetPubkeyFromPrivkeyRequest,
+  ): Promise<GetPubkeyFromPrivkeyResponse>;
+
+  GetWitnessStackNum(
+    jsonObject: GetWitnessStackNumRequest,
+  ): Promise<GetWitnessStackNumResponse>;
+
+  CreateMultisig(
+    jsonObject: CreateMultisigRequest,
+  ): Promise<CreateMultisigResponse>;
+
+  ParseDescriptor(
+    jsonObject: ParseDescriptorRequest,
+  ): Promise<ParseDescriptorResponse>;
+
+  ParseScript(jsonObject: ParseScriptRequest): Promise<ParseScriptResponse>;
+
+  SelectUtxos(jsonObject: SelectUtxosRequest): Promise<SelectUtxosResponse>;
+
+  SerializeLedgerFormat(
+    jsonObject: SerializeLedgerFormatRequest,
+  ): Promise<SerializeLedgerFormatResponse>;
+
+  CreateSignatureHash(
+    jsonObject: CreateSignatureHashRequest,
+  ): Promise<CreateSignatureHashResponse>;
+
+  CreateElementsSignatureHash(
+    jsonObject: CreateElementsSignatureHashRequest,
+  ): Promise<CreateElementsSignatureHashResponse>;
+
+  SignWithPrivkey(
+    jsonObject: SignWithPrivkeyRequest,
+  ): Promise<SignWithPrivkeyResponse>;
+
+  GetSupportedFunction(): Promise<GetSupportedFunctionResponse>;
+
+  CreateRawTransaction(
+    jsonObject: CreateRawTransactionRequest,
+  ): Promise<CreateRawTransactionResponse>;
+
+  UpdateTxOutAmount(
+    jsonObject: UpdateTxOutAmountRequest,
+  ): Promise<UpdateTxOutAmountResponse>;
+
+  UpdateWitnessStack(
+    jsonObject: UpdateWitnessStackRequest,
+  ): Promise<UpdateWitnessStackResponse>;
+
+  VerifySign(jsonObject: VerifySignRequest): Promise<VerifySignResponse>;
+
+  VerifySignature(
+    jsonObject: VerifySignatureRequest,
+  ): Promise<VerifySignatureResponse>;
+}
+
 /**
  * Multisig signature data.
  * @property {string} hex - signature hex.
@@ -1226,18 +1485,6 @@ export interface EncodeSignatureByDerResponse {
   signature: string;
 }
 
-/** */
-export interface InnerErrorResponse {
-  code: number;
-  type: string;
-  message: string;
-}
-
-/** */
-export interface ErrorResponse {
-  error: InnerErrorResponse;
-}
-
 /** @property {string} scriptSigTemplate? - ScriptSig template is for scriptHash calculation fee. */
 export interface SelectUtxoData {
   txid: string;
@@ -1772,20 +2019,6 @@ export interface SignWithPrivkeyResponse {
 export interface GetSupportedFunctionResponse {
   bitcoin: boolean;
   elements: boolean;
-}
-
-/** */
-export interface TxInRequest {
-  txid: string;
-  vout: number;
-  sequence?: number;
-}
-
-/** */
-export interface TxOutRequest {
-  address: string;
-  amount: bigint | number;
-  directLockingScript?: string;
 }
 
 /** */

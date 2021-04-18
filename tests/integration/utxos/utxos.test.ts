@@ -1,9 +1,9 @@
 import 'mocha';
 import { expect } from 'chai';
 import { chains, fundAddress, getInput } from '../common';
-import Client from '@liquality/client';
-import { bitcoin } from '../../../packages/bitcoin-dlc-provider/lib/types/@liquality/types';
-import Input from '../../../packages/bitcoin-dlc-provider/lib/models/Input';
+import Client from '../../../packages/client';
+import { bitcoin } from '@liquality/types';
+import Input from '../../../packages/types/lib/models/Input';
 import { FundingInputV0 } from '@node-dlc/messaging';
 
 const chain = chains.bitcoinWithJs;
@@ -14,7 +14,6 @@ describe('utxos', () => {
     it('should return input format correctly', async () => {
       const aliceInput = await getInputUsingGetInputsForAmount(alice);
       const input = aliceInput.inputs[0];
-      expect(input.amount * 1e8).to.equal(input.satoshis);
       expect(input.amount * 1e8).to.equal(input.value);
     });
   });
@@ -22,14 +21,14 @@ describe('utxos', () => {
   describe('inputToFundingInput', () => {
     it('should convert between types', async () => {
       const actualInput: Input = await getInput(alice);
-      const actualFundingInput: FundingInputV0 = await alice.finance.getMethod(
+      const actualFundingInput: FundingInputV0 = await alice.getMethod(
         'inputToFundingInput',
       )(actualInput);
 
-      const input: Input = await alice.finance.getMethod('fundingInputToInput')(
+      const input: Input = await alice.getMethod('fundingInputToInput')(
         actualFundingInput,
       );
-      const fundingInput: FundingInputV0 = await alice.finance.getMethod(
+      const fundingInput: FundingInputV0 = await alice.getMethod(
         'inputToFundingInput',
       )(input);
 
@@ -37,7 +36,6 @@ describe('utxos', () => {
       expect(actualInput.vout).to.equal(input.vout);
       expect(actualInput.address).to.equal(input.address);
       expect(actualInput.amount).to.equal(input.amount);
-      expect(actualInput.satoshis).to.equal(input.satoshis);
       expect(actualInput.value).to.equal(input.value);
       expect(actualInput.derivationPath).to.equal(input.derivationPath);
       expect(actualInput.maxWitnessLength).to.equal(input.maxWitnessLength);

@@ -1,9 +1,9 @@
 /* eslint-env mocha */
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import Client from '@liquality/client';
 import * as errors from '@liquality/errors';
 import * as utils from '@liquality/utils';
+import Client from '@liquality/client';
 import BitcoinNodeWalletProvider from '@liquality/bitcoin-node-wallet-provider';
 import BitcoinJsWalletProvider from '@liquality/bitcoin-js-wallet-provider';
 import BitcoinRpcProvider from '@liquality/bitcoin-rpc-provider';
@@ -11,13 +11,14 @@ import { Client as FinanceClient } from '../../packages/client/lib';
 import BitcoinCfdProvider from '../../packages/bitcoin-cfd-provider/lib';
 import BitcoinDlcProvider from '../../packages/bitcoin-dlc-provider/lib';
 import BitcoinWalletProvider from '../../packages/bitcoin-wallet-provider/lib';
-import Input from '../../packages/bitcoin-dlc-provider/lib/models/Input';
+import Input from '../../packages/types/lib/models/Input';
 import BN from 'bignumber.js';
 import { decodeRawTransaction } from '@liquality/bitcoin-utils';
 import { generateMnemonic } from 'bip39';
 import config from './config';
 import * as cfdJs from 'cfd-js';
 import { getWrappedCfdDlcJs } from './utils/WrappedCfdDlcJs';
+import { bitcoin } from '@liquality/types';
 
 const cfdDlcJs = getWrappedCfdDlcJs();
 
@@ -30,73 +31,76 @@ const CONSTANTS = {
   BITCOIN_ADDRESS_DEFAULT_BALANCE: 2 * 1e8,
 };
 
-const { network, tsNetwork, rpc } = config.bitcoin;
+const { network, rpc } = config.bitcoin;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 console.warn = () => {}; // Silence warnings
 
-function mockedBitcoinRpcProvider() {
-  const bitcoinRpcProvider = new BitcoinRpcProvider(
-    rpc.host,
-    rpc.username,
-    rpc.password,
-  );
+function mockedBitcoinRpcProvider(): BitcoinRpcProvider {
+  const bitcoinRpcProvider = new BitcoinRpcProvider({
+    uri: rpc.host,
+    username: rpc.username,
+    password: rpc.password,
+    network,
+  });
   // Mock Fee Per Byte to prevent from changing
   bitcoinRpcProvider.getFeePerByte = async () => CONSTANTS.BITCOIN_FEE_PER_BYTE;
   return bitcoinRpcProvider;
 }
 
-const bitcoinWithNode = new Client();
-const bitcoinWithNodeFinance = new FinanceClient(bitcoinWithNode);
-bitcoinWithNode.finance = bitcoinWithNodeFinance;
+const bitcoinWithNode = new FinanceClient();
 bitcoinWithNode.addProvider(mockedBitcoinRpcProvider());
 bitcoinWithNode.addProvider(
-  new BitcoinNodeWalletProvider(
+  new BitcoinNodeWalletProvider({
+    uri: rpc.host,
+    username: rpc.username,
+    password: rpc.password,
     network,
-    rpc.host,
-    rpc.username,
-    rpc.password,
-    'bech32',
-  ),
+    addressType: bitcoin.AddressType.BECH32,
+  }),
 );
-bitcoinWithNode.finance.addProvider(new BitcoinCfdProvider(network, cfdJs));
-bitcoinWithNode.finance.addProvider(
-  new BitcoinDlcProvider(tsNetwork, cfdDlcJs),
-);
-bitcoinWithNode.finance.addProvider(new BitcoinWalletProvider(tsNetwork));
+bitcoinWithNode.addProvider(new BitcoinCfdProvider(cfdJs));
+bitcoinWithNode.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
+bitcoinWithNode.addProvider(new BitcoinWalletProvider(network));
 
-const bitcoinWithJs = new Client();
-const bitcoinWithJsFinance = new FinanceClient(bitcoinWithJs);
-bitcoinWithJs.finance = bitcoinWithJsFinance;
+const bitcoinWithJs = new FinanceClient();
 bitcoinWithJs.addProvider(mockedBitcoinRpcProvider());
 bitcoinWithJs.addProvider(
-  new BitcoinJsWalletProvider(network, generateMnemonic(256), 'bech32'),
+  new BitcoinJsWalletProvider({
+    network,
+    mnemonic: generateMnemonic(256),
+    addressType: bitcoin.AddressType.BECH32,
+  }) as any,
 );
-bitcoinWithJs.finance.addProvider(new BitcoinCfdProvider(network, cfdJs));
-bitcoinWithJs.finance.addProvider(new BitcoinDlcProvider(tsNetwork, cfdDlcJs));
-bitcoinWithJs.finance.addProvider(new BitcoinWalletProvider(tsNetwork));
+bitcoinWithJs.addProvider(new BitcoinCfdProvider(cfdJs));
+bitcoinWithJs.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
+bitcoinWithJs.addProvider(new BitcoinWalletProvider(network));
 
-const bitcoinWithJs2 = new Client();
-const bitcoinWithJsFinance2 = new FinanceClient(bitcoinWithJs2);
-bitcoinWithJs2.finance = bitcoinWithJsFinance2;
+const bitcoinWithJs2 = new FinanceClient();
 bitcoinWithJs2.addProvider(mockedBitcoinRpcProvider());
 bitcoinWithJs2.addProvider(
-  new BitcoinJsWalletProvider(network, generateMnemonic(256), 'bech32'),
+  new BitcoinJsWalletProvider({
+    network,
+    mnemonic: generateMnemonic(256),
+    addressType: bitcoin.AddressType.BECH32,
+  }) as any,
 );
-bitcoinWithJs2.finance.addProvider(new BitcoinCfdProvider(network, cfdJs));
-bitcoinWithJs2.finance.addProvider(new BitcoinDlcProvider(tsNetwork, cfdDlcJs));
-bitcoinWithJs2.finance.addProvider(new BitcoinWalletProvider(tsNetwork));
+bitcoinWithJs2.addProvider(new BitcoinCfdProvider(cfdJs));
+bitcoinWithJs2.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
+bitcoinWithJs2.addProvider(new BitcoinWalletProvider(network));
 
-const bitcoinWithJs3 = new Client();
-const bitcoinWithJsFinance3 = new FinanceClient(bitcoinWithJs3);
-bitcoinWithJs3.finance = bitcoinWithJsFinance3;
+const bitcoinWithJs3 = new FinanceClient();
 bitcoinWithJs3.addProvider(mockedBitcoinRpcProvider());
 bitcoinWithJs3.addProvider(
-  new BitcoinJsWalletProvider(network, generateMnemonic(256), 'bech32'),
+  new BitcoinJsWalletProvider({
+    network,
+    mnemonic: generateMnemonic(256),
+    addressType: bitcoin.AddressType.BECH32,
+  }) as any,
 );
-bitcoinWithJs3.finance.addProvider(new BitcoinCfdProvider(network, cfdJs));
-bitcoinWithJs3.finance.addProvider(new BitcoinDlcProvider(tsNetwork, cfdDlcJs));
-bitcoinWithJs3.finance.addProvider(new BitcoinWalletProvider(tsNetwork));
+bitcoinWithJs3.addProvider(new BitcoinCfdProvider(cfdJs));
+bitcoinWithJs3.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
+bitcoinWithJs3.addProvider(new BitcoinWalletProvider(network));
 
 const chains = {
   bitcoinWithNode: {
@@ -127,10 +131,10 @@ const chains = {
 };
 
 async function fundAddress(address: string) {
-  const tx = await chains.bitcoinWithNode.client.chain.sendTransaction(
-    address,
-    CONSTANTS.BITCOIN_ADDRESS_DEFAULT_BALANCE,
-  );
+  const tx = await chains.bitcoinWithNode.client.chain.sendTransaction({
+    to: address,
+    value: new BN(CONSTANTS.BITCOIN_ADDRESS_DEFAULT_BALANCE),
+  });
   await mineBlock();
   return tx;
 }
@@ -171,8 +175,7 @@ async function getInput(client: Client): Promise<Input> {
     address: unusedAddress,
     scriptPubKey: vout.scriptPubKey.hex,
     amount: vout.value,
-    satoshis: new BN(vout.value).times(1e8).toNumber(),
-    value: vout.value,
+    value: new BN(vout.value).times(1e8).toNumber(),
     derivationPath,
     maxWitnessLength: 108,
     redeemScript: '',

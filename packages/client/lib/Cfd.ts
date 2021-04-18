@@ -1,4 +1,3 @@
-import Client from './Client';
 import {
   AddMultisigSignRequest,
   AddMultisigSignResponse,
@@ -137,12 +136,12 @@ import {
   VerifySignResponse,
   VerifySignatureRequest,
   VerifySignatureResponse,
-} from './types/cfd-js';
+} from '@atomicfinance/types';
 
 export default class Cfd {
-  client: Client;
+  client: any;
 
-  constructor(client?: Client) {
+  constructor(client: any) {
     this.client = client;
   }
 

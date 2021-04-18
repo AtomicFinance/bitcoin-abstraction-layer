@@ -18,7 +18,7 @@
     "lint:fix": "../../node_modules/.bin/eslint --fix --ignore-path ../../.eslintignore  -c ../../.eslintrc.js ."
   },
   "dependencies": {
-    "@liquality/bitcoin-networks": "0.10.3",
+    "@liquality/bitcoin-networks": "1.0.0-beta.2",
     "bitcoinjs-lib": "5.2.0"
   },
   "devDependencies": {

@@ -1,5 +1,263 @@
 /* eslint-disable max-len */
 /* eslint-disable indent */
+
+import {
+  ContractInfo,
+  FundingInput,
+  DlcOffer,
+  DlcAccept,
+  DlcSign,
+  DlcTransactions,
+  CetAdaptorSignaturesV0,
+  OracleAttestationV0,
+} from '@node-dlc/messaging';
+import { Tx } from '@node-lightning/bitcoin';
+import { Psbt } from 'bitcoinjs-lib';
+import Input from './models/Input';
+import { TxInRequest, TxOutRequest } from './common';
+
+export interface DlcProvider {
+  GetInputsForAmount(
+    amount: bigint,
+    feeRatePerVb: bigint,
+    fixedInputs: Input[],
+  ): Promise<Input[]>;
+
+  /**
+   * Check whether wallet is offerer of DlcOffer or DlcAccept
+   * @param dlcOffer Dlc Offer Message
+   * @param dlcAccept Dlc Accept Message
+   * @returns {Promise<boolean>}
+   */
+  isOfferer(_dlcOffer: DlcOffer, _dlcAccept: DlcAccept): Promise<boolean>;
+
+  /**
+   * Create DLC Offer Message
+   * @param contractInfo ContractInfo TLV (V0 or V1)
+   * @param offerCollateralSatoshis Amount DLC Initiator is putting into the contract
+   * @param feeRatePerVb Fee rate in satoshi per virtual byte that both sides use to compute fees in funding tx
+   * @param cetLocktime The nLockTime to be put on CETs
+   * @param refundLocktime The nLockTime to be put on the refund transaction
+   * @returns {Promise<DlcOffer>}
+   */
+  createDlcOffer(
+    contractInfo: ContractInfo,
+    offerCollateralSatoshis: bigint,
+    feeRatePerVb: bigint,
+    cetLocktime: number,
+    refundLocktime: number,
+    fixedInputs?: Input[],
+  ): Promise<DlcOffer>;
+
+  /**
+   * Accept DLC Offer
+   * @param _dlcOffer Dlc Offer Message
+   * @param fixedInputs Optional inputs to use for Funding Inputs
+   * @returns {Promise<AcceptDlcOfferResponse}
+   */
+  acceptDlcOffer(
+    _dlcOffer: DlcOffer,
+    fixedInputs?: Input[],
+  ): Promise<AcceptDlcOfferResponse>;
+
+  /**
+   * Sign Dlc Accept Message
+   * @param _dlcOffer Dlc Offer Message
+   * @param _dlcAccept Dlc Accept Message
+   * @returns {Promise<SignDlcAcceptResponse}
+   */
+  signDlcAccept(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+  ): Promise<SignDlcAcceptResponse>;
+
+  /**
+   * Finalize Dlc Sign
+   * @param _dlcOffer Dlc Offer Message
+   * @param _dlcAccept Dlc Accept Message
+   * @param _dlcSign Dlc Sign Message
+   * @param _dlcTxs Dlc Transactions Message
+   * @returns {Promise<Tx>}
+   */
+  finalizeDlcSign(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcSign: DlcSign,
+    _dlcTxs: DlcTransactions,
+  ): Promise<Tx>;
+
+  /**
+   * Execute DLC
+   * @param _dlcOffer Dlc Offer Message
+   * @param _dlcAccept Dlc Accept Message
+   * @param _dlcSign Dlc Sign Message
+   * @param _dlcTxs Dlc Transactions Message
+   * @param oracleAttestation Oracle Attestations TLV (V0)
+   * @param isOfferer Whether party is Dlc Offerer
+   * @returns {Promise<Tx>}
+   */
+  execute(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcSign: DlcSign,
+    _dlcTxs: DlcTransactions,
+    oracleAttestation: OracleAttestationV0,
+    isOfferer: boolean,
+  ): Promise<Tx>;
+
+  /**
+   * Refund DLC
+   * @param _dlcOffer Dlc Offer Message
+   * @param _dlcAccept Dlc Accept Message
+   * @param _dlcSign Dlc Sign Message
+   * @param _dlcTxs Dlc Transactions message
+   * @returns {Promise<Tx>}
+   */
+  refund(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcSign: DlcSign,
+    _dlcTxs: DlcTransactions,
+  ): Promise<Tx>;
+
+  /**
+   * Generate PSBT for closing DLC with Mutual Consent
+   * If no PSBT provided, assume initiator
+   * If PSBT provided, assume reciprocator
+   * @param _dlcOffer DlcOffer TLV (V0)
+   * @param _dlcAccept DlcAccept TLV (V0)
+   * @param _dlcTxs DlcTransactions TLV (V0)
+   * @param initiatorPayoutSatoshis Amount initiator expects as a payout
+   * @param isOfferer Whether offerer or not
+   * @param _psbt Partially Signed Bitcoin Transaction
+   * @param _inputs Optionally specified closing inputs
+   * @returns {Promise<Psbt>}
+   */
+  close(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcTxs: DlcTransactions,
+    initiatorPayoutSatoshis: bigint,
+    isOfferer: boolean,
+    _psbt?: Psbt,
+    _inputs?: Input[],
+  ): Promise<Psbt>;
+
+  AddSignatureToFundTransaction(
+    jsonObject: AddSignatureToFundTransactionRequest,
+  ): Promise<AddSignatureToFundTransactionResponse>;
+
+  CreateCetAdaptorSignature(
+    jsonObject: CreateCetAdaptorSignatureRequest,
+  ): Promise<CreateCetAdaptorSignatureResponse>;
+
+  CreateCetAdaptorSignatures(
+    jsonObject: CreateCetAdaptorSignaturesRequest,
+  ): Promise<CreateCetAdaptorSignaturesResponse>;
+
+  AddSignaturesToRefundTx(
+    jsonObject: AddSignaturesToRefundTxRequest,
+  ): Promise<AddSignaturesToRefundTxResponse>;
+
+  CreateCet(jsonObject: CreateCetRequest): Promise<CreateCetResponse>;
+
+  CreateDlcTransactions(
+    jsonObject: CreateDlcTransactionsRequest,
+  ): Promise<CreateDlcTransactionsResponse>;
+
+  CreateFundTransaction(
+    jsonObject: CreateFundTransactionRequest,
+  ): Promise<CreateFundTransactionResponse>;
+
+  CreateRefundTransaction(
+    jsonObject: CreateRefundTransactionRequest,
+  ): Promise<CreateRefundTransactionResponse>;
+
+  GetRawFundTxSignature(
+    jsonObject: GetRawFundTxSignatureRequest,
+  ): Promise<GetRawFundTxSignatureResponse>;
+
+  GetRawRefundTxSignature(
+    jsonObject: GetRawRefundTxSignatureRequest,
+  ): Promise<GetRawRefundTxSignatureResponse>;
+
+  SignCet(jsonObject: SignCetRequest): Promise<SignCetResponse>;
+
+  VerifyCetAdaptorSignature(
+    jsonObject: VerifyCetAdaptorSignatureRequest,
+  ): Promise<VerifyCetAdaptorSignatureResponse>;
+
+  VerifyCetAdaptorSignatures(
+    jsonObject: VerifyCetAdaptorSignaturesRequest,
+  ): Promise<VerifyCetAdaptorSignaturesResponse>;
+
+  SignFundTransaction(
+    jsonObject: SignFundTransactionRequest,
+  ): Promise<SignFundTransactionResponse>;
+
+  VerifyFundTxSignature(
+    jsonObject: VerifyFundTxSignatureRequest,
+  ): Promise<VerifyFundTxSignatureResponse>;
+
+  VerifyRefundTxSignature(
+    jsonObject: VerifyRefundTxSignatureRequest,
+  ): Promise<VerifyRefundTxSignatureResponse>;
+
+  fundingInputToInput(_input: FundingInput): Promise<Input>;
+
+  inputToFundingInput(input: Input): Promise<FundingInput>;
+}
+
+export interface InitializeResponse {
+  fundingPubKey: Buffer;
+  payoutSPK: Buffer;
+  payoutSerialId: bigint;
+  fundingInputs: FundingInput[];
+  changeSPK: Buffer;
+  changeSerialId: bigint;
+}
+
+export interface AcceptDlcOfferResponse {
+  dlcAccept: DlcAccept;
+  dlcTransactions: DlcTransactions;
+}
+
+export interface SignDlcAcceptResponse {
+  dlcSign: DlcSign;
+  dlcTransactions: DlcTransactions;
+}
+
+export interface GetPayoutsResponse {
+  payouts: PayoutRequest[];
+  payoutGroups: PayoutGroup[];
+  messagesList: Messages[];
+}
+
+export interface CreateDlcTxsResponse {
+  dlcTransactions: DlcTransactions;
+  messagesList: Messages[];
+}
+
+interface ISig {
+  encryptedSig: Buffer;
+  dleqProof: Buffer;
+}
+
+export interface CreateCetAdaptorAndRefundSigsResponse {
+  cetSignatures: CetAdaptorSignaturesV0;
+  refundSignature: Buffer;
+}
+
+interface PayoutGroup {
+  payout: bigint;
+  groups: number[][];
+}
+
+interface FindOutcomeResponse {
+  index: number;
+  groupLength: number;
+}
+
 export interface AdaptorPair {
   signature: string;
   proof: string;
@@ -160,10 +418,6 @@ export interface CreateRefundTransactionResponse {
   hex: string;
 }
 
-export interface ErrorResponse {
-  error: InnerErrorResponse;
-}
-
 /** Get a signature for a fund transaction input */
 export interface GetRawFundTxSignatureRequest {
   fundTxHex: string;
@@ -190,12 +444,6 @@ export interface GetRawRefundTxSignatureRequest {
 
 export interface GetRawRefundTxSignatureResponse {
   hex: string;
-}
-
-export interface InnerErrorResponse {
-  code: number;
-  type: string;
-  message: string;
 }
 
 export interface Messages {
@@ -248,16 +496,6 @@ export interface TxInInfoRequest {
   vout: number;
   redeemScript?: string;
   maxWitnessLength: number;
-}
-
-export interface TxInRequest {
-  txid: string;
-  vout: number;
-}
-
-export interface TxOutRequest {
-  amount: bigint | number;
-  address: string;
 }
 
 /** Verify a signature for a CET */

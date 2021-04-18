@@ -1,9 +1,6 @@
 import randomBytes from 'randombytes';
 import {
-  ContractInfo,
-  FundingInput,
   DlcOffer,
-  FundingInputV0,
   MessageType,
   DlcAccept,
   DlcOfferV0,
@@ -13,7 +10,7 @@ import {
   DlcTransactionsV0,
   DlcSignV0,
 } from '@node-dlc/messaging';
-import { PayoutRequest, Messages } from '../types/cfd-dlc-js';
+import { PayoutRequest, Messages } from '@atomicfinance/types';
 
 export async function asyncForEach(array: any, callback: any) {
   for (let index = 0; index < array.length; index++) {
