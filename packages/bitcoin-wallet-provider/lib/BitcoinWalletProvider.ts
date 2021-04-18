@@ -14,15 +14,19 @@ const NONCHANGE_ADDRESS = 0;
 const CHANGE_ADDRESS = 1;
 const NONCHANGE_OR_CHANGE_ADDRESS = 2;
 
+type UnusedAddressesBlacklist = {
+  [address: string]: true;
+};
+
 export default class BitcoinWalletProvider extends Provider {
   _network: BitcoinNetwork;
-  _unusedAddressesBlacklist: any;
+  _unusedAddressesBlacklist: UnusedAddressesBlacklist;
 
   constructor(network: BitcoinNetwork) {
     super('BitcoinWalletProvider');
 
     this._network = network;
-    this._unusedAddressesBlacklist = [];
+    this._unusedAddressesBlacklist = {};
   }
 
   async buildSweepTransactionWithSetOutputs(
@@ -39,11 +43,13 @@ export default class BitcoinWalletProvider extends Provider {
     );
   }
 
-  getUnusedAddressesBlacklist() {
+  getUnusedAddressesBlacklist(): UnusedAddressesBlacklist {
     return this._unusedAddressesBlacklist;
   }
 
-  setUnusedAddressesBlacklist(unusedAddressesBlacklist) {
+  setUnusedAddressesBlacklist(
+    unusedAddressesBlacklist: UnusedAddressesBlacklist,
+  ) {
     this._unusedAddressesBlacklist = unusedAddressesBlacklist;
   }
 
