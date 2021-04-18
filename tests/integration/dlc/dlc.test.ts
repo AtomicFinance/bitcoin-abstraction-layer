@@ -36,7 +36,7 @@ import {
 import {
   AcceptDlcOfferResponse,
   SignDlcAcceptResponse,
-} from '../../../packages/provider/node_modules/@atomicfinance/client/lib/Dlc';
+} from '../../../packages/bitcoin-dlc-provider';
 
 chai.use(chaiAsPromised);
 const expect = chai.expect;
@@ -95,7 +95,7 @@ describe('dlc provider', () => {
     const cetLocktime = 1617170572;
     const refundLocktime = 1617170572;
 
-    dlcOffer = await alice.finance.dlc.createDlcOffer(
+    dlcOffer = await alice.dlc.createDlcOffer(
       contractInfo,
       totalCollateral - BigInt(2000),
       feeRatePerVb,
@@ -107,7 +107,7 @@ describe('dlc provider', () => {
     console.timeEnd('offer-get-time');
 
     console.time('accept-time');
-    const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.finance.dlc.acceptDlcOffer(
+    const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
       dlcOffer,
       [bobInput],
     );
@@ -119,14 +119,14 @@ describe('dlc provider', () => {
   describe('actions', () => {
     beforeEach(async () => {
       console.time('sign-time');
-      const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.finance.dlc.signDlcAccept(
+      const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.dlc.signDlcAccept(
         dlcOffer,
         dlcAccept,
       );
       dlcSign = signDlcAcceptResponse.dlcSign;
       console.timeEnd('sign-time');
 
-      const fundTx = await bob.finance.dlc.finalizeDlcSign(
+      const fundTx = await bob.dlc.finalizeDlcSign(
         dlcOffer,
         dlcAccept,
         dlcSign,
@@ -146,7 +146,7 @@ describe('dlc provider', () => {
     });
 
     it('execute', async () => {
-      const cet = await bob.finance.dlc.execute(
+      const cet = await bob.dlc.execute(
         dlcOffer,
         dlcAccept,
         dlcSign,
@@ -162,7 +162,7 @@ describe('dlc provider', () => {
     });
 
     it('refund', async () => {
-      const refund = await bob.finance.dlc.refund(
+      const refund = await bob.dlc.refund(
         dlcOffer,
         dlcAccept,
         dlcSign,
@@ -179,7 +179,7 @@ describe('dlc provider', () => {
     });
 
     it('close', async () => {
-      const alicePsbt: Psbt = await alice.finance.dlc.close(
+      const alicePsbt: Psbt = await alice.dlc.close(
         dlcOffer,
         dlcAccept,
         dlcTransactions,
@@ -187,7 +187,7 @@ describe('dlc provider', () => {
         true,
       );
 
-      const bobPsbt: Psbt = await bob.finance.dlc.close(
+      const bobPsbt: Psbt = await bob.dlc.close(
         dlcOffer,
         dlcAccept,
         dlcTransactions,
@@ -277,22 +277,19 @@ describe('dlc provider', () => {
       _dlcAccept.fundingPubKey = _dlcOffer.fundingPubKey;
 
       expect(
-        alice.finance.dlc.signDlcAccept(_dlcOffer, _dlcAccept),
+        alice.dlc.signDlcAccept(_dlcOffer, _dlcAccept),
       ).to.be.eventually.rejectedWith(Error);
     });
   });
 
   describe('isOfferer', () => {
     it('should determine if party is offerer', async () => {
-      const aliceIsOfferer = await alice.finance.dlc.isOfferer(
-        dlcOffer,
-        dlcAccept,
-      );
-      const bobIsOfferer = await bob.finance.dlc.isOfferer(dlcOffer, dlcAccept);
+      const aliceIsOfferer = await alice.dlc.isOfferer(dlcOffer, dlcAccept);
+      const bobIsOfferer = await bob.dlc.isOfferer(dlcOffer, dlcAccept);
       expect(aliceIsOfferer).to.equal(true);
       expect(bobIsOfferer).to.equal(false);
       expect(
-        carol.finance.dlc.isOfferer(dlcOffer, dlcAccept),
+        carol.dlc.isOfferer(dlcOffer, dlcAccept),
       ).to.be.eventually.rejectedWith(Error);
     });
   });
@@ -365,7 +362,7 @@ describe('external test vectors', () => {
     const cetLocktime = 1617170572;
     const refundLocktime = 1617170572;
 
-    const dlcOffer = await alice.finance.dlc.createDlcOffer(
+    const dlcOffer = await alice.dlc.createDlcOffer(
       contractInfo,
       totalCollateral - BigInt(2000),
       feeRatePerVb,
@@ -379,17 +376,17 @@ describe('external test vectors', () => {
     const {
       dlcAccept,
       dlcTransactions,
-    } = await bob.finance.dlc.acceptDlcOffer(dlcOffer, [bobInput]);
+    } = await bob.dlc.acceptDlcOffer(dlcOffer, [bobInput]);
     console.timeEnd('accept-time');
 
     console.time('sign-time');
-    const {
-      dlcSign,
-      dlcTransactions: dlcTxs,
-    } = await alice.finance.dlc.signDlcAccept(dlcOffer, dlcAccept);
+    const { dlcSign, dlcTransactions: dlcTxs } = await alice.dlc.signDlcAccept(
+      dlcOffer,
+      dlcAccept,
+    );
     console.timeEnd('sign-time');
 
-    const fundTx = await bob.finance.dlc.finalizeDlcSign(
+    const fundTx = await bob.dlc.finalizeDlcSign(
       dlcOffer,
       dlcAccept,
       dlcSign,
@@ -406,7 +403,7 @@ describe('external test vectors', () => {
       ),
     );
 
-    const cet = await bob.finance.dlc.execute(
+    const cet = await bob.dlc.execute(
       dlcOffer,
       dlcAccept,
       dlcSign,

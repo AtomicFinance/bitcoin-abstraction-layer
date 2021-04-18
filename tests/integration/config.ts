@@ -1,5 +1,4 @@
 import BitcoinNetworks from '@liquality/bitcoin-networks';
-import * as TsBitcoinNetworks from '../../packages/bitcoin-networks/lib';
 
 export default {
   bitcoin: {
@@ -9,7 +8,6 @@ export default {
       password: 'local321',
     },
     network: BitcoinNetworks.bitcoin_regtest,
-    tsNetwork: TsBitcoinNetworks.default.bitcoin_regtest,
     value: 1000000,
     mineBlocks: true,
   },

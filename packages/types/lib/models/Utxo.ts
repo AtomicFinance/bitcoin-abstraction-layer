@@ -22,7 +22,6 @@ export default class Utxo {
       address: this.address,
       amount: this.amount.GetBitcoinAmount(),
       value: this.amount.GetSatoshiAmount(),
-      satoshis: this.amount.GetSatoshiAmount(),
       derivationPath: this.derivationPath,
       maxWitnessLength: this.maxWitnessLength,
       toUtxo: Input.prototype.toUtxo,

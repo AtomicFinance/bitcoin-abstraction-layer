@@ -1,9 +1,9 @@
-import Client from './Client';
+import { Input, Output } from '@atomicfinance/types';
 
 export default class Wallet {
-  client: Client;
+  client: any;
 
-  constructor(client?: Client) {
+  constructor(client: any) {
     this.client = client;
   }
 
@@ -38,25 +38,4 @@ export default class Wallet {
   async getUnusedAddress(change = false, numAddressPerCall = 100) {
     return this.client.getMethod('getUnusedAddress')(change, numAddressPerCall);
   }
-}
-
-interface Input {
-  txid: string;
-  vout: number;
-  address: string;
-  label: string;
-  scriptPubKey: string;
-  amount: number;
-  confirmations: number;
-  spendable: boolean;
-  solvable: boolean;
-  safe: boolean;
-  satoshis: number;
-  value: number;
-  derivationPath: string;
-}
-
-interface Output {
-  to: string;
-  value: number;
 }

@@ -1,14 +1,7 @@
-import Client from '@atomicfinance/client';
+import { IFinanceClient } from '@atomicfinance/types';
 
-export default class Provider {
-  client: Client;
-  version: number;
-  identifier: string;
-
-  constructor(identifier: string) {
-    this.identifier = identifier;
-  }
-
+export default abstract class Provider {
+  client: IFinanceClient;
   /**
    * Set client to a provider instance.
    * @param {!ChainAbstractionLayer} client - The ChainAbstractionLayer instance
@@ -23,11 +16,7 @@ export default class Provider {
    * @return {function} Returns a method from a provider above current Provider
    *  in the stack.
    */
-  getMethod(method?: any) {
-    return this.client.getMethod(method, this).bind(this);
-  }
-
-  getIdentifier() {
-    return this.identifier;
+  getMethod(method: string, requestor: any = this) {
+    return this.client.getMethod(method, requestor).bind(this);
   }
 }
