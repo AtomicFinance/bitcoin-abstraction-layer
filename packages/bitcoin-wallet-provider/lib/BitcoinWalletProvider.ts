@@ -1,4 +1,6 @@
 import Provider from '@atomicfinance/provider';
+import { Input } from '@atomicfinance/types';
+import { Transaction, bitcoin as bT, Address } from '@liquality/types';
 
 import {
   normalizeTransactionObject,
@@ -6,7 +8,7 @@ import {
   selectCoins,
 } from '@liquality/bitcoin-utils';
 import * as bitcoin from 'bitcoinjs-lib';
-import { BitcoinNetwork } from '@atomicfinance/bitcoin-networks';
+import { BitcoinNetwork } from '@liquality/bitcoin-networks';
 
 const FEE_PER_BYTE_FALLBACK = 5;
 const ADDRESS_GAP = 20;
@@ -19,7 +21,7 @@ export default class BitcoinWalletProvider extends Provider {
   _unusedAddressesBlacklist: any;
 
   constructor(network: BitcoinNetwork) {
-    super('BitcoinWalletProvider');
+    super();
 
     this._network = network;
     this._unusedAddressesBlacklist = [];
@@ -67,8 +69,8 @@ export default class BitcoinWalletProvider extends Provider {
 
     let addrList;
     let addressIndex = 0;
-    let changeAddresses = [];
-    let nonChangeAddresses = [];
+    let changeAddresses: Address[] = [];
+    let nonChangeAddresses: Address[] = [];
 
     /* eslint-disable no-unmodified-loop-condition */
     while (
@@ -88,7 +90,7 @@ export default class BitcoinWalletProvider extends Provider {
         addressCountMap.change < ADDRESS_GAP
       ) {
         // Scanning for change addr
-        changeAddresses = await this.getMethod('getAddresses')(
+        changeAddresses = await this.client.wallet.getAddresses(
           addressIndex,
           numAddressPerCall,
           true,
@@ -104,7 +106,7 @@ export default class BitcoinWalletProvider extends Provider {
         addressCountMap.nonChange < ADDRESS_GAP
       ) {
         // Scanning for non change addr
-        nonChangeAddresses = await this.getMethod('getAddresses')(
+        nonChangeAddresses = await this.client.wallet.getAddresses(
           addressIndex,
           numAddressPerCall,
           false,
@@ -120,7 +122,9 @@ export default class BitcoinWalletProvider extends Provider {
         const isUsed =
           transactionCounts[address] > 0 ||
           this._unusedAddressesBlacklist[address.address];
-        const isChangeAddress = changeAddresses.find((a) => address.equals(a));
+        const isChangeAddress = changeAddresses.find(
+          (a) => address.address === a.address,
+        );
         const key = isChangeAddress ? 'change' : 'nonChange';
 
         if (isUsed) {
@@ -163,14 +167,14 @@ export default class BitcoinWalletProvider extends Provider {
     feePerByte: number,
     _outputs: Output[],
     fixedInputs: Input[],
-  ) {
+  ): Promise<Transaction<bT.Transaction>> {
     const { hex, fee } = await this._buildSweepTransaction(
       externalChangeAddress,
       feePerByte,
       _outputs,
       fixedInputs,
     );
-    await this.client.getMethod('sendRawTransaction')(hex);
+    await this.getMethod('sendRawTransaction')(hex);
     return normalizeTransactionObject(
       decodeRawTransaction(hex, this._network),
       fee,
@@ -185,12 +189,12 @@ export default class BitcoinWalletProvider extends Provider {
   ) {
     const _feePerByte =
       feePerByte ||
-      (await this.client.getMethod('getFeePerByte')()) ||
+      (await this.getMethod('getFeePerByte')()) ||
       FEE_PER_BYTE_FALLBACK;
     const inputs: Input[] = [];
     const outputs: Output[] = [];
     try {
-      const inputsForAmount = await this.client.getMethod('getInputsForAmount')(
+      const inputsForAmount = await this.getMethod('getInputsForAmount')(
         _outputs,
         _feePerByte,
         fixedInputs,
@@ -214,7 +218,9 @@ export default class BitcoinWalletProvider extends Provider {
         _feePerByte,
         fixedInputs,
       );
-      inputs.push(...(inputsForAmount.inputs || []));
+      inputs.push(
+        ...(inputsForAmount.inputs.map((utxo) => Input.fromUTXO(utxo)) || []),
+      );
       outputs.push(...(inputsForAmount.outputs || []));
     }
     _outputs.forEach((output) => {
@@ -285,29 +291,25 @@ export default class BitcoinWalletProvider extends Provider {
     const prevOutScriptType = 'p2wpkh';
 
     for (let i = 0; i < inputs.length; i++) {
-      const wallet = await this.client.getMethod('getWalletAddress')(
+      const wallet = await this.getMethod('getWalletAddress')(
         inputs[i].address,
       );
-      const keyPair = await this.client.getMethod('keyPair')(
-        wallet.derivationPath,
+      const keyPair = await this.getMethod('keyPair')(wallet.derivationPath);
+      const paymentVariant = this.getMethod('getPaymentVariantFromPublicKey')(
+        keyPair.publicKey,
       );
-      const paymentVariant = this.client.getMethod(
-        'getPaymentVariantFromPublicKey',
-      )(keyPair.publicKey);
 
       txb.addInput(inputs[i].txid, inputs[i].vout, 0, paymentVariant.output);
     }
 
     for (let i = 0; i < inputs.length; i++) {
-      const wallet = await this.client.getMethod('getWalletAddress')(
+      const wallet = await this.getMethod('getWalletAddress')(
         inputs[i].address,
       );
-      const keyPair = await this.client.getMethod('keyPair')(
-        wallet.derivationPath,
+      const keyPair = await this.getMethod('keyPair')(wallet.derivationPath);
+      const paymentVariant = this.getMethod('getPaymentVariantFromPublicKey')(
+        keyPair.publicKey,
       );
-      const paymentVariant = this.client.getMethod(
-        'getPaymentVariantFromPublicKey',
-      )(keyPair.publicKey);
       const needsWitness = true;
 
       const signParams = {
@@ -328,23 +330,7 @@ export default class BitcoinWalletProvider extends Provider {
   }
 }
 
-interface Input {
-  txid: string;
-  vout: number;
-  address: string;
-  label: string;
-  scriptPubKey: string;
-  amount: number;
-  confirmations: number;
-  spendable: boolean;
-  solvable: boolean;
-  safe: boolean;
-  satoshis: number;
-  value: number;
-  derivationPath: string;
-}
-
 interface Output {
-  to: string;
+  to?: string;
   value: number;
 }

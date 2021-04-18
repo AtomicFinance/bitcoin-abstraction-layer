@@ -36,10 +36,9 @@ import {
   AdaptorPair,
   PayoutRequest,
   Messages,
-} from './types/cfd-dlc-js';
+} from '@atomicfinance/types';
 
-import Input from './models/Input';
-import Utxo from './models/Utxo';
+import { Input, Utxo } from '@atomicfinance/types';
 import {
   ContractInfo,
   FundingInput,
@@ -69,7 +68,7 @@ import { Tx, Sequence, Script } from '@node-lightning/bitcoin';
 import { StreamReader } from '@node-lightning/bufio';
 import { sha256, hash160, xor } from '@node-lightning/crypto';
 import { address, Psbt, payments, ECPairInterface } from 'bitcoinjs-lib';
-import { bitcoin, wallet, Address } from './types/@liquality/types';
+import { bitcoin, Address } from '@liquality/types';
 import { generateSerialId, checkTypes, outputsToPayouts } from './utils/Utils';
 import {
   CoveredCall,
@@ -79,7 +78,8 @@ import {
 } from '@node-dlc/core';
 import { asyncForEach } from './utils/Utils';
 import { HyperbolaPayoutCurve } from '@node-dlc/core';
-import { BitcoinNetwork } from '@atomicfinance/bitcoin-networks';
+import { BitcoinNetwork } from '@liquality/bitcoin-networks';
+import { chainHashFromNetwork } from '@atomicfinance/bitcoin-networks';
 import BigNumber from 'bignumber.js';
 
 const ESTIMATED_SIZE = 312;
@@ -89,7 +89,7 @@ export default class BitcoinDlcProvider extends Provider {
   _cfdDlcJs: any;
 
   constructor(network: BitcoinNetwork, cfdDlcJs?: any) {
-    super('BitcoinDlcProvider');
+    super();
 
     this._network = network;
     this._cfdDlcJs = cfdDlcJs;
@@ -106,9 +106,7 @@ export default class BitcoinDlcProvider extends Provider {
 
     for (let i = 0; i < inputs.length; i++) {
       const input = inputs[i];
-      const keyPair = await this.client.getMethod('keyPair')(
-        input.derivationPath,
-      );
+      const keyPair = await this.getMethod('keyPair')(input.derivationPath);
       const privKey = Buffer.from(keyPair.__D).toString('hex');
       privKeys.push(privKey);
     }
@@ -130,7 +128,7 @@ export default class BitcoinDlcProvider extends Provider {
     ];
     let inputs: Input[];
     try {
-      const inputsForAmount: wallet.InputsForAmountResponse = await this.getMethod(
+      const inputsForAmount: InputsForAmountResponse = await this.getMethod(
         'getInputsForAmount',
       )(targets, Number(feeRatePerVb), fixedInputs);
       inputs = inputsForAmount.inputs;
@@ -438,9 +436,7 @@ export default class BitcoinDlcProvider extends Provider {
       fundingAddress,
     ]);
 
-    const fundPrivateKeyPair = await this.client.getMethod('keyPair')(
-      derivationPath,
-    );
+    const fundPrivateKeyPair = await this.getMethod('keyPair')(derivationPath);
 
     const fundPrivateKey = Buffer.from(fundPrivateKeyPair.__D).toString('hex');
 
@@ -628,7 +624,7 @@ export default class BitcoinDlcProvider extends Provider {
           privkey: inputPrivKeys[index],
           prevTxId: input.txid,
           prevVout: input.vout,
-          amount: input.satoshis,
+          amount: input.value,
         };
 
         return (await this.GetRawFundTxSignature(fundTxSignRequest)).hex;
@@ -987,10 +983,10 @@ Payout Group not found',
       isOfferer,
     );
 
-    const { derivationPath } = await this.client.getMethod('getWalletAddress')(
+    const { derivationPath } = await this.getMethod('getWalletAddress')(
       fundingAddress,
     );
-    const keyPair: ECPairInterface = await this.client.getMethod('keyPair')(
+    const keyPair: ECPairInterface = await this.getMethod('keyPair')(
       derivationPath,
     );
 
@@ -1051,9 +1047,9 @@ Payout Group not found',
 
     const pubkeys: Buffer[] = await Promise.all(
       inputs.map(async (input) => {
-        const address: Address = await this.client.getMethod(
-          'getWalletAddress',
-        )(input.address);
+        const address: Address = await this.getMethod('getWalletAddress')(
+          input.address,
+        );
         return Buffer.from(address.publicKey, 'hex');
       }),
     );
@@ -1201,7 +1197,7 @@ Payout Group not found',
     );
 
     dlcOffer.contractFlags = Buffer.from('00', 'hex');
-    dlcOffer.chainHash = network.chainHash;
+    dlcOffer.chainHash = chainHashFromNetwork(network);
     dlcOffer.contractInfo = contractInfo;
     dlcOffer.fundingPubKey = fundingPubKey;
     dlcOffer.payoutSPK = payoutSPK;
@@ -1727,8 +1723,7 @@ Payout Group not found',
       vout: input.prevTxVout,
       address: _address,
       amount: prevTxOut.value.bitcoin,
-      value: prevTxOut.value.bitcoin,
-      satoshis: Number(prevTxOut.value.sats),
+      value: Number(prevTxOut.value.sats),
       derivationPath,
       maxWitnessLength: input.maxWitnessLen,
       redeemScript: input.redeemScript
@@ -1815,6 +1810,22 @@ interface PayoutGroup {
 interface FindOutcomeResponse {
   index: number;
   groupLength: number;
+}
+
+export interface Change {
+  value: number;
+}
+
+export interface Output {
+  value: number;
+  id?: string;
+}
+
+export interface InputsForAmountResponse {
+  inputs: Input[];
+  change: Change;
+  outputs: Output[];
+  fee: number;
 }
 
 const BurnAddress = 'bcrt1qxcjufgh2jarkp2qkx68azh08w9v5gah8u6es8s';

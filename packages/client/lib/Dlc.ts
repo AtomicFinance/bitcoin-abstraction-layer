@@ -1,4 +1,3 @@
-import Client from './Client';
 import {
   AddSignaturesToRefundTxRequest,
   AddSignaturesToRefundTxResponse,
@@ -32,7 +31,7 @@ import {
   VerifyFundTxSignatureResponse,
   VerifyRefundTxSignatureRequest,
   VerifyRefundTxSignatureResponse,
-} from './types/cfd-dlc-js';
+} from '@atomicfinance/types';
 import {
   ContractInfo,
   DlcOffer,
@@ -45,9 +44,9 @@ import { Psbt } from 'bitcoinjs-lib';
 import { Tx } from '@node-lightning/bitcoin';
 
 export default class Dlc {
-  client: Client;
+  client: any;
 
-  constructor(client?: Client) {
+  constructor(client: any) {
     this.client = client;
   }
 
@@ -328,7 +327,6 @@ export interface IInput {
   address: string;
   amount: number; // in BTC
   value: number; // in sats
-  satoshis: number; // in sats
   derivationPath?: string;
   maxWitnessLength?: number;
   redeemScript?: string;
