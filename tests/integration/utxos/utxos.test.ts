@@ -21,16 +21,16 @@ describe('utxos', () => {
   describe('inputToFundingInput', () => {
     it('should convert between types', async () => {
       const actualInput: Input = await getInput(alice);
-      const actualFundingInput: FundingInputV0 = await alice.getMethod(
-        'inputToFundingInput',
-      )(actualInput);
+      const actualFundingInput: FundingInputV0 = (await alice.dlc.inputToFundingInput(
+        actualInput,
+      )) as FundingInputV0;
 
-      const input: Input = await alice.getMethod('fundingInputToInput')(
+      const input: Input = await alice.dlc.fundingInputToInput(
         actualFundingInput,
       );
-      const fundingInput: FundingInputV0 = await alice.getMethod(
-        'inputToFundingInput',
-      )(input);
+      const fundingInput: FundingInputV0 = (await alice.dlc.inputToFundingInput(
+        input,
+      )) as FundingInputV0;
 
       expect(actualInput.txid).to.equal(input.txid);
       expect(actualInput.vout).to.equal(input.vout);
