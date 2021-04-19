@@ -880,6 +880,7 @@ Payout Group not found',
       case MessageType.ContractInfoV0:
         // eslint-disable-next-line no-case-declarations
         const contractInfo = dlcOffer.contractInfo as ContractInfoV0;
+        // eslint-disable-next-line no-case-declarations
         switch (contractInfo.contractDescriptor.type) {
           case MessageType.ContractDescriptorV0:
             throw Error('ContractDescriptorV0 not yet supported');

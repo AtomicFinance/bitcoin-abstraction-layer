@@ -39,6 +39,7 @@ import {
   DlcSign,
   DlcTransactions,
   OracleAttestationV0,
+  FundingInput,
 } from '@node-dlc/messaging';
 import { Psbt } from 'bitcoinjs-lib';
 import { Tx } from '@node-lightning/bitcoin';
@@ -309,6 +310,14 @@ export default class Dlc {
   ): Promise<VerifyRefundTxSignatureResponse> {
     return this.client.getMethod('VerifyRefundTxSignature')(jsonObject);
   }
+
+  async fundingInputToInput(_input: FundingInput): Promise<IInput> {
+    return this.client.getMethod('fundingInputToInput')(_input);
+  }
+
+  async inputToFundingInput(input: IInput): Promise<FundingInput> {
+    return this.client.getMethod('inputToFundingInput')(input);
+  }
 }
 
 export interface AcceptDlcOfferResponse {
@@ -337,4 +346,5 @@ export interface IInput {
   spendable?: boolean;
   solvable?: boolean;
   safe?: boolean;
+  toUtxo: any;
 }
