@@ -357,8 +357,7 @@ export default class BitcoinDlcProvider
 
     const dlcTransactions = new DlcTransactionsV0();
     dlcTransactions.fundTx = Tx.decode(StreamReader.fromHex(dlcTxs.fundTxHex));
-    dlcTransactions.fundTxOutAmount =
-      dlcTransactions.fundTx.outputs[0].value.sats;
+    dlcTransactions.fundTxVout = 0;
     dlcTransactions.refundTx = Tx.decode(
       StreamReader.fromHex(dlcTxs.refundTxHex),
     );
@@ -462,7 +461,7 @@ export default class BitcoinDlcProvider
         fundTxId: dlcTxs.fundTx.txId.toString(),
         localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
         remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
-        fundInputAmount: dlcTxs.fundTxOutAmount,
+        fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
         oraclePubkey: oracleAnnouncement.oraclePubkey.toString('hex'),
         oracleRValues: oracleAnnouncement.oracleEvent.oracleNonces.map(
           (nonce) => nonce.toString('hex'),
@@ -489,7 +488,7 @@ export default class BitcoinDlcProvider
       fundTxId: dlcTxs.fundTx.txId.toString(),
       localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
       remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
-      fundInputAmount: dlcTxs.fundTxOutAmount,
+      fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
     };
 
     const sigs: ISig[] = adaptorPairs.map((adaptorPair) => {
@@ -559,7 +558,7 @@ export default class BitcoinDlcProvider
         localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
         remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
         fundTxId: dlcTxs.fundTx.txId.toString(),
-        fundInputAmount: dlcTxs.fundTxOutAmount,
+        fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
         verifyRemote: isOfferer,
       };
 
@@ -583,7 +582,7 @@ export default class BitcoinDlcProvider
       localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
       remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
       fundTxId: dlcTxs.fundTx.txId.toString(),
-      fundInputAmount: dlcTxs.fundTxOutAmount,
+      fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
       verifyRemote: isOfferer,
     };
 
@@ -942,7 +941,7 @@ Payout Group not found',
       localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
       remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
       oracleSignatures: oracleSignatures.map((sig) => sig.toString('hex')),
-      fundInputAmount: dlcTxs.fundTxOutAmount,
+      fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
       adaptorSignature: isOfferer
         ? dlcAccept.cetSignatures.sigs[outcomeIndex].encryptedSig.toString(
             'hex',
@@ -1044,7 +1043,7 @@ Payout Group not found',
       sequence: 0,
       witnessUtxo: {
         script: paymentVariant.output,
-        value: Number(dlcTxs.fundTxOutAmount),
+        value: Number(dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats),
       },
       witnessScript: paymentVariant.redeem.output,
     });
