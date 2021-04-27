@@ -20,7 +20,7 @@
   "dependencies": {
     "@atomicfinance/provider": "^2.0.0-beta.1",
     "@atomicfinance/types": "^2.0.0-beta.1",
-    "@liquality/utils": "1.0.0-beta.2",
+    "@liquality/utils": "1.0.0-beta.4",
     "is-node": "github:matthewjablack/is-node",
     "lodash": "^4.17.20"
   },
