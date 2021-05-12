@@ -2,7 +2,7 @@ import 'mocha';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import _ from 'lodash';
-import { chains, getInput } from '../common';
+import { chains, getInput, mineBlock } from '../common';
 import Oracle from '../models/Oracle';
 import {
   ContractInfoV0,
@@ -20,6 +20,7 @@ import {
   DlcOfferV0,
   DlcAcceptV0,
   DlcSignV0,
+  DlcTransactionsV0,
 } from '@node-dlc/messaging';
 import {
   CoveredCall,
@@ -300,7 +301,7 @@ describe('dlc provider', () => {
  * i.e. Suredbits Oracle: https://test.oracle.suredbits.com/event/dae0e209c8a6747c27b9adf3d2fd3e1245b28fcef82e9e13e9a1b708f013a719
  * oracle_announcement_v0
  */
-describe('external test vectors', () => {
+describe.only('external test vectors', () => {
   it('executes', async () => {
     const numDigits = 18;
     const oracleBase = 2;
@@ -396,6 +397,12 @@ describe('external test vectors', () => {
       fundTx.serialize().toString('hex'),
     );
 
+    await mineBlock();
+    const fundBlockHeight = await alice.chain.getBlockHeight();
+    const fundBlock = await alice.chain.getBlockByNumber(fundBlockHeight);
+    console.log('fundBlockHeight', fundBlockHeight);
+    console.log('fundBlock', fundBlock);
+
     const oracleAttestation = OracleAttestationV0.deserialize(
       Buffer.from(
         'fdd868fd04da13446572696269742d4254432d32364d415232315d1bcfab252c6dd9edd7aea4c5eeeef138f7ff7346061ea40143a9f5ae80baa90012d39fca86c2492977c0a2909583b2c154bb121834658d75502d41a0e3b719fb0c958d8f9b10b0160e90eec5d4cd6779829105066a458e90c532b33e44e8bd8907d80ea2438d18d049be2d3aa4f1a3096628614d7bdda32757fd9a206c8e8c25c56c80e049f294876f040cb29f695c9eaec210a5dc69adacb65884f0fd281a303414b68799e03bb713d542f6c35ffaa0917fe18646969c77d56f4d8aa0f0fb30b21d34366e2fff8c931474b4d579ebfedd4c182f46da2ecde4e585014487da74156d746cb0713e27a56f8aa56dc828120b523fee21b2f0bc9d3a4a6d9855c251fdc5464ea7de26d48961c8fe1f8c30d5115d223ef1daf0b01ecfe3e5fb621531f26405bb7f6c1dfee97d24cfd7ad533c06162a22f4fc9fdd0e5c02e94201c239bba28e6472b78ace34b61540009a05ddf4d41ed69139d9ebc479794687fd0854cb13753ab5c56881f55367321ebd44e302241b42c99aa67dffb2d229178701d71a73bb12583356d4127760b9f77061442a02e87add0e9644a674118740890e9385756244c433d15f9b20d33628540da5c07face604980e5f709aa0bbfdb157b7a8846c3d6ef8c9c04dd1a0cffc31e0a2dce8993ba6747537266dcfc7bed771c9c4abc8d946f9e5d67c1e91bf22d77f5c097e6b3a51a420a8d882a3cad98cb4f84a88a6404efb146697e49a95f552ed9c3cc82bed630dcbff3624c7e4045e4e9086ce075a8acee1ef4f229e1b2b403ffb9f43a825ca8410b7d803b91ae54959ecd63b88f5c0e434874bca2bbf450a73f04a8cfe67e656c88f388328ceba913e418330e824310749ed1ee54e0e40e0af49d9a11bfbdbf36146234063c00520ed44165a0e71db7715455a21c090f1eca1bdd23c54714b564d5061c8bd31ca7aeb40fba2dafe74f9c0542b2d58c58fa75e9bb5a95c291d934f4dd513c405e9ddc58543cf74dbb37cfb25177458bed70ae641b6dba87f9f05fff8c15f74ef60703a5d31ab4a586bf0b9abf7a12aa272ff29429df38164e3e5d418b913c818c1858a3a8bf3c38e43059dfc8e96d4e21c7685b6b6084609795957d5bdec3bb871e89ab72719355a1ceaee7318a245bab2b09d94bf39f7b600665c3b8b8a655cf54f85c1b355d0fe2e29ec5336525dbbd673f5f4b9ceb9f9f906f29cb42f12da3af17f5b218ed41798968a0da05884d9f0e201b3e3be3a3740cf31439fd325248eed65fa93ce6c66cbf91c4e07fbb82328f60ce024d7884b29839264f6c50aba8d9f89253a44390f5748bbbbbcab4b2f200b9fdd860a1fc813431e0aff174476f4d4d254c6013e77461c006bfb1cf1a63149e91e1b37ff16ae6a8a4e02f4bc98b84d7f5de4ecbb4f8f31ba16858a95a4d138e206c8d96126a69b2b7ebb6b2ec9c3a37a9a12dbc396935195cc553e4f33b2434a5e052f5ee59f99454e2f0b8e1ccb8ddbee0b8162aed19361e41b0fe4ff1504df2a0bd150d7c96860d08990f12eb65bf5e5da02e4b8223853d407ba8ad25cca32992f1d794fff08dc93941e7a25c2a4fe1e4ab79e0fe16db4e7a26d9817d7e50a2c37a8c44a330de349d2ce9e33b802aa0f97a3d8f41cf26c9b4a5de9b98146f38fa8ddcc27a4ab76b8c6e7dcc786af130664013001300131013101300130013101310131013101310131013001310130013101300130',
@@ -416,5 +423,31 @@ describe('external test vectors', () => {
     );
     const cetTx = await alice.getMethod('getTransactionByHash')(cetTxId);
     expect(cetTx._raw.vin.length).to.equal(1);
+
+    const cetIndex = (dlcTxs as DlcTransactionsV0).cets.findIndex(
+      (cet) => cet.txId.toString() === cetTxId,
+    );
+
+    await mineBlock();
+    const blockHeight = await alice.chain.getBlockHeight();
+    const block = await alice.chain.getBlockByNumber(blockHeight);
+    console.log('blockHeight', blockHeight);
+    console.log('block', block);
+
+    const oldDlcTxs = dlcTxs as DlcTransactionsV0;
+    oldDlcTxs.cets = [oldDlcTxs.cets[cetIndex]];
+    console.log(
+      'oldDlcTxs.serialize().toString()',
+      oldDlcTxs.serialize().toString('hex'),
+    );
+
+    const newDlcTxs = oldDlcTxs;
+    // newDlcTxs.cets = [newDlcTxs.cets[cetIndex]];
+    newDlcTxs.fundEpoch.height = blockHeight;
+    newDlcTxs.fundEpoch.hash = Buffer.from(block.hash, 'hex');
+    console.log(
+      'newDlcTxs.serialize().toString()',
+      newDlcTxs.serialize().toString('hex'),
+    );
   });
 });
