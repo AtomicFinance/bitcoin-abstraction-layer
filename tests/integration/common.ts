@@ -3,10 +3,10 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import * as errors from '@liquality/errors';
 import * as utils from '@liquality/utils';
-import Client from '@liquality/client';
-import BitcoinNodeWalletProvider from '@liquality/bitcoin-node-wallet-provider';
-import BitcoinJsWalletProvider from '@liquality/bitcoin-js-wallet-provider';
-import BitcoinRpcProvider from '@liquality/bitcoin-rpc-provider';
+import { Client } from '@liquality/client';
+import { BitcoinNodeWalletProvider } from '@liquality/bitcoin-node-wallet-provider';
+import { BitcoinJsWalletProvider } from '@liquality/bitcoin-js-wallet-provider';
+import { BitcoinRpcProvider } from '@liquality/bitcoin-rpc-provider';
 import { Client as FinanceClient } from '../../packages/client/lib';
 import BitcoinCfdProvider from '../../packages/bitcoin-cfd-provider/lib';
 import BitcoinDlcProvider from '../../packages/bitcoin-dlc-provider/lib';
@@ -69,6 +69,7 @@ bitcoinWithJs.addProvider(
   new BitcoinJsWalletProvider({
     network,
     mnemonic: generateMnemonic(256),
+    baseDerivationPath: `m/84'/${config.bitcoin.network.coinType}'/0'`,
     addressType: bitcoin.AddressType.BECH32,
   }) as any,
 );
@@ -82,6 +83,7 @@ bitcoinWithJs2.addProvider(
   new BitcoinJsWalletProvider({
     network,
     mnemonic: generateMnemonic(256),
+    baseDerivationPath: `m/84'/${config.bitcoin.network.coinType}'/0'`,
     addressType: bitcoin.AddressType.BECH32,
   }) as any,
 );
@@ -95,6 +97,7 @@ bitcoinWithJs3.addProvider(
   new BitcoinJsWalletProvider({
     network,
     mnemonic: generateMnemonic(256),
+    baseDerivationPath: `m/84'/${config.bitcoin.network.coinType}'/0'`,
     addressType: bitcoin.AddressType.BECH32,
   }) as any,
 );

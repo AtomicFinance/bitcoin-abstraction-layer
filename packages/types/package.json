@@ -18,7 +18,7 @@
     "lint:fix": "../../node_modules/.bin/eslint --fix --ignore-path ../../.eslintignore  -c ../../.eslintrc.js ."
   },
   "dependencies": {
-    "@liquality/types": "1.0.0-beta.4",
+    "@liquality/types": "1.1.5",
     "lodash": "^4.17.20"
   },
   "devDependencies": {
