@@ -1,5 +1,5 @@
-import Client from '@liquality/client';
-import Provider from '@liquality/provider';
+import { Client } from '@liquality/client';
+import { Provider } from '@liquality/provider';
 import FinanceProvider from '@atomicfinance/provider';
 
 import Dlc from './Dlc';

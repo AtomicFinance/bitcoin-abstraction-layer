@@ -20,9 +20,9 @@
   "dependencies": {
     "@atomicfinance/provider": "^2.0.0-beta.2",
     "@atomicfinance/types": "^2.0.0-beta.2",
-    "@liquality/bitcoin-utils": "1.0.0-beta.4",
-    "@liquality/provider": "1.0.0-beta.4",
-    "@liquality/types": "1.0.0-beta.4",
+    "@liquality/bitcoin-utils": "1.1.5",
+    "@liquality/provider": "1.1.5",
+    "@liquality/types": "1.1.5",
     "bitcoinjs-lib": "5.2.0",
     "lodash": "^4.17.20"
   },
