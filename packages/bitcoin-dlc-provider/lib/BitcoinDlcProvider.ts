@@ -1714,9 +1714,10 @@ Payout Group not found',
     const prevTxOut = prevTx.outputs[input.prevTxVout];
     const scriptPubKey = prevTxOut.scriptPubKey.serialize().slice(1);
     const _address = address.fromOutputScript(scriptPubKey, network);
-    const inputAddress: Address = await this.getMethod('findAddress')([
-      _address,
-    ]);
+    let inputAddress: Address = await this.getMethod('findAddress')([_address]);
+    if (!inputAddress) {
+      inputAddress = await this.getMethod('findAddress')([_address], true);
+    }
     let derivationPath: string;
     if (inputAddress) {
       derivationPath = inputAddress.derivationPath;
