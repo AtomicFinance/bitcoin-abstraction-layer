@@ -7,9 +7,6 @@
   "homepage": "",
   "license": "ISC",
   "main": "dist/index.js",
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "build": "../../node_modules/.bin/tsc --project tsconfig.json",
     "prepublishOnly": "yarn run build",
