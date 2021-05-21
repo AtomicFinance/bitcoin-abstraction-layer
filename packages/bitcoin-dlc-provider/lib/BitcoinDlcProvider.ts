@@ -311,14 +311,14 @@ export default class BitcoinDlcProvider
 
     const localInputs: Utxo[] = await Promise.all(
       dlcOffer.fundingInputs.map(async (fundingInput) => {
-        const input = await this.fundingInputToInput(fundingInput);
+        const input = await this.fundingInputToInput(fundingInput, false);
         return input.toUtxo();
       }),
     );
 
     const remoteInputs: Utxo[] = await Promise.all(
       dlcAccept.fundingInputs.map(async (fundingInput) => {
-        const input = await this.fundingInputToInput(fundingInput);
+        const input = await this.fundingInputToInput(fundingInput, false);
         return input.toUtxo();
       }),
     );
@@ -1705,7 +1705,10 @@ Payout Group not found',
     return this._cfdDlcJs.VerifyRefundTxSignature(jsonObject);
   }
 
-  async fundingInputToInput(_input: FundingInput): Promise<Input> {
+  async fundingInputToInput(
+    _input: FundingInput,
+    findDerivationPath = true,
+  ): Promise<Input> {
     if (_input.type !== MessageType.FundingInputV0)
       throw Error('Must be FundingInputV0');
     const network = await this.getConnectedNetwork();
@@ -1714,13 +1717,18 @@ Payout Group not found',
     const prevTxOut = prevTx.outputs[input.prevTxVout];
     const scriptPubKey = prevTxOut.scriptPubKey.serialize().slice(1);
     const _address = address.fromOutputScript(scriptPubKey, network);
-    let inputAddress: Address = await this.getMethod('findAddress')([_address]);
-    if (!inputAddress) {
-      inputAddress = await this.getMethod('findAddress')([_address], true);
-    }
     let derivationPath: string;
-    if (inputAddress) {
-      derivationPath = inputAddress.derivationPath;
+
+    if (findDerivationPath) {
+      let inputAddress: Address = await this.getMethod('findAddress')([
+        _address,
+      ]);
+      if (!inputAddress) {
+        inputAddress = await this.getMethod('findAddress')([_address], true);
+      }
+      if (inputAddress) {
+        derivationPath = inputAddress.derivationPath;
+      }
     }
 
     return {
