@@ -1214,6 +1214,8 @@ Payout Group not found',
     dlcOffer.cetLocktime = cetLocktime;
     dlcOffer.refundLocktime = refundLocktime;
 
+    dlcOffer.validate();
+
     return dlcOffer;
   }
 
@@ -1228,7 +1230,7 @@ Payout Group not found',
     fixedInputs?: Input[],
   ): Promise<AcceptDlcOfferResponse> {
     const { dlcOffer } = checkTypes({ _dlcOffer });
-    dlcOffer.contractInfo.validate();
+    dlcOffer.validate();
 
     const acceptCollateralSatoshis =
       dlcOffer.contractInfo.totalCollateral - dlcOffer.offerCollateralSatoshis;
