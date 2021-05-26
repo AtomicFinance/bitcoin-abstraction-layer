@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/bitcoin-wallet-provider",
   "umdName": "BitcoinWalletProvider",
-  "version": "2.0.0-beta.8",
+  "version": "2.0.0-beta.9",
   "description": "CAL Finance Bitcoin Wallet Provider",
   "author": "Atomic Finance <info@atomic.finance>",
   "homepage": "",
@@ -15,8 +15,8 @@
     "lint:fix": "../../node_modules/.bin/eslint --fix --ignore-path ../../.eslintignore  -c ../../.eslintrc.js ."
   },
   "dependencies": {
-    "@atomicfinance/provider": "^2.0.0-beta.8",
-    "@atomicfinance/types": "^2.0.0-beta.8",
+    "@atomicfinance/provider": "^2.0.0-beta.9",
+    "@atomicfinance/types": "^2.0.0-beta.9",
     "@liquality/bitcoin-utils": "1.1.5",
     "@liquality/provider": "1.1.5",
     "@liquality/types": "1.1.5",
