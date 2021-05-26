@@ -38,4 +38,8 @@ export default class Wallet {
   async getUnusedAddress(change = false, numAddressPerCall = 100) {
     return this.client.getMethod('getUnusedAddress')(change, numAddressPerCall);
   }
+
+  async quickFindAddress(addresses: string[]) {
+    return this.client.getMethod('quickFindAddress')(addresses);
+  }
 }

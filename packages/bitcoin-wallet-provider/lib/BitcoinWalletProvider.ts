@@ -336,6 +336,33 @@ export default class BitcoinWalletProvider
 
     return { hex: txb.build().toHex(), fee };
   }
+
+  async quickFindAddress(addresses: string[]): Promise<Address> {
+    const maxAddresses = 500;
+    const addressesPerCall = 5;
+    let index = 0;
+    while (index < maxAddresses) {
+      const walletNonChangeAddresses = await this.getMethod('getAddresses')(
+        index,
+        addressesPerCall,
+        true,
+      );
+      const walletChangeAddresses = await this.getMethod('getAddresses')(
+        index,
+        addressesPerCall,
+        false,
+      );
+      const walletAddresses = [
+        ...walletNonChangeAddresses,
+        ...walletChangeAddresses,
+      ];
+      const walletAddress = walletAddresses.find((walletAddr) =>
+        addresses.find((addr) => walletAddr.address === addr),
+      );
+      if (walletAddress) return walletAddress;
+      index += addressesPerCall;
+    }
+  }
 }
 
 interface Output {
