@@ -1722,12 +1722,9 @@ Payout Group not found',
     let derivationPath: string;
 
     if (findDerivationPath) {
-      let inputAddress: Address = await this.getMethod('findAddress')([
-        _address,
-      ]);
-      if (!inputAddress) {
-        inputAddress = await this.getMethod('findAddress')([_address], true);
-      }
+      const inputAddress: Address = await this.client.financewallet.quickFindAddress(
+        [_address],
+      );
       if (inputAddress) {
         derivationPath = inputAddress.derivationPath;
       }

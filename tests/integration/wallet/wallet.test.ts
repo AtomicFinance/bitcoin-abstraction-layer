@@ -80,4 +80,34 @@ describe.skip('wallet provider', () => {
       expect(carolAddresses[1]).to.deep.equal(daveUnusedAddress);
     });
   });
+
+  describe('quickFindAddress', () => {
+    it('should find change or non change addresses', async () => {
+      const firstThirtyNonChangeAddresses = await alice.wallet.getAddresses(
+        0,
+        30,
+        false,
+      );
+      const firstThirtyChangeAddresses = await alice.wallet.getAddresses(
+        0,
+        30,
+        true,
+      );
+      const nonChangeAddress =
+        firstThirtyNonChangeAddresses[firstThirtyNonChangeAddresses.length - 1];
+      const changeAddress =
+        firstThirtyChangeAddresses[firstThirtyChangeAddresses.length - 1];
+
+      const foundNonChangeAddress = await alice.financewallet.quickFindAddress([
+        nonChangeAddress.address,
+      ]);
+
+      const foundChangeAddress = await alice.financewallet.quickFindAddress([
+        changeAddress.address,
+      ]);
+
+      expect(nonChangeAddress.address).to.equal(foundNonChangeAddress.address);
+      expect(changeAddress.address).to.equal(foundChangeAddress.address);
+    });
+  });
 });

@@ -1,3 +1,4 @@
+import { Address } from '@liquality/types';
 import Input from './models/Input';
 
 export interface FinanceWalletProvider {
@@ -20,6 +21,8 @@ export interface FinanceWalletProvider {
     _outputs: Output[],
     fixedInputs: Input[],
   );
+
+  quickFindAddress(addresses: string[]);
 }
 
 interface Output {
