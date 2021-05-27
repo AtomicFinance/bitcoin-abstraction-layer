@@ -901,6 +901,41 @@ Payout Group not found',
     }
   }
 
+  ValidateEvent(
+    _dlcOffer: DlcOffer,
+    oracleAttestation: OracleAttestationV0,
+  ): void {
+    const { dlcOffer } = checkTypes({
+      _dlcOffer,
+    });
+
+    switch (dlcOffer.contractInfo.type) {
+      case MessageType.ContractInfoV0:
+        // eslint-disable-next-line no-case-declarations
+        const contractInfo = dlcOffer.contractInfo as ContractInfoV0;
+        switch (contractInfo.contractDescriptor.type) {
+          case MessageType.ContractDescriptorV0:
+            throw Error('ContractDescriptorV0 not yet supported');
+          case MessageType.ContractDescriptorV1:
+            // eslint-disable-next-line no-case-declarations
+            const oracleInfo = contractInfo.oracleInfo;
+            if (
+              oracleInfo.announcement.oracleEvent.eventId !==
+              oracleAttestation.eventId
+            )
+              throw Error('Incorrect Oracle Attestation. Event Id must match.');
+            break;
+          default:
+            throw Error('ConractDescriptor must be V0 or V1');
+        }
+        break;
+      case MessageType.ContractInfoV1:
+        throw Error('MultiOracle not yet supported');
+      default:
+        throw Error('ContractInfo must be V0 or V1');
+    }
+  }
+
   async FindAndSignCet(
     _dlcOffer: DlcOffer,
     _dlcAccept: DlcAccept,
@@ -1447,6 +1482,8 @@ Payout Group not found',
       _dlcSign,
       _dlcTxs,
     });
+
+    this.ValidateEvent(dlcOffer, oracleAttestation);
 
     return this.FindAndSignCet(
       dlcOffer,
