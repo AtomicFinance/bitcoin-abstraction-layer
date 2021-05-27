@@ -161,6 +161,25 @@ describe('dlc provider', () => {
       expect(cetTx._raw.vin.length).to.equal(1);
     });
 
+    it(`should fail to execute if event id's don't match`, async () => {
+      oracleAttestation.eventId = 'invalidId';
+
+      let error = null;
+      try {
+        await bob.dlc.execute(
+          dlcOffer,
+          dlcAccept,
+          dlcSign,
+          dlcTransactions,
+          oracleAttestation,
+          false,
+        );
+      } catch (e) {
+        error = e;
+      }
+      expect(error).to.be.an('Error');
+    });
+
     it('refund', async () => {
       const refund = await bob.dlc.refund(
         dlcOffer,
