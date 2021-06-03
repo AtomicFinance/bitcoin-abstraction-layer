@@ -115,6 +115,9 @@ describe('wallet provider', () => {
     it('should finalizePSBT', async () => {
       psbtFinalized = alice.financewallet.finalizePSBT(psbtSigned);
     });
+    it('should sendRawTransaction', async () => {
+      await alice.chain.sendRawTransaction(psbtFinalized.hex);
+    });
   });
 
   describe.skip('setUnusedAddressesBlacklist', () => {
