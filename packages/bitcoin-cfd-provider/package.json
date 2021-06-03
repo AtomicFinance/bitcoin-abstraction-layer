@@ -18,7 +18,6 @@
     "@atomicfinance/provider": "^2.0.0",
     "@atomicfinance/types": "^2.0.0",
     "@liquality/utils": "1.1.5",
-    "is-node": "github:matthewjablack/is-node",
     "lodash": "^4.17.20"
   },
   "devDependencies": {

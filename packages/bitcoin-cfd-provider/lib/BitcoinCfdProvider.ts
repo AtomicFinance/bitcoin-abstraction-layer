@@ -140,7 +140,6 @@ import {
   VerifySignatureResponse,
   CfdProvider,
 } from '@atomicfinance/types';
-import * as isNode from 'is-node';
 
 export default class BitcoinCfdProvider
   extends Provider
@@ -153,11 +152,9 @@ export default class BitcoinCfdProvider
     this._cfdJs = cfdJs;
   }
 
-  async CfdLoaded(): Promise<void> {
-    if (!isNode) {
-      while (!this._cfdJs) {
-        await sleep(1);
-      }
+  private async CfdLoaded() {
+    while (!this._cfdJs) {
+      await sleep(10);
     }
   }
 
