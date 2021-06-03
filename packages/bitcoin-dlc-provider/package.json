@@ -30,7 +30,6 @@
     "bignumber.js": "9.0.1",
     "bip-schnorr": "0.6.2",
     "bitcoinjs-lib": "5.2.0",
-    "is-node": "github:matthewjablack/is-node",
     "lodash": "^4.17.20",
     "randombytes": "2.1.0",
     "uuid": "^8.3.0"
