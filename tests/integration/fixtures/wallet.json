@@ -1,0 +1,23 @@
+{
+  "2of3": {
+    "pubkeys": [
+      "037593f28c86346cc4c68b161bc65ef4699fbe3a434f6dc03e1b38267a712f032c",
+      "02e09211e9edd3ef1305c74ea50efffe20c392c5e2fda18e52c414be003cfd7333"
+    ],
+    "address": "bcrt1q36cr95ljct23nh3fkx0tspjulwpne4zukudfjjnkp3ac9vm43ztq8pz05y",
+    "redeemScript": "5221037593f28c86346cc4c68b161bc65ef4699fbe3a434f6dc03e1b38267a712f032c2102e09211e9edd3ef1305c74ea50efffe20c392c5e2fda18e52c414be003cfd733352ae"
+  },
+  "2of4": {
+    "pubkeys": [
+      "037593f28c86346cc4c68b161bc65ef4699fbe3a434f6dc03e1b38267a712f032c",
+      "02e09211e9edd3ef1305c74ea50efffe20c392c5e2fda18e52c414be003cfd7333",
+      "03b6b6c492d920a867b142c0f1b72066d22b3f0aca310bf88628fa3d7b6e8e8552",
+      "02bd88052beff3adb048dcd3e8cfd7e5ec6e2a485eddf708df280582f633230b7a"
+    ],
+    "address": "bcrt1q02utjc84datt3tw3p7lssyv2jc35qf6ka578e6y4aqc2qz9r2zvqute5t4",
+    "redeemScript": "5221037593f28c86346cc4c68b161bc65ef4699fbe3a434f6dc03e1b38267a712f032c2102e09211e9edd3ef1305c74ea50efffe20c392c5e2fda18e52c414be003cfd73332103b6b6c492d920a867b142c0f1b72066d22b3f0aca310bf88628fa3d7b6e8e85522102bd88052beff3adb048dcd3e8cfd7e5ec6e2a485eddf708df280582f633230b7a54ae"
+  },
+  "invalidPubkeys": {
+    "pubkeys": ["037593f28c86346cc4c68b161bc", "02e09211e9edd3ef1305c74ea50"]
+  }
+}

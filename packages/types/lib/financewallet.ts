@@ -1,4 +1,3 @@
-import { Address } from '@liquality/types';
 import Input from './models/Input';
 
 export interface FinanceWalletProvider {

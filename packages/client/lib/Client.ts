@@ -1,9 +1,8 @@
+import FinanceProvider from '@atomicfinance/provider';
 import { Client } from '@liquality/client';
 import { Provider } from '@liquality/provider';
-import FinanceProvider from '@atomicfinance/provider';
-
-import Dlc from './Dlc';
 import Cfd from './Cfd';
+import Dlc from './Dlc';
 import Wallet from './Wallet';
 
 export default class FinanceClient extends Client {

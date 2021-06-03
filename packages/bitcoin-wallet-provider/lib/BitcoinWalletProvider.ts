@@ -1,14 +1,17 @@
 import Provider from '@atomicfinance/provider';
-import { Input, FinanceWalletProvider } from '@atomicfinance/types';
-import { Transaction, bitcoin as bT, Address } from '@liquality/types';
-
 import {
-  normalizeTransactionObject,
+  CreateMultisigResponse,
+  FinanceWalletProvider,
+  Input,
+} from '@atomicfinance/types';
+import { BitcoinNetwork } from '@liquality/bitcoin-networks';
+import {
   decodeRawTransaction,
+  normalizeTransactionObject,
   selectCoins,
 } from '@liquality/bitcoin-utils';
+import { Address } from '@liquality/types';
 import * as bitcoin from 'bitcoinjs-lib';
-import { BitcoinNetwork } from '@liquality/bitcoin-networks';
 
 const FEE_PER_BYTE_FALLBACK = 5;
 const ADDRESS_GAP = 20;
@@ -19,6 +22,12 @@ const NONCHANGE_OR_CHANGE_ADDRESS = 2;
 type UnusedAddressesBlacklist = {
   [address: string]: true;
 };
+
+interface finalizePSBTResponse {
+  psbt: string;
+  hex: string;
+  complete: boolean;
+}
 
 export default class BitcoinWalletProvider
   extends Provider
@@ -55,6 +64,155 @@ export default class BitcoinWalletProvider
     unusedAddressesBlacklist: UnusedAddressesBlacklist,
   ) {
     this._unusedAddressesBlacklist = unusedAddressesBlacklist;
+  }
+
+  _createMultisigPayment(m: number, pubkeys: string[]): bitcoin.Payment {
+    if (m > pubkeys.length) {
+      throw new Error(
+        `not enough keys supplied (got ${pubkeys.length} keys, but need at least ${m} to redeem)`,
+      );
+    }
+    // Create m-of-n multisig
+    const p2ms = bitcoin.payments.p2ms({
+      m: m,
+      pubkeys: pubkeys.map((key: string) => Buffer.from(key, 'hex')),
+      network: this._network,
+    });
+
+    // Create p2wsh for multisig
+    const p2wsh = bitcoin.payments.p2wsh({
+      redeem: p2ms,
+      network: this._network,
+    });
+
+    return p2wsh;
+  }
+
+  /**
+   * Creates a native-segwit multi-signature address (P2MS in P2WSH) with n signatures of m required keys
+   * https://developer.bitcoin.org/reference/rpc/createmultisig.html
+   * @param m the number of required signatures
+   * @param pubkeys n possible pubkeys in total
+   * @returns a json object containing the `address` and `redeemScript`
+   */
+  createMultisig(m: number, pubkeys: string[]): CreateMultisigResponse {
+    const p2wsh = this._createMultisigPayment(m, pubkeys);
+    return {
+      address: p2wsh.address,
+      redeemScript: p2wsh.redeem?.output?.toString('hex'),
+    };
+  }
+
+  /**
+   * Creates a PSBT of a native-segwit multi-signature address (P2MS in P2WSH) with n signatures of m required keys
+   * https://developer.bitcoin.org/reference/rpc/createmultisig.html
+   * https://developer.bitcoin.org/reference/rpc/createpsbt.html
+   * @param m the number of required signatures
+   * @param pubkeys n possible pubkeys in total
+   * @param inputs the Inputs to the PSBT
+   * @param ouputs the Outputs to the PSBT
+   * @returns a base64 encoded psbt string
+   */
+  buildMultisigPSBT(
+    m: number,
+    pubkeys: string[],
+    inputs: Input[],
+    outputs: Output[],
+  ): string {
+    if (inputs.length <= 0) throw new Error('no inputs found');
+    if (outputs.length <= 0) throw new Error('no outputs found');
+
+    const p2wsh = this._createMultisigPayment(m, pubkeys);
+    // TODO: verify that redeemscript for each fixedinputs correspond to redeemscript for multisig
+
+    // creator
+    const psbt = new bitcoin.Psbt({ network: this._network });
+
+    // updater
+    inputs.forEach((input: Input) => {
+      psbt.addInput({
+        hash: input.txid,
+        index: input.vout,
+        witnessUtxo: { script: p2wsh.output, value: input.value },
+        witnessScript: p2wsh.redeem.output,
+      });
+    });
+
+    outputs.forEach((output: Output) => {
+      psbt.addOutput({
+        address: output.to,
+        value: output.value,
+      });
+    });
+
+    return psbt.toBase64();
+  }
+
+  /**
+   * Update a PSBT with input information from our wallet and then sign inputs that we can sign for
+   * https://developer.bitcoin.org/reference/rpc/walletprocesspsbt.html
+   * @param psbt a base64 encoded psbt string
+   * @returns a base64 encoded signed psbt string
+   */
+  async walletProcessPSBT(psbtString: string): Promise<string> {
+    const psbt = bitcoin.Psbt.fromBase64(psbtString);
+
+    await Promise.all(
+      psbt.data.inputs.map(async (input, i: number) => {
+        const scriptStack = bitcoin.script.decompile(input.witnessScript);
+        const pubkeys = scriptStack.filter((data) => Buffer.isBuffer(data));
+
+        await Promise.all(
+          pubkeys.map(async (key) => {
+            // create address using pubkey
+            const { address: addressString } = bitcoin.payments.p2wpkh({
+              pubkey: key as Buffer,
+              network: this._network,
+            });
+
+            // Retrieve address object from wallet using address
+            const address: Address = await this.quickFindAddress([
+              addressString,
+            ]);
+
+            // exit if address doesn't exist in wallet
+            if (!address) return;
+
+            // derive keypair
+            const keyPair = await this.getMethod('keyPair')(
+              address.derivationPath,
+            );
+
+            // sign PSBT using keypair
+            psbt.signInput(i, keyPair);
+          }),
+        );
+      }),
+    );
+
+    psbt.validateSignaturesOfAllInputs(); // ensure all signatures are valid!
+    return psbt.toBase64();
+  }
+
+  /**
+   * Finalize the inputs of a PSBT. If the transaction is fully signed, it will
+   * produce a network serialized transaction which can be broadcast with sendrawtransaction
+   * https://developer.bitcoin.org/reference/rpc/finalizepsbt.html
+   * @param psbt a base64 encoded psbt string
+   * @returns a json object containing `psbt` in base64, `hex` for transaction and `complete` for if
+   * the transaction has a complete set of signatures
+   */
+  finalizePSBT(psbtString: string): finalizePSBTResponse {
+    const psbt = bitcoin.Psbt.fromBase64(psbtString);
+    psbt.validateSignaturesOfAllInputs(); // ensure all signatures are valid!
+    psbt.finalizeAllInputs();
+
+    // TODO: Figure out if tranasction has a complete set of signatures
+    return {
+      psbt: psbt.toBase64(),
+      hex: psbt.extractTransaction().toHex(),
+      complete: null,
+    };
   }
 
   async getUnusedAddress(change = false, numAddressPerCall = 100) {

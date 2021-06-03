@@ -1,24 +1,24 @@
 /* eslint-env mocha */
+import { BitcoinJsWalletProvider } from '@liquality/bitcoin-js-wallet-provider';
+import { BitcoinNodeWalletProvider } from '@liquality/bitcoin-node-wallet-provider';
+import { BitcoinRpcProvider } from '@liquality/bitcoin-rpc-provider';
+import { decodeRawTransaction } from '@liquality/bitcoin-utils';
+import { Client } from '@liquality/client';
+import * as errors from '@liquality/errors';
+import { bitcoin } from '@liquality/types';
+import * as utils from '@liquality/utils';
+import BN from 'bignumber.js';
+import { generateMnemonic } from 'bip39';
+import * as cfdJs from 'cfd-js';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import * as errors from '@liquality/errors';
-import * as utils from '@liquality/utils';
-import { Client } from '@liquality/client';
-import { BitcoinNodeWalletProvider } from '@liquality/bitcoin-node-wallet-provider';
-import { BitcoinJsWalletProvider } from '@liquality/bitcoin-js-wallet-provider';
-import { BitcoinRpcProvider } from '@liquality/bitcoin-rpc-provider';
-import { Client as FinanceClient } from '../../packages/client/lib';
 import BitcoinCfdProvider from '../../packages/bitcoin-cfd-provider/lib';
 import BitcoinDlcProvider from '../../packages/bitcoin-dlc-provider/lib';
 import BitcoinWalletProvider from '../../packages/bitcoin-wallet-provider/lib';
+import { Client as FinanceClient } from '../../packages/client/lib';
 import Input from '../../packages/types/lib/models/Input';
-import BN from 'bignumber.js';
-import { decodeRawTransaction } from '@liquality/bitcoin-utils';
-import { generateMnemonic } from 'bip39';
 import config from './config';
-import * as cfdJs from 'cfd-js';
 import { getWrappedCfdDlcJs } from './utils/WrappedCfdDlcJs';
-import { bitcoin } from '@liquality/types';
 
 const cfdDlcJs = getWrappedCfdDlcJs();
 
@@ -157,11 +157,17 @@ async function mineBlock() {
   }
 }
 
-async function getInput(client: Client): Promise<Input> {
-  const {
-    address: unusedAddress,
-    derivationPath,
-  } = await client.wallet.getUnusedAddress();
+async function getInput(
+  client: Client,
+  unusedAddress?: string,
+): Promise<Input> {
+  let derivationPath;
+  if (!unusedAddress) {
+    ({
+      address: unusedAddress,
+      derivationPath,
+    } = await client.wallet.getUnusedAddress());
+  }
 
   await client.getMethod('jsonrpc')('importaddress', unusedAddress, '', false);
 

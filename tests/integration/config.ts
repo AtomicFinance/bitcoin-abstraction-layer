@@ -3,7 +3,7 @@ import { BitcoinNetworks } from '@liquality/bitcoin-networks';
 export default {
   bitcoin: {
     rpc: {
-      host: 'http://localhost:18443',
+      host: 'http://localhost:18433',
       username: 'bitcoin',
       password: 'local321',
     },
