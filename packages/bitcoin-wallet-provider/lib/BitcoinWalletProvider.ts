@@ -10,7 +10,7 @@ import {
   normalizeTransactionObject,
   selectCoins,
 } from '@liquality/bitcoin-utils';
-import { Address } from '@liquality/types';
+import { Address, bitcoin as bT, Transaction } from '@liquality/types';
 import * as bitcoin from 'bitcoinjs-lib';
 
 const FEE_PER_BYTE_FALLBACK = 5;
