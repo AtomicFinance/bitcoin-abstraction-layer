@@ -108,6 +108,7 @@ describe('wallet provider', () => {
         [output],
       );
     });
+
     it('should process and sign PSBT', async () => {
       psbtSigned = await alice.financewallet.walletProcessPSBT(psbt);
     });
@@ -115,6 +116,7 @@ describe('wallet provider', () => {
     it('should finalizePSBT', async () => {
       psbtFinalized = alice.financewallet.finalizePSBT(psbtSigned);
     });
+
     it('should sendRawTransaction', async () => {
       await alice.chain.sendRawTransaction(psbtFinalized.hex);
     });
