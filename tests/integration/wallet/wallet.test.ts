@@ -68,7 +68,7 @@ describe('wallet provider', () => {
     });
   });
 
-  describe.only('Full 2-of-3 multisig PSBT creation and signing process', () => {
+  describe('Full 2-of-3 multisig PSBT creation and signing process', () => {
     let aliceaddress1: Address;
     let aliceaddress2: Address;
     let bobaddress1: Address;
