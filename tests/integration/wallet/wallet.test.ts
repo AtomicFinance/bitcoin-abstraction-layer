@@ -1,3 +1,4 @@
+import { Input, Output } from '@atomicfinance/types';
 import BitcoinJsWalletProvider from '@liquality/bitcoin-js-wallet-provider';
 import { Address, bitcoin } from '@liquality/types';
 import { generateMnemonic } from 'bip39';
@@ -67,14 +68,15 @@ describe('wallet provider', () => {
     });
   });
 
-  describe('Full 2-of-3 multisig PSBT creation and signing process', () => {
+  describe.only('Full 2-of-3 multisig PSBT creation and signing process', () => {
     let aliceaddress1: Address;
     let aliceaddress2: Address;
     let bobaddress1: Address;
-    let input; // TODO: type import?
-    let output; // TODO: which type?
+    let input: Input;
+    let output: Output;
     let m: number;
     let pubkeys: string[];
+    let address: string;
     let psbt: string;
     let psbtSigned: string;
     let psbtFinalized;
@@ -90,7 +92,7 @@ describe('wallet provider', () => {
         bobaddress1.publicKey,
       ];
 
-      const { address } = await alice.financewallet.createMultisig(m, pubkeys);
+      ({ address } = await alice.financewallet.createMultisig(m, pubkeys));
 
       // import address, fund address, create input
       input = await getInput(alice, address);
@@ -109,16 +111,43 @@ describe('wallet provider', () => {
       );
     });
 
+    it('should fail buildMultisigPSBT if no inputs', async () => {
+      await expect(() =>
+        alice.financewallet.buildMultisigPSBT(m, pubkeys, [], [output]),
+      ).to.throw(Error);
+    });
+
+    it('should fail buildMultisigPSBT if no outputs', async () => {
+      await expect(() =>
+        alice.financewallet.buildMultisigPSBT(m, pubkeys, [input], []),
+      ).to.throw(Error);
+    });
+
+    it('should fail buildMultisigPSBT if inputpubkey doesnt match', async () => {
+      // import address, fund address, create input
+      const badinput: Input = await getInput(
+        alice,
+        'bcrt1q36cr95ljct23nh3fkx0tspjulwpne4zukudfjjnkp3ac9vm43ztq8pz05y',
+      );
+      await expect(() =>
+        alice.financewallet.buildMultisigPSBT(2, pubkeys, [badinput], [output]),
+      ).to.throw(Error);
+    });
+
     it('should process and sign PSBT', async () => {
       psbtSigned = await alice.financewallet.walletProcessPSBT(psbt);
+      expect(psbtSigned).to.not.be.empty;
     });
 
     it('should finalizePSBT', async () => {
       psbtFinalized = alice.financewallet.finalizePSBT(psbtSigned);
+      expect(psbtFinalized.complete).to.be.true;
     });
 
     it('should sendRawTransaction', async () => {
-      await alice.chain.sendRawTransaction(psbtFinalized.hex);
+      await expect(() =>
+        alice.chain.sendRawTransaction(psbtFinalized.hex),
+      ).to.not.throw(Error);
     });
   });
 

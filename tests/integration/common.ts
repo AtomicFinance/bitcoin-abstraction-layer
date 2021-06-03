@@ -1,4 +1,5 @@
 /* eslint-env mocha */
+import { Input } from '@atomicfinance/types';
 import { BitcoinJsWalletProvider } from '@liquality/bitcoin-js-wallet-provider';
 import { BitcoinNodeWalletProvider } from '@liquality/bitcoin-node-wallet-provider';
 import { BitcoinRpcProvider } from '@liquality/bitcoin-rpc-provider';
@@ -16,7 +17,6 @@ import BitcoinCfdProvider from '../../packages/bitcoin-cfd-provider/lib';
 import BitcoinDlcProvider from '../../packages/bitcoin-dlc-provider/lib';
 import BitcoinWalletProvider from '../../packages/bitcoin-wallet-provider/lib';
 import { Client as FinanceClient } from '../../packages/client/lib';
-import Input from '../../packages/types/lib/models/Input';
 import config from './config';
 import { getWrappedCfdDlcJs } from './utils/WrappedCfdDlcJs';
 

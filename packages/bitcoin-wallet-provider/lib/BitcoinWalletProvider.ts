@@ -1,8 +1,10 @@
 import Provider from '@atomicfinance/provider';
 import {
   CreateMultisigResponse,
+  finalizePSBTResponse,
   FinanceWalletProvider,
   Input,
+  Output,
 } from '@atomicfinance/types';
 import { BitcoinNetwork } from '@liquality/bitcoin-networks';
 import {
@@ -11,6 +13,7 @@ import {
   selectCoins,
 } from '@liquality/bitcoin-utils';
 import { Address, bitcoin as bT, Transaction } from '@liquality/types';
+import assert from 'assert';
 import * as bitcoin from 'bitcoinjs-lib';
 
 const FEE_PER_BYTE_FALLBACK = 5;
@@ -22,12 +25,6 @@ const NONCHANGE_OR_CHANGE_ADDRESS = 2;
 type UnusedAddressesBlacklist = {
   [address: string]: true;
 };
-
-interface finalizePSBTResponse {
-  psbt: string;
-  hex: string;
-  complete: boolean;
-}
 
 export default class BitcoinWalletProvider
   extends Provider
@@ -119,11 +116,18 @@ export default class BitcoinWalletProvider
     inputs: Input[],
     outputs: Output[],
   ): string {
-    if (inputs.length <= 0) throw new Error('no inputs found');
-    if (outputs.length <= 0) throw new Error('no outputs found');
+    assert(inputs.length > 0, 'no inputs found');
+    assert(outputs.length > 0, 'no outputs found');
 
     const p2wsh = this._createMultisigPayment(m, pubkeys);
-    // TODO: verify that redeemscript for each fixedinputs correspond to redeemscript for multisig
+
+    // Verify pubkeyhash for all inputs matches the p2wsh hash
+    assert(
+      inputs.every(
+        (input: Input) => p2wsh.output.toString('hex') === input.scriptPubKey,
+      ),
+      'address pubkeyhash does not match input scriptPubKey',
+    );
 
     // creator
     const psbt = new bitcoin.Psbt({ network: this._network });
@@ -204,14 +208,20 @@ export default class BitcoinWalletProvider
    */
   finalizePSBT(psbtString: string): finalizePSBTResponse {
     const psbt = bitcoin.Psbt.fromBase64(psbtString);
-    psbt.validateSignaturesOfAllInputs(); // ensure all signatures are valid!
-    psbt.finalizeAllInputs();
 
-    // TODO: Figure out if tranasction has a complete set of signatures
+    try {
+      psbt.validateSignaturesOfAllInputs(); // ensure all signatures are valid!
+      psbt.finalizeAllInputs();
+    } catch (error) {
+      return {
+        psbt: psbt.toBase64(),
+        complete: false,
+      };
+    }
     return {
       psbt: psbt.toBase64(),
       hex: psbt.extractTransaction().toHex(),
-      complete: null,
+      complete: true,
     };
   }
 
@@ -521,9 +531,4 @@ export default class BitcoinWalletProvider
       index += addressesPerCall;
     }
   }
-}
-
-interface Output {
-  to?: string;
-  value: number;
 }
