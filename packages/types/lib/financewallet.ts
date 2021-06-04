@@ -1,5 +1,5 @@
-import { Address } from '@liquality/types';
 import Input from './models/Input';
+import Output from './models/Output';
 
 export interface FinanceWalletProvider {
   buildSweepTransactionWithSetOutputs(
@@ -23,9 +23,4 @@ export interface FinanceWalletProvider {
   );
 
   quickFindAddress(addresses: string[]);
-}
-
-interface Output {
-  to?: string;
-  value: number;
 }

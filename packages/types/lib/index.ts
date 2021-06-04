@@ -21,15 +21,15 @@ interface IFinanceClient {
   financewallet: FinanceWalletProvider;
 }
 
-export { IFinanceClient, CfdProvider, DlcProvider, FinanceWalletProvider };
-export * from './common';
 export * from './cfd';
+export * from './common';
 export * from './dlc';
 export * from './financewallet';
-
 export { default as Amount } from './models/Amount';
 export { default as Input } from './models/Input';
 export { default as OracleInfo } from './models/OracleInfo';
 export { default as Outcome } from './models/Outcome';
 export { default as Output } from './models/Output';
 export { default as Utxo } from './models/Utxo';
+export * from './wallet';
+export { IFinanceClient, CfdProvider, DlcProvider, FinanceWalletProvider };

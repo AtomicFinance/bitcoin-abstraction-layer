@@ -1,10 +1,10 @@
-import 'mocha';
-import { expect } from 'chai';
-import { chains, fundAddress, getInput } from '../common';
-import Client from '../../../packages/client';
 import { bitcoin } from '@liquality/types';
-import Input from '../../../packages/types/lib/models/Input';
 import { FundingInputV0 } from '@node-dlc/messaging';
+import { expect } from 'chai';
+import 'mocha';
+import Client from '../../../packages/client';
+import Input from '../../../packages/types/lib/models/Input';
+import { chains, fundAddress, getInput } from '../common';
 
 const chain = chains.bitcoinWithJs;
 const alice = chain.client;

@@ -21,7 +21,8 @@
     "@liquality/provider": "1.1.5",
     "@liquality/types": "1.1.5",
     "bitcoinjs-lib": "5.2.0",
-    "lodash": "^4.17.20"
+    "lodash": "^4.17.20",
+    "secp256k1": "^4.0.2"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.160",
