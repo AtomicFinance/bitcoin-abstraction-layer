@@ -63,7 +63,7 @@ describe('wallet provider', () => {
     });
     it('should fail if pubkeys are invalid', async () => {
       await expect(() =>
-        alice.financewallet.createMultisig(2, fixtures.invalidPubkeys.pubkeys),
+        alice.financewallet.createMultisig(2, fixtures.invalidPubkeys),
       ).to.throw(Error);
     });
   });
@@ -137,6 +137,14 @@ describe('wallet provider', () => {
     it('should process and sign PSBT', async () => {
       psbtSigned = await alice.financewallet.walletProcessPSBT(psbt);
       expect(psbtSigned).to.not.be.empty;
+    });
+
+    it('should fail walletProcessPSBT if non p2wsh inputs provided', async () => {
+      try {
+        await alice.financewallet.walletProcessPSBT(fixtures['non-p2wsh-psbt']);
+      } catch (e) {
+        expect(e).to.be.an('Error');
+      }
     });
 
     it('should finalizePSBT', async () => {

@@ -26,7 +26,7 @@ export default class Wallet {
     );
   }
 
-  walletProcessPSBT(psbtString: string): string {
+  walletProcessPSBT(psbtString: string): Promise<string> {
     return this.client.getMethod('walletProcessPSBT')(psbtString);
   }
 

@@ -15,6 +15,7 @@ import {
 import { Address, bitcoin as bT, Transaction } from '@liquality/types';
 import assert from 'assert';
 import * as bitcoin from 'bitcoinjs-lib';
+import secp256k1 from 'secp256k1';
 
 const FEE_PER_BYTE_FALLBACK = 5;
 const ADDRESS_GAP = 20;
@@ -155,7 +156,7 @@ export default class BitcoinWalletProvider
   /**
    * Update a PSBT with input information from our wallet and then sign inputs that we can sign for
    * https://developer.bitcoin.org/reference/rpc/walletprocesspsbt.html
-   * @param psbt a base64 encoded psbt string
+   * @param psbt a base64 encoded psbt string (P2WSH only)
    * @returns a base64 encoded signed psbt string
    */
   async walletProcessPSBT(psbtString: string): Promise<string> {
@@ -163,8 +164,15 @@ export default class BitcoinWalletProvider
 
     await Promise.all(
       psbt.data.inputs.map(async (input, i: number) => {
+        assert(
+          psbt.getInputType(i).slice(0, 5) === 'p2wsh',
+          'only accepts P2WSH inputs',
+        );
+
         const scriptStack = bitcoin.script.decompile(input.witnessScript);
-        const pubkeys = scriptStack.filter((data) => Buffer.isBuffer(data));
+        const pubkeys = scriptStack.filter(
+          (data) => Buffer.isBuffer(data) && secp256k1.publicKeyVerify(data),
+        );
 
         await Promise.all(
           pubkeys.map(async (key) => {
