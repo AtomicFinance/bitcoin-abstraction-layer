@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/bitcoin-dlc-provider",
   "umdName": "BitcoinDlcProvider",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "CAL Finance Bitcoin Dlc Provider",
   "author": "Atomic Finance <info@atomic.finance>",
   "homepage": "",
@@ -15,9 +15,9 @@
     "lint:fix": "../../node_modules/.bin/eslint --fix --ignore-path ../../.eslintignore  -c ../../.eslintrc.js ."
   },
   "dependencies": {
-    "@atomicfinance/bitcoin-networks": "^2.0.3",
-    "@atomicfinance/provider": "^2.0.3",
-    "@atomicfinance/types": "^2.0.3",
+    "@atomicfinance/bitcoin-networks": "^2.0.4",
+    "@atomicfinance/provider": "^2.0.4",
+    "@atomicfinance/types": "^2.0.4",
     "@liquality/bitcoin-utils": "1.1.5",
     "@liquality/provider": "1.1.5",
     "@liquality/types": "1.1.5",
