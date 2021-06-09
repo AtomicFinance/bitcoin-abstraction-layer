@@ -304,7 +304,7 @@ export default class BitcoinWalletProvider
 
       for (const address of addrList) {
         const isUsed =
-          transactionCounts[address] > 0 ||
+          transactionCounts[address.address] > 0 ||
           this._unusedAddressesBlacklist[address.address];
         const isChangeAddress = changeAddresses.find(
           (a) => address.address === a.address,
