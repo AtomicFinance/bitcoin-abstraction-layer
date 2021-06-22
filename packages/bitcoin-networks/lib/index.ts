@@ -4,17 +4,17 @@ export const chainHashFromNetwork = (network: BitcoinNetwork): Buffer => {
   switch (network.name) {
     case 'bitcoin':
       return Buffer.from(
-        '000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f',
+        '6fe28c0ab6f1b372c1a6a246ae63f74f931e8365e15a089c68d6190000000000',
         'hex',
       );
     case 'bitcoin_testnet':
       return Buffer.from(
-        '000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943',
+        '43497fd7f826957108f4a30fd9cec3aeba79972084e90ead01ea330900000000',
         'hex',
       );
     case 'bitcoin_regtest':
       return Buffer.from(
-        '0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206',
+        '06226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910f',
         'hex',
       );
     default:

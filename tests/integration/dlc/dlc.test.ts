@@ -1,43 +1,38 @@
-import 'mocha';
+import { BitcoinNetworks } from '@liquality/bitcoin-networks';
+import { CoveredCall, groupByIgnoringDigits } from '@node-dlc/core';
+import {
+  ContractDescriptorV1,
+  ContractInfoV0,
+  DigitDecompositionEventDescriptorV0,
+  DlcAccept,
+  DlcAcceptV0,
+  DlcOffer,
+  DlcOfferV0,
+  DlcSign,
+  DlcSignV0,
+  DlcTransactions,
+  OracleAnnouncementV0,
+  OracleAttestationV0,
+  OracleEventV0,
+  OracleInfoV0,
+  RoundingIntervalsV0,
+} from '@node-dlc/messaging';
+import { Psbt } from 'bitcoinjs-lib';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import _ from 'lodash';
-import { chains, getInput } from '../common';
-import Oracle from '../models/Oracle';
-import {
-  ContractInfoV0,
-  OracleInfoV0,
-  OracleAnnouncementV0,
-  OracleEventV0,
-  OracleAttestationV0,
-  DigitDecompositionEventDescriptorV0,
-  ContractDescriptorV1,
-  RoundingIntervalsV0,
-  DlcOffer,
-  DlcAccept,
-  DlcSign,
-  DlcTransactions,
-  DlcOfferV0,
-  DlcAcceptV0,
-  DlcSignV0,
-} from '@node-dlc/messaging';
-import {
-  CoveredCall,
-  groupByIgnoringDigits,
-  separatePrefix,
-} from '@node-dlc/core';
-import * as fs from 'fs';
-import * as base64 from 'base64-js';
-import { Psbt } from 'bitcoinjs-lib';
-import {
-  generateContractInfo,
-  generateOracleAttestation,
-} from '../utils/contract';
+import 'mocha';
 import {
   AcceptDlcOfferResponse,
   SignDlcAcceptResponse,
 } from '../../../packages/bitcoin-dlc-provider';
-
+import { chainHashFromNetwork } from '../../../packages/bitcoin-networks/lib';
+import { chains, getInput } from '../common';
+import f from '../fixtures/blockchain.json';
+import Oracle from '../models/Oracle';
+import {
+  generateContractInfo,
+  generateOracleAttestation,
+} from '../utils/contract';
 chai.use(chaiAsPromised);
 const expect = chai.expect;
 
@@ -46,6 +41,20 @@ const alice = chain.client;
 
 const bob = chains.bitcoinWithJs2.client;
 const carol = chains.bitcoinWithJs3.client;
+
+describe('bitcoin networks', () => {
+  it('have correct genesis block hashes', async () => {
+    expect(
+      chainHashFromNetwork(BitcoinNetworks.bitcoin).toString('hex'),
+    ).to.equal(f.mainnet.chainhash);
+    expect(
+      chainHashFromNetwork(BitcoinNetworks.bitcoin_testnet).toString('hex'),
+    ).to.equal(f.testnet.chainhash);
+    expect(
+      chainHashFromNetwork(BitcoinNetworks.bitcoin_regtest).toString('hex'),
+    ).to.equal(f.regtest.chainhash);
+  });
+});
 
 describe('dlc provider', () => {
   const numDigits = 17;
