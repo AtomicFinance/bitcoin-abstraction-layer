@@ -93,7 +93,7 @@ describe('dlc provider', () => {
 
     const feeRatePerVb = BigInt(10);
     const cetLocktime = 1617170572;
-    const refundLocktime = 1617170572;
+    const refundLocktime = 1617170573;
 
     dlcOffer = await alice.dlc.createDlcOffer(
       contractInfo,
