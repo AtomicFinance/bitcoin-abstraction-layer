@@ -351,6 +351,7 @@ export default class BitcoinDlcProvider
       localChangeScriptPubkey,
       remoteChangeScriptPubkey,
       feeRate: Number(dlcOffer.feeRatePerVb),
+      cetLockTime: dlcOffer.cetLocktime,
     };
 
     const dlcTxs = await this.CreateDlcTransactions(dlcTxRequest);
