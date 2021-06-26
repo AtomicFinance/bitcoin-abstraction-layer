@@ -394,7 +394,7 @@ describe('external test vectors', () => {
 
     const feeRatePerVb = BigInt(10);
     const cetLocktime = 1617170572;
-    const refundLocktime = 1617170572;
+    const refundLocktime = 1617170573;
 
     const dlcOffer = await alice.dlc.createDlcOffer(
       contractInfo,
