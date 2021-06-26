@@ -785,12 +785,12 @@ export default class BitcoinDlcProvider
 
     const { payoutGroups } = this.GetPayouts(dlcOffer);
 
-    const intervalsSorted = contractDescriptor.roundingIntervals.intervals.sort(
+    const intervalsSorted = [...contractDescriptor.roundingIntervals.intervals].sort(
       (a, b) => Number(b.beginInterval) - Number(a.beginInterval),
     );
 
     const interval = intervalsSorted.find(
-      (interval) => payout.toNumber() > Number(interval.beginInterval),
+      (interval) => Number(outcome) > Number(interval.beginInterval),
     );
 
     const roundedPayout = BigInt(
