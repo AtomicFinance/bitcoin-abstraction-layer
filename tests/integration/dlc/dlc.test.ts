@@ -245,7 +245,10 @@ describe('dlc provider', () => {
         numDigits,
       );
 
-      const intervals = [{ beginInterval: 0n, roundingMod: 500n }];
+      const intervals = [
+        { beginInterval: 0n, roundingMod: 1n },
+        { beginInterval: 4000n, roundingMod: 500n },
+      ];
       const roundingIntervals = new RoundingIntervalsV0();
       roundingIntervals.intervals = intervals;
 
@@ -372,7 +375,10 @@ describe('external test vectors', () => {
       numDigits,
     );
 
-    const intervals = [{ beginInterval: 0n, roundingMod: 50000n }];
+    const intervals = [
+      { beginInterval: 0n, roundingMod: 1n },
+      { beginInterval: 60000n, roundingMod: 50000n },
+    ];
     const roundingIntervals = new RoundingIntervalsV0();
     roundingIntervals.intervals = intervals;
 
