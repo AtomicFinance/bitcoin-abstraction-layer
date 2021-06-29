@@ -1,14 +1,15 @@
+import { chainHashFromNetwork } from '@atomicfinance/bitcoin-networks';
 import Provider from '@atomicfinance/provider';
-import { sleep } from '@liquality/utils';
 import {
+  AdaptorPair,
+  AddSignaturesToRefundTxRequest,
+  AddSignaturesToRefundTxResponse,
   AddSignatureToFundTransactionRequest,
   AddSignatureToFundTransactionResponse,
   CreateCetAdaptorSignatureRequest,
   CreateCetAdaptorSignatureResponse,
   CreateCetAdaptorSignaturesRequest,
   CreateCetAdaptorSignaturesResponse,
-  AddSignaturesToRefundTxRequest,
-  AddSignaturesToRefundTxResponse,
   CreateCetRequest,
   CreateCetResponse,
   CreateDlcTransactionsRequest,
@@ -17,71 +18,75 @@ import {
   CreateFundTransactionResponse,
   CreateRefundTransactionRequest,
   CreateRefundTransactionResponse,
+  DlcProvider,
   GetRawFundTxSignatureRequest,
   GetRawFundTxSignatureResponse,
   GetRawRefundTxSignatureRequest,
   GetRawRefundTxSignatureResponse,
+  Input,
+  Messages,
+  PayoutRequest,
   SignCetRequest,
   SignCetResponse,
+  SignFundTransactionRequest,
+  SignFundTransactionResponse,
+  Utxo,
   VerifyCetAdaptorSignatureRequest,
   VerifyCetAdaptorSignatureResponse,
   VerifyCetAdaptorSignaturesRequest,
   VerifyCetAdaptorSignaturesResponse,
-  SignFundTransactionRequest,
-  SignFundTransactionResponse,
   VerifyFundTxSignatureRequest,
   VerifyFundTxSignatureResponse,
   VerifyRefundTxSignatureRequest,
   VerifyRefundTxSignatureResponse,
-  AdaptorPair,
-  PayoutRequest,
-  Messages,
-  Input,
-  Utxo,
-  DlcProvider,
 } from '@atomicfinance/types';
-import {
-  ContractInfo,
-  FundingInput,
-  DlcOffer,
-  FundingInputV0,
-  MessageType,
-  DlcAccept,
-  DlcOfferV0,
-  DlcAcceptV0,
-  DlcSign,
-  DlcTransactions,
-  DlcTransactionsV0,
-  DlcSignV0,
-  ContractInfoV0,
-  ContractDescriptorV1,
-  PayoutFunctionV0,
-  HyperbolaPayoutCurvePiece,
-  OracleEventV0,
-  DigitDecompositionEventDescriptorV0,
-  CetAdaptorSignaturesV0,
-  NegotiationFieldsV0,
-  ScriptWitnessV0,
-  FundingSignaturesV0,
-  OracleAttestationV0,
-} from '@node-dlc/messaging';
-import { Tx, Sequence, Script } from '@node-lightning/bitcoin';
-import { StreamReader } from '@node-lightning/bufio';
-import { sha256, hash160, xor } from '@node-lightning/crypto';
-import { address, Psbt, payments, ECPairInterface } from 'bitcoinjs-lib';
-import { bitcoin, Address } from '@liquality/types';
-import { generateSerialId, checkTypes, outputsToPayouts } from './utils/Utils';
+import { BitcoinNetwork } from '@liquality/bitcoin-networks';
+import { Address, bitcoin } from '@liquality/types';
+import { sleep } from '@liquality/utils';
 import {
   CoveredCall,
-  groupByIgnoringDigits,
-  roundPayout,
   DualClosingTxFinalizer,
+  groupByIgnoringDigits,
+  HyperbolaPayoutCurve,
+  roundPayout,
 } from '@node-dlc/core';
-import { asyncForEach } from './utils/Utils';
-import { HyperbolaPayoutCurve } from '@node-dlc/core';
-import { BitcoinNetwork } from '@liquality/bitcoin-networks';
-import { chainHashFromNetwork } from '@atomicfinance/bitcoin-networks';
+import {
+  CetAdaptorSignaturesV0,
+  ContractDescriptorV1,
+  ContractInfo,
+  ContractInfoV0,
+  DigitDecompositionEventDescriptorV0,
+  DlcAccept,
+  DlcAcceptV0,
+  DlcOffer,
+  DlcOfferV0,
+  DlcSign,
+  DlcSignV0,
+  DlcTransactions,
+  DlcTransactionsV0,
+  FundingInput,
+  FundingInputV0,
+  FundingSignaturesV0,
+  HyperbolaPayoutCurvePiece,
+  MessageType,
+  NegotiationFieldsV0,
+  OracleAttestationV0,
+  OracleEventV0,
+  PayoutFunctionV0,
+  ScriptWitnessV0,
+} from '@node-dlc/messaging';
+import { Script, Sequence, Tx } from '@node-lightning/bitcoin';
+import { StreamReader } from '@node-lightning/bufio';
+import { hash160, sha256, xor } from '@node-lightning/crypto';
+import assert from 'assert';
 import BigNumber from 'bignumber.js';
+import { address, ECPairInterface, payments, Psbt } from 'bitcoinjs-lib';
+import {
+  asyncForEach,
+  checkTypes,
+  generateSerialId,
+  outputsToPayouts,
+} from './utils/Utils';
 
 const ESTIMATED_SIZE = 312;
 
@@ -393,8 +398,10 @@ export default class BitcoinDlcProvider
   }
 
   private GenerateMessages(_contractInfo: ContractInfo): Messages[] {
-    if (_contractInfo.type !== MessageType.ContractInfoV0)
-      throw Error('ContractInfo must be V0');
+    assert(
+      _contractInfo.type === MessageType.ContractInfoV0,
+      'ContractInfo must be V0',
+    );
     const contractInfo = _contractInfo as ContractInfoV0;
     const oracleEvent = contractInfo.oracleInfo.announcement.oracleEvent;
 
@@ -443,8 +450,11 @@ export default class BitcoinDlcProvider
 
     const fundPrivateKey = Buffer.from(fundPrivateKeyPair.__D).toString('hex');
 
-    if (dlcOffer.contractInfo.type !== MessageType.ContractInfoV0)
-      throw Error('ContractInfo must be V0');
+    assert(
+      dlcOffer.contractInfo.type === MessageType.ContractInfoV0,
+      'ContractInfo must be V0',
+    );
+
     const contractInfo = dlcOffer.contractInfo as ContractInfoV0;
     const oracleAnnouncement = contractInfo.oracleInfo.announcement;
 
@@ -527,8 +537,10 @@ export default class BitcoinDlcProvider
 
     const cetsHex = dlcTxs.cets.map((cet) => cet.serialize().toString('hex'));
 
-    if (dlcOffer.contractInfo.type !== MessageType.ContractInfoV0)
-      throw Error('ContractInfo must be V0');
+    assert(
+      dlcOffer.contractInfo.type === MessageType.ContractInfoV0,
+      'ContractInfo must be V0',
+    );
     const contractInfo = dlcOffer.contractInfo as ContractInfoV0;
     const oracleAnnouncement = contractInfo.oracleInfo.announcement;
 
@@ -785,9 +797,9 @@ export default class BitcoinDlcProvider
 
     const { payoutGroups } = this.GetPayouts(dlcOffer);
 
-    const intervalsSorted = [...contractDescriptor.roundingIntervals.intervals].sort(
-      (a, b) => Number(b.beginInterval) - Number(a.beginInterval),
-    );
+    const intervalsSorted = [
+      ...contractDescriptor.roundingIntervals.intervals,
+    ].sort((a, b) => Number(b.beginInterval) - Number(a.beginInterval));
 
     const interval = intervalsSorted.find(
       (interval) => Number(outcome) > Number(interval.beginInterval),
@@ -840,8 +852,10 @@ Payout Group not found',
     oracleAttestation: OracleAttestationV0,
   ): Promise<FindOutcomeResponse> {
     const _payoutFunction = contractDescriptor.payoutFunction;
-    if (_payoutFunction.type !== MessageType.PayoutFunctionV0)
-      throw Error('PayoutFunction must be V0');
+    assert(
+      _payoutFunction.type === MessageType.PayoutFunctionV0,
+      'PayoutFunction must be V0',
+    );
     const payoutFunction = _payoutFunction as PayoutFunctionV0;
     const base = eventDescriptor.base;
 
@@ -1227,12 +1241,15 @@ Payout Group not found',
       fixedInputs,
     );
 
-    _fundingInputs.forEach((input) => {
-      if (input.type !== MessageType.FundingInputV0)
-        throw Error('FundingInput must be V0');
-    });
     const fundingInputs: FundingInputV0[] = _fundingInputs.map(
       (input) => input as FundingInputV0,
+    );
+
+    fundingInputs.forEach((input) =>
+      assert(
+        input.type === MessageType.FundingInputV0,
+        'FundingInput must be V0',
+      ),
     );
 
     dlcOffer.contractFlags = Buffer.from('00', 'hex');
@@ -1271,6 +1288,13 @@ Payout Group not found',
     const acceptCollateralSatoshis =
       dlcOffer.contractInfo.totalCollateral - dlcOffer.offerCollateralSatoshis;
 
+    assert(
+      acceptCollateralSatoshis ===
+        dlcOffer.contractInfo.totalCollateral -
+          dlcOffer.offerCollateralSatoshis,
+      'acceptCollaterialSatoshis should equal totalCollateral - offerCollateralSatoshis',
+    );
+
     const {
       fundingPubKey,
       payoutSPK,
@@ -1284,13 +1308,18 @@ Payout Group not found',
       fixedInputs,
     );
 
-    if (Buffer.compare(dlcOffer.fundingPubKey, fundingPubKey) === 0)
-      throw Error('DlcOffer and DlcAccept FundingPubKey cannot be the same');
+    assert(
+      Buffer.compare(dlcOffer.fundingPubKey, fundingPubKey) !== 0,
+      'DlcOffer and DlcAccept FundingPubKey cannot be the same',
+    );
 
-    _fundingInputs.forEach((input) => {
-      if (input.type !== MessageType.FundingInputV0)
-        throw Error('FundingInput must be V0');
-    });
+    _fundingInputs.forEach((input) =>
+      assert(
+        input.type === MessageType.FundingInputV0,
+        'FundingInput must be V0',
+      ),
+    );
+
     const fundingInputs: FundingInputV0[] = _fundingInputs.map(
       (input) => input as FundingInputV0,
     );
@@ -1305,6 +1334,28 @@ Payout Group not found',
     dlcAccept.fundingInputs = fundingInputs;
     dlcAccept.changeSPK = changeSPK;
     dlcAccept.changeSerialId = changeSerialId;
+
+    assert(
+      dlcAccept.changeSerialId !== dlcOffer.fundOutputSerialId,
+      'changeSerialId cannot equal the fundOutputSerialId',
+    );
+
+    assert(
+      dlcOffer.payoutSerialId !== dlcAccept.payoutSerialId,
+      'offer.payoutSerialId cannot equal accept.payoutSerialId',
+    );
+
+    assert(
+      (() => {
+        const ids = [
+          dlcOffer.changeSerialId,
+          dlcAccept.changeSerialId,
+          dlcOffer.fundOutputSerialId,
+        ];
+        return new Set(ids).size === ids.length;
+      })(),
+      'offer.changeSerialID, accept.changeSerialId and fundOutputSerialId must be unique',
+    );
 
     const { dlcTransactions, messagesList } = await this.CreateDlcTxs(
       dlcOffer,
@@ -1322,8 +1373,10 @@ Payout Group not found',
       false,
     );
 
-    if (dlcTransactions.type !== MessageType.DlcTransactionsV0)
-      throw Error('DlcTransactions must be V0');
+    assert(
+      dlcTransactions.type === MessageType.DlcTransactionsV0,
+      'DlcTransactions must be V0',
+    );
     const _dlcTransactions = dlcTransactions as DlcTransactionsV0;
 
     const contractId = xor(
@@ -1353,8 +1406,11 @@ Payout Group not found',
       _dlcOffer,
       _dlcAccept,
     });
-    if (Buffer.compare(dlcOffer.fundingPubKey, dlcAccept.fundingPubKey) === 0)
-      throw Error('DlcOffer and DlcAccept FundingPubKey cannot be the same');
+
+    assert(
+      Buffer.compare(dlcOffer.fundingPubKey, dlcAccept.fundingPubKey) !== 0,
+      'DlcOffer and DlcAccept FundingPubKey cannot be the same',
+    );
 
     const dlcSign = new DlcSignV0();
 
@@ -1395,6 +1451,14 @@ Payout Group not found',
     const contractId = xor(
       dlcTxs.fundTx.txId.serialize(),
       dlcAccept.tempContractId,
+    );
+
+    assert(
+      Buffer.compare(
+        contractId,
+        xor(dlcTxs.fundTx.txId.serialize(), dlcAccept.tempContractId),
+      ) === 0,
+      'contractId must be the xor of funding txid, fundingOutputIndex and the tempContractId',
     );
 
     dlcTxs.contractId = contractId;
@@ -1749,8 +1813,10 @@ Payout Group not found',
     _input: FundingInput,
     findDerivationPath = true,
   ): Promise<Input> {
-    if (_input.type !== MessageType.FundingInputV0)
-      throw Error('Must be FundingInputV0');
+    assert(
+      _input.type === MessageType.FundingInputV0,
+      'FundingInput must be V0',
+    );
     const network = await this.getConnectedNetwork();
     const input = _input as FundingInputV0;
     const prevTx = input.prevTx;
