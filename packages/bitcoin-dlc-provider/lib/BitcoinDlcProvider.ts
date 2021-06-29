@@ -1241,15 +1241,22 @@ Payout Group not found',
       fixedInputs,
     );
 
-    const fundingInputs: FundingInputV0[] = _fundingInputs.map(
-      (input) => input as FundingInputV0,
-    );
-
-    fundingInputs.forEach((input) =>
+    _fundingInputs.forEach((input) =>
       assert(
         input.type === MessageType.FundingInputV0,
         'FundingInput must be V0',
       ),
+    );
+
+    const fundingInputs: FundingInputV0[] = _fundingInputs.map(
+      (input) => input as FundingInputV0,
+    );
+
+    const fundOutputSerialId = generateSerialId();
+
+    assert(
+      changeSerialId !== fundOutputSerialId,
+      'changeSerialId cannot equal the fundOutputSerialId',
     );
 
     dlcOffer.contractFlags = Buffer.from('00', 'hex');
@@ -1262,7 +1269,7 @@ Payout Group not found',
     dlcOffer.fundingInputs = fundingInputs;
     dlcOffer.changeSPK = changeSPK;
     dlcOffer.changeSerialId = changeSerialId;
-    dlcOffer.fundOutputSerialId = generateSerialId();
+    dlcOffer.fundOutputSerialId = fundOutputSerialId;
     dlcOffer.feeRatePerVb = feeRatePerVb;
     dlcOffer.cetLocktime = cetLocktime;
     dlcOffer.refundLocktime = refundLocktime;
