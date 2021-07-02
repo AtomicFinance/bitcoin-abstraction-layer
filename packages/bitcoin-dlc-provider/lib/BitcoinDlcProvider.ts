@@ -46,6 +46,7 @@ import { sleep } from '@liquality/utils';
 import {
   CoveredCall,
   DualClosingTxFinalizer,
+  DualFundingTxFinalizer,
   groupByIgnoringDigits,
   HyperbolaPayoutCurve,
   roundPayout,
@@ -1274,6 +1275,26 @@ Payout Group not found',
     dlcOffer.cetLocktime = cetLocktime;
     dlcOffer.refundLocktime = refundLocktime;
 
+    assert(
+      (() => {
+        const finalizer = new DualFundingTxFinalizer(
+          dlcOffer.fundingInputs,
+          dlcOffer.payoutSPK,
+          dlcOffer.changeSPK,
+          null,
+          null,
+          null,
+          dlcOffer.feeRatePerVb,
+        );
+        const funding = fundingInputs.reduce((total, input) => {
+          return total + input.prevTx.outputs[input.prevTxVout].value.sats;
+        }, BigInt(0));
+
+        return funding >= offerCollateralSatoshis + finalizer.offerFees;
+      })(),
+      'fundingInputs for dlcOffer must be greater than offerCollateralSatoshis plus offerFees',
+    );
+
     dlcOffer.validate();
 
     return dlcOffer;
@@ -1364,6 +1385,28 @@ Payout Group not found',
       'offer.changeSerialID, accept.changeSerialId and fundOutputSerialId must be unique',
     );
 
+    dlcAccept.validate();
+
+    assert(
+      (() => {
+        const finalizer = new DualFundingTxFinalizer(
+          dlcOffer.fundingInputs,
+          dlcOffer.payoutSPK,
+          dlcOffer.changeSPK,
+          dlcAccept.fundingInputs,
+          dlcAccept.payoutSPK,
+          dlcAccept.changeSPK,
+          dlcOffer.feeRatePerVb,
+        );
+        const funding = fundingInputs.reduce((total, input) => {
+          return total + input.prevTx.outputs[input.prevTxVout].value.sats;
+        }, BigInt(0));
+
+        return funding >= acceptCollateralSatoshis + finalizer.acceptFees;
+      })(),
+      'fundingInputs for dlcAccept must be greater than acceptCollateralSatoshis plus acceptFees',
+    );
+
     const { dlcTransactions, messagesList } = await this.CreateDlcTxs(
       dlcOffer,
       dlcAccept,
@@ -1413,6 +1456,8 @@ Payout Group not found',
       _dlcOffer,
       _dlcAccept,
     });
+    dlcOffer.validate();
+    dlcAccept.validate();
 
     assert(
       Buffer.compare(dlcOffer.fundingPubKey, dlcAccept.fundingPubKey) !== 0,
