@@ -1,5 +1,6 @@
 import { BitcoinNetworks } from '@liquality/bitcoin-networks';
 import { CoveredCall, groupByIgnoringDigits } from '@node-dlc/core';
+import BN from 'bignumber.js';
 import {
   ContractDescriptorV1,
   ContractInfoV0,
@@ -53,6 +54,13 @@ describe('bitcoin networks', () => {
     expect(
       chainHashFromNetwork(BitcoinNetworks.bitcoin_regtest).toString('hex'),
     ).to.equal(f.regtest.chainhash);
+  });
+  it('should send to p2sh-segwit address successfully', async () => {
+    await getInput(alice);
+    await alice.chain.sendTransaction({
+      to: '2N4QQxSdPLmFnb7RCHDF1u4tQU1s6HJHRTn',
+      value: new BN(10000),
+    });
   });
 });
 
