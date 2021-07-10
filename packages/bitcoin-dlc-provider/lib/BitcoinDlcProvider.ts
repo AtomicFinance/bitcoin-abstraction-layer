@@ -82,6 +82,7 @@ import { hash160, sha256, xor } from '@node-lightning/crypto';
 import assert from 'assert';
 import BigNumber from 'bignumber.js';
 import { address, ECPairInterface, payments, Psbt } from 'bitcoinjs-lib';
+
 import {
   asyncForEach,
   checkTypes,

@@ -1,6 +1,7 @@
+import { bitcoin as bT } from '@liquality/types';
+
 import Amount from './Amount';
 import Utxo from './Utxo';
-import { bitcoin as bT } from '@liquality/types';
 
 /**
  * Class for interfacing with inputs/utxos in Liquality ChainAbstractionLayer

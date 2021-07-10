@@ -1,16 +1,16 @@
-import randomBytes from 'randombytes';
+import { Messages, PayoutRequest } from '@atomicfinance/types';
 import {
-  DlcOffer,
-  MessageType,
   DlcAccept,
-  DlcOfferV0,
   DlcAcceptV0,
+  DlcOffer,
+  DlcOfferV0,
   DlcSign,
+  DlcSignV0,
   DlcTransactions,
   DlcTransactionsV0,
-  DlcSignV0,
+  MessageType,
 } from '@node-dlc/messaging';
-import { PayoutRequest, Messages } from '@atomicfinance/types';
+import randomBytes from 'randombytes';
 
 export async function asyncForEach(array: any, callback: any) {
   for (let index = 0; index < array.length; index++) {

@@ -2,19 +2,20 @@
 /* eslint-disable indent */
 
 import {
+  CetAdaptorSignaturesV0,
   ContractInfo,
-  FundingInput,
-  DlcOffer,
   DlcAccept,
+  DlcOffer,
   DlcSign,
   DlcTransactions,
-  CetAdaptorSignaturesV0,
+  FundingInput,
   OracleAttestationV0,
 } from '@node-dlc/messaging';
 import { Tx } from '@node-lightning/bitcoin';
 import { Psbt } from 'bitcoinjs-lib';
-import Input from './models/Input';
+
 import { TxInRequest, TxOutRequest } from './common';
+import Input from './models/Input';
 
 export interface DlcProvider {
   GetInputsForAmount(
