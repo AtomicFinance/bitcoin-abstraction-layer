@@ -34,15 +34,15 @@ import {
 } from '@atomicfinance/types';
 import {
   ContractInfo,
-  DlcOffer,
   DlcAccept,
+  DlcOffer,
   DlcSign,
   DlcTransactions,
-  OracleAttestationV0,
   FundingInput,
+  OracleAttestationV0,
 } from '@node-dlc/messaging';
-import { Psbt } from 'bitcoinjs-lib';
 import { Tx } from '@node-lightning/bitcoin';
+import { Psbt } from 'bitcoinjs-lib';
 
 export default class Dlc {
   client: any;

@@ -1,4 +1,5 @@
 import { ChainProvider, SwapProvider, WalletProvider } from '@liquality/types';
+
 import { CfdProvider } from './cfd';
 import { DlcProvider } from './dlc';
 import { FinanceWalletProvider } from './financewallet';
