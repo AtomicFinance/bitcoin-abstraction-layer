@@ -367,12 +367,23 @@ describe('dlc provider', () => {
         },
       } = generateContractInfo(oliverOracle, numDigits, oracleBase, 'event_2');
 
+      const {
+        contractInfo: {
+          contractDescriptor: contractDescriptor3,
+          oracleInfo: oracleInfo3,
+        },
+      } = generateContractInfo(oliverOracle, numDigits, oracleBase, 'event_3');
+
       const contractInfo = new ContractInfoV1();
       contractInfo.contractOraclePairs = [
         { contractDescriptor: contractDescriptor1, oracleInfo: oracleInfo1 },
         {
           contractDescriptor: contractDescriptor2,
           oracleInfo: oracleInfo2,
+        },
+        {
+          contractDescriptor: contractDescriptor3,
+          oracleInfo: oracleInfo3,
         },
       ];
       contractInfo.totalCollateral = totalCollateral;
@@ -473,6 +484,31 @@ describe('dlc provider', () => {
         expect(cetTx._raw.vin.length).to.equal(1);
       });
 
+      it('execute event 3', async () => {
+        const outcome = 0;
+        const oracleAttestation = generateOracleAttestation(
+          outcome,
+          oliverOracle,
+          oracleBase,
+          numDigits,
+          'event_3',
+        );
+
+        const cet = await bob.dlc.execute(
+          dlcOffer,
+          dlcAccept,
+          dlcSign,
+          dlcTransactions,
+          oracleAttestation,
+          false,
+        );
+        const cetTxId = await bob.chain.sendRawTransaction(
+          cet.serialize().toString('hex'),
+        );
+        const cetTx = await alice.getMethod('getTransactionByHash')(cetTxId);
+        expect(cetTx._raw.vin.length).to.equal(1);
+      });
+
       it(`should fail to execute if event_id is not found`, async () => {
         const outcome = 2500;
         const oracleAttestation = generateOracleAttestation(
@@ -480,7 +516,7 @@ describe('dlc provider', () => {
           oliverOracle,
           oracleBase,
           numDigits,
-          'event_3',
+          'event_4',
         );
 
         let error = null;
@@ -497,6 +533,33 @@ describe('dlc provider', () => {
           error = e;
         }
         expect(error).to.be.an('Error');
+      });
+
+      it(`should fail to execute if wrong oracle signs event`, async () => {
+        const outcome = 2500;
+        const oracleAttestation = generateOracleAttestation(
+          outcome,
+          oliviaOracle,
+          oracleBase,
+          numDigits,
+          'event_3',
+        );
+
+        let error = null;
+        try {
+          const cet = await bob.dlc.execute(
+            dlcOffer,
+            dlcAccept,
+            dlcSign,
+            dlcTransactions,
+            oracleAttestation,
+            false,
+          );
+          await bob.chain.sendRawTransaction(cet.serialize().toString('hex'));
+        } catch (e) {
+          error = e;
+        }
+        expect(error).to.not.be.undefined;
       });
 
       it('refund', async () => {
