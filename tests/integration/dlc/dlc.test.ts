@@ -1,6 +1,7 @@
+import 'mocha';
+
 import { BitcoinNetworks } from '@liquality/bitcoin-networks';
 import { CoveredCall, groupByIgnoringDigits } from '@node-dlc/core';
-import BN from 'bignumber.js';
 import {
   ContractDescriptorV1,
   ContractInfoV0,
@@ -18,10 +19,11 @@ import {
   OracleInfoV0,
   RoundingIntervalsV0,
 } from '@node-dlc/messaging';
+import BN from 'bignumber.js';
 import { Psbt } from 'bitcoinjs-lib';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import 'mocha';
+
 import {
   AcceptDlcOfferResponse,
   SignDlcAcceptResponse,
@@ -114,7 +116,7 @@ describe('dlc provider', () => {
 
     dlcOffer = await alice.dlc.createDlcOffer(
       contractInfo,
-      totalCollateral - BigInt(2000),
+      totalCollateral - BigInt(10000),
       feeRatePerVb,
       cetLocktime,
       refundLocktime,
