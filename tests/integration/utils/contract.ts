@@ -1,21 +1,22 @@
+import { CoveredCall } from '@node-dlc/core';
 import {
-  ContractInfoV0,
-  OracleInfoV0,
-  OracleAnnouncementV0,
-  OracleEventV0,
-  OracleAttestationV0,
-  DigitDecompositionEventDescriptorV0,
   ContractDescriptorV1,
+  ContractInfoV0,
+  DigitDecompositionEventDescriptorV0,
+  OracleAnnouncementV0,
+  OracleAttestationV0,
+  OracleEventV0,
+  OracleInfoV0,
   RoundingIntervalsV0,
 } from '@node-dlc/messaging';
-import Oracle from '../models/Oracle';
 import { math } from 'bip-schnorr';
-import { CoveredCall } from '@node-dlc/core';
+import Oracle from '../models/Oracle';
 
 export function generateContractInfo(
   oracle: Oracle,
   numDigits = 18,
   oracleBase = 2,
+  eventId = 'btc/usd',
 ): { contractInfo: ContractInfoV0; totalCollateral: bigint } {
   const oliviaInfo = oracle.GetOracleInfo();
 
@@ -32,7 +33,7 @@ export function generateContractInfo(
   );
   event.eventMaturityEpoch = 1617170572;
   event.eventDescriptor = eventDescriptor;
-  event.eventId = 'btc/usd';
+  event.eventId = eventId;
 
   const announcement = new OracleAnnouncementV0();
   announcement.announcementSig = Buffer.from(
@@ -82,6 +83,7 @@ export function generateOracleAttestation(
   oracle: Oracle,
   base = 2,
   nbDigits = 18,
+  eventId = 'btc/usd',
 ): OracleAttestationV0 {
   const oracleInfo = oracle.GetOracleInfo();
 
@@ -96,7 +98,7 @@ export function generateOracleAttestation(
   }
 
   const oracleAttestation = new OracleAttestationV0();
-  oracleAttestation.eventId = 'btc/usd';
+  oracleAttestation.eventId = eventId;
   oracleAttestation.oraclePubkey = Buffer.from(oracleInfo.publicKey, 'hex');
   oracleAttestation.signatures = sigs;
   oracleAttestation.outcomes = outcomes;

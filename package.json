@@ -18,6 +18,7 @@
     "@node-dlc/core": "0.9.6",
     "@node-dlc/messaging": "0.9.6",
     "@types/chai": "^4.2.12",
+    "@types/chai-as-promised": "^7.1.4",
     "@types/mocha": "^8.0.3",
     "@types/node": "^12.12.2",
     "@types/uuid": "^8.3.0",
