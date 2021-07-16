@@ -85,6 +85,7 @@ import { hash160, sha256, xor } from '@node-lightning/crypto';
 import assert from 'assert';
 import BigNumber from 'bignumber.js';
 import { address, ECPairInterface, payments, Psbt } from 'bitcoinjs-lib';
+
 import {
   asyncForEach,
   checkTypes,
@@ -93,6 +94,7 @@ import {
 } from './utils/Utils';
 
 const ESTIMATED_SIZE = 312;
+const TEMP_FORCE_SERIAL_ID_ORDERING = true;
 
 export default class BitcoinDlcProvider
   extends Provider
@@ -400,8 +402,12 @@ export default class BitcoinDlcProvider
       remoteFinalScriptPubkey,
       localInputAmount,
       localCollateralAmount: dlcOffer.offerCollateralSatoshis,
+      localPayoutSerialId: dlcOffer.payoutSerialId,
+      localChangeSerialId: dlcOffer.changeSerialId,
       remoteInputAmount,
       remoteCollateralAmount: dlcAccept.acceptCollateralSatoshis,
+      remotePayoutSerialId: dlcAccept.payoutSerialId,
+      remoteChangeSerialId: dlcAccept.changeSerialId,
       refundLocktime: dlcOffer.refundLocktime,
       localInputs,
       remoteInputs,
@@ -409,13 +415,22 @@ export default class BitcoinDlcProvider
       remoteChangeScriptPubkey,
       feeRate: Number(dlcOffer.feeRatePerVb),
       cetLockTime: dlcOffer.cetLocktime,
+      fundOutputSerialId: TEMP_FORCE_SERIAL_ID_ORDERING
+        ? BigInt(Number(dlcOffer.changeSerialId) - 1)
+        : dlcOffer.fundOutputSerialId, // TODO SERIAL_ID remove temp force serial id ordering
     };
 
     const dlcTxs = await this.CreateDlcTransactions(dlcTxRequest);
 
     const dlcTransactions = new DlcTransactionsV0();
     dlcTransactions.fundTx = Tx.decode(StreamReader.fromHex(dlcTxs.fundTxHex));
-    dlcTransactions.fundTxVout = 0;
+    dlcTransactions.fundTxVout = [
+      BigInt(dlcOffer.changeSerialId),
+      BigInt(dlcAccept.changeSerialId),
+      BigInt(dlcTxRequest.fundOutputSerialId),
+    ]
+      .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+      .findIndex((i) => BigInt(i) === BigInt(dlcTxRequest.fundOutputSerialId));
     dlcTransactions.refundTx = Tx.decode(
       StreamReader.fromHex(dlcTxs.refundTxHex),
     );
@@ -548,6 +563,7 @@ export default class BitcoinDlcProvider
           cetsHex: tempCetsHex,
           privkey: fundPrivateKey,
           fundTxId: dlcTxs.fundTx.txId.toString(),
+          fundVout: dlcTxs.fundTxVout,
           localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
           remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
           fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
@@ -585,6 +601,7 @@ export default class BitcoinDlcProvider
       refundTxHex: dlcTxs.refundTx.serialize().toString('hex'),
       privkey: fundPrivateKey,
       fundTxId: dlcTxs.fundTx.txId.toString(),
+      fundVout: dlcTxs.fundTxVout,
       localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
       remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
       fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
@@ -666,6 +683,7 @@ export default class BitcoinDlcProvider
           localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
           remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
           fundTxId: dlcTxs.fundTx.txId.toString(),
+          fundVout: dlcTxs.fundTxVout,
           fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
           verifyRemote: isOfferer,
         };
@@ -690,6 +708,7 @@ export default class BitcoinDlcProvider
         localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
         remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
         fundTxId: dlcTxs.fundTx.txId.toString(),
+        fundVout: dlcTxs.fundTxVout,
         fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
         verifyRemote: isOfferer,
       };
@@ -1106,6 +1125,7 @@ Payout Group not found',
       cetHex: dlcTxs.cets[outcomeIndex].serialize().toString('hex'),
       fundPrivkey: fundPrivateKey,
       fundTxId: dlcTxs.fundTx.txId.toString(),
+      fundVout: dlcTxs.fundTxVout,
       localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
       remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
       oracleSignatures: oracleSignatures.map((sig) => sig.toString('hex')),
@@ -1207,7 +1227,7 @@ Payout Group not found',
 
     psbt.addInput({
       hash: dlcTxs.fundTx.txId.serialize(),
-      index: 0,
+      index: dlcTxs.fundTxVout,
       sequence: 0,
       witnessUtxo: {
         script: paymentVariant.output,
@@ -1387,7 +1407,9 @@ Payout Group not found',
     dlcOffer.fundingInputs = fundingInputs;
     dlcOffer.changeSPK = changeSPK;
     dlcOffer.changeSerialId = changeSerialId;
-    dlcOffer.fundOutputSerialId = fundOutputSerialId;
+    dlcOffer.fundOutputSerialId = TEMP_FORCE_SERIAL_ID_ORDERING
+      ? BigInt(Number(changeSerialId) - 1)
+      : (dlcOffer.fundOutputSerialId = fundOutputSerialId); // TODO SERIAL_ID remove temp force serial id ordering
     dlcOffer.feeRatePerVb = feeRatePerVb;
     dlcOffer.cetLocktime = cetLocktime;
     dlcOffer.refundLocktime = refundLocktime;
@@ -1475,10 +1497,14 @@ Payout Group not found',
     dlcAccept.acceptCollateralSatoshis = acceptCollateralSatoshis;
     dlcAccept.fundingPubKey = fundingPubKey;
     dlcAccept.payoutSPK = payoutSPK;
-    dlcAccept.payoutSerialId = payoutSerialId;
+    dlcAccept.payoutSerialId = TEMP_FORCE_SERIAL_ID_ORDERING
+      ? BigInt(Number(dlcOffer.payoutSerialId) + 1)
+      : (dlcAccept.payoutSerialId = payoutSerialId); // TODO SERIAL_ID remove temp force serial id ordering
     dlcAccept.fundingInputs = fundingInputs;
     dlcAccept.changeSPK = changeSPK;
-    dlcAccept.changeSerialId = changeSerialId;
+    dlcAccept.changeSerialId = TEMP_FORCE_SERIAL_ID_ORDERING
+      ? BigInt(Number(dlcOffer.changeSerialId) + 1)
+      : (dlcAccept.changeSerialId = changeSerialId); // TODO SERIAL_ID remove temp force serial id ordering
 
     assert(
       dlcAccept.changeSerialId !== dlcOffer.fundOutputSerialId,
@@ -1766,6 +1792,7 @@ Payout Group not found',
       refundTxHex: dlcTxs.refundTx.serialize().toString('hex'),
       signatures,
       fundTxId: dlcTxs.fundTx.txId.toString(),
+      fundVout: dlcTxs.fundTxVout,
       localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
       remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
     };

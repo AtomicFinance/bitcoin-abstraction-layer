@@ -1,3 +1,5 @@
+import 'mocha';
+
 import { BitcoinNetworks } from '@liquality/bitcoin-networks';
 import { CoveredCall, groupByIgnoringDigits } from '@node-dlc/core';
 import {
@@ -22,7 +24,7 @@ import BN from 'bignumber.js';
 import { Psbt } from 'bitcoinjs-lib';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import 'mocha';
+
 import {
   AcceptDlcOfferResponse,
   SignDlcAcceptResponse,
