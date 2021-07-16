@@ -1052,7 +1052,7 @@ Payout Group not found',
       }
       case MessageType.ContractInfoV1: {
         const contractInfo = dlcOffer.contractInfo as ContractInfoV1;
-        const attestedOracleEvent = contractInfo.contractOraclePairs.findIndex(
+        const attestedOracleEvent = contractInfo.contractOraclePairs.find(
           ({ oracleInfo }) => {
             oracleInfo.announcement.oracleEvent.eventId ===
               oracleAttestation.eventId;
