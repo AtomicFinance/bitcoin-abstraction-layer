@@ -85,6 +85,7 @@ import { hash160, sha256, xor } from '@node-lightning/crypto';
 import assert from 'assert';
 import BigNumber from 'bignumber.js';
 import { address, ECPairInterface, payments, Psbt } from 'bitcoinjs-lib';
+
 import {
   asyncForEach,
   checkTypes,
@@ -400,8 +401,12 @@ export default class BitcoinDlcProvider
       remoteFinalScriptPubkey,
       localInputAmount,
       localCollateralAmount: dlcOffer.offerCollateralSatoshis,
+      localPayoutSerialId: dlcOffer.payoutSerialId,
+      localChangeSerialId: dlcOffer.changeSerialId,
       remoteInputAmount,
       remoteCollateralAmount: dlcAccept.acceptCollateralSatoshis,
+      remotePayoutSerialId: dlcAccept.payoutSerialId,
+      remoteChangeSerialId: dlcAccept.changeSerialId,
       refundLocktime: dlcOffer.refundLocktime,
       localInputs,
       remoteInputs,
@@ -409,13 +414,20 @@ export default class BitcoinDlcProvider
       remoteChangeScriptPubkey,
       feeRate: Number(dlcOffer.feeRatePerVb),
       cetLockTime: dlcOffer.cetLocktime,
+      fundOutputSerialId: dlcOffer.fundOutputSerialId,
     };
 
     const dlcTxs = await this.CreateDlcTransactions(dlcTxRequest);
 
     const dlcTransactions = new DlcTransactionsV0();
     dlcTransactions.fundTx = Tx.decode(StreamReader.fromHex(dlcTxs.fundTxHex));
-    dlcTransactions.fundTxVout = 0;
+    dlcTransactions.fundTxVout = [
+      BigInt(dlcOffer.changeSerialId),
+      BigInt(dlcAccept.changeSerialId),
+      BigInt(dlcTxRequest.fundOutputSerialId),
+    ]
+      .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+      .findIndex((i) => BigInt(i) === BigInt(dlcTxRequest.fundOutputSerialId));
     dlcTransactions.refundTx = Tx.decode(
       StreamReader.fromHex(dlcTxs.refundTxHex),
     );
@@ -548,6 +560,7 @@ export default class BitcoinDlcProvider
           cetsHex: tempCetsHex,
           privkey: fundPrivateKey,
           fundTxId: dlcTxs.fundTx.txId.toString(),
+          fundVout: dlcTxs.fundTxVout,
           localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
           remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
           fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
@@ -585,6 +598,7 @@ export default class BitcoinDlcProvider
       refundTxHex: dlcTxs.refundTx.serialize().toString('hex'),
       privkey: fundPrivateKey,
       fundTxId: dlcTxs.fundTx.txId.toString(),
+      fundVout: dlcTxs.fundTxVout,
       localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
       remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
       fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
@@ -666,6 +680,7 @@ export default class BitcoinDlcProvider
           localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
           remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
           fundTxId: dlcTxs.fundTx.txId.toString(),
+          fundVout: dlcTxs.fundTxVout,
           fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
           verifyRemote: isOfferer,
         };
@@ -690,6 +705,7 @@ export default class BitcoinDlcProvider
         localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
         remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
         fundTxId: dlcTxs.fundTx.txId.toString(),
+        fundVout: dlcTxs.fundTxVout,
         fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
         verifyRemote: isOfferer,
       };
@@ -1106,6 +1122,7 @@ Payout Group not found',
       cetHex: dlcTxs.cets[outcomeIndex].serialize().toString('hex'),
       fundPrivkey: fundPrivateKey,
       fundTxId: dlcTxs.fundTx.txId.toString(),
+      fundVout: dlcTxs.fundTxVout,
       localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
       remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
       oracleSignatures: oracleSignatures.map((sig) => sig.toString('hex')),
@@ -1207,7 +1224,7 @@ Payout Group not found',
 
     psbt.addInput({
       hash: dlcTxs.fundTx.txId.serialize(),
-      index: 0,
+      index: dlcTxs.fundTxVout,
       sequence: 0,
       witnessUtxo: {
         script: paymentVariant.output,
@@ -1387,7 +1404,7 @@ Payout Group not found',
     dlcOffer.fundingInputs = fundingInputs;
     dlcOffer.changeSPK = changeSPK;
     dlcOffer.changeSerialId = changeSerialId;
-    dlcOffer.fundOutputSerialId = fundOutputSerialId;
+    dlcOffer.fundOutputSerialId = dlcOffer.fundOutputSerialId = fundOutputSerialId;
     dlcOffer.feeRatePerVb = feeRatePerVb;
     dlcOffer.cetLocktime = cetLocktime;
     dlcOffer.refundLocktime = refundLocktime;
@@ -1475,10 +1492,10 @@ Payout Group not found',
     dlcAccept.acceptCollateralSatoshis = acceptCollateralSatoshis;
     dlcAccept.fundingPubKey = fundingPubKey;
     dlcAccept.payoutSPK = payoutSPK;
-    dlcAccept.payoutSerialId = payoutSerialId;
+    dlcAccept.payoutSerialId = dlcAccept.payoutSerialId = payoutSerialId;
     dlcAccept.fundingInputs = fundingInputs;
     dlcAccept.changeSPK = changeSPK;
-    dlcAccept.changeSerialId = changeSerialId;
+    dlcAccept.changeSerialId = dlcAccept.changeSerialId = changeSerialId;
 
     assert(
       dlcAccept.changeSerialId !== dlcOffer.fundOutputSerialId,
@@ -1766,6 +1783,7 @@ Payout Group not found',
       refundTxHex: dlcTxs.refundTx.serialize().toString('hex'),
       signatures,
       fundTxId: dlcTxs.fundTx.txId.toString(),
+      fundVout: dlcTxs.fundTxVout,
       localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
       remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
     };

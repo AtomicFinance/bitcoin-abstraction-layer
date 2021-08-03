@@ -259,6 +259,9 @@ interface FindOutcomeResponse {
   groupLength: number;
 }
 
+/* eslint-disable max-len */
+/* eslint-disable indent */
+
 export interface AdaptorPair {
   signature: string;
   proof: string;
@@ -289,18 +292,6 @@ export interface AddSignatureToFundTransactionRequest {
 
 export interface AddSignatureToFundTransactionResponse {
   hex: string;
-}
-
-/** Create an adaptor signature using multiple oracles for a CET */
-export interface CreateCetAdaptorSignatureMultiOracleRequest {
-  cetHex: string;
-  privkey: string;
-  fundTxId: string;
-  fundVout?: number;
-  localFundPubkey: string;
-  remoteFundPubkey: string;
-  oracleInfos: OracleInfo[];
-  fundInputAmount: bigint | number;
 }
 
 /** Create an adaptor signature for a CET */
@@ -351,6 +342,8 @@ export interface CreateCetRequest {
   fundTxId: string;
   fundVout?: number;
   lockTime: bigint | number;
+  localSerialId?: bigint | number;
+  remoteSerialId?: bigint | number;
 }
 
 export interface CreateCetResponse {
@@ -366,8 +359,12 @@ export interface CreateDlcTransactionsRequest {
   remoteFinalScriptPubkey: string;
   localInputAmount: bigint | number;
   localCollateralAmount: bigint | number;
+  localPayoutSerialId: bigint | number;
+  localChangeSerialId: bigint | number;
   remoteInputAmount: bigint | number;
   remoteCollateralAmount: bigint | number;
+  remotePayoutSerialId: bigint | number;
+  remoteChangeSerialId: bigint | number;
   refundLocktime: bigint | number;
   localInputs: TxInInfoRequest[];
   localChangeScriptPubkey: string;
@@ -376,6 +373,7 @@ export interface CreateDlcTransactionsRequest {
   feeRate: number;
   cetLockTime?: bigint | number;
   fundLockTime?: bigint | number;
+  fundOutputSerialId?: bigint | number;
   optionDest?: string;
   optionPremium?: bigint | number;
 }
@@ -391,13 +389,17 @@ export interface CreateFundTransactionRequest {
   localPubkey: string;
   remotePubkey: string;
   outputAmount: bigint | number;
-  localInputs: TxInRequest[];
+  localInputs: TxInInfoRequest[];
   localChange: TxOutRequest;
-  remoteInputs: TxInRequest[];
+  remoteInputs: TxInInfoRequest[];
   remoteChange: TxOutRequest;
   feeRate: bigint | number;
   optionDest?: string;
   optionPremium?: bigint | number;
+  lockTime?: bigint | number;
+  localSerialId?: bigint | number;
+  remoteSerialId?: bigint | number;
+  outputSerialId?: bigint | number;
 }
 
 export interface CreateFundTransactionResponse {
@@ -451,12 +453,6 @@ export interface Messages {
   messages: string[];
 }
 
-export interface OracleInfo {
-  oraclePubkey: string;
-  oracleRValues: string[];
-  messages: string[];
-}
-
 export interface PayoutRequest {
   local: bigint | number;
   remote: bigint | number;
@@ -497,20 +493,7 @@ export interface TxInInfoRequest {
   vout: number;
   redeemScript?: string;
   maxWitnessLength: number;
-}
-
-/** Verify a signature for a CET */
-export interface VerifyCetAdaptorSignatureMultiOracleRequest {
-  cetHex: string;
-  adaptorSignature: string;
-  adaptorProof: string;
-  oracleInfos: OracleInfo[];
-  localFundPubkey: string;
-  remoteFundPubkey: string;
-  fundTxId: string;
-  fundVout?: number;
-  fundInputAmount: bigint | number;
-  verifyRemote: boolean;
+  inputSerialId?: bigint | number;
 }
 
 /** Verify a signature for a CET */
