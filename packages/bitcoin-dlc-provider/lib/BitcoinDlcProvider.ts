@@ -236,7 +236,10 @@ export default class BitcoinDlcProvider
       throw Error('More than one PayoutCurvePiece not supported');
     const payoutCurvePiece = payoutFunction.pieces[0]
       .payoutCurvePiece as HyperbolaPayoutCurvePiece;
-    if (payoutCurvePiece.type !== MessageType.HyperbolaPayoutCurvePiece)
+    if (
+      payoutCurvePiece.type !== MessageType.HyperbolaPayoutCurvePiece &&
+      payoutCurvePiece.type !== MessageType.OldHyperbolaPayoutCurvePiece
+    )
       throw Error('Must be HyperbolaPayoutCurvePiece');
     if (payoutCurvePiece.b !== BigInt(0) || payoutCurvePiece.c !== BigInt(0))
       throw Error('b and c HyperbolaPayoutCurvePiece values must be 0');
@@ -1025,6 +1028,15 @@ Payout Group not found',
       case MessageType.PolynomialPayoutCurvePiece:
         throw Error('Polynomial Curve Piece not yet supported');
       case MessageType.HyperbolaPayoutCurvePiece:
+        return this.FindOutcomeIndexFromHyperbolaPayoutCurvePiece(
+          dlcOffer,
+          contractDescriptor,
+          contractOraclePairIndex,
+          piece.payoutCurvePiece as HyperbolaPayoutCurvePiece,
+          oracleAttestation,
+          BigInt(outcome),
+        );
+      case MessageType.OldHyperbolaPayoutCurvePiece:
         return this.FindOutcomeIndexFromHyperbolaPayoutCurvePiece(
           dlcOffer,
           contractDescriptor,
