@@ -94,7 +94,6 @@ import {
 } from './utils/Utils';
 
 const ESTIMATED_SIZE = 312;
-const TEMP_FORCE_SERIAL_ID_ORDERING = true;
 
 export default class BitcoinDlcProvider
   extends Provider
@@ -415,9 +414,7 @@ export default class BitcoinDlcProvider
       remoteChangeScriptPubkey,
       feeRate: Number(dlcOffer.feeRatePerVb),
       cetLockTime: dlcOffer.cetLocktime,
-      fundOutputSerialId: TEMP_FORCE_SERIAL_ID_ORDERING
-        ? BigInt(Number(dlcOffer.changeSerialId) - 1)
-        : dlcOffer.fundOutputSerialId, // TODO SERIAL_ID remove temp force serial id ordering
+      fundOutputSerialId: dlcOffer.fundOutputSerialId,
     };
 
     const dlcTxs = await this.CreateDlcTransactions(dlcTxRequest);
@@ -1407,9 +1404,7 @@ Payout Group not found',
     dlcOffer.fundingInputs = fundingInputs;
     dlcOffer.changeSPK = changeSPK;
     dlcOffer.changeSerialId = changeSerialId;
-    dlcOffer.fundOutputSerialId = TEMP_FORCE_SERIAL_ID_ORDERING
-      ? BigInt(Number(changeSerialId) - 1)
-      : (dlcOffer.fundOutputSerialId = fundOutputSerialId); // TODO SERIAL_ID remove temp force serial id ordering
+    dlcOffer.fundOutputSerialId = dlcOffer.fundOutputSerialId = fundOutputSerialId;
     dlcOffer.feeRatePerVb = feeRatePerVb;
     dlcOffer.cetLocktime = cetLocktime;
     dlcOffer.refundLocktime = refundLocktime;
@@ -1497,14 +1492,10 @@ Payout Group not found',
     dlcAccept.acceptCollateralSatoshis = acceptCollateralSatoshis;
     dlcAccept.fundingPubKey = fundingPubKey;
     dlcAccept.payoutSPK = payoutSPK;
-    dlcAccept.payoutSerialId = TEMP_FORCE_SERIAL_ID_ORDERING
-      ? BigInt(Number(dlcOffer.payoutSerialId) + 1)
-      : (dlcAccept.payoutSerialId = payoutSerialId); // TODO SERIAL_ID remove temp force serial id ordering
+    dlcAccept.payoutSerialId = dlcAccept.payoutSerialId = payoutSerialId;
     dlcAccept.fundingInputs = fundingInputs;
     dlcAccept.changeSPK = changeSPK;
-    dlcAccept.changeSerialId = TEMP_FORCE_SERIAL_ID_ORDERING
-      ? BigInt(Number(dlcOffer.changeSerialId) + 1)
-      : (dlcAccept.changeSerialId = changeSerialId); // TODO SERIAL_ID remove temp force serial id ordering
+    dlcAccept.changeSerialId = dlcAccept.changeSerialId = changeSerialId;
 
     assert(
       dlcAccept.changeSerialId !== dlcOffer.fundOutputSerialId,
