@@ -27,7 +27,7 @@
     "bignumber.js": "^9.0.1",
     "bip-schnorr": "^0.6.2",
     "bip39": "^3.0.2",
-    "cfd-dlc-js": "https://github.com/atomicfinance/cfd-dlc-js.git#v0.0.18",
+    "cfd-dlc-js": "https://github.com/atomicfinance/cfd-dlc-js.git#v0.0.25",
     "cfd-js": "https://github.com/cryptogarageinc/cfd-js.git#v0.3.3",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
