@@ -53,9 +53,11 @@ import {
 } from '@node-dlc/core';
 import {
   CetAdaptorSignaturesV0,
+  ContractDescriptor,
   ContractDescriptorV1,
   ContractInfo,
   ContractInfoV0,
+  ContractInfoV1,
   DigitDecompositionEventDescriptorV0,
   DlcAccept,
   DlcAcceptV0,
@@ -73,6 +75,7 @@ import {
   NegotiationFieldsV0,
   OracleAttestationV0,
   OracleEventV0,
+  OracleInfoV0,
   PayoutFunctionV0,
   ScriptWitnessV0,
 } from '@node-dlc/messaging';
@@ -82,7 +85,6 @@ import { hash160, sha256, xor } from '@node-lightning/crypto';
 import assert from 'assert';
 import BigNumber from 'bignumber.js';
 import { address, ECPairInterface, payments, Psbt } from 'bitcoinjs-lib';
-
 import {
   asyncForEach,
   checkTypes,
@@ -218,7 +220,7 @@ export default class BitcoinDlcProvider
   private GetPayoutsFromPayoutFunction(
     _dlcOffer: DlcOffer,
     contractDescriptor: ContractDescriptorV1,
-    eventDescriptor: DigitDecompositionEventDescriptorV0,
+    oracleInfo: OracleInfoV0,
     totalCollateral: bigint,
   ): GetPayoutsResponse {
     if (_dlcOffer.type !== MessageType.DlcOfferV0)
@@ -237,6 +239,12 @@ export default class BitcoinDlcProvider
       throw Error('Must be HyperbolaPayoutCurvePiece');
     if (payoutCurvePiece.b !== BigInt(0) || payoutCurvePiece.c !== BigInt(0))
       throw Error('b and c HyperbolaPayoutCurvePiece values must be 0');
+    const eventDescriptor = oracleInfo.announcement.oracleEvent
+      .eventDescriptor as DigitDecompositionEventDescriptorV0;
+    if (
+      eventDescriptor.type !== MessageType.DigitDecompositionEventDescriptorV0
+    )
+      throw Error('Only DigitDecomposition Oracle Events supported');
 
     const roundingIntervals = contractDescriptor.roundingIntervals;
     const cetPayouts = CoveredCall.computePayouts(
@@ -258,7 +266,7 @@ export default class BitcoinDlcProvider
       });
     });
 
-    const rValuesMessagesList = this.GenerateMessages(dlcOffer.contractInfo);
+    const rValuesMessagesList = this.GenerateMessages(oracleInfo);
 
     const { payouts, messagesList } = outputsToPayouts(
       payoutGroups,
@@ -271,32 +279,73 @@ export default class BitcoinDlcProvider
     return { payouts, payoutGroups, messagesList };
   }
 
-  private GetPayouts(_dlcOffer: DlcOffer): GetPayoutsResponse {
+  private GetPayouts(_dlcOffer: DlcOffer): GetPayoutsResponse[] {
     const { dlcOffer } = checkTypes({ _dlcOffer });
-    switch (dlcOffer.contractInfo.type) {
-      case MessageType.ContractInfoV0:
+
+    const contractInfo = dlcOffer.contractInfo;
+    const totalCollateral = contractInfo.totalCollateral;
+    const contractOraclePairs = this.GetContractOraclePairs(contractInfo);
+
+    const payoutResponses = contractOraclePairs.map(
+      ({ contractDescriptor, oracleInfo }) =>
+        this.GetPayoutsFromContractDescriptor(
+          dlcOffer,
+          contractDescriptor,
+          oracleInfo,
+          totalCollateral,
+        ),
+    );
+
+    return payoutResponses;
+  }
+
+  private FlattenPayouts(payoutResponses: GetPayoutsResponse[]) {
+    return payoutResponses.reduce(
+      (acc, { payouts, payoutGroups, messagesList }) => {
+        return {
+          payouts: acc.payouts.concat(payouts),
+          payoutGroups: acc.payoutGroups.concat(payoutGroups),
+          messagesList: acc.messagesList.concat(messagesList),
+        };
+      },
+    );
+  }
+
+  private GetIndicesFromPayouts(payoutResponses: GetPayoutsResponse[]) {
+    return payoutResponses.reduce(
+      (prev, acc) => {
+        return prev.concat({
+          startingMessagesIndex:
+            prev[prev.length - 1].startingMessagesIndex +
+            acc.messagesList.length,
+          startingPayoutGroupsIndex:
+            prev[prev.length - 1].startingPayoutGroupsIndex +
+            acc.payoutGroups.length,
+        });
+      },
+      [{ startingMessagesIndex: 0, startingPayoutGroupsIndex: 0 }],
+    );
+  }
+
+  private GetPayoutsFromContractDescriptor(
+    dlcOffer: DlcOfferV0,
+    contractDescriptor: ContractDescriptor,
+    oracleInfo: OracleInfoV0,
+    totalCollateral: bigint,
+  ) {
+    switch (contractDescriptor.type) {
+      case MessageType.ContractDescriptorV0:
+        throw Error('ContractDescriptorV0 not yet supported');
+      case MessageType.ContractDescriptorV1:
         // eslint-disable-next-line no-case-declarations
-        const contractInfo = dlcOffer.contractInfo as ContractInfoV0;
-        switch (contractInfo.contractDescriptor.type) {
-          case MessageType.ContractDescriptorV0:
-            throw Error('ContractDescriptorV0 not yet supported');
-          case MessageType.ContractDescriptorV1:
-            // eslint-disable-next-line no-case-declarations
-            const oracleInfo = contractInfo.oracleInfo;
-            return this.GetPayoutsFromPayoutFunction(
-              dlcOffer,
-              contractInfo.contractDescriptor as ContractDescriptorV1,
-              oracleInfo.announcement.oracleEvent
-                .eventDescriptor as DigitDecompositionEventDescriptorV0,
-              contractInfo.totalCollateral,
-            );
-          default:
-            throw Error('ConractDescriptor must be V0 or V1');
-        }
-      case MessageType.ContractInfoV1:
-        throw Error('MultiOracle not yet supported');
+        return this.GetPayoutsFromPayoutFunction(
+          dlcOffer,
+          contractDescriptor as ContractDescriptorV1,
+          oracleInfo,
+          totalCollateral,
+        );
       default:
-        throw Error('ContractInfo must be V0 or V1');
+        throw Error('ContractDescriptor must be V0 or V1');
     }
   }
 
@@ -340,7 +389,8 @@ export default class BitcoinDlcProvider
       0,
     );
 
-    const { payouts, messagesList } = this.GetPayouts(dlcOffer);
+    const payoutResponses = this.GetPayouts(dlcOffer);
+    const { payouts, messagesList } = this.FlattenPayouts(payoutResponses);
 
     const dlcTxRequest: CreateDlcTransactionsRequest = {
       payouts,
@@ -399,13 +449,8 @@ export default class BitcoinDlcProvider
     return messagesList;
   }
 
-  private GenerateMessages(_contractInfo: ContractInfo): Messages[] {
-    assert(
-      _contractInfo.type === MessageType.ContractInfoV0,
-      'ContractInfo must be V0',
-    );
-    const contractInfo = _contractInfo as ContractInfoV0;
-    const oracleEvent = contractInfo.oracleInfo.announcement.oracleEvent;
+  private GenerateMessages(oracleInfo: OracleInfoV0): Messages[] {
+    const oracleEvent = oracleInfo.announcement.oracleEvent;
 
     switch (oracleEvent.eventDescriptor.type) {
       case MessageType.EnumEventDescriptorV0:
@@ -414,6 +459,27 @@ export default class BitcoinDlcProvider
         return this.GenerateDigitDecompositionMessages(oracleEvent);
       default:
         throw Error('EventDescriptor must be Enum or DigitDecomposition');
+    }
+  }
+
+  private GetContractOraclePairs(
+    _contractInfo: ContractInfo,
+  ): { contractDescriptor: ContractDescriptor; oracleInfo: OracleInfoV0 }[] {
+    switch (_contractInfo.type) {
+      case MessageType.ContractInfoV0: {
+        const contractInfo = _contractInfo as ContractInfoV0;
+        return [
+          {
+            contractDescriptor: contractInfo.contractDescriptor,
+            oracleInfo: contractInfo.oracleInfo,
+          },
+        ];
+      }
+      case MessageType.ContractInfoV1: {
+        return (_contractInfo as ContractInfoV1).contractOraclePairs;
+      }
+      default:
+        throw Error('ContractInfo must be V0 or V1');
     }
   }
 
@@ -449,51 +515,71 @@ export default class BitcoinDlcProvider
     ]);
 
     const fundPrivateKeyPair = await this.getMethod('keyPair')(derivationPath);
-
     const fundPrivateKey = Buffer.from(fundPrivateKeyPair.__D).toString('hex');
 
-    assert(
-      dlcOffer.contractInfo.type === MessageType.ContractInfoV0,
-      'ContractInfo must be V0',
+    const contractOraclePairs = this.GetContractOraclePairs(
+      dlcOffer.contractInfo,
     );
 
-    const contractInfo = dlcOffer.contractInfo as ContractInfoV0;
-    const oracleAnnouncement = contractInfo.oracleInfo.announcement;
+    const indices = this.GetIndicesFromPayouts(this.GetPayouts(_dlcOffer));
+    const sigs: ISig[][] = [];
 
-    const chunk = 100;
-    const adaptorSigRequestPromises: Promise<AdaptorPair[]>[] = [];
+    for (const [index, { oracleInfo }] of contractOraclePairs.entries()) {
+      const oracleAnnouncement = oracleInfo.announcement;
 
-    for (let i = 0, j = messagesList.length; i < j; i += chunk) {
-      const tempMessagesList = messagesList.slice(i, i + chunk);
-      const tempCetsHex = cetsHex.slice(i, i + chunk);
+      const startingIndex = indices[index].startingMessagesIndex,
+        endingIndex = indices[index + 1].startingMessagesIndex;
 
-      const cetSignRequest: CreateCetAdaptorSignaturesRequest = {
-        messagesList: tempMessagesList,
-        cetsHex: tempCetsHex,
-        privkey: fundPrivateKey,
-        fundTxId: dlcTxs.fundTx.txId.toString(),
-        localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
-        remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
-        fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
-        oraclePubkey: oracleAnnouncement.oraclePubkey.toString('hex'),
-        oracleRValues: oracleAnnouncement.oracleEvent.oracleNonces.map(
-          (nonce) => nonce.toString('hex'),
-        ),
-      };
+      const oracleEventMessagesList = messagesList.slice(
+        startingIndex,
+        endingIndex,
+      );
+      const oracleEventCetsHex = cetsHex.slice(startingIndex, endingIndex);
 
-      adaptorSigRequestPromises.push(
-        (async () => {
-          const response = await this.CreateCetAdaptorSignatures(
-            cetSignRequest,
-          );
-          return response.adaptorPairs;
-        })(),
+      const chunk = 100;
+      const adaptorSigRequestPromises: Promise<AdaptorPair[]>[] = [];
+
+      for (let i = 0, j = oracleEventMessagesList.length; i < j; i += chunk) {
+        const tempMessagesList = oracleEventMessagesList.slice(i, i + chunk);
+        const tempCetsHex = oracleEventCetsHex.slice(i, i + chunk);
+
+        const cetSignRequest: CreateCetAdaptorSignaturesRequest = {
+          messagesList: tempMessagesList,
+          cetsHex: tempCetsHex,
+          privkey: fundPrivateKey,
+          fundTxId: dlcTxs.fundTx.txId.toString(),
+          localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
+          remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
+          fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
+          oraclePubkey: oracleAnnouncement.oraclePubkey.toString('hex'),
+          oracleRValues: oracleAnnouncement.oracleEvent.oracleNonces.map(
+            (nonce) => nonce.toString('hex'),
+          ),
+        };
+
+        adaptorSigRequestPromises.push(
+          (async () => {
+            const response = await this.CreateCetAdaptorSignatures(
+              cetSignRequest,
+            );
+            return response.adaptorPairs;
+          })(),
+        );
+      }
+
+      const adaptorPairs: AdaptorPair[] = (
+        await Promise.all(adaptorSigRequestPromises)
+      ).flat();
+
+      sigs.push(
+        adaptorPairs.map((adaptorPair) => {
+          return {
+            encryptedSig: Buffer.from(adaptorPair.signature, 'hex'),
+            dleqProof: Buffer.from(adaptorPair.proof, 'hex'),
+          };
+        }),
       );
     }
-
-    const adaptorPairs: AdaptorPair[] = (
-      await Promise.all(adaptorSigRequestPromises)
-    ).flat();
 
     const refundSignRequest: GetRawRefundTxSignatureRequest = {
       refundTxHex: dlcTxs.refundTx.serialize().toString('hex'),
@@ -504,20 +590,13 @@ export default class BitcoinDlcProvider
       fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
     };
 
-    const sigs: ISig[] = adaptorPairs.map((adaptorPair) => {
-      return {
-        encryptedSig: Buffer.from(adaptorPair.signature, 'hex'),
-        dleqProof: Buffer.from(adaptorPair.proof, 'hex'),
-      };
-    });
-
-    const cetSignatures = new CetAdaptorSignaturesV0();
-    cetSignatures.sigs = sigs;
-
     const refundSignature = Buffer.from(
       (await this.GetRawRefundTxSignature(refundSignRequest)).hex,
       'hex',
     );
+
+    const cetSignatures = new CetAdaptorSignaturesV0();
+    cetSignatures.sigs = sigs.flat();
 
     return { cetSignatures, refundSignature };
   }
@@ -539,37 +618,75 @@ export default class BitcoinDlcProvider
 
     const cetsHex = dlcTxs.cets.map((cet) => cet.serialize().toString('hex'));
 
-    assert(
-      dlcOffer.contractInfo.type === MessageType.ContractInfoV0,
-      'ContractInfo must be V0',
-    );
-    const contractInfo = dlcOffer.contractInfo as ContractInfoV0;
-    const oracleAnnouncement = contractInfo.oracleInfo.announcement;
-
     const chunk = 100;
-    const sigsValidity: Promise<boolean>[] = [];
 
-    for (let i = 0, j = messagesList.length; i < j; i += chunk) {
-      const tempMessagesList = messagesList.slice(i, i + chunk);
-      const tempCetsHex = cetsHex.slice(i, i + chunk);
-      const tempSigs = isOfferer
-        ? dlcAccept.cetSignatures.sigs.slice(i, i + chunk)
-        : dlcSign.cetSignatures.sigs.slice(i, i + chunk);
-      const tempAdaptorPairs = tempSigs.map((sig) => {
-        return {
-          signature: sig.encryptedSig.toString('hex'),
-          proof: sig.dleqProof.toString('hex'),
+    const contractOraclePairs = this.GetContractOraclePairs(
+      dlcOffer.contractInfo,
+    );
+
+    const indices = this.GetIndicesFromPayouts(this.GetPayouts(_dlcOffer));
+
+    for (const [index, { oracleInfo }] of contractOraclePairs.entries()) {
+      const oracleAnnouncement = oracleInfo.announcement;
+
+      const startingIndex = indices[index].startingMessagesIndex,
+        endingIndex = indices[index + 1].startingMessagesIndex;
+
+      const oracleEventMessagesList = messagesList.slice(
+        startingIndex,
+        endingIndex,
+      );
+      const oracleEventCetsHex = cetsHex.slice(startingIndex, endingIndex);
+      const oracleEventSigs = (isOfferer
+        ? dlcAccept.cetSignatures.sigs
+        : dlcSign.cetSignatures.sigs
+      ).slice(startingIndex, endingIndex);
+
+      const sigsValidity: Promise<boolean>[] = [];
+
+      for (let i = 0, j = oracleEventMessagesList.length; i < j; i += chunk) {
+        const tempMessagesList = oracleEventMessagesList.slice(i, i + chunk);
+        const tempCetsHex = oracleEventCetsHex.slice(i, i + chunk);
+        const tempSigs = oracleEventSigs.slice(i, i + chunk);
+        const tempAdaptorPairs = tempSigs.map((sig) => {
+          return {
+            signature: sig.encryptedSig.toString('hex'),
+            proof: sig.dleqProof.toString('hex'),
+          };
+        });
+
+        const verifyCetAdaptorSignaturesRequest: VerifyCetAdaptorSignaturesRequest = {
+          cetsHex: tempCetsHex,
+          messagesList: tempMessagesList,
+          oraclePubkey: oracleAnnouncement.oraclePubkey.toString('hex'),
+          oracleRValues: oracleAnnouncement.oracleEvent.oracleNonces.map(
+            (nonce) => nonce.toString('hex'),
+          ),
+          adaptorPairs: tempAdaptorPairs,
+          localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
+          remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
+          fundTxId: dlcTxs.fundTx.txId.toString(),
+          fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
+          verifyRemote: isOfferer,
         };
-      });
 
-      const verifyCetAdaptorSignaturesRequest: VerifyCetAdaptorSignaturesRequest = {
-        cetsHex: tempCetsHex,
-        messagesList: tempMessagesList,
-        oraclePubkey: oracleAnnouncement.oraclePubkey.toString('hex'),
-        oracleRValues: oracleAnnouncement.oracleEvent.oracleNonces.map(
-          (nonce) => nonce.toString('hex'),
-        ),
-        adaptorPairs: tempAdaptorPairs,
+        sigsValidity.push(
+          (async () => {
+            const response = await this.VerifyCetAdaptorSignatures(
+              verifyCetAdaptorSignaturesRequest,
+            );
+            return response.valid;
+          })(),
+        );
+      }
+
+      let areSigsValid = (await Promise.all(sigsValidity)).every((b) => b);
+
+      const verifyRefundSigRequest: VerifyRefundTxSignatureRequest = {
+        refundTxHex: dlcTxs.refundTx.serialize().toString('hex'),
+        signature: isOfferer
+          ? dlcAccept.refundSignature.toString('hex')
+          : dlcSign.refundSignature.toString('hex'),
         localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
         remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
         fundTxId: dlcTxs.fundTx.txId.toString(),
@@ -577,36 +694,13 @@ export default class BitcoinDlcProvider
         verifyRemote: isOfferer,
       };
 
-      sigsValidity.push(
-        (async () => {
-          const response = await this.VerifyCetAdaptorSignatures(
-            verifyCetAdaptorSignaturesRequest,
-          );
-          return response.valid;
-        })(),
-      );
-    }
+      areSigsValid =
+        areSigsValid &&
+        (await this.VerifyRefundTxSignature(verifyRefundSigRequest)).valid;
 
-    let areSigsValid = (await Promise.all(sigsValidity)).every((b) => b);
-
-    const verifyRefundSigRequest: VerifyRefundTxSignatureRequest = {
-      refundTxHex: dlcTxs.refundTx.serialize().toString('hex'),
-      signature: isOfferer
-        ? dlcAccept.refundSignature.toString('hex')
-        : dlcSign.refundSignature.toString('hex'),
-      localFundPubkey: dlcOffer.fundingPubKey.toString('hex'),
-      remoteFundPubkey: dlcAccept.fundingPubKey.toString('hex'),
-      fundTxId: dlcTxs.fundTx.txId.toString(),
-      fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
-      verifyRemote: isOfferer,
-    };
-
-    areSigsValid =
-      areSigsValid &&
-      (await this.VerifyRefundTxSignature(verifyRefundSigRequest)).valid;
-
-    if (!areSigsValid) {
-      throw new Error('Invalid signatures received');
+      if (!areSigsValid) {
+        throw new Error('Invalid signatures received');
+      }
     }
   }
 
@@ -779,6 +873,7 @@ export default class BitcoinDlcProvider
   async FindOutcomeIndexFromHyperbolaPayoutCurvePiece(
     _dlcOffer: DlcOffer,
     contractDescriptor: ContractDescriptorV1,
+    contractOraclePairIndex: number,
     hyperbolaPayoutCurvePiece: HyperbolaPayoutCurvePiece,
     oracleAttestation: OracleAttestationV0,
     outcome: bigint,
@@ -797,14 +892,19 @@ export default class BitcoinDlcProvider
 
     const payout = clampBN(hyperbolaCurve.getPayout(outcome));
 
-    const { payoutGroups } = this.GetPayouts(dlcOffer);
+    const payoutResponses = this.GetPayouts(dlcOffer);
+    const payoutIndexOffset = this.GetIndicesFromPayouts(payoutResponses)[
+      contractOraclePairIndex
+    ].startingMessagesIndex;
+
+    const { payoutGroups } = payoutResponses[contractOraclePairIndex];
 
     const intervalsSorted = [
       ...contractDescriptor.roundingIntervals.intervals,
     ].sort((a, b) => Number(b.beginInterval) - Number(a.beginInterval));
 
     const interval = intervalsSorted.find(
-      (interval) => Number(outcome) > Number(interval.beginInterval),
+      (interval) => Number(outcome) >= Number(interval.beginInterval),
     );
 
     const roundedPayout = BigInt(
@@ -820,6 +920,7 @@ export default class BitcoinDlcProvider
     let index = 0;
     let groupIndex = -1;
     let groupLength = 0;
+
     for (const payoutGroup of payoutGroups) {
       if (payoutGroup.payout === roundedPayout) {
         groupIndex = payoutGroup.groups.findIndex((group) => {
@@ -844,21 +945,54 @@ Payout Group found but incorrect group index',
 Payout Group not found',
       );
 
-    return { index, groupLength };
+    return { index: payoutIndexOffset + index, groupLength };
   }
 
-  async FindOutcomeIndexFromPayoutFunction(
-    dlcOffer: DlcOffer,
-    contractDescriptor: ContractDescriptorV1,
-    eventDescriptor: DigitDecompositionEventDescriptorV0,
+  async FindOutcomeIndex(
+    _dlcOffer: DlcOffer,
     oracleAttestation: OracleAttestationV0,
   ): Promise<FindOutcomeResponse> {
+    const { dlcOffer } = checkTypes({ _dlcOffer });
+
+    const contractOraclePairs = this.GetContractOraclePairs(
+      dlcOffer.contractInfo,
+    );
+
+    const contractOraclePairIndex = contractOraclePairs.findIndex(
+      ({ oracleInfo }) =>
+        oracleInfo.announcement.oracleEvent.eventId ===
+        oracleAttestation.eventId,
+    );
+
+    assert(
+      contractOraclePairIndex !== -1,
+      'OracleAttestation must be for an existing OracleEvent',
+    );
+
+    const contractOraclePair = contractOraclePairs[contractOraclePairIndex];
+
+    const {
+      contractDescriptor: _contractDescriptor,
+      oracleInfo,
+    } = contractOraclePair;
+
+    assert(
+      _contractDescriptor.type === MessageType.ContractDescriptorV1,
+      'ContractDescriptor must be V1',
+    );
+
+    const contractDescriptor = _contractDescriptor as ContractDescriptorV1;
     const _payoutFunction = contractDescriptor.payoutFunction;
+
     assert(
       _payoutFunction.type === MessageType.PayoutFunctionV0,
       'PayoutFunction must be V0',
     );
+
+    const eventDescriptor = oracleInfo.announcement.oracleEvent
+      .eventDescriptor as DigitDecompositionEventDescriptorV0;
     const payoutFunction = _payoutFunction as PayoutFunctionV0;
+
     const base = eventDescriptor.base;
 
     const outcome: number = [...oracleAttestation.outcomes]
@@ -878,43 +1012,13 @@ Payout Group not found',
         return this.FindOutcomeIndexFromHyperbolaPayoutCurvePiece(
           dlcOffer,
           contractDescriptor,
+          contractOraclePairIndex,
           piece.payoutCurvePiece as HyperbolaPayoutCurvePiece,
           oracleAttestation,
           BigInt(outcome),
         );
       default:
         throw Error('Must be Hyperbola or Polynomial curve piece');
-    }
-  }
-
-  async FindOutcomeIndex(
-    _dlcOffer: DlcOffer,
-    oracleAttestation: OracleAttestationV0,
-  ): Promise<FindOutcomeResponse> {
-    const { dlcOffer } = checkTypes({ _dlcOffer });
-    switch (dlcOffer.contractInfo.type) {
-      case MessageType.ContractInfoV0:
-        // eslint-disable-next-line no-case-declarations
-        const contractInfo = dlcOffer.contractInfo as ContractInfoV0;
-        // eslint-disable-next-line no-case-declarations
-        switch (contractInfo.contractDescriptor.type) {
-          case MessageType.ContractDescriptorV0:
-            throw Error('ContractDescriptorV0 not yet supported');
-          case MessageType.ContractDescriptorV1:
-            return this.FindOutcomeIndexFromPayoutFunction(
-              dlcOffer,
-              contractInfo.contractDescriptor as ContractDescriptorV1,
-              contractInfo.oracleInfo.announcement.oracleEvent
-                .eventDescriptor as DigitDecompositionEventDescriptorV0,
-              oracleAttestation,
-            );
-          default:
-            throw Error('ConractDescriptor must be V0 or V1');
-        }
-      case MessageType.ContractInfoV1:
-        throw Error('MultiOracle not yet supported');
-      default:
-        throw Error('ContractInfo must be V0 or V1');
     }
   }
 
@@ -927,14 +1031,12 @@ Payout Group not found',
     });
 
     switch (dlcOffer.contractInfo.type) {
-      case MessageType.ContractInfoV0:
-        // eslint-disable-next-line no-case-declarations
+      case MessageType.ContractInfoV0: {
         const contractInfo = dlcOffer.contractInfo as ContractInfoV0;
         switch (contractInfo.contractDescriptor.type) {
           case MessageType.ContractDescriptorV0:
             throw Error('ContractDescriptorV0 not yet supported');
-          case MessageType.ContractDescriptorV1:
-            // eslint-disable-next-line no-case-declarations
+          case MessageType.ContractDescriptorV1: {
             const oracleInfo = contractInfo.oracleInfo;
             if (
               oracleInfo.announcement.oracleEvent.eventId !==
@@ -942,12 +1044,26 @@ Payout Group not found',
             )
               throw Error('Incorrect Oracle Attestation. Event Id must match.');
             break;
+          }
           default:
             throw Error('ConractDescriptor must be V0 or V1');
         }
         break;
-      case MessageType.ContractInfoV1:
-        throw Error('MultiOracle not yet supported');
+      }
+      case MessageType.ContractInfoV1: {
+        const contractInfo = dlcOffer.contractInfo as ContractInfoV1;
+        const attestedOracleEvent = contractInfo.contractOraclePairs.find(
+          ({ oracleInfo }) => {
+            oracleInfo.announcement.oracleEvent.eventId ===
+              oracleAttestation.eventId;
+          },
+        );
+
+        if (!attestedOracleEvent)
+          throw Error('Oracle event of attestation not found.');
+
+        break;
+      }
       default:
         throw Error('ContractInfo must be V0 or V1');
     }
@@ -1545,7 +1661,8 @@ Payout Group not found',
       _dlcTxs,
     });
 
-    const { messagesList } = await this.GetPayouts(dlcOffer);
+    const payoutResponses = this.GetPayouts(dlcOffer);
+    const { messagesList } = this.FlattenPayouts(payoutResponses);
 
     await this.VerifyCetAdaptorAndRefundSigs(
       dlcOffer,
