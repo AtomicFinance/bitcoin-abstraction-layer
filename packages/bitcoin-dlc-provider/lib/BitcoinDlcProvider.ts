@@ -60,6 +60,8 @@ import {
   DigitDecompositionEventDescriptorV0,
   DlcAccept,
   DlcAcceptV0,
+  DlcClose,
+  DlcCloseV0,
   DlcOffer,
   DlcOfferV0,
   DlcSign,
@@ -1881,6 +1883,205 @@ Payout Group not found',
     }
 
     return psbt;
+  }
+
+  /**
+   * Goal of createDlcClose is for alice (the initiator) to
+   * 1. take dlcoffer, accept, and sign messages. Create a dlcClose message.
+   * 2. Build a close tx, sign.
+   * 3. return dlcClose message (no psbt)
+   */
+
+  /**
+   * Generate DlcClose messagetype for closing DLC with Mutual Consent
+   * @param _dlcOffer DlcOffer TLV (V0)
+   * @param _dlcAccept DlcAccept TLV (V0)
+   * @param _dlcTxs DlcTransactions TLV (V0)
+   * @param initiatorPayoutSatoshis Amount initiator expects as a payout
+   * @param isOfferer Whether offerer or not
+   * @param _inputs Optionally specified closing inputs
+   * @returns {Promise<DlcClose>}
+   */
+  async createDlcClose(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcTxs: DlcTransactions,
+    initiatorPayoutSatoshis: bigint,
+    isOfferer: boolean,
+    _inputs?: Input[],
+  ): Promise<DlcClose> {
+    const { dlcOffer, dlcAccept, dlcTxs } = checkTypes({
+      _dlcOffer,
+      _dlcAccept,
+      _dlcTxs,
+    });
+
+    const fundPrivateKeyPair = await this.GetFundKeyPair(
+      dlcOffer,
+      dlcAccept,
+      isOfferer,
+    );
+
+    // Initiate and build PSBT
+    let inputs: Input[] = _inputs;
+    if ((_inputs && _inputs.length === 0) || !_inputs) {
+      inputs = await this.GetInputsForAmount(
+        BigInt(20000),
+        dlcOffer.feeRatePerVb,
+        _inputs,
+      ); // TODO: Sort by serial ID?
+    }
+
+    // Use psbt as a tx builder
+    const psbt = await this.BuildCloseTx(
+      dlcOffer,
+      dlcAccept,
+      dlcTxs,
+      initiatorPayoutSatoshis,
+      isOfferer,
+      inputs,
+    );
+
+    // Sign dlc fundinginput
+    psbt.signInput(0, fundPrivateKeyPair);
+
+    // Sign dlcclose inputs
+    await Promise.all(
+      inputs.map(async (input: Input, i: number) => {
+        assert(
+          psbt.getInputType(i).slice(0, 5) === 'p2wsh',
+          'only accepts P2WSH inputs',
+        );
+
+        // derive keypair
+        const keyPair = await this.getMethod('keyPair')(input.derivationPath);
+        psbt.signInput(i + 1, keyPair);
+      }),
+    );
+
+    // Validate signatures
+    psbt.validateSignaturesOfAllInputs();
+
+    // Extract close signature from psbt
+    const closeSignature = psbt.data.inputs[0].partialSig[0].signature;
+
+    // Extract funding signatures from psbt
+    const inputSigs = psbt.data.inputs
+      .slice(1)
+      .map((input) => input.partialSig[0]);
+
+    const witnessElements: ScriptWitnessV0[][] = [];
+    for (let i = 0; i < inputSigs.length; i++) {
+      const sigWitness = new ScriptWitnessV0();
+      sigWitness.witness = inputSigs[i].signature;
+      const pubKeyWitness = new ScriptWitnessV0();
+      pubKeyWitness.witness = inputSigs[i].pubkey;
+      witnessElements.push([sigWitness, pubKeyWitness]);
+    }
+    const fundingSignatures = new FundingSignaturesV0();
+    fundingSignatures.witnessElements = witnessElements;
+
+    console.log('funding Signatures', fundingSignatures);
+
+    // Creat DlcClose
+    const dlcClose = new DlcCloseV0();
+    dlcClose.contractId = dlcTxs.contractId;
+    dlcClose.offerPayoutSatoshis = BigInt(psbt.txOutputs[0].value); // You give collateral back to users
+    dlcClose.acceptPayoutSatoshis = BigInt(psbt.txOutputs[1].value); // give collateral back to users
+    dlcClose.fundInputSerialId = generateSerialId(); // randomly generated serial id
+    dlcClose.closeSignature = closeSignature;
+    dlcClose.fundingSignatures = fundingSignatures;
+    dlcClose.validate();
+
+    return dlcClose;
+  }
+
+  /**
+   * Goal of finalize Dlc Close is for bob to
+   * 1. take the dlcClose created by alice using createDlcClose,
+   * 2. Build a psbt using Alice's dlcClose message
+   * 3. Sign psbt with bob's privkey
+   * 4. return a tx ready to be broadcast
+   */
+
+  /**
+   * Finalize Dlc Close
+   * @param _dlcOffer Dlc Offer Message
+   * @param _dlcAccept Dlc Accept Message
+   * @param _dlcSign Dlc Sign Message
+   * @param _dlcClose Dlc Close Message
+   * @param _dlcTxs Dlc Transactions Message
+   * @returns {Promise<Tx>}
+   */
+  async finalizeDlcClose(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcClose: DlcClose,
+    _dlcTxs: DlcTransactions,
+    initiatorPayoutSatoshis: bigint,
+    isOfferer: boolean,
+    _inputs?: Input[],
+  ): Promise<Tx> {
+    const { dlcOffer, dlcAccept, dlcClose, dlcTxs } = checkTypes({
+      _dlcOffer,
+      _dlcAccept,
+      _dlcClose,
+      _dlcTxs,
+    });
+
+    dlcOffer.validate();
+    dlcAccept.validate();
+    dlcClose.validate();
+
+    // Create keypair
+    const fundPrivateKeyPair = await this.GetFundKeyPair(
+      dlcOffer,
+      dlcAccept,
+      isOfferer,
+    );
+
+    // Initiate and build PSBT
+    let inputs: Input[] = _inputs;
+    if ((_inputs && _inputs.length === 0) || !_inputs) {
+      inputs = await this.GetInputsForAmount(
+        BigInt(20000),
+        dlcOffer.feeRatePerVb,
+        _inputs,
+      );
+    }
+
+    const psbt: Psbt = await this.BuildCloseTx(
+      dlcOffer,
+      dlcAccept,
+      dlcTxs,
+      initiatorPayoutSatoshis,
+      isOfferer,
+      inputs,
+    );
+
+    // Sign dlc fundinginput with keypair
+    psbt.signInput(0, fundPrivateKeyPair);
+
+    // Sign dlcclose inputs
+    await Promise.all(
+      inputs.map(async (input: Input, i: number) => {
+        assert(
+          psbt.getInputType(i).slice(0, 5) === 'p2wsh',
+          'only accepts P2WSH inputs',
+        );
+
+        // derive keypair
+        const keyPair = await this.getMethod('keyPair')(input.derivationPath);
+        psbt.signInput(i + 1, keyPair);
+      }),
+    );
+
+    // Validate signatures
+    psbt.validateSignaturesOfAllInputs();
+
+    console.log(psbt.toHex());
+
+    return Tx.decode(StreamReader.fromHex(psbt.toHex()));
   }
 
   async AddSignatureToFundTransaction(

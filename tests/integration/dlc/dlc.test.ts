@@ -1,3 +1,5 @@
+import 'mocha';
+
 import { BitcoinNetworks } from '@liquality/bitcoin-networks';
 import {
   CoveredCall,
@@ -11,6 +13,7 @@ import {
   DigitDecompositionEventDescriptorV0,
   DlcAccept,
   DlcAcceptV0,
+  DlcClose,
   DlcOffer,
   DlcOfferV0,
   DlcSign,
@@ -26,7 +29,7 @@ import BN from 'bignumber.js';
 import { Psbt } from 'bitcoinjs-lib';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import 'mocha';
+
 import {
   AcceptDlcOfferResponse,
   SignDlcAcceptResponse,
@@ -242,6 +245,31 @@ describe('dlc provider', () => {
         const closeTxId = await bob.chain.sendRawTransaction(
           bobPsbt.extractTransaction().toHex(),
         );
+        const closeTx = await alice.getMethod('getTransactionByHash')(
+          closeTxId,
+        );
+        expect(closeTx._raw.vin.length).to.equal(2);
+      });
+
+      it('close 2', async () => {
+        const aliceDlcClose: DlcClose = await alice.dlc.createDlcClose(
+          dlcOffer,
+          dlcAccept,
+          dlcTransactions,
+          10000n,
+          true,
+        );
+
+        const bobDlcTx: Tx = await alice.dlc.finalizeDlcClose(
+          dlcOffer,
+          dlcAccept,
+          aliceDlcClose,
+          dlcTransactions,
+          10000n,
+          true,
+        );
+
+        const closeTxId = await bob.chain.sendRawTransaction(bobDlcTx);
         const closeTx = await alice.getMethod('getTransactionByHash')(
           closeTxId,
         );

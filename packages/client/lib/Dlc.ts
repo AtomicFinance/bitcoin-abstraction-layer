@@ -19,6 +19,7 @@ import {
   GetRawFundTxSignatureResponse,
   GetRawRefundTxSignatureRequest,
   GetRawRefundTxSignatureResponse,
+  Input,
   SignCetRequest,
   SignCetResponse,
   SignFundTransactionRequest,
@@ -35,6 +36,7 @@ import {
 import {
   ContractInfo,
   DlcAccept,
+  DlcClose,
   DlcOffer,
   DlcSign,
   DlcTransactions,
@@ -215,6 +217,65 @@ export default class Dlc {
       initiatorPayoutSatoshis,
       isOfferer,
       psbt,
+      inputs,
+    );
+  }
+
+  /**
+   * Generate DlcClose messagetype for closing DLC with Mutual Consent
+   * @param dlcOffer DlcOffer TLV (V0)
+   * @param dlcAccept DlcAccept TLV (V0)
+   * @param dlcTxs DlcTransactions TLV (V0)
+   * @param initiatorPayoutSatoshis Amount initiator expects as a payout
+   * @param isOfferer Whether offerer or not
+   * @param inputs Optionally specified closing inputs
+   * @returns {Promise<DlcClose>}
+   */
+  async createDlcClose(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    dlcTxs: DlcTransactions,
+    initiatorPayoutSatoshis: bigint,
+    isOfferer: boolean,
+    inputs?: Input[],
+  ): Promise<DlcClose> {
+    return this.client.getMethod('createDlcClose')(
+      dlcOffer,
+      dlcAccept,
+      dlcTxs,
+      initiatorPayoutSatoshis,
+      isOfferer,
+      inputs,
+    );
+  }
+
+  /**
+   * Finalize Dlc Close
+   * @param dlcOffer Dlc Offer Message
+   * @param dlcAccept Dlc Accept Message
+   * @param dlcClose Dlc Close Message
+   * @param dlcTxs Dlc Transactions Message
+   * @param initiatorPayoutSatoshis Amount initiator expects as a payout
+   * @param isOfferer Whether offerer or not
+   * @param inputs Optionally specified closing inputs
+   * @returns {Promise<Tx>}
+   */
+  finalizeDlcClose(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    dlcClose: DlcClose,
+    dlcTxs: DlcTransactions,
+    initiatorPayoutSatoshis: bigint,
+    isOfferer: boolean,
+    inputs?: Input[],
+  ): Promise<Tx> {
+    return this.client.getMethod('finalizeDlcClose')(
+      dlcOffer,
+      dlcAccept,
+      dlcClose,
+      dlcTxs,
+      initiatorPayoutSatoshis,
+      isOfferer,
       inputs,
     );
   }

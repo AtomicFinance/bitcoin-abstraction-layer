@@ -5,6 +5,7 @@ import {
   CetAdaptorSignaturesV0,
   ContractInfo,
   DlcAccept,
+  DlcClose,
   DlcOffer,
   DlcSign,
   DlcTransactions,
@@ -14,7 +15,7 @@ import {
 import { Tx } from '@node-lightning/bitcoin';
 import { Psbt } from 'bitcoinjs-lib';
 
-import { TxInRequest, TxOutRequest } from './common';
+import { TxOutRequest } from './common';
 import Input from './models/Input';
 
 export interface DlcProvider {
@@ -143,6 +144,46 @@ export interface DlcProvider {
     _psbt?: Psbt,
     _inputs?: Input[],
   ): Promise<Psbt>;
+
+  /**
+   * Generate DLC close message for closing DLC with Mutual Consent
+   * @param _dlcOffer DlcOffer TLV (V0)
+   * @param _dlcAccept DlcAccept TLV (V0)
+   * @param _dlcTxs DlcTransactions TLV (V0)
+   * @param initiatorPayoutSatoshis Amount initiator expects as a payout
+   * @param isOfferer Whether offerer or not
+   * @param _inputs Optionally specified closing inputs
+   * @returns {Promise<DlcClose>}
+   */
+  createDlcClose(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcTxs: DlcTransactions,
+    initiatorPayoutSatoshis: bigint,
+    isOfferer: boolean,
+    _inputs?: Input[],
+  ): Promise<DlcClose>;
+
+  /**
+   * Finalize Dlc Close
+   * @param _dlcOffer Dlc Offer Message
+   * @param _dlcAccept Dlc Accept Message
+   * @param _dlcClose Dlc Close Message
+   * @param _dlcTxs Dlc Transactions Message
+   * @param initiatorPayoutSatoshis Amount initiator expects as a payout
+   * @param isOfferer Whether offerer or not
+   * @param _inputs Optionally specified closing inputs
+   * @returns {Promise<Tx>}
+   */
+  finalizeDlcClose(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcClose: DlcClose,
+    _dlcTxs: DlcTransactions,
+    initiatorPayoutSatoshis: bigint,
+    isOfferer: boolean,
+    _inputs?: Input[],
+  ): Promise<Tx>;
 
   AddSignatureToFundTransaction(
     jsonObject: AddSignatureToFundTransactionRequest,
