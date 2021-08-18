@@ -1,7 +1,9 @@
-import 'mocha';
-
 import { BitcoinNetworks } from '@liquality/bitcoin-networks';
-import { CoveredCall, groupByIgnoringDigits } from '@node-dlc/core';
+import {
+  CoveredCall,
+  groupByIgnoringDigits,
+  HyperbolaPayoutCurve,
+} from '@node-dlc/core';
 import {
   ContractDescriptorV1,
   ContractInfoV0,
@@ -24,7 +26,7 @@ import BN from 'bignumber.js';
 import { Psbt } from 'bitcoinjs-lib';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-
+import 'mocha';
 import {
   AcceptDlcOfferResponse,
   SignDlcAcceptResponse,
@@ -37,6 +39,7 @@ import {
   generateContractInfo,
   generateOracleAttestation,
 } from '../utils/contract';
+
 chai.use(chaiAsPromised);
 const expect = chai.expect;
 
@@ -266,7 +269,7 @@ describe('dlc provider', () => {
         const roundingIntervals = new RoundingIntervalsV0();
         roundingIntervals.intervals = intervals;
 
-        const payouts = CoveredCall.computePayouts(
+        const payouts = HyperbolaPayoutCurve.computePayouts(
           payoutFunction,
           totalCollateral,
           roundingIntervals,
@@ -486,7 +489,7 @@ describe('dlc provider', () => {
         expect(cetTx._raw.vin.length).to.equal(1);
       });
 
-      it('execute event 3', async () => {
+      it.only('execute event 3', async () => {
         const outcome = 0;
         const oracleAttestation = generateOracleAttestation(
           outcome,

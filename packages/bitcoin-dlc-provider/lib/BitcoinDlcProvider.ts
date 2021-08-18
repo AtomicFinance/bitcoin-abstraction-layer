@@ -44,7 +44,6 @@ import { BitcoinNetwork } from '@liquality/bitcoin-networks';
 import { Address, bitcoin } from '@liquality/types';
 import { sleep } from '@liquality/utils';
 import {
-  CoveredCall,
   DualClosingTxFinalizer,
   DualFundingTxFinalizer,
   groupByIgnoringDigits,
@@ -251,7 +250,7 @@ export default class BitcoinDlcProvider
       throw Error('Only DigitDecomposition Oracle Events supported');
 
     const roundingIntervals = contractDescriptor.roundingIntervals;
-    const cetPayouts = CoveredCall.computePayouts(
+    const cetPayouts = HyperbolaPayoutCurve.computePayouts(
       payoutFunction,
       totalCollateral,
       roundingIntervals,
@@ -1081,10 +1080,9 @@ Payout Group not found',
       case MessageType.ContractInfoV1: {
         const contractInfo = dlcOffer.contractInfo as ContractInfoV1;
         const attestedOracleEvent = contractInfo.contractOraclePairs.find(
-          ({ oracleInfo }) => {
+          ({ oracleInfo }) =>
             oracleInfo.announcement.oracleEvent.eventId ===
-              oracleAttestation.eventId;
-          },
+            oracleAttestation.eventId,
         );
 
         if (!attestedOracleEvent)

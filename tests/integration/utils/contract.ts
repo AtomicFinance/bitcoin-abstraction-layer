@@ -10,6 +10,7 @@ import {
   RoundingIntervalsV0,
 } from '@node-dlc/messaging';
 import { math } from 'bip-schnorr';
+
 import Oracle from '../models/Oracle';
 
 export function generateContractInfo(
@@ -39,10 +40,7 @@ export function generateContractInfo(
   announcement.announcementSig = Buffer.from(
     oracle.GetSignature(
       math
-        .taggedHash(
-          'DLC/oracle/announcement/v0',
-          event.serialize().toString('hex'),
-        )
+        .taggedHash('DLC/oracle/announcement/v0', event.serialize())
         .toString('hex'),
     ),
     'hex',
