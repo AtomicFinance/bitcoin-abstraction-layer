@@ -489,7 +489,7 @@ describe('dlc provider', () => {
         expect(cetTx._raw.vin.length).to.equal(1);
       });
 
-      it.only('execute event 3', async () => {
+      it('execute event 3', async () => {
         const outcome = 0;
         const oracleAttestation = generateOracleAttestation(
           outcome,
