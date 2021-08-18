@@ -1234,17 +1234,6 @@ Payout Group not found',
       network,
     });
 
-    psbt.addInput({
-      hash: dlcTxs.fundTx.txId.serialize(),
-      index: dlcTxs.fundTxVout,
-      sequence: 0,
-      witnessUtxo: {
-        script: paymentVariant.output,
-        value: Number(dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats),
-      },
-      witnessScript: paymentVariant.redeem.output,
-    });
-
     const pubkeys: Buffer[] = await Promise.all(
       inputs.map(async (input) => {
         const address: Address = await this.getMethod('getWalletAddress')(
@@ -1254,10 +1243,29 @@ Payout Group not found',
       }),
     );
 
+    const fundingInputSerialId = generateSerialId();
+
+    // Make temporary array to hold all inputs and then sort them
+    // this method can be improved later
+    const psbtInputs = [];
+    psbtInputs.push({
+      hash: dlcTxs.fundTx.txId.serialize(),
+      index: dlcTxs.fundTxVout,
+      sequence: 0,
+      witnessUtxo: {
+        script: paymentVariant.output,
+        value: Number(dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats),
+      },
+      witnessScript: paymentVariant.redeem.output,
+      serialId: fundingInputSerialId,
+      derivationPath: null,
+    });
+
+    // add all dlc close inputs
     inputs.forEach((input, i) => {
       const paymentVariant = payments.p2wpkh({ pubkey: pubkeys[i], network });
 
-      psbt.addInput({
+      psbtInputs.push({
         hash: input.txid,
         index: input.vout,
         sequence: 0,
@@ -1265,8 +1273,28 @@ Payout Group not found',
           script: paymentVariant.output,
           value: input.value,
         },
+        serialId: input.inputSerialId || generateSerialId(), // create if doesn't exist
+        derivationPath: input.derivationPath,
       });
     });
+
+    // sort all inputs in ascending order by serial ID
+    // The only reason we are doing this is for privacy. If the fundingInput is
+    // always first, it is very obvious. Hence, a serialId is randomly generated
+    // and the inputs are sorted by that instead.
+    const sortedPsbtInputs = psbtInputs.sort((a, b) =>
+      Number(a.serialId - b.serialId),
+    );
+
+    // Get index of fundingInput
+    const fundingInputIndex = sortedPsbtInputs.findIndex(
+      (input) => input.serialId === fundingInputSerialId,
+    );
+
+    console.log('fundinginputindex', fundingInputIndex);
+
+    // add to psbt
+    sortedPsbtInputs.forEach((input, i) => psbt.addInput(input));
 
     const fundingInputs: FundingInput[] = await Promise.all(
       inputs.map(async (input) => {
@@ -1306,6 +1334,30 @@ Payout Group not found',
       value: Number(acceptPayoutValue),
       address: address.fromOutputScript(dlcAccept.payoutSPK, network),
     });
+
+    // Generate keypair to sign inputs
+    const fundPrivateKeyPair = await this.GetFundKeyPair(
+      dlcOffer,
+      dlcAccept,
+      isOfferer,
+    );
+
+    // Sign dlc fundinginput
+    psbt.signInput(fundingInputIndex, fundPrivateKeyPair);
+
+    // Sign dlcclose inputs
+    await Promise.all(
+      sortedPsbtInputs.map(async (input, i) => {
+        if (i === fundingInputIndex) return;
+
+        // derive keypair
+        const keyPair = await this.getMethod('keyPair')(input.derivationPath);
+        psbt.signInput(i, keyPair);
+      }),
+    );
+
+    // Validate signatures
+    psbt.validateSignaturesOfAllInputs();
 
     return psbt;
   }
@@ -1916,12 +1968,6 @@ Payout Group not found',
       _dlcTxs,
     });
 
-    const fundPrivateKeyPair = await this.GetFundKeyPair(
-      dlcOffer,
-      dlcAccept,
-      isOfferer,
-    );
-
     // Initiate and build PSBT
     let inputs: Input[] = _inputs;
     if ((_inputs && _inputs.length === 0) || !_inputs) {
@@ -1929,7 +1975,7 @@ Payout Group not found',
         BigInt(20000),
         dlcOffer.feeRatePerVb,
         _inputs,
-      ); // TODO: Sort by serial ID?
+      );
     }
 
     // Use psbt as a tx builder
@@ -1941,26 +1987,6 @@ Payout Group not found',
       isOfferer,
       inputs,
     );
-
-    // Sign dlc fundinginput
-    psbt.signInput(0, fundPrivateKeyPair);
-
-    // Sign dlcclose inputs
-    await Promise.all(
-      inputs.map(async (input: Input, i: number) => {
-        assert(
-          psbt.getInputType(i).slice(0, 5) === 'p2wsh',
-          'only accepts P2WSH inputs',
-        );
-
-        // derive keypair
-        const keyPair = await this.getMethod('keyPair')(input.derivationPath);
-        psbt.signInput(i + 1, keyPair);
-      }),
-    );
-
-    // Validate signatures
-    psbt.validateSignaturesOfAllInputs();
 
     // Extract close signature from psbt
     const closeSignature = psbt.data.inputs[0].partialSig[0].signature;
@@ -2033,13 +2059,6 @@ Payout Group not found',
     dlcAccept.validate();
     dlcClose.validate();
 
-    // Create keypair
-    const fundPrivateKeyPair = await this.GetFundKeyPair(
-      dlcOffer,
-      dlcAccept,
-      isOfferer,
-    );
-
     // Initiate and build PSBT
     let inputs: Input[] = _inputs;
     if ((_inputs && _inputs.length === 0) || !_inputs) {
@@ -2059,29 +2078,11 @@ Payout Group not found',
       inputs,
     );
 
-    // Sign dlc fundinginput with keypair
-    psbt.signInput(0, fundPrivateKeyPair);
-
-    // Sign dlcclose inputs
-    await Promise.all(
-      inputs.map(async (input: Input, i: number) => {
-        assert(
-          psbt.getInputType(i).slice(0, 5) === 'p2wsh',
-          'only accepts P2WSH inputs',
-        );
-
-        // derive keypair
-        const keyPair = await this.getMethod('keyPair')(input.derivationPath);
-        psbt.signInput(i + 1, keyPair);
-      }),
-    );
-
-    // Validate signatures
-    psbt.validateSignaturesOfAllInputs();
-
     console.log(psbt.toHex());
 
-    return Tx.decode(StreamReader.fromHex(psbt.toHex()));
+    psbt.finalizeAllInputs();
+
+    return Tx.decode(StreamReader.fromHex(psbt.extractTransaction().toHex()));
   }
 
   async AddSignatureToFundTransaction(
