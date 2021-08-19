@@ -2009,10 +2009,10 @@ Payout Group not found',
             ].scriptPubKey.serialize(),
             value: Number(input.prevTx.outputs[input.prevTxVout].value.sats),
           },
-          // witnessScript: Script.p2pkhUnlock(
-          //   dlcClose.fundingSignatures.witnessElements[0][0].witness,
-          //   dlcClose.fundingSignatures.witnessElements[0][1].witness,
-          // ).serialize(),
+          witnessScript: Script.p2pkhUnlock(
+            dlcClose.fundingSignatures.witnessElements[0][0].witness,
+            dlcClose.fundingSignatures.witnessElements[0][1].witness,
+          ).serialize(),
         });
       }),
     );
