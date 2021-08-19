@@ -26,7 +26,6 @@ import {
   RoundingIntervalsV0,
 } from '@node-dlc/messaging';
 import BN from 'bignumber.js';
-import { Psbt } from 'bitcoinjs-lib';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
@@ -222,33 +221,6 @@ describe('dlc provider', () => {
         );
         expect(refundTx._raw.vout.length).to.equal(2);
         expect(refundTx._raw.vin.length).to.equal(1);
-      });
-
-      it('close', async () => {
-        const alicePsbt: Psbt = await alice.dlc.close(
-          dlcOffer,
-          dlcAccept,
-          dlcTransactions,
-          10000n,
-          true,
-        );
-
-        const bobPsbt: Psbt = await bob.dlc.close(
-          dlcOffer,
-          dlcAccept,
-          dlcTransactions,
-          10000n,
-          false,
-          alicePsbt,
-        );
-
-        const closeTxId = await bob.chain.sendRawTransaction(
-          bobPsbt.extractTransaction().toHex(),
-        );
-        const closeTx = await alice.getMethod('getTransactionByHash')(
-          closeTxId,
-        );
-        expect(closeTx._raw.vin.length).to.equal(2);
       });
 
       it('close 2', async () => {
@@ -613,7 +585,7 @@ describe('dlc provider', () => {
       });
 
       it('close', async () => {
-        const alicePsbt: Psbt = await alice.dlc.close(
+        const aliceDlcClose: DlcClose = await alice.dlc.createDlcClose(
           dlcOffer,
           dlcAccept,
           dlcTransactions,
@@ -621,18 +593,16 @@ describe('dlc provider', () => {
           true,
         );
 
-        const bobPsbt: Psbt = await bob.dlc.close(
+        const bobDlcTx: Tx = await alice.dlc.finalizeDlcClose(
           dlcOffer,
           dlcAccept,
+          aliceDlcClose,
           dlcTransactions,
           10000n,
-          false,
-          alicePsbt,
+          true,
         );
 
-        const closeTxId = await bob.chain.sendRawTransaction(
-          bobPsbt.extractTransaction().toHex(),
-        );
+        const closeTxId = await bob.chain.sendRawTransaction(bobDlcTx);
         const closeTx = await alice.getMethod('getTransactionByHash')(
           closeTxId,
         );

@@ -1214,7 +1214,7 @@ Payout Group not found',
     initiatorPayoutSatoshis: bigint,
     isOfferer: boolean,
     inputs?: Input[],
-  ): Promise<Psbt> {
+  ): Promise<[Psbt, FundingInput[]]> {
     const network = await this.getConnectedNetwork();
     const psbt = new Psbt({ network });
 
@@ -1359,7 +1359,7 @@ Payout Group not found',
     // Validate signatures
     psbt.validateSignaturesOfAllInputs();
 
-    return psbt;
+    return [psbt, fundingInputs];
   }
 
   /**
@@ -1860,84 +1860,6 @@ Payout Group not found',
   }
 
   /**
-   * Generate PSBT for closing DLC with Mutual Consent
-   * If no PSBT provided, assume initiator
-   * If PSBT provided, assume reciprocator
-   * @param _dlcOffer DlcOffer TLV (V0)
-   * @param _dlcAccept DlcAccept TLV (V0)
-   * @param _dlcTxs DlcTransactions TLV (V0)
-   * @param initiatorPayoutSatoshis Amount initiator expects as a payout
-   * @param isOfferer Whether offerer or not
-   * @param _psbt Partially Signed Bitcoin Transaction
-   * @param _inputs Optionally specified closing inputs
-   * @returns {Promise<Psbt>}
-   */
-  async close(
-    _dlcOffer: DlcOffer,
-    _dlcAccept: DlcAccept,
-    _dlcTxs: DlcTransactions,
-    initiatorPayoutSatoshis: bigint,
-    isOfferer: boolean,
-    _psbt?: Psbt,
-    _inputs?: Input[],
-  ): Promise<Psbt> {
-    const { dlcOffer, dlcAccept, dlcTxs } = checkTypes({
-      _dlcOffer,
-      _dlcAccept,
-      _dlcTxs,
-    });
-
-    const fundPrivateKeyPair = await this.GetFundKeyPair(
-      dlcOffer,
-      dlcAccept,
-      isOfferer,
-    );
-
-    let psbt: Psbt;
-    if (_psbt) {
-      // Reciprocate if PSBT passed in
-      psbt = _psbt.clone();
-
-      psbt.signInput(0, fundPrivateKeyPair);
-      psbt.validateSignaturesOfInput(0);
-      psbt.finalizeAllInputs();
-    } else {
-      // Initiate and build PSBT
-      let inputs: Input[] = _inputs;
-      if ((_inputs && _inputs.length === 0) || !_inputs) {
-        inputs = await this.GetInputsForAmount(
-          BigInt(20000),
-          dlcOffer.feeRatePerVb,
-          _inputs,
-        );
-      }
-
-      psbt = await this.BuildCloseTx(
-        dlcOffer,
-        dlcAccept,
-        dlcTxs,
-        initiatorPayoutSatoshis,
-        isOfferer,
-        inputs,
-      );
-
-      psbt.signInput(0, fundPrivateKeyPair);
-      psbt.validateSignaturesOfInput(0);
-
-      for (let i = 1; i < inputs.length + 1; i++) {
-        const wallet: Address = await this.getMethod('getWalletAddress')(
-          inputs[i - 1].address,
-        );
-        const keyPair = await this.getMethod('keyPair')(wallet.derivationPath);
-        psbt.signInput(i, keyPair);
-        psbt.validateSignaturesOfInput(i);
-      }
-    }
-
-    return psbt;
-  }
-
-  /**
    * Goal of createDlcClose is for alice (the initiator) to
    * 1. take dlcoffer, accept, and sign messages. Create a dlcClose message.
    * 2. Build a close tx, sign.
@@ -1979,7 +1901,7 @@ Payout Group not found',
     }
 
     // Use psbt as a tx builder
-    const psbt = await this.BuildCloseTx(
+    const [psbt, fundingInputs] = await this.BuildCloseTx(
       dlcOffer,
       dlcAccept,
       dlcTxs,
@@ -2017,6 +1939,7 @@ Payout Group not found',
     dlcClose.fundInputSerialId = generateSerialId(); // randomly generated serial id
     dlcClose.closeSignature = closeSignature;
     dlcClose.fundingSignatures = fundingSignatures;
+    dlcClose.fundingInputs = fundingInputs as FundingInputV0[];
     dlcClose.validate();
 
     return dlcClose;
@@ -2069,14 +1992,57 @@ Payout Group not found',
       );
     }
 
-    const psbt: Psbt = await this.BuildCloseTx(
+    const network = await this.getConnectedNetwork();
+    const psbt = new Psbt({ network });
+
+    console.log('inputs', dlcClose.fundingInputs);
+
+    await Promise.all(
+      dlcClose.fundingInputs.map(async (input: FundingInputV0) => {
+        psbt.addInput({
+          hash: input.prevTx.txId.serialize(),
+          index: input.prevTxVout,
+          sequence: 0,
+          witnessUtxo: {
+            script: input.prevTx.outputs[
+              input.prevTxVout
+            ].scriptPubKey.serialize(),
+            value: Number(input.prevTx.outputs[input.prevTxVout].value.sats),
+          },
+          // witnessScript: Script.p2pkhUnlock(
+          //   dlcClose.fundingSignatures.witnessElements[0][0].witness,
+          //   dlcClose.fundingSignatures.witnessElements[0][1].witness,
+          // ).serialize(),
+        });
+      }),
+    );
+
+    psbt.addOutput({
+      value: Number(dlcClose.offerPayoutSatoshis),
+      address: address.fromOutputScript(dlcOffer.payoutSPK, network),
+    });
+
+    psbt.addOutput({
+      value: Number(dlcClose.acceptPayoutSatoshis),
+      address: address.fromOutputScript(dlcAccept.payoutSPK, network),
+    });
+
+    // Generate keypair to sign inputs
+    const fundPrivateKeyPair = await this.GetFundKeyPair(
       dlcOffer,
       dlcAccept,
-      dlcTxs,
-      initiatorPayoutSatoshis,
       isOfferer,
-      inputs,
     );
+
+    // Sign dlc fundinginput
+    console.log('InputCount: ', psbt.inputCount);
+    for (let i = 0; i < psbt.inputCount; ++i) {
+      // try {
+      psbt.signInput(i, fundPrivateKeyPair);
+      // } catch (e) {
+      //   console.log('error', e);
+      // }
+    }
 
     console.log(psbt.toHex());
 
