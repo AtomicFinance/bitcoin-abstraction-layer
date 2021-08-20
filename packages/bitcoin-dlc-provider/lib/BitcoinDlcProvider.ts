@@ -1900,6 +1900,9 @@ Payout Group not found',
     );
 
     console.log('create psbt', psbt.data.inputs);
+    psbt.data.inputs.forEach((input) =>
+      console.log(hash160(input.partialSig[0].pubkey)),
+    );
 
     // Extract funding signatures from psbt
     const inputSigs = psbt.data.inputs
@@ -2062,6 +2065,13 @@ Payout Group not found',
       offerer,
     );
 
+    psbt.data.inputs[fundingInputIndex].partialSig = [
+      {
+        pubkey: offerer ? dlcAccept.fundingPubKey : dlcOffer.fundingPubKey,
+        signature: dlcClose.closeSignature,
+      },
+    ];
+
     // Sign dlc fundinginput
     psbt.signInput(fundingInputIndex, fundPrivateKeyPair);
 
@@ -2076,23 +2086,28 @@ Payout Group not found',
 
     // (isOfferer && dlcOfferPubkeyFirst) || (!isOffer && dlcAcceptPubkeyFirst) => add partial sig at index 0
 
-    const dlcOfferPubkeyFirst =
-      Buffer.compare(dlcOffer.fundingPubKey, dlcAccept.fundingPubKey) === -1;
+    // const dlcOfferPubkeyFirst =
+    //   Buffer.compare(dlcOffer.fundingPubKey, dlcAccept.fundingPubKey) === -1;
 
-    if (
-      (offerer && dlcOfferPubkeyFirst) ||
-      (!offerer && !dlcOfferPubkeyFirst)
-    ) {
-      psbt.data.inputs[fundingInputIndex].partialSig.push({
-        pubkey: offerer ? dlcAccept.fundingPubKey : dlcOffer.fundingPubKey,
-        signature: dlcClose.closeSignature,
-      });
-    } else {
-      psbt.data.inputs[fundingInputIndex].partialSig.splice(0, 0, {
-        pubkey: offerer ? dlcAccept.fundingPubKey : dlcOffer.fundingPubKey,
-        signature: dlcClose.closeSignature,
-      });
-    }
+    // if (
+    //   (offerer && dlcOfferPubkeyFirst) ||
+    //   (!offerer && !dlcOfferPubkeyFirst)
+    // ) {
+    //   psbt.data.inputs[fundingInputIndex].partialSig.push({
+    //     pubkey: offerer ? dlcAccept.fundingPubKey : dlcOffer.fundingPubKey,
+    //     signature: dlcClose.closeSignature,
+    //   });
+    // } else {
+    //   psbt.data.inputs[fundingInputIndex].partialSig.splice(0, 0, {
+    //     pubkey: offerer ? dlcAccept.fundingPubKey : dlcOffer.fundingPubKey,
+    //     signature: dlcClose.closeSignature,
+    //   });
+    // }
+
+    console.log(
+      'dlcClose.fundingSignatures.witnessElements',
+      dlcClose.fundingSignatures.witnessElements,
+    );
 
     for (let i = 0; i < psbt.data.inputs.length; ++i) {
       if (i === fundingInputIndex) continue;
@@ -2102,6 +2117,10 @@ Payout Group not found',
 
       const witnessI = dlcClose.fundingSignatures.witnessElements.findIndex(
         (el) => {
+          console.log(
+            `Script.p2wpkhLock(hash160(el[1].witness)).serialize().slice(1)`,
+            Script.p2wpkhLock(hash160(el[1].witness)).serialize(),
+          );
           console.log('hash', hash160(el[1].witness));
           console.log(
             'witness',
@@ -2109,8 +2128,8 @@ Payout Group not found',
           );
           return (
             Buffer.compare(
-              hash160(el[1].witness),
-              psbt.data.inputs[i].witnessUtxo.script.slice(1),
+              Script.p2wpkhLock(hash160(el[1].witness)).serialize().slice(1),
+              psbt.data.inputs[i].witnessUtxo.script,
             ) === 0
           );
         },
