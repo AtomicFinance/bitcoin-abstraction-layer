@@ -1846,6 +1846,10 @@ Payout Group not found',
 
       psbt.signInput(0, fundPrivateKeyPair);
       psbt.validateSignaturesOfInput(0);
+
+      console.log('psbt.data.inputs', psbt.data.inputs);
+      psbt.data.inputs.forEach((input) => console.log(input.partialSig));
+
       psbt.finalizeAllInputs();
     } else {
       // Initiate and build PSBT
@@ -1878,6 +1882,11 @@ Payout Group not found',
         psbt.signInput(i, keyPair);
         psbt.validateSignaturesOfInput(i);
       }
+    }
+
+    if (!_psbt) {
+      console.log('psbt.data.inputs', psbt.data.inputs);
+      psbt.data.inputs.forEach((input) => console.log(input.partialSig));
     }
 
     return psbt;

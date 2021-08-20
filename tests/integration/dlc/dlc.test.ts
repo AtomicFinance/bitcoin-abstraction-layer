@@ -1,3 +1,5 @@
+import 'mocha';
+
 import { BitcoinNetworks } from '@liquality/bitcoin-networks';
 import {
   CoveredCall,
@@ -26,7 +28,7 @@ import BN from 'bignumber.js';
 import { Psbt } from 'bitcoinjs-lib';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import 'mocha';
+
 import {
   AcceptDlcOfferResponse,
   SignDlcAcceptResponse,
@@ -584,7 +586,8 @@ describe('dlc provider', () => {
         expect(refundTx._raw.vin.length).to.equal(1);
       });
 
-      it('close', async () => {
+      it.only('close', async () => {
+        console.log('alice close');
         const alicePsbt: Psbt = await alice.dlc.close(
           dlcOffer,
           dlcAccept,
@@ -593,6 +596,7 @@ describe('dlc provider', () => {
           true,
         );
 
+        console.log('bob close');
         const bobPsbt: Psbt = await bob.dlc.close(
           dlcOffer,
           dlcAccept,
