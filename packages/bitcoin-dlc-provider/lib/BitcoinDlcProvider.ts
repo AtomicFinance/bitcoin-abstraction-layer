@@ -1291,8 +1291,6 @@ Payout Group not found',
       (input) => input.serialId === fundingInputSerialId,
     );
 
-    console.log('fundinginputindex', fundingInputIndex);
-
     // add to psbt
     sortedPsbtInputs.forEach((input, i) => psbt.addInput(input));
 
@@ -1995,27 +1993,104 @@ Payout Group not found',
     const network = await this.getConnectedNetwork();
     const psbt = new Psbt({ network });
 
-    console.log('inputs', dlcClose.fundingInputs);
+    const fundingPubKeys =
+      Buffer.compare(dlcOffer.fundingPubKey, dlcAccept.fundingPubKey) === -1
+        ? [dlcOffer.fundingPubKey, dlcAccept.fundingPubKey]
+        : [dlcAccept.fundingPubKey, dlcOffer.fundingPubKey];
 
-    await Promise.all(
-      dlcClose.fundingInputs.map(async (input: FundingInputV0) => {
-        psbt.addInput({
-          hash: input.prevTx.txId.serialize(),
-          index: input.prevTxVout,
-          sequence: 0,
-          witnessUtxo: {
-            script: input.prevTx.outputs[
-              input.prevTxVout
-            ].scriptPubKey.serialize(),
-            value: Number(input.prevTx.outputs[input.prevTxVout].value.sats),
-          },
-          witnessScript: Script.p2pkhUnlock(
-            dlcClose.fundingSignatures.witnessElements[0][0].witness,
-            dlcClose.fundingSignatures.witnessElements[0][1].witness,
-          ).serialize(),
-        });
+    const p2ms = payments.p2ms({
+      m: 2,
+      pubkeys: fundingPubKeys,
+      network,
+    });
+
+    const paymentVariant = payments.p2wsh({
+      redeem: p2ms,
+      network,
+    });
+
+    const fundingInputSerialId = generateSerialId();
+
+    // Make temporary array to hold all inputs and then sort them
+    // this method can be improved later
+    const psbtInputs = [];
+    psbtInputs.push({
+      hash: dlcTxs.fundTx.txId.serialize(),
+      index: dlcTxs.fundTxVout,
+      sequence: 0,
+      witnessUtxo: {
+        script: paymentVariant.output,
+        value: Number(dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats),
+      },
+      witnessScript: paymentVariant.redeem.output,
+      serialId: fundingInputSerialId,
+      derivationPath: null,
+    });
+
+    // add all dlc close inputs
+    dlcClose.fundingInputs.forEach((input, i) => {
+      psbtInputs.push({
+        hash: input.prevTx.txId.serialize(),
+        index: input.prevTxVout,
+        sequence: 0,
+        witnessUtxo: {
+          script: input.prevTx.outputs[
+            input.prevTxVout
+          ].scriptPubKey.serialize(),
+          value: Number(input.prevTx.outputs[input.prevTxVout].value.sats),
+        },
+        witnessScript: Script.p2pkhUnlock(
+          dlcClose.fundingSignatures.witnessElements[0][0].witness,
+          dlcClose.fundingSignatures.witnessElements[0][1].witness,
+        ).serialize(),
+        serialId: input.inputSerialId || generateSerialId(), // create if doesn't exist
+        derivationPath: null,
+      });
+    });
+
+    // sort all inputs in ascending order by serial ID
+    // The only reason we are doing this is for privacy. If the fundingInput is
+    // always first, it is very obvious. Hence, a serialId is randomly generated
+    // and the inputs are sorted by that instead.
+    const sortedPsbtInputs = psbtInputs.sort((a, b) =>
+      Number(a.serialId - b.serialId),
+    );
+
+    // Get index of fundingInput
+    const fundingInputIndex = sortedPsbtInputs.findIndex(
+      (input) => input.serialId === fundingInputSerialId,
+    );
+
+    console.log('fundinginputindexFinalize', fundingInputIndex);
+
+    // add to psbt
+    sortedPsbtInputs.forEach((input, i) => psbt.addInput(input));
+
+    const fundingInputs: FundingInput[] = await Promise.all(
+      inputs.map(async (input) => {
+        return this.inputToFundingInput(input);
       }),
     );
+
+    // await Promise.all(
+    //   dlcClose.fundingInputs.map(async (input: FundingInputV0) => {
+    //     psbt.addInput({
+    //       hash: input.prevTx.txId.serialize(),
+    //       index: input.prevTxVout,
+    //       sequence: 0,
+    //       witnessUtxo: {
+    //         script: input.prevTx.outputs[
+    //           input.prevTxVout
+    //         ].scriptPubKey.serialize(),
+    //         value: Number(input.prevTx.outputs[input.prevTxVout].value.sats),
+    //       },
+    //       witnessScript: Script.p2pkhUnlock(
+    //         dlcClose.fundingSignatures.witnessElements[0][0].witness,
+    //         dlcClose.fundingSignatures.witnessElements[0][1].witness,
+    //       ).serialize(),
+    //     });
+    //   }),
+    // );
 
     psbt.addOutput({
       value: Number(dlcClose.offerPayoutSatoshis),
@@ -2035,14 +2110,21 @@ Payout Group not found',
     );
 
     // Sign dlc fundinginput
-    console.log('InputCount: ', psbt.inputCount);
-    for (let i = 0; i < psbt.inputCount; ++i) {
-      // try {
-      psbt.signInput(i, fundPrivateKeyPair);
-      // } catch (e) {
-      //   console.log('error', e);
-      // }
-    }
+    psbt.signInput(fundingInputIndex, fundPrivateKeyPair);
+
+    // Sign dlcclose inputs
+    await Promise.all(
+      sortedPsbtInputs.map(async (input, i) => {
+        if (i === fundingInputIndex) return;
+
+        // derive keypair
+        const keyPair = await this.getMethod('keyPair')(input.derivationPath);
+        psbt.signInput(i, keyPair);
+      }),
+    );
+
+    // Validate signatures
+    psbt.validateSignaturesOfAllInputs();
 
     console.log(psbt.toHex());
 
