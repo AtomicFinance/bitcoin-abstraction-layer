@@ -3,20 +3,42 @@ import Provider from '@atomicfinance/provider';
 import {
   AdaptorPair,
   AddSignaturesToRefundTxRequest,
+  AddSignaturesToRefundTxResponse,
   AddSignatureToFundTransactionRequest,
+  AddSignatureToFundTransactionResponse,
+  CreateCetAdaptorSignatureRequest,
+  CreateCetAdaptorSignatureResponse,
   CreateCetAdaptorSignaturesRequest,
+  CreateCetAdaptorSignaturesResponse,
+  CreateCetRequest,
+  CreateCetResponse,
   CreateDlcTransactionsRequest,
+  CreateDlcTransactionsResponse,
+  CreateFundTransactionRequest,
+  CreateFundTransactionResponse,
+  CreateRefundTransactionRequest,
+  CreateRefundTransactionResponse,
   DlcProvider,
   GetRawFundTxSignatureRequest,
+  GetRawFundTxSignatureResponse,
   GetRawRefundTxSignatureRequest,
+  GetRawRefundTxSignatureResponse,
   Input,
   Messages,
   PayoutRequest,
   SignCetRequest,
+  SignCetResponse,
+  SignFundTransactionRequest,
+  SignFundTransactionResponse,
   Utxo,
+  VerifyCetAdaptorSignatureRequest,
+  VerifyCetAdaptorSignatureResponse,
   VerifyCetAdaptorSignaturesRequest,
+  VerifyCetAdaptorSignaturesResponse,
   VerifyFundTxSignatureRequest,
+  VerifyFundTxSignatureResponse,
   VerifyRefundTxSignatureRequest,
+  VerifyRefundTxSignatureResponse,
 } from '@atomicfinance/types';
 import { BitcoinNetwork } from '@liquality/bitcoin-networks';
 import { Address, bitcoin } from '@liquality/types';
@@ -65,6 +87,7 @@ import assert from 'assert';
 import BigNumber from 'bignumber.js';
 import { address, ECPairInterface, payments, Psbt } from 'bitcoinjs-lib';
 
+import { PartialSig } from '../../bitcoin-networks/node_modules/bip174/src/lib/interfaces';
 import {
   asyncForEach,
   checkTypes,
@@ -1192,7 +1215,7 @@ Payout Group not found',
     initiatorPayoutSatoshis: bigint,
     isOfferer: boolean,
     inputs?: Input[],
-  ): Promise<[Psbt, FundingInput[], Buffer, bigint]> {
+  ): Promise<[Psbt, FundingInput[], Buffer, bigint, PartialSig[]]> {
     const network = await this.getConnectedNetwork();
     const psbt = new Psbt({ network });
 
@@ -1343,7 +1366,18 @@ Payout Group not found',
 
     psbt.data.inputs.forEach((input) => console.log(input.partialSig));
 
-    return [psbt, fundingInputs, closeSignature, fundingInputSerialId];
+    // Extract funding signatures from psbt
+    const inputSigs = psbt.data.inputs
+      .filter((input) => input !== fundingInputIndex)
+      .map((input) => input.partialSig[0]);
+
+    return [
+      psbt,
+      fundingInputs,
+      closeSignature,
+      fundingInputSerialId,
+      inputSigs,
+    ];
   }
 
   /**
@@ -1890,6 +1924,7 @@ Payout Group not found',
       fundingInputs,
       closeSignature,
       fundingInputSerialId,
+      inputSigs,
     ] = await this.BuildCloseTx(
       dlcOffer,
       dlcAccept,
@@ -1903,11 +1938,6 @@ Payout Group not found',
     psbt.data.inputs.forEach((input) =>
       console.log(hash160(input.partialSig[0].pubkey)),
     );
-
-    // Extract funding signatures from psbt
-    const inputSigs = psbt.data.inputs
-      .slice(1)
-      .map((input) => input.partialSig[0]);
 
     const witnessElements: ScriptWitnessV0[][] = [];
     for (let i = 0; i < inputSigs.length; i++) {
@@ -2058,6 +2088,8 @@ Payout Group not found',
     sortedPsbtInputs.forEach((input, i) => psbt.addInput(input));
 
     const offerer = await this.isOfferer(dlcOffer, dlcAccept);
+
+    console.log('offerer', offerer);
     // Generate keypair to sign inputs
     const fundPrivateKeyPair = await this.GetFundKeyPair(
       dlcOffer,
@@ -2065,15 +2097,27 @@ Payout Group not found',
       offerer,
     );
 
-    psbt.data.inputs[fundingInputIndex].partialSig = [
-      {
-        pubkey: offerer ? dlcAccept.fundingPubKey : dlcOffer.fundingPubKey,
-        signature: dlcClose.closeSignature,
-      },
-    ];
+    console.log('SIG1', psbt.data.inputs[fundingInputIndex].partialSig);
+    // psbt.data.inputs[fundingInputIndex].partialSig = [
+    //   {
+    //     pubkey: offerer ? dlcAccept.fundingPubKey : dlcOffer.fundingPubKey,
+    //     signature: dlcClose.closeSignature,
+    //   },
+    // ];
 
+    console.log('SIG2', psbt.data.inputs[fundingInputIndex].partialSig);
     // Sign dlc fundinginput
     psbt.signInput(fundingInputIndex, fundPrivateKeyPair);
+    console.log('SIG3', psbt.data.inputs[fundingInputIndex].partialSig);
+
+    psbt.data.inputs[fundingInputIndex].partialSig.push({
+      pubkey: offerer ? dlcAccept.fundingPubKey : dlcOffer.fundingPubKey,
+      signature: dlcClose.closeSignature,
+    });
+    console.log('SIG4', psbt.data.inputs[fundingInputIndex].partialSig);
+    console.log('dlcOffer.fundingPubKey', dlcOffer.fundingPubKey);
+    console.log('dlcAccept.fundingPubKey', dlcAccept.fundingPubKey);
+    console.log('dlcClose.closeSignature', dlcClose.closeSignature);
 
     // if you are bob, get alices pubkey. Go to dlcOffer.fundingpubkey
     // if you are alice, get bobs pubkey. go to dlcAccept.fundingpubkey
