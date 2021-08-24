@@ -1823,8 +1823,6 @@ Payout Group not found',
       Number(a.serialId - b.serialId),
     );
 
-    console.log('sortedpsbtinputs', sortedPsbtInputs);
-
     // Get index of fundingInput
     const fundingInputIndex = sortedPsbtInputs.findIndex(
       (input) => input.serialId === fundingInputSerialId,
@@ -1927,8 +1925,6 @@ Payout Group not found',
     dlcClose.fundingSignatures = fundingSignatures;
     dlcClose.fundingInputs = fundingInputs as FundingInputV0[];
     dlcClose.validate();
-
-    console.log('createdlc psbt.data', psbt.data);
 
     return dlcClose;
   }
@@ -2039,8 +2035,6 @@ Payout Group not found',
       address: address.fromOutputScript(dlcAccept.payoutSPK, network),
     });
 
-    console.log('sortedPsbtInputs', sortedPsbtInputs);
-
     // add to psbt
     sortedPsbtInputs.forEach((input, i) => psbt.addInput(input));
 
@@ -2053,15 +2047,16 @@ Payout Group not found',
       offerer,
     );
 
-    psbt.data.inputs[fundingInputIndex].partialSig = [
+    // Sign dlc fundinginput
+    psbt.signInput(fundingInputIndex, fundPrivateKeyPair);
+
+    const partialSig = [
       {
         pubkey: offerer ? dlcAccept.fundingPubKey : dlcOffer.fundingPubKey,
         signature: dlcClose.closeSignature,
       },
     ];
-
-    // Sign dlc fundinginput
-    psbt.signInput(fundingInputIndex, fundPrivateKeyPair);
+    psbt.updateInput(fundingInputIndex, { partialSig });
 
     for (let i = 0; i < psbt.data.inputs.length; ++i) {
       if (i === fundingInputIndex) continue;
@@ -2074,22 +2069,21 @@ Payout Group not found',
             psbt.data.inputs[i].witnessUtxo.script,
           ) === 0,
       );
-      psbt.data.inputs[i].partialSig.push({
-        pubkey: dlcClose.fundingSignatures.witnessElements[witnessI][1].witness,
-        signature:
-          dlcClose.fundingSignatures.witnessElements[witnessI][0].witness,
-      });
-    }
 
-    console.log('finalize psbt.data', psbt.data);
+      const partialSig = [
+        {
+          pubkey:
+            dlcClose.fundingSignatures.witnessElements[witnessI][1].witness,
+          signature:
+            dlcClose.fundingSignatures.witnessElements[witnessI][0].witness,
+        },
+      ];
+
+      psbt.updateInput(i, { partialSig });
+    }
 
     psbt.validateSignaturesOfAllInputs();
     psbt.finalizeAllInputs();
-
-    console.log(
-      'psbt.extractTransaction().toHex()',
-      psbt.extractTransaction().toHex(),
-    );
 
     return psbt.extractTransaction().toHex();
   }
