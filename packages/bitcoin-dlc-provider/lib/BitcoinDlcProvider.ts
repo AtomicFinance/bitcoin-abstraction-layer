@@ -1810,7 +1810,7 @@ Payout Group not found',
           script: paymentVariant.output,
           value: input.value,
         },
-        serialId: input.inputSerialId || generateSerialId(), // create if doesn't exist
+        serialId: input.inputSerialId,
         derivationPath: input.derivationPath,
       });
     });
@@ -2008,7 +2008,7 @@ Payout Group not found',
             .slice(1),
           value: Number(input.prevTx.outputs[input.prevTxVout].value.sats),
         },
-        serialId: input.inputSerialId || generateSerialId(), // create if doesn't exist
+        serialId: input.inputSerialId,
       });
     });
 

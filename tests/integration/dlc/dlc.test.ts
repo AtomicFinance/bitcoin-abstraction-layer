@@ -223,7 +223,7 @@ describe('dlc provider', () => {
         expect(refundTx._raw.vin.length).to.equal(1);
       });
 
-      it.only('close', async () => {
+      it('close', async () => {
         const aliceDlcClose: DlcClose = await alice.dlc.createDlcClose(
           dlcOffer,
           dlcAccept,
