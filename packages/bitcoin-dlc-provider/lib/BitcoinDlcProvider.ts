@@ -1757,11 +1757,18 @@ Payout Group not found',
     // Initiate and build PSBT
     let inputs: Input[] = _inputs;
     if ((_inputs && _inputs.length === 0) || !_inputs) {
-      inputs = await this.GetInputsForAmount(
+      const tempInputs = await this.GetInputsForAmount(
         BigInt(20000),
         dlcOffer.feeRatePerVb,
         _inputs,
       );
+      inputs = tempInputs.map((input) => {
+        return {
+          ...input,
+          inputSerialId: generateSerialId(),
+          toUtxo: Input.prototype.toUtxo,
+        };
+      });
     }
 
     const pubkeys: Buffer[] = await Promise.all(
@@ -1815,6 +1822,8 @@ Payout Group not found',
     const sortedPsbtInputs = psbtInputs.sort((a, b) =>
       Number(a.serialId - b.serialId),
     );
+
+    console.log('sortedpsbtinputs', sortedPsbtInputs);
 
     // Get index of fundingInput
     const fundingInputIndex = sortedPsbtInputs.findIndex(
@@ -1918,6 +1927,8 @@ Payout Group not found',
     dlcClose.fundingSignatures = fundingSignatures;
     dlcClose.fundingInputs = fundingInputs as FundingInputV0[];
     dlcClose.validate();
+
+    console.log('createdlc psbt.data', psbt.data);
 
     return dlcClose;
   }
@@ -2028,6 +2039,8 @@ Payout Group not found',
       address: address.fromOutputScript(dlcAccept.payoutSPK, network),
     });
 
+    console.log('sortedPsbtInputs', sortedPsbtInputs);
+
     // add to psbt
     sortedPsbtInputs.forEach((input, i) => psbt.addInput(input));
 
@@ -2040,13 +2053,15 @@ Payout Group not found',
       offerer,
     );
 
+    psbt.data.inputs[fundingInputIndex].partialSig = [
+      {
+        pubkey: offerer ? dlcAccept.fundingPubKey : dlcOffer.fundingPubKey,
+        signature: dlcClose.closeSignature,
+      },
+    ];
+
     // Sign dlc fundinginput
     psbt.signInput(fundingInputIndex, fundPrivateKeyPair);
-
-    psbt.data.inputs[fundingInputIndex].partialSig.push({
-      pubkey: offerer ? dlcAccept.fundingPubKey : dlcOffer.fundingPubKey,
-      signature: dlcClose.closeSignature,
-    });
 
     for (let i = 0; i < psbt.data.inputs.length; ++i) {
       if (i === fundingInputIndex) continue;
@@ -2066,8 +2081,15 @@ Payout Group not found',
       });
     }
 
+    console.log('finalize psbt.data', psbt.data);
+
     psbt.validateSignaturesOfAllInputs();
     psbt.finalizeAllInputs();
+
+    console.log(
+      'psbt.extractTransaction().toHex()',
+      psbt.extractTransaction().toHex(),
+    );
 
     return psbt.extractTransaction().toHex();
   }
