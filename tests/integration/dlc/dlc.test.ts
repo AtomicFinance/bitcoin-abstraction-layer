@@ -118,7 +118,7 @@ describe('dlc provider', () => {
       );
 
       const feeRatePerVb = BigInt(10);
-      const cetLocktime = 0;
+      const cetLocktime = 1617170572;
       const refundLocktime = 1617170573;
 
       dlcOffer = await alice.dlc.createDlcOffer(
@@ -223,7 +223,7 @@ describe('dlc provider', () => {
         expect(refundTx._raw.vin.length).to.equal(1);
       });
 
-      it('close 2', async () => {
+      it.only('close', async () => {
         const aliceDlcClose: DlcClose = await alice.dlc.createDlcClose(
           dlcOffer,
           dlcAccept,
@@ -237,8 +237,6 @@ describe('dlc provider', () => {
           dlcAccept,
           aliceDlcClose,
           dlcTransactions,
-          10000n,
-          true,
         );
 
         const closeTxId = await bob.chain.sendRawTransaction(bobDlcTx);
@@ -584,7 +582,7 @@ describe('dlc provider', () => {
         expect(refundTx._raw.vin.length).to.equal(1);
       });
 
-      it.only('close', async () => {
+      it('close', async () => {
         const aliceDlcClose: DlcClose = await alice.dlc.createDlcClose(
           dlcOffer,
           dlcAccept,
@@ -593,13 +591,11 @@ describe('dlc provider', () => {
           true,
         );
 
-        const bobDlcTx: Tx = await alice.dlc.finalizeDlcClose(
+        const bobDlcTx: Tx = await bob.dlc.finalizeDlcClose(
           dlcOffer,
           dlcAccept,
           aliceDlcClose,
           dlcTransactions,
-          10000n,
-          true,
         );
 
         const closeTxId = await bob.chain.sendRawTransaction(bobDlcTx);

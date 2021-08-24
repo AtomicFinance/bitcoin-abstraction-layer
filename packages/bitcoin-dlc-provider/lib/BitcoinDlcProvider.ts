@@ -87,7 +87,6 @@ import assert from 'assert';
 import BigNumber from 'bignumber.js';
 import { address, ECPairInterface, payments, Psbt } from 'bitcoinjs-lib';
 
-import { PartialSig } from '../../bitcoin-networks/node_modules/bip174/src/lib/interfaces';
 import {
   asyncForEach,
   checkTypes,
@@ -1208,178 +1207,6 @@ Payout Group not found',
     return Buffer.from(fundPrivateKeyPair.privateKey).toString('hex');
   }
 
-  async BuildCloseTx(
-    dlcOffer: DlcOfferV0,
-    dlcAccept: DlcAcceptV0,
-    dlcTxs: DlcTransactionsV0,
-    initiatorPayoutSatoshis: bigint,
-    isOfferer: boolean,
-    inputs?: Input[],
-  ): Promise<[Psbt, FundingInput[], Buffer, bigint, PartialSig[]]> {
-    const network = await this.getConnectedNetwork();
-    const psbt = new Psbt({ network });
-
-    const fundingPubKeys =
-      Buffer.compare(dlcOffer.fundingPubKey, dlcAccept.fundingPubKey) === -1
-        ? [dlcOffer.fundingPubKey, dlcAccept.fundingPubKey]
-        : [dlcAccept.fundingPubKey, dlcOffer.fundingPubKey];
-
-    const p2ms = payments.p2ms({
-      m: 2,
-      pubkeys: fundingPubKeys,
-      network,
-    });
-
-    const paymentVariant = payments.p2wsh({
-      redeem: p2ms,
-      network,
-    });
-
-    const pubkeys: Buffer[] = await Promise.all(
-      inputs.map(async (input) => {
-        const address: Address = await this.getMethod('getWalletAddress')(
-          input.address,
-        );
-        return Buffer.from(address.publicKey, 'hex');
-      }),
-    );
-
-    const fundingInputSerialId = generateSerialId();
-
-    // Make temporary array to hold all inputs and then sort them
-    // this method can be improved later
-    const psbtInputs = [];
-    psbtInputs.push({
-      hash: dlcTxs.fundTx.txId.serialize(),
-      index: dlcTxs.fundTxVout,
-      sequence: 0,
-      witnessUtxo: {
-        script: paymentVariant.output,
-        value: Number(dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats),
-      },
-      witnessScript: paymentVariant.redeem.output,
-      serialId: fundingInputSerialId,
-      derivationPath: null,
-    });
-
-    // add all dlc close inputs
-    inputs.forEach((input, i) => {
-      const paymentVariant = payments.p2wpkh({ pubkey: pubkeys[i], network });
-
-      psbtInputs.push({
-        hash: input.txid,
-        index: input.vout,
-        sequence: 0,
-        witnessUtxo: {
-          script: paymentVariant.output,
-          value: input.value,
-        },
-        serialId: input.inputSerialId || generateSerialId(), // create if doesn't exist
-        derivationPath: input.derivationPath,
-      });
-    });
-
-    // sort all inputs in ascending order by serial ID
-    // The only reason we are doing this is for privacy. If the fundingInput is
-    // always first, it is very obvious. Hence, a serialId is randomly generated
-    // and the inputs are sorted by that instead.
-    const sortedPsbtInputs = psbtInputs.sort((a, b) =>
-      Number(a.serialId - b.serialId),
-    );
-
-    // Get index of fundingInput
-    const fundingInputIndex = sortedPsbtInputs.findIndex(
-      (input) => input.serialId === fundingInputSerialId,
-    );
-
-    console.log('create fundinginputindex', fundingInputIndex);
-
-    // add to psbt
-    sortedPsbtInputs.forEach((input, i) => psbt.addInput(input));
-
-    const fundingInputs: FundingInput[] = await Promise.all(
-      inputs.map(async (input) => {
-        return this.inputToFundingInput(input);
-      }),
-    );
-
-    const finalizer = new DualClosingTxFinalizer(
-      fundingInputs,
-      dlcOffer.payoutSPK,
-      dlcAccept.payoutSPK,
-      dlcOffer.feeRatePerVb,
-    );
-
-    const closeInputAmount = BigInt(
-      inputs.reduce((acc, val) => acc + val.value, 0),
-    );
-
-    const offerPayoutValue: bigint = isOfferer
-      ? closeInputAmount +
-        initiatorPayoutSatoshis -
-        finalizer.offerInitiatorFees
-      : dlcOffer.contractInfo.totalCollateral - initiatorPayoutSatoshis;
-
-    const acceptPayoutValue: bigint = isOfferer
-      ? dlcOffer.contractInfo.totalCollateral - initiatorPayoutSatoshis
-      : closeInputAmount +
-        initiatorPayoutSatoshis -
-        finalizer.offerInitiatorFees;
-
-    psbt.addOutput({
-      value: Number(offerPayoutValue),
-      address: address.fromOutputScript(dlcOffer.payoutSPK, network),
-    });
-
-    psbt.addOutput({
-      value: Number(acceptPayoutValue),
-      address: address.fromOutputScript(dlcAccept.payoutSPK, network),
-    });
-
-    // Generate keypair to sign inputs
-    const fundPrivateKeyPair = await this.GetFundKeyPair(
-      dlcOffer,
-      dlcAccept,
-      isOfferer,
-    );
-
-    // Sign dlc fundinginput
-    psbt.signInput(fundingInputIndex, fundPrivateKeyPair);
-
-    // Sign dlcclose inputs
-    await Promise.all(
-      sortedPsbtInputs.map(async (input, i) => {
-        if (i === fundingInputIndex) return;
-
-        // derive keypair
-        const keyPair = await this.getMethod('keyPair')(input.derivationPath);
-        psbt.signInput(i, keyPair);
-      }),
-    );
-
-    // Validate signatures
-    psbt.validateSignaturesOfAllInputs();
-
-    // Extract close signature from psbt
-    const closeSignature =
-      psbt.data.inputs[fundingInputIndex].partialSig[0].signature;
-
-    psbt.data.inputs.forEach((input) => console.log(input.partialSig));
-
-    // Extract funding signatures from psbt
-    const inputSigs = psbt.data.inputs
-      .filter((input) => input !== fundingInputIndex)
-      .map((input) => input.partialSig[0]);
-
-    return [
-      psbt,
-      fundingInputs,
-      closeSignature,
-      fundingInputSerialId,
-      inputSigs,
-    ];
-  }
-
   /**
    * Check whether wallet is offerer of DlcOffer or DlcAccept
    * @param dlcOffer Dlc Offer Message
@@ -1908,6 +1735,25 @@ Payout Group not found',
       _dlcTxs,
     });
 
+    const network = await this.getConnectedNetwork();
+    const psbt = new Psbt({ network });
+
+    const fundingPubKeys =
+      Buffer.compare(dlcOffer.fundingPubKey, dlcAccept.fundingPubKey) === -1
+        ? [dlcOffer.fundingPubKey, dlcAccept.fundingPubKey]
+        : [dlcAccept.fundingPubKey, dlcOffer.fundingPubKey];
+
+    const p2ms = payments.p2ms({
+      m: 2,
+      pubkeys: fundingPubKeys,
+      network,
+    });
+
+    const paymentVariant = payments.p2wsh({
+      redeem: p2ms,
+      network,
+    });
+
     // Initiate and build PSBT
     let inputs: Input[] = _inputs;
     if ((_inputs && _inputs.length === 0) || !_inputs) {
@@ -1918,27 +1764,139 @@ Payout Group not found',
       );
     }
 
-    // Use psbt as a tx builder
-    const [
-      psbt,
+    const pubkeys: Buffer[] = await Promise.all(
+      inputs.map(async (input) => {
+        const address: Address = await this.getMethod('getWalletAddress')(
+          input.address,
+        );
+        return Buffer.from(address.publicKey, 'hex');
+      }),
+    );
+
+    const fundingInputSerialId = generateSerialId();
+
+    // Make temporary array to hold all inputs and then sort them
+    // this method can be improved later
+    const psbtInputs = [];
+    psbtInputs.push({
+      hash: dlcTxs.fundTx.txId.serialize(),
+      index: dlcTxs.fundTxVout,
+      sequence: 0,
+      witnessUtxo: {
+        script: paymentVariant.output,
+        value: Number(dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats),
+      },
+      witnessScript: paymentVariant.redeem.output,
+      serialId: fundingInputSerialId,
+      derivationPath: null,
+    });
+
+    // add all dlc close inputs
+    inputs.forEach((input, i) => {
+      const paymentVariant = payments.p2wpkh({ pubkey: pubkeys[i], network });
+
+      psbtInputs.push({
+        hash: input.txid,
+        index: input.vout,
+        sequence: 0,
+        witnessUtxo: {
+          script: paymentVariant.output,
+          value: input.value,
+        },
+        serialId: input.inputSerialId || generateSerialId(), // create if doesn't exist
+        derivationPath: input.derivationPath,
+      });
+    });
+
+    // sort all inputs in ascending order by serial ID
+    // The only reason we are doing this is for privacy. If the fundingInput is
+    // always first, it is very obvious. Hence, a serialId is randomly generated
+    // and the inputs are sorted by that instead.
+    const sortedPsbtInputs = psbtInputs.sort((a, b) =>
+      Number(a.serialId - b.serialId),
+    );
+
+    // Get index of fundingInput
+    const fundingInputIndex = sortedPsbtInputs.findIndex(
+      (input) => input.serialId === fundingInputSerialId,
+    );
+
+    // add to psbt
+    sortedPsbtInputs.forEach((input, i) => psbt.addInput(input));
+
+    const fundingInputs: FundingInput[] = await Promise.all(
+      inputs.map(async (input) => {
+        return this.inputToFundingInput(input);
+      }),
+    );
+
+    const finalizer = new DualClosingTxFinalizer(
       fundingInputs,
-      closeSignature,
-      fundingInputSerialId,
-      inputSigs,
-    ] = await this.BuildCloseTx(
+      dlcOffer.payoutSPK,
+      dlcAccept.payoutSPK,
+      dlcOffer.feeRatePerVb,
+    );
+
+    const closeInputAmount = BigInt(
+      inputs.reduce((acc, val) => acc + val.value, 0),
+    );
+
+    const offerPayoutValue: bigint = isOfferer
+      ? closeInputAmount +
+        initiatorPayoutSatoshis -
+        finalizer.offerInitiatorFees
+      : dlcOffer.contractInfo.totalCollateral - initiatorPayoutSatoshis;
+
+    const acceptPayoutValue: bigint = isOfferer
+      ? dlcOffer.contractInfo.totalCollateral - initiatorPayoutSatoshis
+      : closeInputAmount +
+        initiatorPayoutSatoshis -
+        finalizer.offerInitiatorFees;
+
+    psbt.addOutput({
+      value: Number(offerPayoutValue),
+      address: address.fromOutputScript(dlcOffer.payoutSPK, network),
+    });
+
+    psbt.addOutput({
+      value: Number(acceptPayoutValue),
+      address: address.fromOutputScript(dlcAccept.payoutSPK, network),
+    });
+
+    // Generate keypair to sign inputs
+    const fundPrivateKeyPair = await this.GetFundKeyPair(
       dlcOffer,
       dlcAccept,
-      dlcTxs,
-      initiatorPayoutSatoshis,
       isOfferer,
-      inputs,
     );
 
-    console.log('create psbt', psbt.data.inputs);
-    psbt.data.inputs.forEach((input) =>
-      console.log(hash160(input.partialSig[0].pubkey)),
+    // Sign dlc fundinginput
+    psbt.signInput(fundingInputIndex, fundPrivateKeyPair);
+
+    // Sign dlcclose inputs
+    await Promise.all(
+      sortedPsbtInputs.map(async (input, i) => {
+        if (i === fundingInputIndex) return;
+
+        // derive keypair
+        const keyPair = await this.getMethod('keyPair')(input.derivationPath);
+        psbt.signInput(i, keyPair);
+      }),
     );
 
+    // Validate signatures
+    psbt.validateSignaturesOfAllInputs();
+
+    // Extract close signature from psbt
+    const closeSignature =
+      psbt.data.inputs[fundingInputIndex].partialSig[0].signature;
+
+    // Extract funding signatures from psbt
+    const inputSigs = psbt.data.inputs
+      .filter((input) => input !== fundingInputIndex)
+      .map((input) => input.partialSig[0]);
+
+    // create fundingSignatures
     const witnessElements: ScriptWitnessV0[][] = [];
     for (let i = 0; i < inputSigs.length; i++) {
       const sigWitness = new ScriptWitnessV0();
@@ -1950,9 +1908,7 @@ Payout Group not found',
     const fundingSignatures = new FundingSignaturesV0();
     fundingSignatures.witnessElements = witnessElements;
 
-    console.log('funding Signatures', fundingSignatures);
-
-    // Creat DlcClose
+    // Create DlcClose
     const dlcClose = new DlcCloseV0();
     dlcClose.contractId = dlcTxs.contractId;
     dlcClose.offerPayoutSatoshis = BigInt(psbt.txOutputs[0].value); // You give collateral back to users
@@ -1987,9 +1943,6 @@ Payout Group not found',
     _dlcAccept: DlcAccept,
     _dlcClose: DlcClose,
     _dlcTxs: DlcTransactions,
-    // initiatorPayoutSatoshis: bigint,
-    // isOfferer: boolean,
-    // _inputs?: Input[],
   ): Promise<string> {
     const { dlcOffer, dlcAccept, dlcClose, dlcTxs } = checkTypes({
       _dlcOffer,
@@ -2048,11 +2001,6 @@ Payout Group not found',
             .slice(1),
           value: Number(input.prevTx.outputs[input.prevTxVout].value.sats),
         },
-        //  ,
-        // witnessScript: Script.p2pkhUnlock(
-        //   dlcClose.fundingSignatures.witnessElements[0][0].witness,
-        //   dlcClose.fundingSignatures.witnessElements[0][1].witness,
-        // ).serialize(),
         serialId: input.inputSerialId || generateSerialId(), // create if doesn't exist
       });
     });
@@ -2065,14 +2013,10 @@ Payout Group not found',
       Number(a.serialId - b.serialId),
     );
 
-    console.log('sorted', sortedPsbtInputs);
-
     // Get index of fundingInput
     const fundingInputIndex = sortedPsbtInputs.findIndex(
       (input) => input.serialId === dlcClose.fundInputSerialId,
     );
-
-    console.log('fundinginputindexFinalize', fundingInputIndex);
 
     psbt.addOutput({
       value: Number(dlcClose.offerPayoutSatoshis),
@@ -2089,7 +2033,6 @@ Payout Group not found',
 
     const offerer = await this.isOfferer(dlcOffer, dlcAccept);
 
-    console.log('offerer', offerer);
     // Generate keypair to sign inputs
     const fundPrivateKeyPair = await this.GetFundKeyPair(
       dlcOffer,
@@ -2097,88 +2040,25 @@ Payout Group not found',
       offerer,
     );
 
-    console.log('SIG1', psbt.data.inputs[fundingInputIndex].partialSig);
-    // psbt.data.inputs[fundingInputIndex].partialSig = [
-    //   {
-    //     pubkey: offerer ? dlcAccept.fundingPubKey : dlcOffer.fundingPubKey,
-    //     signature: dlcClose.closeSignature,
-    //   },
-    // ];
-
-    console.log('SIG2', psbt.data.inputs[fundingInputIndex].partialSig);
     // Sign dlc fundinginput
     psbt.signInput(fundingInputIndex, fundPrivateKeyPair);
-    console.log('SIG3', psbt.data.inputs[fundingInputIndex].partialSig);
 
     psbt.data.inputs[fundingInputIndex].partialSig.push({
       pubkey: offerer ? dlcAccept.fundingPubKey : dlcOffer.fundingPubKey,
       signature: dlcClose.closeSignature,
     });
-    console.log('SIG4', psbt.data.inputs[fundingInputIndex].partialSig);
-    console.log('dlcOffer.fundingPubKey', dlcOffer.fundingPubKey);
-    console.log('dlcAccept.fundingPubKey', dlcAccept.fundingPubKey);
-    console.log('dlcClose.closeSignature', dlcClose.closeSignature);
-
-    // if you are bob, get alices pubkey. Go to dlcOffer.fundingpubkey
-    // if you are alice, get bobs pubkey. go to dlcAccept.fundingpubkey
-    // psbt.data.inputs[fundingInputIndex].partialSig[0] = dlcClose.closeSignature;
-
-    // const fundingPubKeys =
-    //   Buffer.compare(dlcOffer.fundingPubKey, dlcAccept.fundingPubKey) === -1
-    //     ? [dlcOffer.fundingPubKey, dlcAccept.fundingPubKey]
-    //     : [dlcAccept.fundingPubKey, dlcOffer.fundingPubKey];
-
-    // (isOfferer && dlcOfferPubkeyFirst) || (!isOffer && dlcAcceptPubkeyFirst) => add partial sig at index 0
-
-    // const dlcOfferPubkeyFirst =
-    //   Buffer.compare(dlcOffer.fundingPubKey, dlcAccept.fundingPubKey) === -1;
-
-    // if (
-    //   (offerer && dlcOfferPubkeyFirst) ||
-    //   (!offerer && !dlcOfferPubkeyFirst)
-    // ) {
-    //   psbt.data.inputs[fundingInputIndex].partialSig.push({
-    //     pubkey: offerer ? dlcAccept.fundingPubKey : dlcOffer.fundingPubKey,
-    //     signature: dlcClose.closeSignature,
-    //   });
-    // } else {
-    //   psbt.data.inputs[fundingInputIndex].partialSig.splice(0, 0, {
-    //     pubkey: offerer ? dlcAccept.fundingPubKey : dlcOffer.fundingPubKey,
-    //     signature: dlcClose.closeSignature,
-    //   });
-    // }
-
-    console.log(
-      'dlcClose.fundingSignatures.witnessElements',
-      dlcClose.fundingSignatures.witnessElements,
-    );
 
     for (let i = 0; i < psbt.data.inputs.length; ++i) {
       if (i === fundingInputIndex) continue;
       if (!psbt.data.inputs[i].partialSig) psbt.data.inputs[i].partialSig = [];
 
-      console.log('witness el', dlcClose.fundingSignatures.witnessElements);
-
       const witnessI = dlcClose.fundingSignatures.witnessElements.findIndex(
-        (el) => {
-          console.log(
-            `Script.p2wpkhLock(hash160(el[1].witness)).serialize().slice(1)`,
-            Script.p2wpkhLock(hash160(el[1].witness)).serialize(),
-          );
-          console.log('hash', hash160(el[1].witness));
-          console.log(
-            'witness',
-            psbt.data.inputs[i].witnessUtxo.script.slice(1),
-          );
-          return (
-            Buffer.compare(
-              Script.p2wpkhLock(hash160(el[1].witness)).serialize().slice(1),
-              psbt.data.inputs[i].witnessUtxo.script,
-            ) === 0
-          );
-        },
+        (el) =>
+          Buffer.compare(
+            Script.p2wpkhLock(hash160(el[1].witness)).serialize().slice(1),
+            psbt.data.inputs[i].witnessUtxo.script,
+          ) === 0,
       );
-      console.log(witnessI);
       psbt.data.inputs[i].partialSig.push({
         pubkey: dlcClose.fundingSignatures.witnessElements[witnessI][1].witness,
         signature:
@@ -2186,15 +2066,8 @@ Payout Group not found',
       });
     }
 
-    // psbt.validateSignaturesOfInput(fundingInputIndex);
-    psbt.data.inputs.forEach((input) => console.log(input.partialSig));
-
-    console.log(psbt.data.inputs);
     psbt.validateSignaturesOfAllInputs();
-
     psbt.finalizeAllInputs();
-
-    console.log(psbt.extractTransaction().toHex());
 
     return psbt.extractTransaction().toHex();
   }

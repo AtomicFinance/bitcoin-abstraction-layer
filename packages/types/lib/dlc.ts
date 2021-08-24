@@ -170,20 +170,14 @@ export interface DlcProvider {
    * @param _dlcAccept Dlc Accept Message
    * @param _dlcClose Dlc Close Message
    * @param _dlcTxs Dlc Transactions Message
-   * @param initiatorPayoutSatoshis Amount initiator expects as a payout
-   * @param isOfferer Whether offerer or not
-   * @param _inputs Optionally specified closing inputs
-   * @returns {Promise<Tx>}
+   * @returns {Promise<string>}
    */
   finalizeDlcClose(
     _dlcOffer: DlcOffer,
     _dlcAccept: DlcAccept,
     _dlcClose: DlcClose,
     _dlcTxs: DlcTransactions,
-    initiatorPayoutSatoshis: bigint,
-    isOfferer: boolean,
-    _inputs?: Input[],
-  ): Promise<Tx>;
+  ): Promise<string>;
 
   AddSignatureToFundTransaction(
     jsonObject: AddSignatureToFundTransactionRequest,
