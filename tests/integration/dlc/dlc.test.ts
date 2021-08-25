@@ -246,6 +246,47 @@ describe('dlc provider', () => {
         expect(closeTx._raw.vin.length).to.equal(2);
       });
 
+      it('close with fixedInputs', async () => {
+        const aliceInput = await getInput(alice);
+
+        const aliceDlcClose: DlcClose = await alice.dlc.createDlcClose(
+          dlcOffer,
+          dlcAccept,
+          dlcTransactions,
+          10000n,
+          true,
+          [aliceInput],
+        );
+
+        const bobDlcTx: Tx = await bob.dlc.finalizeDlcClose(
+          dlcOffer,
+          dlcAccept,
+          aliceDlcClose,
+          dlcTransactions,
+        );
+
+        const closeTxId = await bob.chain.sendRawTransaction(bobDlcTx);
+        const closeTx = await alice.getMethod('getTransactionByHash')(
+          closeTxId,
+        );
+        expect(closeTx._raw.vin.length).to.equal(2);
+      });
+
+      it('should fail close with invalid fixedInputs', async () => {
+        const wrongInput = await getInput(bob);
+
+        expect(
+          alice.dlc.createDlcClose(
+            dlcOffer,
+            dlcAccept,
+            dlcTransactions,
+            10000n,
+            true,
+            [wrongInput],
+          ),
+        ).to.be.eventually.rejectedWith(Error);
+      });
+
       it('compute payouts', async () => {
         const numDigits = 17;
         const oracleBase = 2;
@@ -603,6 +644,47 @@ describe('dlc provider', () => {
           closeTxId,
         );
         expect(closeTx._raw.vin.length).to.equal(2);
+      });
+
+      it('close with fixedInputs', async () => {
+        const aliceInput = await getInput(alice);
+
+        const aliceDlcClose: DlcClose = await alice.dlc.createDlcClose(
+          dlcOffer,
+          dlcAccept,
+          dlcTransactions,
+          10000n,
+          true,
+          [aliceInput],
+        );
+
+        const bobDlcTx: Tx = await bob.dlc.finalizeDlcClose(
+          dlcOffer,
+          dlcAccept,
+          aliceDlcClose,
+          dlcTransactions,
+        );
+
+        const closeTxId = await bob.chain.sendRawTransaction(bobDlcTx);
+        const closeTx = await alice.getMethod('getTransactionByHash')(
+          closeTxId,
+        );
+        expect(closeTx._raw.vin.length).to.equal(2);
+      });
+
+      it('should fail close with invalid fixedInputs', async () => {
+        const wrongInput = await getInput(bob);
+
+        expect(
+          alice.dlc.createDlcClose(
+            dlcOffer,
+            dlcAccept,
+            dlcTransactions,
+            10000n,
+            true,
+            [wrongInput],
+          ),
+        ).to.be.eventually.rejectedWith(Error);
       });
     });
   });

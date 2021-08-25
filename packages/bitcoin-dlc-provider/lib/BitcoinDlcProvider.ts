@@ -1762,14 +1762,15 @@ Payout Group not found',
         dlcOffer.feeRatePerVb,
         _inputs,
       );
-      inputs = tempInputs.map((input) => {
-        return {
-          ...input,
-          inputSerialId: generateSerialId(),
-          toUtxo: Input.prototype.toUtxo,
-        };
-      });
+      _inputs = tempInputs;
     }
+    inputs = _inputs.map((input) => {
+      return {
+        ...input,
+        inputSerialId: generateSerialId(),
+        toUtxo: input.toUtxo,
+      };
+    });
 
     const pubkeys: Buffer[] = await Promise.all(
       inputs.map(async (input) => {
@@ -1794,7 +1795,7 @@ Payout Group not found',
         value: Number(dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats),
       },
       witnessScript: paymentVariant.redeem.output,
-      serialId: fundingInputSerialId,
+      inputSerialId: fundingInputSerialId,
       derivationPath: null,
     });
 
@@ -1810,7 +1811,7 @@ Payout Group not found',
           script: paymentVariant.output,
           value: input.value,
         },
-        serialId: input.inputSerialId,
+        inputSerialId: input.inputSerialId,
         derivationPath: input.derivationPath,
       });
     });
@@ -1820,12 +1821,12 @@ Payout Group not found',
     // always first, it is very obvious. Hence, a serialId is randomly generated
     // and the inputs are sorted by that instead.
     const sortedPsbtInputs = psbtInputs.sort((a, b) =>
-      Number(a.serialId - b.serialId),
+      Number(a.inputSerialId - b.inputSerialId),
     );
 
     // Get index of fundingInput
     const fundingInputIndex = sortedPsbtInputs.findIndex(
-      (input) => input.serialId === fundingInputSerialId,
+      (input) => input.inputSerialId === fundingInputSerialId,
     );
 
     // add to psbt
@@ -1993,7 +1994,7 @@ Payout Group not found',
         value: Number(dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats),
       },
       witnessScript: paymentVariant.redeem.output,
-      serialId: dlcClose.fundInputSerialId,
+      inputSerialId: dlcClose.fundInputSerialId,
     });
 
     // add all dlc close inputs
@@ -2008,7 +2009,7 @@ Payout Group not found',
             .slice(1),
           value: Number(input.prevTx.outputs[input.prevTxVout].value.sats),
         },
-        serialId: input.inputSerialId,
+        inputSerialId: input.inputSerialId,
       });
     });
 
@@ -2017,12 +2018,12 @@ Payout Group not found',
     // always first, it is very obvious. Hence, a serialId is randomly generated
     // and the inputs are sorted by that instead.
     const sortedPsbtInputs = psbtInputs.sort((a, b) =>
-      Number(a.serialId - b.serialId),
+      Number(a.inputSerialId - b.inputSerialId),
     );
 
     // Get index of fundingInput
     const fundingInputIndex = sortedPsbtInputs.findIndex(
-      (input) => input.serialId === dlcClose.fundInputSerialId,
+      (input) => input.inputSerialId === dlcClose.fundInputSerialId,
     );
 
     psbt.addOutput({
