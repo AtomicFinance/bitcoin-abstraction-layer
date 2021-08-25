@@ -19,6 +19,7 @@ import {
   GetRawFundTxSignatureResponse,
   GetRawRefundTxSignatureRequest,
   GetRawRefundTxSignatureResponse,
+  Input,
   SignCetRequest,
   SignCetResponse,
   SignFundTransactionRequest,
@@ -35,6 +36,7 @@ import {
 import {
   ContractInfo,
   DlcAccept,
+  DlcClose,
   DlcOffer,
   DlcSign,
   DlcTransactions,
@@ -42,7 +44,6 @@ import {
   OracleAttestationV0,
 } from '@node-dlc/messaging';
 import { Tx } from '@node-lightning/bitcoin';
-import { Psbt } from 'bitcoinjs-lib';
 
 export default class Dlc {
   client: any;
@@ -187,35 +188,52 @@ export default class Dlc {
   }
 
   /**
-   * Generate PSBT for closing DLC with Mutual Consent
-   * If no PSBT provided, assume initiator
-   * If PSBT provided, assume reciprocator
+   * Generate DlcClose messagetype for closing DLC with Mutual Consent
    * @param dlcOffer DlcOffer TLV (V0)
    * @param dlcAccept DlcAccept TLV (V0)
    * @param dlcTxs DlcTransactions TLV (V0)
    * @param initiatorPayoutSatoshis Amount initiator expects as a payout
    * @param isOfferer Whether offerer or not
-   * @param psbt Partially Signed Bitcoin Transaction
    * @param inputs Optionally specified closing inputs
-   * @returns {Promise<Psbt>}
+   * @returns {Promise<DlcClose>}
    */
-  async close(
+  async createDlcClose(
     dlcOffer: DlcOffer,
     dlcAccept: DlcAccept,
     dlcTxs: DlcTransactions,
     initiatorPayoutSatoshis: bigint,
     isOfferer: boolean,
-    psbt?: Psbt,
-    inputs?: IInput[],
-  ): Promise<Psbt> {
-    return this.client.getMethod('close')(
+    inputs?: Input[],
+  ): Promise<DlcClose> {
+    return this.client.getMethod('createDlcClose')(
       dlcOffer,
       dlcAccept,
       dlcTxs,
       initiatorPayoutSatoshis,
       isOfferer,
-      psbt,
       inputs,
+    );
+  }
+
+  /**
+   * Finalize Dlc Close
+   * @param dlcOffer Dlc Offer Message
+   * @param dlcAccept Dlc Accept Message
+   * @param dlcClose Dlc Close Message
+   * @param dlcTxs Dlc Transactions Message
+   * @returns {Promise<string>}
+   */
+  finalizeDlcClose(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    dlcClose: DlcClose,
+    dlcTxs: DlcTransactions,
+  ): Promise<string> {
+    return this.client.getMethod('finalizeDlcClose')(
+      dlcOffer,
+      dlcAccept,
+      dlcClose,
+      dlcTxs,
     );
   }
 

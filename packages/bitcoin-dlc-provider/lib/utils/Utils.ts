@@ -2,6 +2,8 @@ import { Messages, PayoutRequest } from '@atomicfinance/types';
 import {
   DlcAccept,
   DlcAcceptV0,
+  DlcClose,
+  DlcCloseV0,
   DlcOffer,
   DlcOfferV0,
   DlcSign,
@@ -23,27 +25,31 @@ export function generateSerialId(): bigint {
 }
 
 export function checkTypes(types: ICheckTypesRequest): ICheckTypesResponse {
-  const { _dlcOffer, _dlcAccept, _dlcSign, _dlcTxs } = types;
+  const { _dlcOffer, _dlcAccept, _dlcSign, _dlcClose, _dlcTxs } = types;
   if (_dlcOffer && _dlcOffer.type !== MessageType.DlcOfferV0)
     throw Error('DlcOffer must be V0');
   if (_dlcAccept && _dlcAccept.type !== MessageType.DlcAcceptV0)
     throw Error('DlcAccept must be V0');
   if (_dlcSign && _dlcSign.type !== MessageType.DlcSignV0)
     throw Error('DlcSign must be V0');
+  if (_dlcClose && _dlcClose.type !== MessageType.DlcCloseV0)
+    throw Error('DlcClose must be V0');
   if (_dlcTxs && _dlcTxs.type !== MessageType.DlcTransactionsV0)
     throw Error('DlcTransactions must be V0');
 
   let dlcOffer: DlcOfferV0;
   let dlcAccept: DlcAcceptV0;
   let dlcSign: DlcSignV0;
+  let dlcClose: DlcCloseV0;
   let dlcTxs: DlcTransactionsV0;
 
   if (_dlcOffer) dlcOffer = _dlcOffer as DlcOfferV0;
   if (_dlcAccept) dlcAccept = _dlcAccept as DlcAcceptV0;
   if (_dlcSign) dlcSign = _dlcSign as DlcSignV0;
+  if (_dlcClose) dlcClose = _dlcClose as DlcCloseV0;
   if (_dlcTxs) dlcTxs = _dlcTxs as DlcTransactionsV0;
 
-  return { dlcOffer, dlcAccept, dlcSign, dlcTxs };
+  return { dlcOffer, dlcAccept, dlcSign, dlcClose, dlcTxs };
 }
 
 export function outputsToPayouts(
@@ -85,6 +91,7 @@ export interface ICheckTypesRequest {
   _dlcOffer?: DlcOffer;
   _dlcAccept?: DlcAccept;
   _dlcSign?: DlcSign;
+  _dlcClose?: DlcClose;
   _dlcTxs?: DlcTransactions;
 }
 
@@ -92,6 +99,7 @@ export interface ICheckTypesResponse {
   dlcOffer?: DlcOfferV0;
   dlcAccept?: DlcAcceptV0;
   dlcSign?: DlcSignV0;
+  dlcClose?: DlcCloseV0;
   dlcTxs?: DlcTransactionsV0;
 }
 

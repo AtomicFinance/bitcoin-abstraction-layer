@@ -60,6 +60,8 @@ import {
   DigitDecompositionEventDescriptorV0,
   DlcAccept,
   DlcAcceptV0,
+  DlcClose,
+  DlcCloseV0,
   DlcOffer,
   DlcOfferV0,
   DlcSign,
@@ -1205,109 +1207,6 @@ Payout Group not found',
     return Buffer.from(fundPrivateKeyPair.privateKey).toString('hex');
   }
 
-  async BuildCloseTx(
-    dlcOffer: DlcOfferV0,
-    dlcAccept: DlcAcceptV0,
-    dlcTxs: DlcTransactionsV0,
-    initiatorPayoutSatoshis: bigint,
-    isOfferer: boolean,
-    inputs?: Input[],
-  ): Promise<Psbt> {
-    const network = await this.getConnectedNetwork();
-    const psbt = new Psbt({ network });
-
-    const fundingPubKeys =
-      Buffer.compare(dlcOffer.fundingPubKey, dlcAccept.fundingPubKey) === -1
-        ? [dlcOffer.fundingPubKey, dlcAccept.fundingPubKey]
-        : [dlcAccept.fundingPubKey, dlcOffer.fundingPubKey];
-
-    const p2ms = payments.p2ms({
-      m: 2,
-      pubkeys: fundingPubKeys,
-      network,
-    });
-
-    const paymentVariant = payments.p2wsh({
-      redeem: p2ms,
-      network,
-    });
-
-    psbt.addInput({
-      hash: dlcTxs.fundTx.txId.serialize(),
-      index: dlcTxs.fundTxVout,
-      sequence: 0,
-      witnessUtxo: {
-        script: paymentVariant.output,
-        value: Number(dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats),
-      },
-      witnessScript: paymentVariant.redeem.output,
-    });
-
-    const pubkeys: Buffer[] = await Promise.all(
-      inputs.map(async (input) => {
-        const address: Address = await this.getMethod('getWalletAddress')(
-          input.address,
-        );
-        return Buffer.from(address.publicKey, 'hex');
-      }),
-    );
-
-    inputs.forEach((input, i) => {
-      const paymentVariant = payments.p2wpkh({ pubkey: pubkeys[i], network });
-
-      psbt.addInput({
-        hash: input.txid,
-        index: input.vout,
-        sequence: 0,
-        witnessUtxo: {
-          script: paymentVariant.output,
-          value: input.value,
-        },
-      });
-    });
-
-    const fundingInputs: FundingInput[] = await Promise.all(
-      inputs.map(async (input) => {
-        return this.inputToFundingInput(input);
-      }),
-    );
-
-    const finalizer = new DualClosingTxFinalizer(
-      fundingInputs,
-      dlcOffer.payoutSPK,
-      dlcAccept.payoutSPK,
-      dlcOffer.feeRatePerVb,
-    );
-
-    const closeInputAmount = BigInt(
-      inputs.reduce((acc, val) => acc + val.value, 0),
-    );
-
-    const offerPayoutValue: bigint = isOfferer
-      ? closeInputAmount +
-        initiatorPayoutSatoshis -
-        finalizer.offerInitiatorFees
-      : dlcOffer.contractInfo.totalCollateral - initiatorPayoutSatoshis;
-
-    const acceptPayoutValue: bigint = isOfferer
-      ? dlcOffer.contractInfo.totalCollateral - initiatorPayoutSatoshis
-      : closeInputAmount +
-        initiatorPayoutSatoshis -
-        finalizer.offerInitiatorFees;
-
-    psbt.addOutput({
-      value: Number(offerPayoutValue),
-      address: address.fromOutputScript(dlcOffer.payoutSPK, network),
-    });
-
-    psbt.addOutput({
-      value: Number(acceptPayoutValue),
-      address: address.fromOutputScript(dlcAccept.payoutSPK, network),
-    });
-
-    return psbt;
-  }
-
   /**
    * Check whether wallet is offerer of DlcOffer or DlcAccept
    * @param dlcOffer Dlc Offer Message
@@ -1806,81 +1705,388 @@ Payout Group not found',
   }
 
   /**
-   * Generate PSBT for closing DLC with Mutual Consent
-   * If no PSBT provided, assume initiator
-   * If PSBT provided, assume reciprocator
+   * Goal of createDlcClose is for alice (the initiator) to
+   * 1. take dlcoffer, accept, and sign messages. Create a dlcClose message.
+   * 2. Build a close tx, sign.
+   * 3. return dlcClose message (no psbt)
+   */
+
+  /**
+   * Generate DlcClose messagetype for closing DLC with Mutual Consent
    * @param _dlcOffer DlcOffer TLV (V0)
    * @param _dlcAccept DlcAccept TLV (V0)
    * @param _dlcTxs DlcTransactions TLV (V0)
    * @param initiatorPayoutSatoshis Amount initiator expects as a payout
    * @param isOfferer Whether offerer or not
-   * @param _psbt Partially Signed Bitcoin Transaction
    * @param _inputs Optionally specified closing inputs
-   * @returns {Promise<Psbt>}
+   * @returns {Promise<DlcClose>}
    */
-  async close(
+  async createDlcClose(
     _dlcOffer: DlcOffer,
     _dlcAccept: DlcAccept,
     _dlcTxs: DlcTransactions,
     initiatorPayoutSatoshis: bigint,
     isOfferer: boolean,
-    _psbt?: Psbt,
     _inputs?: Input[],
-  ): Promise<Psbt> {
+  ): Promise<DlcClose> {
     const { dlcOffer, dlcAccept, dlcTxs } = checkTypes({
       _dlcOffer,
       _dlcAccept,
       _dlcTxs,
     });
 
+    const network = await this.getConnectedNetwork();
+    const psbt = new Psbt({ network });
+
+    const fundingPubKeys =
+      Buffer.compare(dlcOffer.fundingPubKey, dlcAccept.fundingPubKey) === -1
+        ? [dlcOffer.fundingPubKey, dlcAccept.fundingPubKey]
+        : [dlcAccept.fundingPubKey, dlcOffer.fundingPubKey];
+
+    const p2ms = payments.p2ms({
+      m: 2,
+      pubkeys: fundingPubKeys,
+      network,
+    });
+
+    const paymentVariant = payments.p2wsh({
+      redeem: p2ms,
+      network,
+    });
+
+    // Initiate and build PSBT
+    let inputs: Input[] = _inputs;
+    if ((_inputs && _inputs.length === 0) || !_inputs) {
+      const tempInputs = await this.GetInputsForAmount(
+        BigInt(20000),
+        dlcOffer.feeRatePerVb,
+        _inputs,
+      );
+      _inputs = tempInputs;
+    }
+    inputs = _inputs.map((input) => {
+      return {
+        ...input,
+        inputSerialId: input.inputSerialId || generateSerialId(),
+        toUtxo: input.toUtxo,
+      };
+    });
+
+    const pubkeys: Buffer[] = await Promise.all(
+      inputs.map(async (input) => {
+        const address: Address = await this.getMethod('getWalletAddress')(
+          input.address,
+        );
+        return Buffer.from(address.publicKey, 'hex');
+      }),
+    );
+
+    const fundingInputSerialId = generateSerialId();
+
+    // Make temporary array to hold all inputs and then sort them
+    // this method can be improved later
+    const psbtInputs = [];
+    psbtInputs.push({
+      hash: dlcTxs.fundTx.txId.serialize(),
+      index: dlcTxs.fundTxVout,
+      sequence: 0,
+      witnessUtxo: {
+        script: paymentVariant.output,
+        value: Number(dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats),
+      },
+      witnessScript: paymentVariant.redeem.output,
+      inputSerialId: fundingInputSerialId,
+      derivationPath: null,
+    });
+
+    // add all dlc close inputs
+    inputs.forEach((input, i) => {
+      const paymentVariant = payments.p2wpkh({ pubkey: pubkeys[i], network });
+
+      psbtInputs.push({
+        hash: input.txid,
+        index: input.vout,
+        sequence: 0,
+        witnessUtxo: {
+          script: paymentVariant.output,
+          value: input.value,
+        },
+        inputSerialId: input.inputSerialId,
+        derivationPath: input.derivationPath,
+      });
+    });
+
+    // sort all inputs in ascending order by serial ID
+    // The only reason we are doing this is for privacy. If the fundingInput is
+    // always first, it is very obvious. Hence, a serialId is randomly generated
+    // and the inputs are sorted by that instead.
+    const sortedPsbtInputs = psbtInputs.sort((a, b) =>
+      Number(a.inputSerialId - b.inputSerialId),
+    );
+
+    // Get index of fundingInput
+    const fundingInputIndex = sortedPsbtInputs.findIndex(
+      (input) => input.inputSerialId === fundingInputSerialId,
+    );
+
+    // add to psbt
+    sortedPsbtInputs.forEach((input, i) => psbt.addInput(input));
+
+    const fundingInputs: FundingInput[] = await Promise.all(
+      inputs.map(async (input) => {
+        return this.inputToFundingInput(input);
+      }),
+    );
+
+    const finalizer = new DualClosingTxFinalizer(
+      fundingInputs,
+      dlcOffer.payoutSPK,
+      dlcAccept.payoutSPK,
+      dlcOffer.feeRatePerVb,
+    );
+
+    const closeInputAmount = BigInt(
+      inputs.reduce((acc, val) => acc + val.value, 0),
+    );
+
+    const offerPayoutValue: bigint = isOfferer
+      ? closeInputAmount +
+        initiatorPayoutSatoshis -
+        finalizer.offerInitiatorFees
+      : dlcOffer.contractInfo.totalCollateral - initiatorPayoutSatoshis;
+
+    const acceptPayoutValue: bigint = isOfferer
+      ? dlcOffer.contractInfo.totalCollateral - initiatorPayoutSatoshis
+      : closeInputAmount +
+        initiatorPayoutSatoshis -
+        finalizer.offerInitiatorFees;
+
+    psbt.addOutput({
+      value: Number(offerPayoutValue),
+      address: address.fromOutputScript(dlcOffer.payoutSPK, network),
+    });
+
+    psbt.addOutput({
+      value: Number(acceptPayoutValue),
+      address: address.fromOutputScript(dlcAccept.payoutSPK, network),
+    });
+
+    // Generate keypair to sign inputs
     const fundPrivateKeyPair = await this.GetFundKeyPair(
       dlcOffer,
       dlcAccept,
       isOfferer,
     );
 
-    let psbt: Psbt;
-    if (_psbt) {
-      // Reciprocate if PSBT passed in
-      psbt = _psbt.clone();
+    // Sign dlc fundinginput
+    psbt.signInput(fundingInputIndex, fundPrivateKeyPair);
 
-      psbt.signInput(0, fundPrivateKeyPair);
-      psbt.validateSignaturesOfInput(0);
-      psbt.finalizeAllInputs();
-    } else {
-      // Initiate and build PSBT
-      let inputs: Input[] = _inputs;
-      if ((_inputs && _inputs.length === 0) || !_inputs) {
-        inputs = await this.GetInputsForAmount(
-          BigInt(20000),
-          dlcOffer.feeRatePerVb,
-          _inputs,
-        );
-      }
+    // Sign dlcclose inputs
+    await Promise.all(
+      sortedPsbtInputs.map(async (input, i) => {
+        if (i === fundingInputIndex) return;
 
-      psbt = await this.BuildCloseTx(
-        dlcOffer,
-        dlcAccept,
-        dlcTxs,
-        initiatorPayoutSatoshis,
-        isOfferer,
-        inputs,
+        // derive keypair
+        const keyPair = await this.getMethod('keyPair')(input.derivationPath);
+        psbt.signInput(i, keyPair);
+      }),
+    );
+
+    // Validate signatures
+    psbt.validateSignaturesOfAllInputs();
+
+    // Extract close signature from psbt
+    const closeSignature =
+      psbt.data.inputs[fundingInputIndex].partialSig[0].signature;
+
+    // Extract funding signatures from psbt
+    const inputSigs = psbt.data.inputs
+      .filter((input) => input !== fundingInputIndex)
+      .map((input) => input.partialSig[0]);
+
+    // create fundingSignatures
+    const witnessElements: ScriptWitnessV0[][] = [];
+    for (let i = 0; i < inputSigs.length; i++) {
+      const sigWitness = new ScriptWitnessV0();
+      sigWitness.witness = inputSigs[i].signature;
+      const pubKeyWitness = new ScriptWitnessV0();
+      pubKeyWitness.witness = inputSigs[i].pubkey;
+      witnessElements.push([sigWitness, pubKeyWitness]);
+    }
+    const fundingSignatures = new FundingSignaturesV0();
+    fundingSignatures.witnessElements = witnessElements;
+
+    // Create DlcClose
+    const dlcClose = new DlcCloseV0();
+    dlcClose.contractId = dlcTxs.contractId;
+    dlcClose.offerPayoutSatoshis = BigInt(psbt.txOutputs[0].value); // You give collateral back to users
+    dlcClose.acceptPayoutSatoshis = BigInt(psbt.txOutputs[1].value); // give collateral back to users
+    dlcClose.fundInputSerialId = fundingInputSerialId; // randomly generated serial id
+    dlcClose.closeSignature = closeSignature;
+    dlcClose.fundingSignatures = fundingSignatures;
+    dlcClose.fundingInputs = fundingInputs as FundingInputV0[];
+    dlcClose.validate();
+
+    return dlcClose;
+  }
+
+  /**
+   * Goal of finalize Dlc Close is for bob to
+   * 1. take the dlcClose created by alice using createDlcClose,
+   * 2. Build a psbt using Alice's dlcClose message
+   * 3. Sign psbt with bob's privkey
+   * 4. return a tx ready to be broadcast
+   */
+
+  /**
+   * Finalize Dlc Close
+   * @param _dlcOffer Dlc Offer Message
+   * @param _dlcAccept Dlc Accept Message
+   * @param _dlcClose Dlc Close Message
+   * @param _dlcTxs Dlc Transactions Message
+   * @returns {Promise<Tx>}
+   */
+  async finalizeDlcClose(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcClose: DlcClose,
+    _dlcTxs: DlcTransactions,
+  ): Promise<string> {
+    const { dlcOffer, dlcAccept, dlcClose, dlcTxs } = checkTypes({
+      _dlcOffer,
+      _dlcAccept,
+      _dlcClose,
+      _dlcTxs,
+    });
+
+    dlcOffer.validate();
+    dlcAccept.validate();
+    dlcClose.validate();
+
+    const network = await this.getConnectedNetwork();
+    const psbt = new Psbt({ network });
+
+    const fundingPubKeys =
+      Buffer.compare(dlcOffer.fundingPubKey, dlcAccept.fundingPubKey) === -1
+        ? [dlcOffer.fundingPubKey, dlcAccept.fundingPubKey]
+        : [dlcAccept.fundingPubKey, dlcOffer.fundingPubKey];
+
+    const p2ms = payments.p2ms({
+      m: 2,
+      pubkeys: fundingPubKeys,
+      network,
+    });
+
+    const paymentVariant = payments.p2wsh({
+      redeem: p2ms,
+      network,
+    });
+
+    // Make temporary array to hold all inputs and then sort them
+    // this method can be improved later
+    const psbtInputs = [];
+    psbtInputs.push({
+      hash: dlcTxs.fundTx.txId.serialize(),
+      index: dlcTxs.fundTxVout,
+      sequence: 0,
+      witnessUtxo: {
+        script: paymentVariant.output,
+        value: Number(dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats),
+      },
+      witnessScript: paymentVariant.redeem.output,
+      inputSerialId: dlcClose.fundInputSerialId,
+    });
+
+    // add all dlc close inputs
+    dlcClose.fundingInputs.forEach((input, i) => {
+      psbtInputs.push({
+        hash: input.prevTx.txId.serialize(),
+        index: input.prevTxVout,
+        sequence: 0,
+        witnessUtxo: {
+          script: input.prevTx.outputs[input.prevTxVout].scriptPubKey
+            .serialize()
+            .slice(1),
+          value: Number(input.prevTx.outputs[input.prevTxVout].value.sats),
+        },
+        inputSerialId: input.inputSerialId,
+      });
+    });
+
+    // sort all inputs in ascending order by serial ID
+    // The only reason we are doing this is for privacy. If the fundingInput is
+    // always first, it is very obvious. Hence, a serialId is randomly generated
+    // and the inputs are sorted by that instead.
+    const sortedPsbtInputs = psbtInputs.sort((a, b) =>
+      Number(a.inputSerialId - b.inputSerialId),
+    );
+
+    // Get index of fundingInput
+    const fundingInputIndex = sortedPsbtInputs.findIndex(
+      (input) => input.inputSerialId === dlcClose.fundInputSerialId,
+    );
+
+    psbt.addOutput({
+      value: Number(dlcClose.offerPayoutSatoshis),
+      address: address.fromOutputScript(dlcOffer.payoutSPK, network),
+    });
+
+    psbt.addOutput({
+      value: Number(dlcClose.acceptPayoutSatoshis),
+      address: address.fromOutputScript(dlcAccept.payoutSPK, network),
+    });
+
+    // add to psbt
+    sortedPsbtInputs.forEach((input, i) => psbt.addInput(input));
+
+    const offerer = await this.isOfferer(dlcOffer, dlcAccept);
+
+    // Generate keypair to sign inputs
+    const fundPrivateKeyPair = await this.GetFundKeyPair(
+      dlcOffer,
+      dlcAccept,
+      offerer,
+    );
+
+    // Sign dlc fundinginput
+    psbt.signInput(fundingInputIndex, fundPrivateKeyPair);
+
+    const partialSig = [
+      {
+        pubkey: offerer ? dlcAccept.fundingPubKey : dlcOffer.fundingPubKey,
+        signature: dlcClose.closeSignature,
+      },
+    ];
+    psbt.updateInput(fundingInputIndex, { partialSig });
+
+    for (let i = 0; i < psbt.data.inputs.length; ++i) {
+      if (i === fundingInputIndex) continue;
+      if (!psbt.data.inputs[i].partialSig) psbt.data.inputs[i].partialSig = [];
+
+      const witnessI = dlcClose.fundingSignatures.witnessElements.findIndex(
+        (el) =>
+          Buffer.compare(
+            Script.p2wpkhLock(hash160(el[1].witness)).serialize().slice(1),
+            psbt.data.inputs[i].witnessUtxo.script,
+          ) === 0,
       );
 
-      psbt.signInput(0, fundPrivateKeyPair);
-      psbt.validateSignaturesOfInput(0);
+      const partialSig = [
+        {
+          pubkey:
+            dlcClose.fundingSignatures.witnessElements[witnessI][1].witness,
+          signature:
+            dlcClose.fundingSignatures.witnessElements[witnessI][0].witness,
+        },
+      ];
 
-      for (let i = 1; i < inputs.length + 1; i++) {
-        const wallet: Address = await this.getMethod('getWalletAddress')(
-          inputs[i - 1].address,
-        );
-        const keyPair = await this.getMethod('keyPair')(wallet.derivationPath);
-        psbt.signInput(i, keyPair);
-        psbt.validateSignaturesOfInput(i);
-      }
+      psbt.updateInput(i, { partialSig });
     }
 
-    return psbt;
+    psbt.validateSignaturesOfAllInputs();
+    psbt.finalizeAllInputs();
+
+    return psbt.extractTransaction().toHex();
   }
 
   async AddSignatureToFundTransaction(
