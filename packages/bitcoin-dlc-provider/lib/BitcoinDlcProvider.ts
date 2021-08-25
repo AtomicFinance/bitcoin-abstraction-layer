@@ -1767,7 +1767,7 @@ Payout Group not found',
     inputs = _inputs.map((input) => {
       return {
         ...input,
-        inputSerialId: generateSerialId(),
+        inputSerialId: input.inputSerialId || generateSerialId(),
         toUtxo: input.toUtxo,
       };
     });
