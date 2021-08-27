@@ -85,7 +85,13 @@ import { StreamReader } from '@node-lightning/bufio';
 import { hash160, sha256, xor } from '@node-lightning/crypto';
 import assert from 'assert';
 import BigNumber from 'bignumber.js';
-import { address, ECPairInterface, payments, Psbt } from 'bitcoinjs-lib';
+import {
+  address,
+  ECPairInterface,
+  payments,
+  Psbt,
+  script,
+} from 'bitcoinjs-lib';
 
 import {
   asyncForEach,
@@ -1895,9 +1901,10 @@ Payout Group not found',
     // Validate signatures
     psbt.validateSignaturesOfAllInputs();
 
-    // Extract close signature from psbt
-    const closeSignature =
-      psbt.data.inputs[fundingInputIndex].partialSig[0].signature;
+    // Extract close signature from psbt and decode it to only extract r and s values
+    const closeSignature = await script.signature.decode(
+      psbt.data.inputs[fundingInputIndex].partialSig[0].signature,
+    ).signature;
 
     // Extract funding signatures from psbt
     const inputSigs = psbt.data.inputs
@@ -2054,7 +2061,7 @@ Payout Group not found',
     const partialSig = [
       {
         pubkey: offerer ? dlcAccept.fundingPubKey : dlcOffer.fundingPubKey,
-        signature: dlcClose.closeSignature,
+        signature: await script.signature.encode(dlcClose.closeSignature, 1),
       },
     ];
     psbt.updateInput(fundingInputIndex, { partialSig });
