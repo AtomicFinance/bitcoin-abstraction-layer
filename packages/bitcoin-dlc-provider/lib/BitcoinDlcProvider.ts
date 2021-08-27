@@ -2061,7 +2061,7 @@ Payout Group not found',
     const partialSig = [
       {
         pubkey: offerer ? dlcAccept.fundingPubKey : dlcOffer.fundingPubKey,
-        signature: await script.signature.encode(dlcClose.closeSignature, 1),
+        signature: await script.signature.encode(dlcClose.closeSignature, 1), // encode using SIGHASH_ALL
       },
     ];
     psbt.updateInput(fundingInputIndex, { partialSig });
