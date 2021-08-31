@@ -36,5 +36,11 @@ jobs:
 
       - name: Start bitcoin node
         run: bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction
+
       - name: Run tests
-        run: yarn test
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 16.x
+      - run: yarn
+      - run: yarn bootstrap
+      - run: yarn test
