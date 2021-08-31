@@ -23,8 +23,6 @@ jobs:
       - run: sudo apt-add-repository ppa:bitcoin/bitcoin -y
       - run: sudo apt-get update
       - run: sudo apt-get install bitcoind
-      - name: Setup bitcoin node
       - run: mkdir -p ~/.bitcoin && cp bitcoin.conf ~/.bitcoin/bitcoin.conf && \
       - run: bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction
-      - name: Run Tests
       - run: CI=false yarn test
