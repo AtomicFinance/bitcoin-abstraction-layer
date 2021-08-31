@@ -37,4 +37,5 @@ jobs:
       - name: Start bitcoin node
         run: bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction
       - name: Run tests
-        run: CI=false yarn test
+        uses: ./
+        run: yarn test
