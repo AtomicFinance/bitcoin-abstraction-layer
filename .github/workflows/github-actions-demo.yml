@@ -20,9 +20,11 @@ jobs:
     steps:
       # - name: Install bitcoin node
       #   run: sudo apt-get install -y libusb-1.0-0 libusb-1.0-0-dev libudev-dev && sudo apt-add-repository ppa:bitcoin/bitcoin -y && sudo apt-get update --allow-insecure-repositories && sudo apt-get install bitcoind
-      - name: Install bitcoin node
-        run: sudo snap install bitcoin-core
+      # - name: Install bitcoin node
+      #   run: sudo snap install bitcoin-core
+      - name: Install Bitcoin node
+        run: wget https://bitcoin.org/bin/bitcoin-core-0.21.1/bitcoin-0.21.1-x86_64-linux-gnu.tar.gz && tar -xvf bitcoin-0.21.1-x86_64-linux-gnu.tar.gz
       - name: Start bitcoin node
-        run: snap run bitcoin-core -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction
+        run: ./bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction
       - name: Run tests
         run: CI=false yarn test
