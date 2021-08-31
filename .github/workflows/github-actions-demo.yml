@@ -20,14 +20,15 @@ jobs:
     steps:
       - name: Install bitcoin node
       - run: |
-        sudo apt-get install -y libusb-1.0-0 libusb-1.0-0-dev libudev-dev
-        sudo apt-add-repository ppa:bitcoin/bitcoin -y
-        sudo apt-get update
+        sudo apt-get install -y libusb-1.0-0 libusb-1.0-0-dev libudev-dev && \
+        sudo apt-add-repository ppa:bitcoin/bitcoin -y && \
+        sudo apt-get update && \
         sudo apt-get install bitcoind -y
       - name: Setup bitcoin node
       - run: |
-        mkdir -p ~/.bitcoin && cp bitcoin.conf ~/.bitcoin/bitcoin.conf
+        mkdir -p ~/.bitcoin && cp bitcoin.conf ~/.bitcoin/bitcoin.conf && \
         bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction
       - name: Run Tests
       - run: |
         CI=false yarn test
+        
