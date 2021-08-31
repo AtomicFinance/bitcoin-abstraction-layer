@@ -23,6 +23,6 @@ jobs:
       - name: Install bitcoin node
         run: sudo snap install bitcoin-core
       - name: Start bitcoin node
-        run: snap run bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction
+        run: snap run bitcoin-core -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction
       - name: Run tests
         run: CI=false yarn test
