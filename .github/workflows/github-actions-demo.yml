@@ -1,20 +1,20 @@
 name: GitHub Actions Demo
 on: [push]
 jobs:
-  Github-Actions-Test:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
-      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
-      - name: Check out repository code
-        uses: actions/checkout@v2
-      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
-      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
-      - name: List files in the repository
-        run: |
-          ls ${{ github.workspace }}
-      - run: echo "🍏 This job's status is ${{ job.status }}."
+  # Github-Actions-Test:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+  #     - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
+  #     - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+  #     - name: Check out repository code
+  #       uses: actions/checkout@v2
+  #     - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
+  #     - run: echo "🖥️ The workflow is now ready to test your code on the runner."
+  #     - name: List files in the repository
+  #       run: |
+  #         ls ${{ github.workspace }}
+  #     - run: echo "🍏 This job's status is ${{ job.status }}."
   CI:
     runs-on: ubuntu-latest
     steps:
@@ -22,9 +22,19 @@ jobs:
       #   run: sudo apt-get install -y libusb-1.0-0 libusb-1.0-0-dev libudev-dev && sudo apt-add-repository ppa:bitcoin/bitcoin -y && sudo apt-get update --allow-insecure-repositories && sudo apt-get install bitcoind
       # - name: Install bitcoin node
       #   run: sudo snap install bitcoin-core
+
       - name: Install Bitcoin node
-        run: wget https://bitcoin.org/bin/bitcoin-core-0.21.1/bitcoin-0.21.1-x86_64-linux-gnu.tar.gz && tar -xvf bitcoin-0.21.1-x86_64-linux-gnu.tar.gz
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: wget https://bitcoin.org/bin/bitcoin-core-0.21.1/bitcoin-0.21.1-x86_64-linux-gnu.tar.gz && tar -xvf bitcoin-0.21.1-x86_64-linux-gnu.tar.gz && cp bitcoin-0.21.1/bin/* /usr/local/bin/
+
+      - name: Cache Bitcoin Node
+        id: cache-bitcoin-node
+        uses: actions/cache@v2
+        with:
+          path: bitcoin-0.21.1
+          key: bitcoin-0.21.1
+
       - name: Start bitcoin node
-        run: ./bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction
+        run: bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction
       - name: Run tests
         run: CI=false yarn test
