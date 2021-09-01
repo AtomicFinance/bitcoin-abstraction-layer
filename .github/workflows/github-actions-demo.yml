@@ -11,19 +11,19 @@ jobs:
       # - name: Install bitcoin node
       #   run: sudo snap install bitcoin-core
 
-      - name: Cache Bitcoin Node
-        id: cache-bitcoin-node
+      - name: Cache Bitcoin Download
+        id: bitcoin-node-cache
         uses: actions/cache@v2
         with:
-          path: ./bitcoin-0.21.1
+          path: bitcoin-0.21.1
           key: bitcoin-0.21.1
 
       - name: Install Bitcoin node
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: wget https://bitcoin.org/bin/bitcoin-core-0.21.1/bitcoin-0.21.1-x86_64-linux-gnu.tar.gz && tar -xvf bitcoin-0.21.1-x86_64-linux-gnu.tar.gz && cp bitcoin-0.21.1/bin/* /usr/local/bin/
+        if: steps.bitcoin-node-cache.outputs.cache-hit != 'true'
+        run: wget https://bitcoin.org/bin/bitcoin-core-0.21.1/bitcoin-0.21.1-x86_64-linux-gnu.tar.gz && tar -xvf bitcoin-0.21.1-x86_64-linux-gnu.tar.gz
 
       - name: Start bitcoin node
-        run: bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction
+        run: cp bitcoin-0.21.1/bin/* /usr/local/bin/ && bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction
 
       # - name: Setup nodejs
       #   uses: actions/checkout@v2
@@ -47,6 +47,8 @@ jobs:
       - run: ls
       - run: yarn
       - run: yarn bootstrap
+      - name: Install dependencies for cmake
+        run: DEBIAN_FRONTEND=noninteractive apt-get -y install build-essential cmake
       - name: Build cfd-dlc-js
         run: npm run cmake_all
         shell: bash
