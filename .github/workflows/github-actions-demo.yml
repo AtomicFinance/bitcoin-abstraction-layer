@@ -47,5 +47,6 @@ jobs:
       - run: ls
       - run: yarn
       - run: yarn bootstrap
+      - run: $(cd node_modules/cfd-dlc-js && npm run cmake_all)
       - run: yarn build
       - run: yarn test
