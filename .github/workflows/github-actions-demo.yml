@@ -39,7 +39,7 @@ jobs:
         run: yarn install --frozen-lockfile
       - run: yarn bootstrap
       - name: Install dependencies for cmake
-        run: DEBIAN_FRONTEND=noninteractive sudo apt-get -y install build-essential cmake automake python3
+        run: DEBIAN_FRONTEND=noninteractive sudo apt-get -y install build-essential cmake automake python3 nodejs
       - name: Build cfd-js
         if: steps.${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}.outputs.cache-hit != 'true'
         run: npm run cmake_all
