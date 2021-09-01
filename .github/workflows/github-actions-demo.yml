@@ -28,9 +28,9 @@ jobs:
         with:
           node-version: 16.x
       - name: restore lerna node_modules from cache
-        key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
         uses: actions/cache@v2
         with:
+          key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
           path: |
             node_modules
             */*/node_modules
