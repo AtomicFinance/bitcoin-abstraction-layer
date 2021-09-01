@@ -1,10 +1,10 @@
 name: GitHub Actions Demo
 on: [push]
 jobs:
-  strategy:
-    max-parallel: 1
   CI:
     runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
     steps:
       # - name: Install bitcoin node
       #   run: sudo apt-get install -y libusb-1.0-0 libusb-1.0-0-dev libudev-dev && sudo apt-add-repository ppa:bitcoin/bitcoin -y && sudo apt-get update --allow-insecure-repositories && sudo apt-get install bitcoind
@@ -37,6 +37,8 @@ jobs:
       #   run: ls && yarn && yarn bootstrap && yarn build && yarn test
   test:
     runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
