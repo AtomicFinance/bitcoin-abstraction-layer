@@ -30,12 +30,12 @@ jobs:
       - name: restore lerna node_modules from cache
         uses: actions/cache@v2
         with:
-          key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }}
           path: |
             node_modules
             */*/node_modules
       - name: yarn install
-        if: steps.${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}.outputs.cache-hit != 'true'
+        if: steps.${{ runner.os }}-${{ hashFiles('yarn.lock') }}.outputs.cache-hit != 'true'
         run: yarn install --frozen-lockfile
       - run: yarn bootstrap
       - name: Install dependencies for cmake
