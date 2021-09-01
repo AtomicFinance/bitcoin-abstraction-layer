@@ -1,7 +1,7 @@
 name: GitHub Actions Demo
 on: [push]
 jobs:
-  CI:
+  Setup-Bitcoin-Node:
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 1
@@ -11,18 +11,18 @@ jobs:
       # - name: Install bitcoin node
       #   run: sudo snap install bitcoin-core
 
-      - name: Cache Bitcoin Download
+      - name: Cache Bitcoin node
         id: bitcoin-node-cache
         uses: actions/cache@v2
         with:
           path: bitcoin-0.21.1
           key: bitcoin-0.21.1
 
-      - name: Install Bitcoin node
+      - name: Download Bitcoin node
         if: steps.bitcoin-node-cache.outputs.cache-hit != 'true'
         run: wget https://bitcoin.org/bin/bitcoin-core-0.21.1/bitcoin-0.21.1-x86_64-linux-gnu.tar.gz && tar -xvf bitcoin-0.21.1-x86_64-linux-gnu.tar.gz
 
-      - name: Start bitcoin node
+      - name: Start Bitcoin node
         run: cp bitcoin-0.21.1/bin/* /usr/local/bin/ && bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction
 
       # - name: Setup nodejs
@@ -45,10 +45,10 @@ jobs:
         with:
           node-version: 16.x
       - run: ls
-      - run: yarn
+      - run: yarn install --frozen-lockfile
       - run: yarn bootstrap
       - name: Install dependencies for cmake
-        run: DEBIAN_FRONTEND=noninteractive sudo apt-get -y install build-essential cmake
+        run: DEBIAN_FRONTEND=noninteractive sudo apt-get -y install build-essential cmake automake
       - name: Build cfd-dlc-js
         run: npm run cmake_all
         shell: bash
