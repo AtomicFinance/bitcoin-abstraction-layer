@@ -39,13 +39,13 @@ jobs:
 
       # - name: Setup nodejs
       #   uses: actions/checkout@v2
-      - name: Setupp nodejs
+      - name: Setup nodejs
         uses: actions/setup-node@v1
         with:
           node-version: 16.x
 
       - name: Run tests
-        run: yarn && yarn bootstrap && yarn build && yarn test
+        run: ls && yarn && yarn bootstrap && yarn build && yarn test
   # test:
   #   runs-on: ubuntu-latest
   #   steps:
