@@ -6,11 +6,6 @@ jobs:
     strategy:
       max-parallel: 1
     steps:
-      # - name: Install bitcoin node
-      #   run: sudo apt-get install -y libusb-1.0-0 libusb-1.0-0-dev libudev-dev && sudo apt-add-repository ppa:bitcoin/bitcoin -y && sudo apt-get update --allow-insecure-repositories && sudo apt-get install bitcoind
-      # - name: Install bitcoin node
-      #   run: sudo snap install bitcoin-core
-
       - name: Cache Bitcoin node
         id: bitcoin-node-cache
         uses: actions/cache@v2
@@ -25,38 +20,35 @@ jobs:
       - name: Start Bitcoin node
         run: cp bitcoin-0.21.1/bin/* /usr/local/bin/ && bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction
 
-      # - name: Setup nodejs
-      #   uses: actions/checkout@v2
-      # - name: Setup nodejs
-      #   uses: actions/setup-node@v1
-      #   with:
-      #     node-version: 16.x
-
-      # - name: Run tests
-      #   uses: actions/checkout@v2
-      #   run: ls && yarn && yarn bootstrap && yarn build && yarn test
   run_tests:
     runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 1
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
         with:
           node-version: 16.x
-      - run: ls
-      - run: yarn install --frozen-lockfile
+      - name: restore lerna node_modules from cache
+        key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
+        uses: actions/cache@v2
+        with:
+          path: |
+            node_modules
+            */*/node_modules
+      - name: yarn install
+        if: steps.${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}.outputs.cache-hit != 'true'
+        run: yarn install --frozen-lockfile
       - run: yarn bootstrap
       - name: Install dependencies for cmake
-        run: DEBIAN_FRONTEND=noninteractive sudo apt-get -y install build-essential cmake automake
+        run: DEBIAN_FRONTEND=noninteractive sudo apt-get -y install build-essential cmake automake python3
       - name: Build cfd-js
+        if: steps.${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}.outputs.cache-hit != 'true'
         run: npm run cmake_all
         shell: bash
         working-directory: ./node_modules/cfd-js
       - name: Build cfd-dlc-js
+        if: steps.${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}.outputs.cache-hit != 'true'
         run: npm run cmake_all
         shell: bash
         working-directory: ./node_modules/cfd-dlc-js
-      # $(cd node_modules/cfd-dlc-js && npm run cmake_all)
       - run: yarn build
       - run: yarn test
