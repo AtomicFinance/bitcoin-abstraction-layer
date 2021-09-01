@@ -20,9 +20,9 @@ jobs:
       - name: Start Bitcoin node
         run: cp bitcoin-0.21.1/bin/* /usr/local/bin/ && bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction
 
-  run_tests:
-    runs-on: ubuntu-latest
-    steps:
+      # run_tests:
+      #   runs-on: ubuntu-latest
+      #   steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v1
         with:
