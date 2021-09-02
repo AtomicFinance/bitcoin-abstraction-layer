@@ -18,7 +18,7 @@ jobs:
         run: wget https://bitcoin.org/bin/bitcoin-core-0.20.0/bitcoin-0.20.0-x86_64-linux-gnu.tar.gz && tar -xvf bitcoin-0.20.0-x86_64-linux-gnu.tar.gz
 
       - name: Start Bitcoin node
-        run: cp bitcoin-0.20.0/bin/* /usr/local/bin/ && bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction && bitcoin-cli generatetoaddress 101 $(bitcoin-cli getnewaddress "" "bech32")"
+        run: cp bitcoin-0.20.0/bin/* /usr/local/bin/ && bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction && bitcoin-cli generatetoaddress 101 $(bitcoin-cli getnewaddress '' 'bech32')"
 
       # run_tests:
       #   runs-on: ubuntu-latest
