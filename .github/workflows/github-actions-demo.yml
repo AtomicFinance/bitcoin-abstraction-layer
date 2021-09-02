@@ -18,6 +18,7 @@ jobs:
         run: |
           wget https://bitcoin.org/bin/bitcoin-core-0.20.0/bitcoin-0.20.0-x86_64-linux-gnu.tar.gz
           tar -xvf bitcoin-0.20.0-x86_64-linux-gnu.tar.gz
+          ls
 
       - name: Start Bitcoin node
         run: |
