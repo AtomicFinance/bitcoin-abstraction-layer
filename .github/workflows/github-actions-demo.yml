@@ -42,7 +42,7 @@ jobs:
 
       - name: yarn install
         if: steps.${{ runner.os }}-${{ hashFiles('yarn.lock') }}.outputs.cache-hit != 'true'
-        run: npm install
+        run: yarn install --frozen-lockfile
       - run: npm run bootstrap
 
       - name: Install dependencies for cmake
