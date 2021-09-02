@@ -48,10 +48,10 @@ jobs:
         run: DEBIAN_FRONTEND=noninteractive sudo apt-get -y install build-essential cmake automake python python3 nodejs g++ gcc
       - name: Install cfd-core
         run: git clone https://github.com/p2pderivatives/cfd-core.git && cd cfd-core && npm install && npm run cmake_all && npm run cmake_install
-        # - name: Build cfd-js
-        #   if: steps.${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}.outputs.cache-hit != 'true'
-        #   run: npm run cmake_all
-        #   shell: bash
+      - name: Build cfd-js
+        if: steps.${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}.outputs.cache-hit != 'true'
+        run: npm run cmake_all
+        shell: bash
         working-directory: ./node_modules/cfd-js
       - name: Build cfd-dlc-js
         if: steps.${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}.outputs.cache-hit != 'true'
