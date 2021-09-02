@@ -53,7 +53,7 @@ jobs:
 
       - name: Build cfd-js
         if: steps.${{ runner.os }}-${{ hashFiles('yarn.lock') }}.outputs.cache-hit != 'true'
-        run: npm install && npm run cmake_debug_all
+        run: npm install && npm run cmake_static_debug
         shell: bash
         working-directory: ./node_modules/cfd-js
 
