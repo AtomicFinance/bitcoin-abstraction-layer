@@ -42,8 +42,8 @@ jobs:
 
       - name: yarn install
         if: steps.${{ runner.os }}-${{ hashFiles('yarn.lock') }}.outputs.cache-hit != 'true'
-        run: yarn install
-      - run: yarn bootstrap
+        run: npm install
+      - run: npm run bootstrap
 
       - name: Install dependencies for cmake
         run: DEBIAN_FRONTEND=noninteractive sudo apt-get -y install build-essential cmake automake python python3 nodejs g++ gcc
@@ -53,7 +53,7 @@ jobs:
 
       - name: Build cfd-js
         if: steps.${{ runner.os }}-${{ hashFiles('yarn.lock') }}.outputs.cache-hit != 'true'
-        run: npm install && npm run cmake_all
+        run: npm install && npm run cmake_debug_all
         shell: bash
         working-directory: ./node_modules/cfd-js
 
