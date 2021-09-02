@@ -15,7 +15,9 @@ jobs:
 
       - name: Download Bitcoin node
         if: steps.bitcoin-node-cache.outputs.cache-hit != 'true'
-        run: wget https://bitcoin.org/bin/bitcoin-core-0.20.0/bitcoin-0.20.0-x86_64-linux-gnu.tar.gz && tar -xvf bitcoin-0.20.0-x86_64-linux-gnu.tar.gz
+        run: |
+          wget https://bitcoin.org/bin/bitcoin-core-0.20.0/bitcoin-0.20.0-x86_64-linux-gnu.tar.gz
+          tar -xvf bitcoin-0.20.0-x86_64-linux-gnu.tar.gz
 
       - name: Start Bitcoin node
         run: cp bitcoin-0.20.0/bin/* /usr/local/bin/ && bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction -fallbackfee=0.00001 -addresstype=p2sh-segwit -zmqpubrawblock=tcp://127.0.0.1:29000 -zmqpubrawtx=tcp://127.0.0.1:29000 && sleep 5 && bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 generatetoaddress 101 $(bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 getnewaddress '' 'bech32')
