@@ -6,18 +6,18 @@ jobs:
     # strategy:
     #   max-parallel: 1
     steps:
-      - name: Download Bitcoin node
-        if: steps.bitcoin-node-cache.outputs.cache-hit != 'true'
-        run: |
-          wget https://bitcoin.org/bin/bitcoin-core-0.20.0/bitcoin-0.20.0-x86_64-linux-gnu.tar.gz
-          tar -xvf bitcoin-0.20.0-x86_64-linux-gnu.tar.gz
-
       - name: Cache Bitcoin node
         id: bitcoin-node-cache
         uses: actions/cache@v2
         with:
           path: bitcoin-0.20.0
           key: bitcoin-0.20.0
+
+      - name: Download Bitcoin node
+        if: steps.bitcoin-node-cache.outputs.cache-hit != 'true'
+        run: |
+          wget https://bitcoin.org/bin/bitcoin-core-0.20.0/bitcoin-0.20.0-x86_64-linux-gnu.tar.gz
+          tar -xvf bitcoin-0.20.0-x86_64-linux-gnu.tar.gz
 
       - name: Start Bitcoin node
         run: |
@@ -48,13 +48,13 @@ jobs:
         run: DEBIAN_FRONTEND=noninteractive sudo apt-get -y install build-essential cmake automake python python3 nodejs g++ gcc
       - name: Install cfd-core
         run: git clone https://github.com/p2pderivatives/cfd-core.git && cd cfd-core && npm install && npm run cmake_all && npm run cmake_install
-      - name: Build cfd-js
-        if: steps.${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}.outputs.cache-hit != 'true'
-        run: npm run cmake_all
-        shell: bash
-        working-directory: ./node_modules/cfd-js
+      # - name: Build cfd-js
+      #   if: steps.${{ runner.os }}-${{ hashFiles('yarn.lock') }}.outputs.cache-hit != 'true'
+      #   run: npm run cmake_all
+      #   shell: bash
+      #   working-directory: ./node_modules/cfd-js
       - name: Build cfd-dlc-js
-        if: steps.${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}.outputs.cache-hit != 'true'
+        if: steps.${{ runner.os }}-${{ hashFiles('yarn.lock') }}.outputs.cache-hit != 'true'
         run: npm run cmake_all
         shell: bash
         working-directory: ./node_modules/cfd-dlc-js
