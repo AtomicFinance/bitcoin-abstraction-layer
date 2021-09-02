@@ -53,7 +53,7 @@ jobs:
 
       - name: Build cfd-js
         if: steps.${{ runner.os }}-${{ hashFiles('yarn.lock') }}.outputs.cache-hit != 'true'
-        run: npm run cmake_clean_all && npm run cmake_all
+        run: npm run emcmake
         shell: bash
         working-directory: ./node_modules/cfd-js
 
