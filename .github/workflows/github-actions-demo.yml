@@ -7,7 +7,7 @@ jobs:
     #   max-parallel: 1
     steps:
       - name: Cache Bitcoin node
-        id: bitcoin-node-cache
+        id: bitcoin-node-cache-20
         uses: actions/cache@v2
         with:
           path: bitcoin-0.20.0
