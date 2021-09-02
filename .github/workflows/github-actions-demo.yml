@@ -51,11 +51,11 @@ jobs:
       # - name: Install cfd-core
       #   run: git clone https://github.com/p2pderivatives/cfd-core.git && cd cfd-core && npm install && npm run cmake_all && npm run cmake_install
 
-      # - name: Build cfd-js
-      #   if: steps.${{ runner.os }}-${{ hashFiles('yarn.lock') }}.outputs.cache-hit != 'true'
-      #   run: npm install && npm run cmake_static_debug
-      #   shell: bash
-      #   working-directory: ./node_modules/cfd-js
+      - name: Build cfd-js
+        if: steps.${{ runner.os }}-${{ hashFiles('yarn.lock') }}.outputs.cache-hit != 'true'
+        run: npm install && npm run cmake_static_debug
+        shell: bash
+        working-directory: ./node_modules/cfd-js
 
       - name: Build cfd-dlc-js
         if: steps.${{ runner.os }}-${{ hashFiles('yarn.lock') }}.outputs.cache-hit != 'true'
