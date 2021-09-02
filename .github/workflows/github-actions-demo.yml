@@ -50,7 +50,7 @@ jobs:
         run: git clone https://github.com/p2pderivatives/cfd-core.git && cd cfd-core && npm install && npm run cmake_all && npm run cmake_install
       - name: Build cfd-js
         if: steps.${{ runner.os }}-${{ hashFiles('yarn.lock') }}.outputs.cache-hit != 'true'
-        run: yarn clean && npm run cmake_all
+        run: npm run cmake_clean_all && npm run cmake_all
         shell: bash
         working-directory: ./node_modules/cfd-js
       - name: Build cfd-dlc-js
