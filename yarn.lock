@@ -1413,19 +1413,6 @@
     bip-schnorr "0.6.3"
     bitcoinjs-lib "5.2.0"
 
-"@node-dlc/messaging@0.9.7":
-  version "0.9.7"
-  resolved "https://registry.yarnpkg.com/@node-dlc/messaging/-/messaging-0.9.7.tgz#08575653d11cfd7e1b1d0f4218af72d02b26097c"
-  integrity sha512-zac81aTWupAkMehd0gNFimIQW7PLdEQUNCyP9DqhWSTlmQiqtnumYop1KTDkKjAAvNCrPHedH+bljdsu4TssHg==
-  dependencies:
-    "@liquality/bitcoin-networks" "1.0.0-beta.2"
-    "@liquality/utils" "1.0.0-beta.2"
-    "@node-lightning/bitcoin" "0.22.1"
-    "@node-lightning/bufio" "0.22.1"
-    "@node-lightning/checksum" "0.22.1"
-    "@node-lightning/wire" "0.22.1"
-    bitcoinjs-lib "5.2.0"
-
 "@node-lightning/bitcoin@0.22.1", "@node-lightning/bitcoin@^0.22.1":
   version "0.22.1"
   resolved "https://registry.yarnpkg.com/@node-lightning/bitcoin/-/bitcoin-0.22.1.tgz#98b07e80b8292a3f12d83af4d821514627de53fa"
@@ -3022,9 +3009,9 @@ cashaddrjs@^0.4.4:
     prebuild-install "^5.3.5"
     run-script-os "^1.1.5"
 
-"cfd-js@https://github.com/cryptogarageinc/cfd-js.git#v0.3.3":
-  version "0.3.3"
-  resolved "https://github.com/cryptogarageinc/cfd-js.git#a942a1a182ed323d8c8d2c798d36a2f52f22dcbd"
+"cfd-js@https://github.com/cryptogarageinc/cfd-js.git#v0.3.4":
+  version "0.3.4"
+  resolved "https://github.com/cryptogarageinc/cfd-js.git#5c71b17424d1b8068335e637bcc418cb45b0e841"
   dependencies:
     "@types/node" "^14.14.14"
     bindings "^1.5.0"
