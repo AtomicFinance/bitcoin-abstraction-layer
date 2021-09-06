@@ -5,14 +5,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Cache Bitcoin node
-        id: bitcoin-node-cache
+        id: bitcoin-node-cache-20
         uses: actions/cache@v2
         with:
           path: bitcoin-0.20.0
           key: bitcoin-0.20.0
 
       - name: Download Bitcoin node
-        if: steps.bitcoin-node-cache.outputs.cache-hit != 'true'
+        if: steps.bitcoin-node-cache-20.outputs.cache-hit != 'true'
         run: |
           wget https://bitcoin.org/bin/bitcoin-core-0.20.0/bitcoin-0.20.0-x86_64-linux-gnu.tar.gz
           tar -xvf bitcoin-0.20.0-x86_64-linux-gnu.tar.gz
