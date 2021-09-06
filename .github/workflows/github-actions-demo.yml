@@ -3,8 +3,6 @@ on: [push]
 jobs:
   setup_bitcoin_node_and_run_tests:
     runs-on: ubuntu-latest
-    # strategy:
-    #   max-parallel: 1
     steps:
       - name: Download Bitcoin node
         if: steps.bitcoin-node-cache.outputs.cache-hit != 'true'
@@ -14,7 +12,7 @@ jobs:
           ls
 
       - name: Cache Bitcoin node
-        id: bitcoin-node-cache-20
+        id: bitcoin-node-cache
         uses: actions/cache@v2
         with:
           path: ./bitcoin-0.20.0
@@ -45,8 +43,8 @@ jobs:
         run: yarn install --frozen-lockfile
       - run: npm run bootstrap
 
-      - name: Install dependencies for cmake
-        run: DEBIAN_FRONTEND=noninteractive sudo apt-get -y install build-essential cmake automake python python3 nodejs g++ gcc
+      # - name: Install dependencies for cmake
+      #   run: DEBIAN_FRONTEND=noninteractive sudo apt-get -y install build-essential cmake automake python python3 nodejs g++ gcc
 
       # - name: Install cfd-core
       #   run: git clone https://github.com/p2pderivatives/cfd-core.git && cd cfd-core && npm install && npm run cmake_all && npm run cmake_install
