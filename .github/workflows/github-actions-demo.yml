@@ -40,6 +40,7 @@ jobs:
       - name: yarn install
         if: steps.${{ runner.os }}-${{ hashFiles('yarn.lock') }}.outputs.cache-hit != 'true'
         run: yarn install --frozen-lockfile
+
       - run: npm run bootstrap
 
       - name: Build cfd-dlc-js
