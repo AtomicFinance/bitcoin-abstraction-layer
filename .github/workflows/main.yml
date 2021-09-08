@@ -1,7 +1,9 @@
-name: GitHub Actions Demo
+name: CI/CD
+
 on: [push]
+
 jobs:
-  setup_bitcoin_node_and_run_tests:
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Cache Bitcoin node
@@ -37,7 +39,7 @@ jobs:
         if: steps.${{ runner.os }}-${{ hashFiles('yarn.lock') }}.outputs.cache-hit != 'true'
         run: yarn install --frozen-lockfile
 
-      - run: npm run bootstrap
+      - run: yarn bootstrap
 
       - name: Build cfd-dlc-js
         if: steps.${{ runner.os }}-${{ hashFiles('yarn.lock') }}.outputs.cache-hit != 'true'
