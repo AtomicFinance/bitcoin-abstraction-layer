@@ -11,7 +11,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ./bitcoin-0.20.0/
-          key: ${{ runner.os }}-bitcoin-node-cache
+          key: ${{ runner.os }}-bitcoin-node-cache-20
 
       - name: Download Bitcoin node
         if: steps.bitcoin-node-cache.outputs.cache-hit != 'true'
