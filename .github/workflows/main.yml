@@ -21,6 +21,8 @@ jobs:
 
       - name: Start Bitcoin node
         run: |
+          echo $(pwd)
+          echo $(ls)
           cp bitcoin-0.20.0/bin/* /usr/local/bin/
           bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction -fallbackfee=0.00001 -addresstype=p2sh-segwit -zmqpubrawblock=tcp://127.0.0.1:29000 -zmqpubrawtx=tcp://127.0.0.1:29000
           sleep 5
