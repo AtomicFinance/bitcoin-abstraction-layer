@@ -13,7 +13,6 @@ import {
   OracleAttestationV0,
 } from '@node-dlc/messaging';
 import { Tx } from '@node-lightning/bitcoin';
-import { Psbt } from 'bitcoinjs-lib';
 
 import { TxOutRequest } from './common';
 import Input from './models/Input';
@@ -104,7 +103,7 @@ export interface DlcProvider {
     _dlcSign: DlcSign,
     _dlcTxs: DlcTransactions,
     oracleAttestation: OracleAttestationV0,
-    isOfferer: boolean,
+    isOfferer?: boolean,
   ): Promise<Tx>;
 
   /**
@@ -123,29 +122,6 @@ export interface DlcProvider {
   ): Promise<Tx>;
 
   /**
-   * Generate PSBT for closing DLC with Mutual Consent
-   * If no PSBT provided, assume initiator
-   * If PSBT provided, assume reciprocator
-   * @param _dlcOffer DlcOffer TLV (V0)
-   * @param _dlcAccept DlcAccept TLV (V0)
-   * @param _dlcTxs DlcTransactions TLV (V0)
-   * @param initiatorPayoutSatoshis Amount initiator expects as a payout
-   * @param isOfferer Whether offerer or not
-   * @param _psbt Partially Signed Bitcoin Transaction
-   * @param _inputs Optionally specified closing inputs
-   * @returns {Promise<Psbt>}
-   */
-  close(
-    _dlcOffer: DlcOffer,
-    _dlcAccept: DlcAccept,
-    _dlcTxs: DlcTransactions,
-    initiatorPayoutSatoshis: bigint,
-    isOfferer: boolean,
-    _psbt?: Psbt,
-    _inputs?: Input[],
-  ): Promise<Psbt>;
-
-  /**
    * Generate DLC close message for closing DLC with Mutual Consent
    * @param _dlcOffer DlcOffer TLV (V0)
    * @param _dlcAccept DlcAccept TLV (V0)
@@ -160,7 +136,7 @@ export interface DlcProvider {
     _dlcAccept: DlcAccept,
     _dlcTxs: DlcTransactions,
     initiatorPayoutSatoshis: bigint,
-    isOfferer: boolean,
+    isOfferer?: boolean,
     _inputs?: Input[],
   ): Promise<DlcClose>;
 

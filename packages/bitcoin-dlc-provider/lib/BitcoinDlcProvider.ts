@@ -1109,7 +1109,7 @@ Payout Group not found',
     _dlcSign: DlcSign,
     _dlcTxs: DlcTransactions,
     oracleAttestation: OracleAttestationV0,
-    isOfferer: boolean,
+    isOfferer?: boolean,
   ): Promise<Tx> {
     const { dlcOffer, dlcAccept, dlcSign, dlcTxs } = checkTypes({
       _dlcOffer,
@@ -1117,6 +1117,9 @@ Payout Group not found',
       _dlcSign,
       _dlcTxs,
     });
+
+    if (isOfferer === undefined)
+      isOfferer = await this.isOfferer(dlcOffer, dlcAccept);
 
     const { index: outcomeIndex, groupLength } = await this.FindOutcomeIndex(
       dlcOffer,
@@ -1641,7 +1644,7 @@ Payout Group not found',
     _dlcSign: DlcSign,
     _dlcTxs: DlcTransactions,
     oracleAttestation: OracleAttestationV0,
-    isOfferer: boolean,
+    isOfferer?: boolean,
   ): Promise<Tx> {
     const { dlcOffer, dlcAccept, dlcSign, dlcTxs } = checkTypes({
       _dlcOffer,
@@ -1649,6 +1652,9 @@ Payout Group not found',
       _dlcSign,
       _dlcTxs,
     });
+
+    if (isOfferer === undefined)
+      isOfferer = await this.isOfferer(dlcOffer, dlcAccept);
 
     this.ValidateEvent(dlcOffer, oracleAttestation);
 
@@ -1732,7 +1738,7 @@ Payout Group not found',
     _dlcAccept: DlcAccept,
     _dlcTxs: DlcTransactions,
     initiatorPayoutSatoshis: bigint,
-    isOfferer: boolean,
+    isOfferer?: boolean,
     _inputs?: Input[],
   ): Promise<DlcClose> {
     const { dlcOffer, dlcAccept, dlcTxs } = checkTypes({
@@ -1740,6 +1746,9 @@ Payout Group not found',
       _dlcAccept,
       _dlcTxs,
     });
+
+    if (isOfferer === undefined)
+      isOfferer = await this.isOfferer(dlcOffer, dlcAccept);
 
     const network = await this.getConnectedNetwork();
     const psbt = new Psbt({ network });
