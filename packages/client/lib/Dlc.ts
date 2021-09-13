@@ -153,7 +153,7 @@ export default class Dlc {
     dlcSign: DlcSign,
     dlcTxs: DlcTransactions,
     oracleAttestation: OracleAttestationV0,
-    isOfferer: boolean,
+    isOfferer?: boolean,
   ): Promise<Tx> {
     return this.client.getMethod('execute')(
       dlcOffer,
@@ -202,7 +202,7 @@ export default class Dlc {
     dlcAccept: DlcAccept,
     dlcTxs: DlcTransactions,
     initiatorPayoutSatoshis: bigint,
-    isOfferer: boolean,
+    isOfferer?: boolean,
     inputs?: Input[],
   ): Promise<DlcClose> {
     return this.client.getMethod('createDlcClose')(
