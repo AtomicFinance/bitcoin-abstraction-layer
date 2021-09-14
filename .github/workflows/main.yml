@@ -33,6 +33,7 @@ jobs:
           node-version: 14.x
 
       - name: restore lerna node_modules from cache
+        id: node-modules-cache
         uses: actions/cache@v2
         with:
           key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }}
@@ -41,13 +42,13 @@ jobs:
             */*/node_modules
 
       - name: yarn install
-        if: steps.${{ runner.os }}-${{ hashFiles('yarn.lock') }}.outputs.cache-hit != 'true'
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
         run: yarn install --frozen-lockfile
 
       - run: yarn bootstrap
 
       - name: Build cfd-dlc-js
-        if: steps.${{ runner.os }}-${{ hashFiles('yarn.lock') }}.outputs.cache-hit != 'true'
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
         run: npm run cmake_all
         shell: bash
         working-directory: ./node_modules/cfd-dlc-js
