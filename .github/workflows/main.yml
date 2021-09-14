@@ -7,22 +7,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Cache Bitcoin node
-        id: cache
+        id: bitcoin-cache
         uses: actions/cache@v2
         with:
-          path: ./bitcoin-0.20.0
+          path: ~/bitcoin
           key: ${{ runner.os }}-cache
 
       - name: Download Bitcoin node
-        if: steps.cache.outputs.cache-hit != 'true'
+        if: steps.bitcoin-cache.outputs.cache-hit != 'true'
         run: |
-          wget https://bitcoin.org/bin/bitcoin-core-0.20.0/bitcoin-0.20.0-x86_64-linux-gnu.tar.gz
-          tar -xvf bitcoin-0.20.0-x86_64-linux-gnu.tar.gz
+          wget -P ~/bitcoin https://bitcoin.org/bin/bitcoin-core-0.20.0/bitcoin-0.20.0-x86_64-linux-gnu.tar.gz
 
       - name: Start Bitcoin node
         run: |
-          echo $(pwd)
-          echo $(ls)
+          cd ~/bitcoin
+          tar -xvf bitcoin-0.20.0-x86_64-linux-gnu.tar.gz
           cp bitcoin-0.20.0/bin/* /usr/local/bin/
           bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction -fallbackfee=0.00001 -addresstype=p2sh-segwit -zmqpubrawblock=tcp://127.0.0.1:29000 -zmqpubrawtx=tcp://127.0.0.1:29000
           sleep 5
