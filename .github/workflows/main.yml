@@ -54,5 +54,9 @@ jobs:
         working-directory: ./node_modules/cfd-dlc-js
 
       - run: yarn build
-
       - run: yarn test
+
+      - name: Get test coverage
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
