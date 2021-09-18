@@ -6,6 +6,8 @@ import {
   AddSignaturesToRefundTxResponse,
   AddSignatureToFundTransactionRequest,
   AddSignatureToFundTransactionResponse,
+  CalculateEcSignatureRequest,
+  CalculateEcSignatureResponse,
   CreateCetAdaptorSignatureRequest,
   CreateCetAdaptorSignatureResponse,
   CreateCetAdaptorSignaturesRequest,
@@ -16,8 +18,12 @@ import {
   CreateDlcTransactionsResponse,
   CreateFundTransactionRequest,
   CreateFundTransactionResponse,
+  CreateRawTransactionRequest,
+  CreateRawTransactionResponse,
   CreateRefundTransactionRequest,
   CreateRefundTransactionResponse,
+  CreateSignatureHashRequest,
+  CreateSignatureHashResponse,
   DlcProvider,
   GetRawFundTxSignatureRequest,
   GetRawFundTxSignatureResponse,
@@ -1947,6 +1953,259 @@ Payout Group not found',
   }
 
   /**
+   * Generate DlcClose messagetype for closing DLC with Mutual Consent
+   * @param _dlcOffer DlcOffer TLV (V0)
+   * @param _dlcAccept DlcAccept TLV (V0)
+   * @param _dlcTxs DlcTransactions TLV (V0)
+   * @param initiatorPayoutSatoshis Amount initiator expects as a payout
+   * @param isOfferer Whether offerer or not
+   * @param _inputs Optionally specified closing inputs
+   * @returns {Promise<DlcClose>}
+   */
+  async createManyDlcClose(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcTxs: DlcTransactions,
+    initiatorPayouts: bigint[],
+    isOfferer?: boolean,
+    _inputs?: Input[],
+  ) {
+    const { dlcOffer, dlcAccept, dlcTxs } = checkTypes({
+      _dlcOffer,
+      _dlcAccept,
+      _dlcTxs,
+    });
+
+    if (isOfferer === undefined)
+      isOfferer = await this.isOfferer(dlcOffer, dlcAccept);
+
+    const network = await this.getConnectedNetwork();
+    const psbt = new Psbt({ network });
+
+    const fundingPubKeys =
+      Buffer.compare(dlcOffer.fundingPubKey, dlcAccept.fundingPubKey) === -1
+        ? [dlcOffer.fundingPubKey, dlcAccept.fundingPubKey]
+        : [dlcAccept.fundingPubKey, dlcOffer.fundingPubKey];
+
+    const p2ms = payments.p2ms({
+      m: 2,
+      pubkeys: fundingPubKeys,
+      network,
+    });
+
+    const paymentVariant = payments.p2wsh({
+      redeem: p2ms,
+      network,
+    });
+
+    // Initiate and build PSBT
+    let inputs: Input[] = _inputs;
+    if ((_inputs && _inputs.length === 0) || !_inputs) {
+      const tempInputs = await this.GetInputsForAmount(
+        BigInt(20000),
+        dlcOffer.feeRatePerVb,
+        _inputs,
+      );
+      _inputs = tempInputs;
+    }
+    inputs = _inputs.map((input) => {
+      return {
+        ...input,
+        inputSerialId: input.inputSerialId || generateSerialId(),
+        toUtxo: input.toUtxo,
+      };
+    });
+
+    const pubkeys: Buffer[] = await Promise.all(
+      inputs.map(async (input) => {
+        const address: Address = await this.getMethod('getWalletAddress')(
+          input.address,
+        );
+        return Buffer.from(address.publicKey, 'hex');
+      }),
+    );
+
+    const fundingInputSerialId = generateSerialId();
+
+    // Make temporary array to hold all inputs and then sort them
+    // this method can be improved later
+    const psbtInputs = [];
+    psbtInputs.push({
+      hash: dlcTxs.fundTx.txId.serialize(),
+      index: dlcTxs.fundTxVout,
+      sequence: 0,
+      witnessUtxo: {
+        script: paymentVariant.output,
+        value: Number(dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats),
+      },
+      witnessScript: paymentVariant.redeem.output,
+      inputSerialId: fundingInputSerialId,
+      derivationPath: null,
+    });
+
+    // sort all inputs in ascending order by serial ID
+    // The only reason we are doing this is for privacy. If the fundingInput is
+    // always first, it is very obvious. Hence, a serialId is randomly generated
+    // and the inputs are sorted by that instead.
+    const sortedPsbtInputs = psbtInputs.sort((a, b) =>
+      Number(a.inputSerialId - b.inputSerialId),
+    );
+
+    // Get index of fundingInput
+    const fundingInputIndex = sortedPsbtInputs.findIndex(
+      (input) => input.inputSerialId === fundingInputSerialId,
+    );
+
+    // add to psbt
+    sortedPsbtInputs.forEach((input, i) => psbt.addInput(input));
+
+    const fundingInputs: FundingInput[] = await Promise.all(
+      inputs.map(async (input) => {
+        return this.inputToFundingInput(input);
+      }),
+    );
+
+    const finalizer = new DualClosingTxFinalizer(
+      fundingInputs,
+      dlcOffer.payoutSPK,
+      dlcAccept.payoutSPK,
+      dlcOffer.feeRatePerVb,
+    );
+
+    // Generate keypair to sign inputs
+    const fundPrivateKeyPair = await this.GetFundKeyPair(
+      dlcOffer,
+      dlcAccept,
+      isOfferer,
+    );
+
+    // // Make temporary array to hold all inputs and then sort them
+    // // this method can be improved later
+    // const psbtInputs = [];
+    // psbtInputs.push({
+    //   hash: dlcTxs.fundTx.txId.serialize(),
+    //   index: dlcTxs.fundTxVout,
+    //   sequence: 0,
+    //   witnessUtxo: {
+    //     script: paymentVariant.output,
+    //     value: Number(dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats),
+    //   },
+    //   witnessScript: paymentVariant.redeem.output,
+    //   inputSerialId: fundingInputSerialId,
+    //   derivationPath: null,
+    // });
+
+    // psbt.addOutput({
+    //   value: Number(offerPayoutValue),
+    //   address: address.fromOutputScript(dlcOffer.payoutSPK, network),
+    // });
+
+    // psbt.addOutput({
+    //   value: Number(acceptPayoutValue),
+    //   address: address.fromOutputScript(dlcAccept.payoutSPK, network),
+    // });
+
+    const closeInputAmount = BigInt(0);
+
+    const offerPayoutValue: bigint = isOfferer
+      ? closeInputAmount + initiatorPayouts[0] - finalizer.offerInitiatorFees
+      : dlcOffer.contractInfo.totalCollateral - initiatorPayouts[0];
+
+    const acceptPayoutValue: bigint = isOfferer
+      ? dlcOffer.contractInfo.totalCollateral - initiatorPayouts[0]
+      : closeInputAmount + initiatorPayouts[0] - finalizer.offerInitiatorFees;
+
+    const rawTransactionRequest: CreateRawTransactionRequest = {
+      version: 2,
+      locktime: 0,
+      txins: [
+        {
+          txid: dlcTxs.fundTx.txId.serialize().reverse().toString('hex'),
+          vout: dlcTxs.fundTxVout,
+          sequence: 0,
+        },
+      ],
+      txouts: [
+        {
+          address: address.fromOutputScript(dlcOffer.payoutSPK, network),
+          amount: Number(offerPayoutValue),
+        },
+        {
+          address: address.fromOutputScript(dlcAccept.payoutSPK, network),
+          amount: Number(acceptPayoutValue),
+        },
+      ],
+    };
+
+    console.log(
+      `dlcTxs.fundTx.txId.serialize().toString('hex')`,
+      dlcTxs.fundTx.txId.serialize().toString('hex'),
+    );
+
+    const rawTx = await this.getMethod('CreateRawTransaction')(
+      rawTransactionRequest,
+    );
+
+    console.log('paymentVariant', paymentVariant.redeem.output.toString('hex'));
+
+    console.log('rawTx.hex', rawTx.hex);
+
+    const sigHashRequest: CreateSignatureHashRequest = {
+      tx: rawTx.hex,
+      txin: {
+        txid: dlcTxs.fundTx.txId.serialize().reverse().toString('hex'),
+        vout: dlcTxs.fundTxVout,
+        keyData: {
+          hex: paymentVariant.redeem.output.toString('hex'),
+          type: 'redeem_script',
+        },
+        amount: Number(dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats),
+        hashType: 'p2wsh',
+        sighashType: 'all',
+        sighashAnyoneCanPay: false,
+      },
+    };
+
+    console.log('sigHashRequest', sigHashRequest);
+
+    const sigHash = await this.getMethod('CreateSignatureHash')(sigHashRequest);
+    console.log('sigHash', sigHash);
+
+    console.log('fundPrivateKeyPair', fundPrivateKeyPair);
+
+    const privKey = Buffer.from(fundPrivateKeyPair.privateKey).toString('hex');
+    console.log('privKey', privKey);
+
+    const calculateEcSignatureRequest: CalculateEcSignatureRequest = {
+      sighash: sigHash.sighash,
+      privkeyData: {
+        privkey: privKey,
+        wif: false,
+        network: 'regtest',
+      },
+      isGrindR: true,
+    };
+
+    const sig = await this.getMethod('CalculateEcSignature')(
+      calculateEcSignatureRequest,
+    );
+    console.log('sig', sig);
+
+    const fundingSignatures = new FundingSignaturesV0();
+
+    const dlcClose = new DlcCloseV0();
+    dlcClose.contractId = dlcTxs.contractId;
+    dlcClose.offerPayoutSatoshis = offerPayoutValue;
+    dlcClose.acceptPayoutSatoshis = acceptPayoutValue;
+    dlcClose.fundInputSerialId = fundingInputSerialId;
+    dlcClose.closeSignature = Buffer.from(sig.signature, 'hex');
+    dlcClose.fundingSignatures = fundingSignatures;
+    dlcClose.validate();
+
+    return dlcClose;
+  }
+
+  /**
    * Goal of finalize Dlc Close is for bob to
    * 1. take the dlcClose created by alice using createDlcClose,
    * 2. Build a psbt using Alice's dlcClose message
@@ -1997,6 +2256,11 @@ Payout Group not found',
       redeem: p2ms,
       network,
     });
+
+    console.log(
+      'dlcTxs.fundTx.txId.serialize()',
+      dlcTxs.fundTx.txId.serialize().toString('hex'),
+    );
 
     // Make temporary array to hold all inputs and then sort them
     // this method can be improved later

@@ -223,6 +223,27 @@ describe('dlc provider', () => {
         expect(refundTx._raw.vin.length).to.equal(1);
       });
 
+      it.only('close multiple', async () => {
+        const aliceDlcClose: DlcClose = await alice.dlc.createManyDlcClose(
+          dlcOffer,
+          dlcAccept,
+          dlcTransactions,
+          [10000n],
+          true,
+        );
+
+        const bobDlcTx = await bob.dlc.finalizeDlcClose(
+          dlcOffer,
+          dlcAccept,
+          aliceDlcClose,
+          dlcTransactions,
+        );
+
+        console.log('bobDlcTx', bobDlcTx);
+
+        const closeTxId = await bob.chain.sendRawTransaction(bobDlcTx);
+      });
+
       it('close', async () => {
         const aliceDlcClose: DlcClose = await alice.dlc.createDlcClose(
           dlcOffer,
