@@ -2261,6 +2261,41 @@ Payout Group not found',
     return dlcCloses;
   }
 
+  // async verifyDlcClose(
+  //   _dlcOffer: DlcOffer,
+  //   _dlcAccept: DlcAccept,
+  //   _dlcClose: DlcClose,
+  //   _dlcTxs: DlcTransactions,
+  // ): Promise<boolean> {
+  //   const { dlcOffer, dlcAccept, dlcClose, dlcTxs } = checkTypes({
+  //     _dlcOffer,
+  //     _dlcAccept,
+  //     _dlcClose,
+  //     _dlcTxs,
+  //   });
+
+  //   return true;
+  // }
+
+  async verifyBatchDlcClose(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcCloses: DlcClose[],
+    _dlcTxs: DlcTransactions,
+  ): Promise<boolean> {
+    const { dlcOffer, dlcAccept, dlcTxs } = checkTypes({
+      _dlcOffer,
+      _dlcAccept,
+      _dlcTxs,
+    });
+
+    const dlcCloses = _dlcCloses.map(
+      (_dlcClose) => checkTypes({ _dlcClose }).dlcClose,
+    );
+
+    return true;
+  }
+
   /**
    * Goal of finalize Dlc Close is for bob to
    * 1. take the dlcClose created by alice using createDlcClose,
