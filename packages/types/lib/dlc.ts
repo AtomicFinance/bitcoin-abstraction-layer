@@ -122,23 +122,23 @@ export interface DlcProvider {
   ): Promise<Tx>;
 
   /**
-   * Generate DLC close message for closing DLC with Mutual Consent
+   * Generate multiple DlcClose messagetypes for closing DLC with Mutual Consent
    * @param _dlcOffer DlcOffer TLV (V0)
    * @param _dlcAccept DlcAccept TLV (V0)
    * @param _dlcTxs DlcTransactions TLV (V0)
-   * @param initiatorPayoutSatoshis Amount initiator expects as a payout
+   * @param initiatorPayouts Array of amounts initiator expects as payouts
    * @param isOfferer Whether offerer or not
    * @param _inputs Optionally specified closing inputs
-   * @returns {Promise<DlcClose>}
+   * @returns {Promise<DlcClose[]>}
    */
-  createDlcClose(
+  createBatchDlcClose(
     _dlcOffer: DlcOffer,
     _dlcAccept: DlcAccept,
     _dlcTxs: DlcTransactions,
-    initiatorPayoutSatoshis: bigint,
+    initiatorPayouts: bigint[],
     isOfferer?: boolean,
     _inputs?: Input[],
-  ): Promise<DlcClose>;
+  ): Promise<DlcClose[]>;
 
   /**
    * Finalize Dlc Close

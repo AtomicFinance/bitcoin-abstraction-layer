@@ -1,5 +1,6 @@
 import 'mocha';
 
+import { Input } from '@atomicfinance/types';
 import { BitcoinNetworks } from '@liquality/bitcoin-networks';
 import {
   CoveredCall,
@@ -69,6 +70,23 @@ describe('bitcoin networks', () => {
       to: '2N4QQxSdPLmFnb7RCHDF1u4tQU1s6HJHRTn',
       value: new BN(10000),
     });
+  });
+});
+
+describe('inputToFundingInput', () => {
+  it('should throw Error if invalid input', async () => {
+    const aliceInput = await getInput(alice);
+    const invalidInput = new Input(
+      '00'.repeat(32),
+      aliceInput.vout,
+      aliceInput.address,
+      aliceInput.amount,
+      aliceInput.value,
+    );
+
+    expect(
+      alice.dlc.inputToFundingInput(invalidInput),
+    ).to.be.eventually.rejectedWith(Error);
   });
 });
 
@@ -187,6 +205,22 @@ describe('dlc provider', () => {
         expect(cetTx._raw.vin.length).to.equal(1);
       });
 
+      it('should execute if offerer not provided', async () => {
+        const cet = await bob.dlc.execute(
+          dlcOffer,
+          dlcAccept,
+          dlcSign,
+          dlcTransactions,
+          oracleAttestation,
+          undefined,
+        );
+        const cetTxId = await bob.chain.sendRawTransaction(
+          cet.serialize().toString('hex'),
+        );
+        const cetTx = await alice.getMethod('getTransactionByHash')(cetTxId);
+        expect(cetTx._raw.vin.length).to.equal(1);
+      });
+
       it(`should fail to execute if event id's don't match`, async () => {
         oracleAttestation.eventId = 'invalidId';
 
@@ -223,6 +257,40 @@ describe('dlc provider', () => {
         expect(refundTx._raw.vin.length).to.equal(1);
       });
 
+      it('batch close', async () => {
+        console.time('batch-close');
+        const aliceDlcCloses: DlcClose[] = await alice.dlc.createBatchDlcClose(
+          dlcOffer,
+          dlcAccept,
+          dlcTransactions,
+          Array.from(Array(250).keys()).map((n) => BigInt(n + 10000)),
+          true,
+        );
+        console.timeEnd('batch-close');
+
+        await alice.dlc.createBatchDlcClose(
+          // Test creation of DlcClose with undefined offerer
+          dlcOffer,
+          dlcAccept,
+          dlcTransactions,
+          Array.from(Array(1).keys()).map((n) => BigInt(n + 10000)),
+          undefined,
+        );
+
+        const bobDlcTx = await bob.dlc.finalizeDlcClose(
+          dlcOffer,
+          dlcAccept,
+          aliceDlcCloses[randomIntFromInterval(0, 249)],
+          dlcTransactions,
+        );
+
+        const closeTxId = await bob.chain.sendRawTransaction(bobDlcTx);
+        const closeTx = await alice.getMethod('getTransactionByHash')(
+          closeTxId,
+        );
+        expect(closeTx._raw.vin.length).to.equal(1);
+      });
+
       it('close', async () => {
         const aliceDlcClose: DlcClose = await alice.dlc.createDlcClose(
           dlcOffer,
@@ -232,7 +300,7 @@ describe('dlc provider', () => {
           true,
         );
 
-        const bobDlcTx: Tx = await bob.dlc.finalizeDlcClose(
+        const bobDlcTx: string = await bob.dlc.finalizeDlcClose(
           dlcOffer,
           dlcAccept,
           aliceDlcClose,
@@ -258,7 +326,7 @@ describe('dlc provider', () => {
           [aliceInput],
         );
 
-        const bobDlcTx: Tx = await bob.dlc.finalizeDlcClose(
+        const bobDlcTx: string = await bob.dlc.finalizeDlcClose(
           dlcOffer,
           dlcAccept,
           aliceDlcClose,
@@ -270,6 +338,21 @@ describe('dlc provider', () => {
           closeTxId,
         );
         expect(closeTx._raw.vin.length).to.equal(2);
+      });
+
+      it('should fail batch close with fixedInputs', async () => {
+        const wrongInput = await getInput(bob);
+
+        expect(
+          alice.dlc.createBatchDlcClose(
+            dlcOffer,
+            dlcAccept,
+            dlcTransactions,
+            [10000n],
+            true,
+            [wrongInput],
+          ),
+        ).to.be.eventually.rejectedWith(Error);
       });
 
       it('should fail close with invalid fixedInputs', async () => {
@@ -632,7 +715,7 @@ describe('dlc provider', () => {
           true,
         );
 
-        const bobDlcTx: Tx = await bob.dlc.finalizeDlcClose(
+        const bobDlcTx: string = await bob.dlc.finalizeDlcClose(
           dlcOffer,
           dlcAccept,
           aliceDlcClose,
@@ -658,7 +741,7 @@ describe('dlc provider', () => {
           [aliceInput],
         );
 
-        const bobDlcTx: Tx = await bob.dlc.finalizeDlcClose(
+        const bobDlcTx: string = await bob.dlc.finalizeDlcClose(
           dlcOffer,
           dlcAccept,
           aliceDlcClose,
@@ -816,3 +899,7 @@ describe('external test vectors', () => {
     expect(cetTx._raw.vin.length).to.equal(1);
   });
 });
+
+const randomIntFromInterval = (min, max) => {
+  return Math.floor(Math.random() * (max - min + 1) + min);
+};

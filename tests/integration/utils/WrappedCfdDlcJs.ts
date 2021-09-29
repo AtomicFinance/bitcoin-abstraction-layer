@@ -1,5 +1,5 @@
-import { StaticPool } from 'node-worker-threads-pool';
 import cfdDlcJs from 'cfd-dlc-js';
+import { StaticPool } from 'node-worker-threads-pool';
 
 const FILE_PATH = './tests/integration/utils/cfdDlcJsWorker.js';
 
