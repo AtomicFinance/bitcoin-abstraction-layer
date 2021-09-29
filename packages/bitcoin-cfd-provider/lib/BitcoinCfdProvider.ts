@@ -16,6 +16,8 @@ import {
   BlindRawTransactionResponse,
   CalculateEcSignatureRequest,
   CalculateEcSignatureResponse,
+  CalculateEcSignaturesRequest,
+  CalculateEcSignaturesResponse,
   CfdProvider,
   ConvertAesRequest,
   ConvertAesResponse,
@@ -218,6 +220,14 @@ export default class BitcoinCfdProvider
     await this.CfdLoaded();
 
     return this._cfdJs.CalculateEcSignature(jsonObject);
+  }
+
+  async CalculateEcSignatures(
+    jsonObject: CalculateEcSignaturesRequest,
+  ): Promise<CalculateEcSignaturesResponse> {
+    await this.CfdLoaded();
+
+    return this._cfdJs.CalculateEcSignatures(jsonObject);
   }
 
   async ConvertAes(jsonObject: ConvertAesRequest): Promise<ConvertAesResponse> {

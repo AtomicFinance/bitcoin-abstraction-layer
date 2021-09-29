@@ -224,27 +224,31 @@ describe('dlc provider', () => {
       });
 
       it.only('close multiple', async () => {
-        const aliceDlcClose: DlcClose = await alice.dlc.createManyDlcClose(
+        console.time('close-multiple');
+        const aliceDlcCloses: DlcClose = await alice.dlc.createManyDlcClose(
           dlcOffer,
           dlcAccept,
           dlcTransactions,
-          [10000n],
+          Array.from(Array(250).keys()).map((n) => BigInt(n + 10000)),
           true,
         );
+        console.timeEnd('close-multiple');
 
         const bobDlcTx = await bob.dlc.finalizeDlcClose(
           dlcOffer,
           dlcAccept,
-          aliceDlcClose,
+          aliceDlcCloses[randomIntFromInterval(0, 249)],
           dlcTransactions,
         );
 
-        console.log('bobDlcTx', bobDlcTx);
-
         const closeTxId = await bob.chain.sendRawTransaction(bobDlcTx);
+        const closeTx = await alice.getMethod('getTransactionByHash')(
+          closeTxId,
+        );
+        expect(closeTx._raw.vin.length).to.equal(1);
       });
 
-      it('close', async () => {
+      it.only('close', async () => {
         const aliceDlcClose: DlcClose = await alice.dlc.createDlcClose(
           dlcOffer,
           dlcAccept,
@@ -290,7 +294,7 @@ describe('dlc provider', () => {
         const closeTx = await alice.getMethod('getTransactionByHash')(
           closeTxId,
         );
-        expect(closeTx._raw.vin.length).to.equal(2);
+        expect(closeTx._raw.vin.length).to.equal(1);
       });
 
       it('should fail close with invalid fixedInputs', async () => {
@@ -837,3 +841,7 @@ describe('external test vectors', () => {
     expect(cetTx._raw.vin.length).to.equal(1);
   });
 });
+
+const randomIntFromInterval = (min, max) => {
+  return Math.floor(Math.random() * (max - min + 1) + min);
+};
