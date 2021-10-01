@@ -216,6 +216,34 @@ export default class Dlc {
   }
 
   /**
+   * Generate multiple DlcClose messagetypes for closing DLC with Mutual Consent
+   * @param dlcOffer DlcOffer TLV (V0)
+   * @param dlcAccept DlcAccept TLV (V0)
+   * @param dlcTxs DlcTransactions TLV (V0)
+   * @param initiatorPayouts Array of amounts initiator expects as payouts
+   * @param isOfferer Whether offerer or not
+   * @param inputs Optionally specified closing inputs
+   * @returns {Promise<DlcClose[]>}
+   */
+  async createBatchDlcClose(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    dlcTxs: DlcTransactions,
+    initiatorPayouts: bigint[],
+    isOfferer?: boolean,
+    inputs?: Input[],
+  ): Promise<DlcClose[]> {
+    return this.client.getMethod('createBatchDlcClose')(
+      dlcOffer,
+      dlcAccept,
+      dlcTxs,
+      initiatorPayouts,
+      isOfferer,
+      inputs,
+    );
+  }
+
+  /**
    * Finalize Dlc Close
    * @param dlcOffer Dlc Offer Message
    * @param dlcAccept Dlc Accept Message

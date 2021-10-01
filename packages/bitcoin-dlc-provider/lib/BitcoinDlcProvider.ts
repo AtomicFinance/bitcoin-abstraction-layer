@@ -6,6 +6,7 @@ import {
   AddSignaturesToRefundTxResponse,
   AddSignatureToFundTransactionRequest,
   AddSignatureToFundTransactionResponse,
+  CalculateEcSignatureRequest,
   CreateCetAdaptorSignatureRequest,
   CreateCetAdaptorSignatureResponse,
   CreateCetAdaptorSignaturesRequest,
@@ -16,8 +17,10 @@ import {
   CreateDlcTransactionsResponse,
   CreateFundTransactionRequest,
   CreateFundTransactionResponse,
+  CreateRawTransactionRequest,
   CreateRefundTransactionRequest,
   CreateRefundTransactionResponse,
+  CreateSignatureHashRequest,
   DlcProvider,
   GetRawFundTxSignatureRequest,
   GetRawFundTxSignatureResponse,
@@ -132,6 +135,19 @@ export default class BitcoinDlcProvider
     }
 
     return privKeys;
+  }
+
+  async GetCfdNetwork(): Promise<string> {
+    const network = await this.getConnectedNetwork();
+
+    switch (network.name) {
+      case 'bitcoin_testnet':
+        return 'testnet';
+      case 'bitcoin_regtest':
+        return 'regtest';
+      default:
+        return 'bitcoin';
+    }
   }
 
   async GetInputsForAmount(
@@ -1216,6 +1232,191 @@ Payout Group not found',
     return Buffer.from(fundPrivateKeyPair.privateKey).toString('hex');
   }
 
+  async CreateCloseRawTxs(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcTxs: DlcTransactions,
+    initiatorPayouts: bigint[],
+    closeInputAmount: bigint,
+    fundingInputs: FundingInput[],
+    isOfferer: boolean,
+  ): Promise<string[]> {
+    const { dlcOffer, dlcAccept, dlcTxs } = checkTypes({
+      _dlcOffer,
+      _dlcAccept,
+      _dlcTxs,
+    });
+    const network = await this.getConnectedNetwork();
+
+    const finalizer = new DualClosingTxFinalizer(
+      fundingInputs,
+      dlcOffer.payoutSPK,
+      dlcAccept.payoutSPK,
+      dlcOffer.feeRatePerVb,
+    );
+
+    const rawTransactionRequestPromises: Promise<string>[] = [];
+    const rawCloseTxs = [];
+
+    for (let i = 0; i < initiatorPayouts.length; i++) {
+      const payout = initiatorPayouts[i];
+
+      const offerPayoutValue: bigint = isOfferer
+        ? closeInputAmount + payout - finalizer.offerInitiatorFees
+        : dlcOffer.contractInfo.totalCollateral - payout;
+
+      const acceptPayoutValue: bigint = isOfferer
+        ? dlcOffer.contractInfo.totalCollateral - payout
+        : closeInputAmount + payout - finalizer.offerInitiatorFees;
+
+      const txOuts = [
+        {
+          address: address.fromOutputScript(dlcOffer.payoutSPK, network),
+          amount: Number(offerPayoutValue),
+        },
+        {
+          address: address.fromOutputScript(dlcAccept.payoutSPK, network),
+          amount: Number(acceptPayoutValue),
+        },
+      ];
+
+      if (dlcOffer.payoutSerialId <= dlcAccept.payoutSerialId) txOuts.reverse();
+
+      const rawTransactionRequest: CreateRawTransactionRequest = {
+        version: 2,
+        locktime: 0,
+        txins: [
+          {
+            txid: dlcTxs.fundTx.txId.serialize().reverse().toString('hex'),
+            vout: dlcTxs.fundTxVout,
+            sequence: 0,
+          },
+        ],
+        txouts: txOuts,
+      };
+
+      rawTransactionRequestPromises.push(
+        (async () => {
+          const response = await this.getMethod('CreateRawTransaction')(
+            rawTransactionRequest,
+          );
+          return response.hex;
+        })(),
+      );
+    }
+
+    const hexs: string[] = await Promise.all(rawTransactionRequestPromises);
+
+    rawCloseTxs.push(hexs);
+
+    return rawCloseTxs.flat();
+  }
+
+  async CreateSignatureHashes(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcTxs: DlcTransactions,
+    rawCloseTxs: string[],
+  ): Promise<string[]> {
+    const { dlcOffer, dlcAccept, dlcTxs } = checkTypes({
+      _dlcOffer,
+      _dlcAccept,
+      _dlcTxs,
+    });
+
+    const network = await this.getConnectedNetwork();
+
+    const fundingPubKeys =
+      Buffer.compare(dlcOffer.fundingPubKey, dlcAccept.fundingPubKey) === -1
+        ? [dlcOffer.fundingPubKey, dlcAccept.fundingPubKey]
+        : [dlcAccept.fundingPubKey, dlcOffer.fundingPubKey];
+
+    const p2ms = payments.p2ms({
+      m: 2,
+      pubkeys: fundingPubKeys,
+      network,
+    });
+
+    const paymentVariant = payments.p2wsh({
+      redeem: p2ms,
+      network,
+    });
+
+    const sigHashRequestPromises: Promise<string>[] = [];
+    const sigHashes = [];
+
+    for (let i = 0; i < rawCloseTxs.length; i++) {
+      const rawTx = rawCloseTxs[i];
+
+      const sigHashRequest: CreateSignatureHashRequest = {
+        tx: rawTx,
+        txin: {
+          txid: dlcTxs.fundTx.txId.serialize().reverse().toString('hex'),
+          vout: dlcTxs.fundTxVout,
+          keyData: {
+            hex: paymentVariant.redeem.output.toString('hex'),
+            type: 'redeem_script',
+          },
+          amount: Number(dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats),
+          hashType: 'p2wsh',
+          sighashType: 'all',
+          sighashAnyoneCanPay: false,
+        },
+      };
+
+      sigHashRequestPromises.push(
+        (async () => {
+          const response = await this.getMethod('CreateSignatureHash')(
+            sigHashRequest,
+          );
+          return response.sighash;
+        })(),
+      );
+    }
+
+    const sighashes: string[] = await Promise.all(sigHashRequestPromises);
+
+    sigHashes.push(sighashes);
+
+    return sigHashes.flat();
+  }
+
+  async CalculateEcSignatureHashes(
+    sigHashes: string[],
+    privKey: string,
+  ): Promise<string[]> {
+    const cfdNetwork = await this.GetCfdNetwork();
+
+    const sigsRequestPromises: Promise<string>[] = [];
+
+    for (let i = 0; i < sigHashes.length; i++) {
+      const sigHash = sigHashes[i];
+
+      const calculateEcSignatureRequest: CalculateEcSignatureRequest = {
+        sighash: sigHash,
+        privkeyData: {
+          privkey: privKey,
+          wif: false,
+          network: cfdNetwork,
+        },
+        isGrindR: true,
+      };
+
+      sigsRequestPromises.push(
+        (async () => {
+          const response = await this.getMethod('CalculateEcSignature')(
+            calculateEcSignatureRequest,
+          );
+          return response.signature;
+        })(),
+      );
+    }
+
+    const sigs: string[] = await Promise.all(sigsRequestPromises);
+
+    return sigs.flat();
+  }
+
   /**
    * Check whether wallet is offerer of DlcOffer or DlcAccept
    * @param dlcOffer Dlc Offer Message
@@ -1771,7 +1972,7 @@ Payout Group not found',
 
     // Initiate and build PSBT
     let inputs: Input[] = _inputs;
-    if ((_inputs && _inputs.length === 0) || !_inputs) {
+    if (!_inputs) {
       const tempInputs = await this.GetInputsForAmount(
         BigInt(20000),
         dlcOffer.feeRatePerVb,
@@ -1876,14 +2077,22 @@ Payout Group not found',
         initiatorPayoutSatoshis -
         finalizer.offerInitiatorFees;
 
+    const offerFirst = dlcOffer.payoutSerialId > dlcAccept.payoutSerialId;
+
     psbt.addOutput({
-      value: Number(offerPayoutValue),
-      address: address.fromOutputScript(dlcOffer.payoutSPK, network),
+      value: Number(offerFirst ? offerPayoutValue : acceptPayoutValue),
+      address: address.fromOutputScript(
+        offerFirst ? dlcOffer.payoutSPK : dlcAccept.payoutSPK,
+        network,
+      ),
     });
 
     psbt.addOutput({
-      value: Number(acceptPayoutValue),
-      address: address.fromOutputScript(dlcAccept.payoutSPK, network),
+      value: Number(offerFirst ? acceptPayoutValue : offerPayoutValue),
+      address: address.fromOutputScript(
+        offerFirst ? dlcAccept.payoutSPK : dlcOffer.payoutSPK,
+        network,
+      ),
     });
 
     // Generate keypair to sign inputs
@@ -1935,8 +2144,12 @@ Payout Group not found',
     // Create DlcClose
     const dlcClose = new DlcCloseV0();
     dlcClose.contractId = dlcTxs.contractId;
-    dlcClose.offerPayoutSatoshis = BigInt(psbt.txOutputs[0].value); // You give collateral back to users
-    dlcClose.acceptPayoutSatoshis = BigInt(psbt.txOutputs[1].value); // give collateral back to users
+    dlcClose.offerPayoutSatoshis = BigInt(
+      psbt.txOutputs[offerFirst ? 0 : 1].value,
+    ); // You give collateral back to users
+    dlcClose.acceptPayoutSatoshis = BigInt(
+      psbt.txOutputs[offerFirst ? 1 : 0].value,
+    ); // give collateral back to users
     dlcClose.fundInputSerialId = fundingInputSerialId; // randomly generated serial id
     dlcClose.closeSignature = closeSignature;
     dlcClose.fundingSignatures = fundingSignatures;
@@ -1944,6 +2157,108 @@ Payout Group not found',
     dlcClose.validate();
 
     return dlcClose;
+  }
+
+  /**
+   * Generate multiple DlcClose messagetypes for closing DLC with Mutual Consent
+   * @param _dlcOffer DlcOffer TLV (V0)
+   * @param _dlcAccept DlcAccept TLV (V0)
+   * @param _dlcTxs DlcTransactions TLV (V0)
+   * @param initiatorPayouts Array of amounts initiator expects as payouts
+   * @param isOfferer Whether offerer or not
+   * @param _inputs Optionally specified closing inputs
+   * @returns {Promise<DlcClose[]>}
+   */
+  async createBatchDlcClose(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcTxs: DlcTransactions,
+    initiatorPayouts: bigint[],
+    isOfferer?: boolean,
+    _inputs?: Input[],
+  ): Promise<DlcClose[]> {
+    const { dlcOffer, dlcAccept, dlcTxs } = checkTypes({
+      _dlcOffer,
+      _dlcAccept,
+      _dlcTxs,
+    });
+
+    if (isOfferer === undefined)
+      isOfferer = await this.isOfferer(dlcOffer, dlcAccept);
+
+    if (_inputs && _inputs.length > 0)
+      throw Error('funding inputs not supported on BatchDlcClose'); // TODO support multiple funding inputs
+
+    const fundingInputSerialId = generateSerialId();
+
+    const fundingInputs: FundingInput[] = []; // TODO: support multiple funding inputs
+
+    const finalizer = new DualClosingTxFinalizer(
+      fundingInputs,
+      dlcOffer.payoutSPK,
+      dlcAccept.payoutSPK,
+      dlcOffer.feeRatePerVb,
+    );
+
+    // Generate keypair to sign inputs
+    const fundPrivateKeyPair = await this.GetFundKeyPair(
+      dlcOffer,
+      dlcAccept,
+      isOfferer,
+    );
+
+    const closeInputAmount = BigInt(0); // TODO support multiple funding inputs
+
+    const privKey = Buffer.from(fundPrivateKeyPair.privateKey).toString('hex');
+
+    const rawCloseTxs = await this.CreateCloseRawTxs(
+      dlcOffer,
+      dlcAccept,
+      dlcTxs,
+      initiatorPayouts,
+      closeInputAmount,
+      fundingInputs,
+      isOfferer,
+    );
+
+    const sigHashes = await this.CreateSignatureHashes(
+      dlcOffer,
+      dlcAccept,
+      dlcTxs,
+      rawCloseTxs,
+    );
+
+    const signatures = await this.CalculateEcSignatureHashes(
+      sigHashes,
+      privKey,
+    );
+
+    const dlcCloses = [];
+
+    signatures.forEach((sig, i) => {
+      const offerPayoutValue: bigint = isOfferer
+        ? closeInputAmount + initiatorPayouts[i] - finalizer.offerInitiatorFees
+        : dlcOffer.contractInfo.totalCollateral - initiatorPayouts[i];
+
+      const acceptPayoutValue: bigint = isOfferer
+        ? dlcOffer.contractInfo.totalCollateral - initiatorPayouts[i]
+        : closeInputAmount + initiatorPayouts[i] - finalizer.offerInitiatorFees;
+
+      const fundingSignatures = new FundingSignaturesV0();
+
+      const dlcClose = new DlcCloseV0();
+      dlcClose.contractId = dlcTxs.contractId;
+      dlcClose.offerPayoutSatoshis = offerPayoutValue;
+      dlcClose.acceptPayoutSatoshis = acceptPayoutValue;
+      dlcClose.fundInputSerialId = fundingInputSerialId;
+      dlcClose.closeSignature = Buffer.from(sig, 'hex');
+      dlcClose.fundingSignatures = fundingSignatures;
+      dlcClose.validate();
+
+      dlcCloses.push(dlcClose);
+    });
+
+    return dlcCloses;
   }
 
   /**
@@ -2042,14 +2357,30 @@ Payout Group not found',
       (input) => input.inputSerialId === dlcClose.fundInputSerialId,
     );
 
+    const offerFirst = dlcOffer.payoutSerialId > dlcAccept.payoutSerialId;
+
     psbt.addOutput({
-      value: Number(dlcClose.offerPayoutSatoshis),
-      address: address.fromOutputScript(dlcOffer.payoutSPK, network),
+      value: Number(
+        offerFirst
+          ? dlcClose.offerPayoutSatoshis
+          : dlcClose.acceptPayoutSatoshis,
+      ),
+      address: address.fromOutputScript(
+        offerFirst ? dlcOffer.payoutSPK : dlcAccept.payoutSPK,
+        network,
+      ),
     });
 
     psbt.addOutput({
-      value: Number(dlcClose.acceptPayoutSatoshis),
-      address: address.fromOutputScript(dlcAccept.payoutSPK, network),
+      value: Number(
+        offerFirst
+          ? dlcClose.acceptPayoutSatoshis
+          : dlcClose.offerPayoutSatoshis,
+      ),
+      address: address.fromOutputScript(
+        offerFirst ? dlcAccept.payoutSPK : dlcOffer.payoutSPK,
+        network,
+      ),
     });
 
     // add to psbt
@@ -2275,7 +2606,19 @@ Payout Group not found',
     const fundingInput = new FundingInputV0();
     fundingInput.prevTxVout = input.vout;
 
-    const txRaw = await this.getMethod('getRawTransactionByHash')(input.txid);
+    let txRaw = '';
+    try {
+      txRaw = await this.getMethod('getRawTransactionByHash')(input.txid);
+    } catch (e) {
+      try {
+        txRaw = (await this.getMethod('jsonrpc')('gettransaction', input.txid))
+          .hex;
+      } catch (e) {
+        throw Error(
+          `Cannot find tx ${input.txid} in inputToFundingInput using getrawtransactionbyhash or gettransaction`,
+        );
+      }
+    }
     const tx = Tx.decode(StreamReader.fromHex(txRaw));
 
     fundingInput.prevTx = tx;
