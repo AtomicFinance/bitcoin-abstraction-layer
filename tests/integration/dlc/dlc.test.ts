@@ -281,6 +281,17 @@ describe('dlc provider', () => {
           undefined,
         );
 
+        console.time('batch-close-verify');
+        const aliceDlcClosesValid = await bob.dlc.verifyBatchDlcClose(
+          dlcOffer,
+          dlcAccept,
+          dlcTransactions,
+          aliceDlcCloses,
+        );
+        console.timeEnd('batch-close-verify');
+
+        expect(aliceDlcClosesValid).to.equal(true);
+
         const bobDlcTx = await bob.dlc.finalizeDlcClose(
           dlcOffer,
           dlcAccept,

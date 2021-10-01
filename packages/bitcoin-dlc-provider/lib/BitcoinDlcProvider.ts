@@ -42,6 +42,7 @@ import {
   VerifyFundTxSignatureResponse,
   VerifyRefundTxSignatureRequest,
   VerifyRefundTxSignatureResponse,
+  VerifySignatureRequest,
 } from '@atomicfinance/types';
 import { BitcoinNetwork } from '@liquality/bitcoin-networks';
 import { Address, bitcoin } from '@liquality/types';
@@ -1236,10 +1237,11 @@ Payout Group not found',
     _dlcOffer: DlcOffer,
     _dlcAccept: DlcAccept,
     _dlcTxs: DlcTransactions,
-    initiatorPayouts: bigint[],
     closeInputAmount: bigint,
-    fundingInputs: FundingInput[],
     isOfferer: boolean,
+    _dlcCloses: DlcClose[] = [],
+    fundingInputs?: FundingInput[],
+    initiatorPayouts?: bigint[],
   ): Promise<string[]> {
     const { dlcOffer, dlcAccept, dlcTxs } = checkTypes({
       _dlcOffer,
@@ -1248,26 +1250,42 @@ Payout Group not found',
     });
     const network = await this.getConnectedNetwork();
 
-    const finalizer = new DualClosingTxFinalizer(
-      fundingInputs,
-      dlcOffer.payoutSPK,
-      dlcAccept.payoutSPK,
-      dlcOffer.feeRatePerVb,
-    );
+    let finalizer: DualClosingTxFinalizer;
+    if (_dlcCloses.length === 0) {
+      finalizer = new DualClosingTxFinalizer(
+        fundingInputs,
+        dlcOffer.payoutSPK,
+        dlcAccept.payoutSPK,
+        dlcOffer.feeRatePerVb,
+      );
+    }
 
     const rawTransactionRequestPromises: Promise<string>[] = [];
     const rawCloseTxs = [];
 
-    for (let i = 0; i < initiatorPayouts.length; i++) {
-      const payout = initiatorPayouts[i];
+    const numPayouts =
+      _dlcCloses.length === 0 ? initiatorPayouts.length : _dlcCloses.length;
 
-      const offerPayoutValue: bigint = isOfferer
-        ? closeInputAmount + payout - finalizer.offerInitiatorFees
-        : dlcOffer.contractInfo.totalCollateral - payout;
+    for (let i = 0; i < numPayouts; i++) {
+      let offerPayoutValue = BigInt(0);
+      let acceptPayoutValue = BigInt(0);
 
-      const acceptPayoutValue: bigint = isOfferer
-        ? dlcOffer.contractInfo.totalCollateral - payout
-        : closeInputAmount + payout - finalizer.offerInitiatorFees;
+      if (_dlcCloses.length === 0) {
+        const payout = initiatorPayouts[i];
+
+        offerPayoutValue = isOfferer
+          ? closeInputAmount + payout - finalizer.offerInitiatorFees
+          : dlcOffer.contractInfo.totalCollateral - payout;
+
+        acceptPayoutValue = isOfferer
+          ? dlcOffer.contractInfo.totalCollateral - payout
+          : closeInputAmount + payout - finalizer.offerInitiatorFees;
+      } else {
+        const dlcClose = checkTypes({ _dlcClose: _dlcCloses[i] }).dlcClose;
+
+        offerPayoutValue = dlcClose.offerPayoutSatoshis;
+        acceptPayoutValue = dlcClose.acceptPayoutSatoshis;
+      }
 
       const txOuts = [
         {
@@ -1415,6 +1433,79 @@ Payout Group not found',
     const sigs: string[] = await Promise.all(sigsRequestPromises);
 
     return sigs.flat();
+  }
+
+  async VerifySignatures(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcTxs: DlcTransactions,
+    _dlcCloses: DlcClose[],
+    rawCloseTxs: string[],
+    isOfferer: boolean,
+  ): Promise<boolean> {
+    const { dlcOffer, dlcAccept, dlcTxs } = checkTypes({
+      _dlcOffer,
+      _dlcAccept,
+      _dlcTxs,
+    });
+
+    const dlcCloses = _dlcCloses.map(
+      (_dlcClose) => checkTypes({ _dlcClose }).dlcClose,
+    );
+
+    const network = await this.getConnectedNetwork();
+
+    const fundingPubKeys =
+      Buffer.compare(dlcOffer.fundingPubKey, dlcAccept.fundingPubKey) === -1
+        ? [dlcOffer.fundingPubKey, dlcAccept.fundingPubKey]
+        : [dlcAccept.fundingPubKey, dlcOffer.fundingPubKey];
+
+    const p2ms = payments.p2ms({
+      m: 2,
+      pubkeys: fundingPubKeys,
+      network,
+    });
+
+    const paymentVariant = payments.p2wsh({
+      redeem: p2ms,
+      network,
+    });
+
+    const pubkey = isOfferer ? dlcAccept.fundingPubKey : dlcOffer.fundingPubKey;
+
+    const sigsValidity: Promise<boolean>[] = [];
+
+    for (let i = 0; i < rawCloseTxs.length; i++) {
+      const rawTx = rawCloseTxs[i];
+      const dlcClose = dlcCloses[i];
+
+      const verifySignatureRequest: VerifySignatureRequest = {
+        tx: rawTx,
+        txin: {
+          txid: dlcTxs.fundTx.txId.serialize().reverse().toString('hex'),
+          vout: dlcTxs.fundTxVout,
+          signature: dlcClose.closeSignature.toString('hex'),
+          pubkey: pubkey.toString('hex'),
+          redeemScript: paymentVariant.redeem.output.toString('hex'),
+          hashType: 'p2wsh',
+          sighashType: 'all',
+          sighashAnyoneCanPay: false,
+          amount: Number(dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats),
+        },
+      };
+
+      sigsValidity.push(
+        (async () => {
+          const response = await this.getMethod('VerifySignature')(
+            verifySignatureRequest,
+          );
+          return response.success;
+        })(),
+      );
+    }
+
+    const areSigsValid = (await Promise.all(sigsValidity)).every((b) => b);
+    return areSigsValid;
   }
 
   /**
@@ -2215,10 +2306,11 @@ Payout Group not found',
       dlcOffer,
       dlcAccept,
       dlcTxs,
-      initiatorPayouts,
       closeInputAmount,
-      fundingInputs,
       isOfferer,
+      [],
+      fundingInputs,
+      initiatorPayouts,
     );
 
     const sigHashes = await this.CreateSignatureHashes(
@@ -2261,27 +2353,21 @@ Payout Group not found',
     return dlcCloses;
   }
 
-  // async verifyDlcClose(
-  //   _dlcOffer: DlcOffer,
-  //   _dlcAccept: DlcAccept,
-  //   _dlcClose: DlcClose,
-  //   _dlcTxs: DlcTransactions,
-  // ): Promise<boolean> {
-  //   const { dlcOffer, dlcAccept, dlcClose, dlcTxs } = checkTypes({
-  //     _dlcOffer,
-  //     _dlcAccept,
-  //     _dlcClose,
-  //     _dlcTxs,
-  //   });
-
-  //   return true;
-  // }
-
+  /**
+   * Verify multiple DlcClose messagetypes for closing DLC with Mutual Consent
+   * @param _dlcOffer DlcOffer TLV (V0)
+   * @param _dlcAccept DlcAccept TLV (V0)
+   * @param _dlcTxs DlcTransactions TLV (V0)
+   * @param _dlcCloses DlcClose[] TLV (V0)
+   * @param isOfferer Whether offerer or not
+   * @returns {Promise<boolean>}
+   */
   async verifyBatchDlcClose(
     _dlcOffer: DlcOffer,
     _dlcAccept: DlcAccept,
-    _dlcCloses: DlcClose[],
     _dlcTxs: DlcTransactions,
+    _dlcCloses: DlcClose[],
+    isOfferer?: boolean,
   ): Promise<boolean> {
     const { dlcOffer, dlcAccept, dlcTxs } = checkTypes({
       _dlcOffer,
@@ -2293,7 +2379,32 @@ Payout Group not found',
       (_dlcClose) => checkTypes({ _dlcClose }).dlcClose,
     );
 
-    return true;
+    if (isOfferer === undefined)
+      isOfferer = await this.isOfferer(dlcOffer, dlcAccept);
+
+    // make sure no funding inputs
+
+    const closeInputAmount = BigInt(0); // TODO support multiple funding inputs
+
+    const rawCloseTxs = await this.CreateCloseRawTxs(
+      dlcOffer,
+      dlcAccept,
+      dlcTxs,
+      closeInputAmount,
+      isOfferer,
+      dlcCloses,
+    );
+
+    const areSigsValid = await this.VerifySignatures(
+      dlcOffer,
+      dlcAccept,
+      dlcTxs,
+      dlcCloses,
+      rawCloseTxs,
+      isOfferer,
+    );
+
+    return areSigsValid;
   }
 
   /**
