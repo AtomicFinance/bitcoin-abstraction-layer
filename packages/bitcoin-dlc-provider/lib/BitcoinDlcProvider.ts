@@ -137,6 +137,19 @@ export default class BitcoinDlcProvider
     return privKeys;
   }
 
+  async GetCfdNetwork(): Promise<string> {
+    const network = await this.getConnectedNetwork();
+
+    switch (network.name) {
+      case 'bitcoin_testnet':
+        return 'testnet';
+      case 'bitcoin_regtest':
+        return 'regtest';
+      default:
+        return 'bitcoin';
+    }
+  }
+
   async GetInputsForAmount(
     amount: bigint,
     feeRatePerVb: bigint,
@@ -1372,6 +1385,8 @@ Payout Group not found',
     sigHashes: string[],
     privKey: string,
   ): Promise<string[]> {
+    const cfdNetwork = await this.GetCfdNetwork();
+
     const sigsRequestPromises: Promise<string>[] = [];
 
     for (let i = 0; i < sigHashes.length; i++) {
@@ -1382,7 +1397,7 @@ Payout Group not found',
         privkeyData: {
           privkey: privKey,
           wif: false,
-          network: 'regtest',
+          network: cfdNetwork,
         },
         isGrindR: true,
       };

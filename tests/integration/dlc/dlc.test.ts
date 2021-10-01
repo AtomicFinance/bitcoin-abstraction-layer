@@ -71,6 +71,10 @@ describe('bitcoin networks', () => {
       value: new BN(10000),
     });
   });
+  it('should return correct cfd network', async () => {
+    const network = await alice.getMethod('GetCfdNetwork')();
+    expect(network).to.equal('regtest');
+  });
 });
 
 describe('inputToFundingInput', () => {
