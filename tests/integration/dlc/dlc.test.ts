@@ -370,6 +370,26 @@ describe('dlc provider', () => {
         ).to.be.eventually.rejectedWith(Error);
       });
 
+      it('should fail verify batch close with fixedInputs', async () => {
+        // TODO support multiple funding inputs
+        const aliceInput = await getInput(alice);
+
+        const aliceDlcClose: DlcClose = await alice.dlc.createDlcClose(
+          dlcOffer,
+          dlcAccept,
+          dlcTransactions,
+          10000n,
+          true,
+          [aliceInput],
+        );
+
+        expect(
+          alice.dlc.verifyBatchDlcClose(dlcOffer, dlcAccept, dlcTransactions, [
+            aliceDlcClose,
+          ]),
+        ).to.be.eventually.rejectedWith(Error);
+      });
+
       it('should fail close with invalid fixedInputs', async () => {
         const wrongInput = await getInput(bob);
 

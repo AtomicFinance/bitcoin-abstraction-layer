@@ -2382,8 +2382,10 @@ Payout Group not found',
     if (isOfferer === undefined)
       isOfferer = await this.isOfferer(dlcOffer, dlcAccept);
 
-    // if (_inputs && _inputs.length > 0)
-    //   throw Error('funding inputs not supported on BatchDlcClose'); // TODO support multiple funding inputs
+    assert(
+      dlcCloses.every((dlcClose) => dlcClose.fundingInputs.length === 0),
+      'funding inputs not supported on verify BatchDlcClose',
+    ); // TODO support multiple funding inputs
 
     const closeInputAmount = BigInt(0); // TODO support multiple funding inputs
 
