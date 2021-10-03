@@ -147,7 +147,7 @@ export interface DlcProvider {
    * @param _dlcTxs DlcTransactions TLV (V0)
    * @param _dlcCloses DlcClose[] TLV (V0)
    * @param isOfferer Whether offerer or not
-   * @returns {Promise<boolean>}
+   * @returns {Promise<void>}
    */
   verifyBatchDlcClose(
     _dlcOffer: DlcOffer,
@@ -155,7 +155,7 @@ export interface DlcProvider {
     _dlcTxs: DlcTransactions,
     _dlcCloses: DlcClose[],
     isOfferer?: boolean,
-  ): Promise<boolean>;
+  ): Promise<void>;
 
   /**
    * Finalize Dlc Close

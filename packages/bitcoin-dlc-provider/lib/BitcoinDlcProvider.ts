@@ -2360,7 +2360,7 @@ Payout Group not found',
    * @param _dlcTxs DlcTransactions TLV (V0)
    * @param _dlcCloses DlcClose[] TLV (V0)
    * @param isOfferer Whether offerer or not
-   * @returns {Promise<boolean>}
+   * @returns {Promise<void>}
    */
   async verifyBatchDlcClose(
     _dlcOffer: DlcOffer,
@@ -2368,7 +2368,7 @@ Payout Group not found',
     _dlcTxs: DlcTransactions,
     _dlcCloses: DlcClose[],
     isOfferer?: boolean,
-  ): Promise<boolean> {
+  ): Promise<void> {
     const { dlcOffer, dlcAccept, dlcTxs } = checkTypes({
       _dlcOffer,
       _dlcAccept,
@@ -2407,7 +2407,7 @@ Payout Group not found',
       isOfferer,
     );
 
-    return areSigsValid;
+    assert(areSigsValid, 'Signatures invalid in Verify Batch DlcClose');
   }
 
   /**

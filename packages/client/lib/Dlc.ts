@@ -250,7 +250,7 @@ export default class Dlc {
    * @param dlcTxs DlcTransactions TLV (V0)
    * @param dlcCloses DlcClose[] TLV (V0)
    * @param isOfferer Whether offerer or not
-   * @returns {Promise<boolean>}
+   * @returns {Promise<void>}
    */
   async verifyBatchDlcClose(
     dlcOffer: DlcOffer,
@@ -258,7 +258,7 @@ export default class Dlc {
     dlcTxs: DlcTransactions,
     dlcCloses: DlcClose[],
     isOfferer?: boolean,
-  ): Promise<boolean> {
+  ): Promise<void> {
     return this.client.getMethod('verifyBatchDlcClose')(
       dlcOffer,
       dlcAccept,

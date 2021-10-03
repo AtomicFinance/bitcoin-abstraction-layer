@@ -15,6 +15,7 @@ import {
   DlcAccept,
   DlcAcceptV0,
   DlcClose,
+  DlcCloseV0,
   DlcOffer,
   DlcOfferV0,
   DlcSign,
@@ -282,15 +283,13 @@ describe('dlc provider', () => {
         );
 
         console.time('batch-close-verify');
-        const aliceDlcClosesValid = await bob.dlc.verifyBatchDlcClose(
+        await bob.dlc.verifyBatchDlcClose(
           dlcOffer,
           dlcAccept,
           dlcTransactions,
           aliceDlcCloses,
         );
         console.timeEnd('batch-close-verify');
-
-        expect(aliceDlcClosesValid).to.equal(true);
 
         const bobDlcTx = await bob.dlc.finalizeDlcClose(
           dlcOffer,
@@ -384,9 +383,61 @@ describe('dlc provider', () => {
         );
 
         expect(
-          alice.dlc.verifyBatchDlcClose(dlcOffer, dlcAccept, dlcTransactions, [
-            aliceDlcClose,
-          ]),
+          bob.dlc.verifyBatchDlcClose(
+            dlcOffer,
+            dlcAccept,
+            dlcTransactions,
+            [aliceDlcClose],
+            false,
+          ),
+        ).to.be.eventually.rejectedWith(Error);
+      });
+
+      it('should fail verify batch close with invalid close msg offer payout', async () => {
+        const aliceDlcClose: DlcClose = await alice.dlc.createDlcClose(
+          dlcOffer,
+          dlcAccept,
+          dlcTransactions,
+          10000n,
+          true,
+          [],
+        );
+
+        const invalidDlcClose = aliceDlcClose as DlcCloseV0;
+        invalidDlcClose.offerPayoutSatoshis =
+          invalidDlcClose.offerPayoutSatoshis + 1n;
+
+        expect(
+          bob.dlc.verifyBatchDlcClose(
+            dlcOffer,
+            dlcAccept,
+            dlcTransactions,
+            [aliceDlcClose],
+            false,
+          ),
+        ).to.be.eventually.rejectedWith(Error);
+      });
+
+      it('should fail verify batch close with invalid close msg accept payout', async () => {
+        const aliceDlcClose: DlcClose = await alice.dlc.createDlcClose(
+          dlcOffer,
+          dlcAccept,
+          dlcTransactions,
+          10000n,
+        );
+
+        const invalidDlcClose = aliceDlcClose as DlcCloseV0;
+        invalidDlcClose.acceptPayoutSatoshis =
+          invalidDlcClose.acceptPayoutSatoshis + 1n;
+
+        expect(
+          bob.dlc.verifyBatchDlcClose(
+            dlcOffer,
+            dlcAccept,
+            dlcTransactions,
+            [aliceDlcClose],
+            false,
+          ),
         ).to.be.eventually.rejectedWith(Error);
       });
 
