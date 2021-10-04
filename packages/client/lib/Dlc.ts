@@ -37,6 +37,7 @@ import {
   ContractInfo,
   DlcAccept,
   DlcClose,
+  DlcCloseMetadata,
   DlcOffer,
   DlcSign,
   DlcTransactions,
@@ -240,6 +241,18 @@ export default class Dlc {
       initiatorPayouts,
       isOfferer,
       inputs,
+    );
+  }
+
+  async verifyBatchDlcCloseUsingMetadata(
+    dlcCloseMetadata: DlcCloseMetadata,
+    _dlcCloses: DlcClose[],
+    isOfferer?: boolean,
+  ): Promise<void> {
+    return this.client.getMethod('verifyBatchDlcCloseUsingMetadata')(
+      dlcCloseMetadata,
+      _dlcCloses,
+      isOfferer,
     );
   }
 
