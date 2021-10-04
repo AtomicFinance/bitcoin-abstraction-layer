@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/bitcoin-networks",
   "umdName": "BitcoinNetworks",
-  "version": "2.2.3",
+  "version": "2.2.4",
   "description": "CAL Finance Bitcoin Networks Provider",
   "author": "Atomic Finance <info@atomic.finance>",
   "homepage": "",
