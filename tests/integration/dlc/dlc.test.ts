@@ -15,6 +15,7 @@ import {
   DlcAccept,
   DlcAcceptV0,
   DlcClose,
+  DlcCloseV0,
   DlcOffer,
   DlcOfferV0,
   DlcSign,
@@ -281,6 +282,15 @@ describe('dlc provider', () => {
           undefined,
         );
 
+        console.time('batch-close-verify');
+        await bob.dlc.verifyBatchDlcClose(
+          dlcOffer,
+          dlcAccept,
+          dlcTransactions,
+          aliceDlcCloses,
+        );
+        console.timeEnd('batch-close-verify');
+
         const bobDlcTx = await bob.dlc.finalizeDlcClose(
           dlcOffer,
           dlcAccept,
@@ -355,6 +365,78 @@ describe('dlc provider', () => {
             [10000n],
             true,
             [wrongInput],
+          ),
+        ).to.be.eventually.rejectedWith(Error);
+      });
+
+      it('should fail verify batch close with fixedInputs', async () => {
+        // TODO support multiple funding inputs
+        const aliceInput = await getInput(alice);
+
+        const aliceDlcClose: DlcClose = await alice.dlc.createDlcClose(
+          dlcOffer,
+          dlcAccept,
+          dlcTransactions,
+          10000n,
+          true,
+          [aliceInput],
+        );
+
+        expect(
+          bob.dlc.verifyBatchDlcClose(
+            dlcOffer,
+            dlcAccept,
+            dlcTransactions,
+            [aliceDlcClose],
+            false,
+          ),
+        ).to.be.eventually.rejectedWith(Error);
+      });
+
+      it('should fail verify batch close with invalid close msg offer payout', async () => {
+        const aliceDlcClose: DlcClose = await alice.dlc.createDlcClose(
+          dlcOffer,
+          dlcAccept,
+          dlcTransactions,
+          10000n,
+          true,
+          [],
+        );
+
+        const invalidDlcClose = aliceDlcClose as DlcCloseV0;
+        invalidDlcClose.offerPayoutSatoshis =
+          invalidDlcClose.offerPayoutSatoshis + 1n;
+
+        expect(
+          bob.dlc.verifyBatchDlcClose(
+            dlcOffer,
+            dlcAccept,
+            dlcTransactions,
+            [aliceDlcClose],
+            false,
+          ),
+        ).to.be.eventually.rejectedWith(Error);
+      });
+
+      it('should fail verify batch close with invalid close msg accept payout', async () => {
+        const aliceDlcClose: DlcClose = await alice.dlc.createDlcClose(
+          dlcOffer,
+          dlcAccept,
+          dlcTransactions,
+          10000n,
+        );
+
+        const invalidDlcClose = aliceDlcClose as DlcCloseV0;
+        invalidDlcClose.acceptPayoutSatoshis =
+          invalidDlcClose.acceptPayoutSatoshis + 1n;
+
+        expect(
+          bob.dlc.verifyBatchDlcClose(
+            dlcOffer,
+            dlcAccept,
+            dlcTransactions,
+            [aliceDlcClose],
+            false,
           ),
         ).to.be.eventually.rejectedWith(Error);
       });

@@ -141,6 +141,23 @@ export interface DlcProvider {
   ): Promise<DlcClose[]>;
 
   /**
+   * Verify multiple DlcClose messagetypes for closing DLC with Mutual Consent
+   * @param _dlcOffer DlcOffer TLV (V0)
+   * @param _dlcAccept DlcAccept TLV (V0)
+   * @param _dlcTxs DlcTransactions TLV (V0)
+   * @param _dlcCloses DlcClose[] TLV (V0)
+   * @param isOfferer Whether offerer or not
+   * @returns {Promise<void>}
+   */
+  verifyBatchDlcClose(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    _dlcTxs: DlcTransactions,
+    _dlcCloses: DlcClose[],
+    isOfferer?: boolean,
+  ): Promise<void>;
+
+  /**
    * Finalize Dlc Close
    * @param _dlcOffer Dlc Offer Message
    * @param _dlcAccept Dlc Accept Message
