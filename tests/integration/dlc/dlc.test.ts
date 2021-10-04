@@ -15,12 +15,14 @@ import {
   DlcAccept,
   DlcAcceptV0,
   DlcClose,
+  DlcCloseMetadata,
   DlcCloseV0,
   DlcOffer,
   DlcOfferV0,
   DlcSign,
   DlcSignV0,
   DlcTransactions,
+  DlcTransactionsV0,
   OracleAnnouncementV0,
   OracleAttestationV0,
   OracleEventV0,
@@ -291,6 +293,17 @@ describe('dlc provider', () => {
         );
         console.timeEnd('batch-close-verify');
 
+        const dlcCloseMetadata = DlcCloseMetadata.fromDlcMessages(
+          dlcOffer as DlcOfferV0,
+          dlcAccept as DlcAcceptV0,
+          dlcTransactions as DlcTransactionsV0,
+        );
+        await bob.dlc.verifyBatchDlcCloseUsingMetadata(
+          dlcCloseMetadata,
+          [aliceDlcCloses[0]],
+          false,
+        );
+
         const bobDlcTx = await bob.dlc.finalizeDlcClose(
           dlcOffer,
           dlcAccept,
@@ -382,11 +395,25 @@ describe('dlc provider', () => {
           [aliceInput],
         );
 
+        const dlcCloseMetadata = DlcCloseMetadata.fromDlcMessages(
+          dlcOffer as DlcOfferV0,
+          dlcAccept as DlcAcceptV0,
+          dlcTransactions as DlcTransactionsV0,
+        );
+
         expect(
           bob.dlc.verifyBatchDlcClose(
             dlcOffer,
             dlcAccept,
             dlcTransactions,
+            [aliceDlcClose],
+            false,
+          ),
+        ).to.be.eventually.rejectedWith(Error);
+
+        expect(
+          bob.dlc.verifyBatchDlcCloseUsingMetadata(
+            dlcCloseMetadata,
             [aliceDlcClose],
             false,
           ),

@@ -1390,19 +1390,19 @@
     call-me-maybe "^1.0.1"
     glob-to-regexp "^0.3.0"
 
-"@node-dlc/core@0.10.3":
-  version "0.10.3"
-  resolved "https://registry.yarnpkg.com/@node-dlc/core/-/core-0.10.3.tgz#286d6d11e459522eb53a6a5bde33cf83ca4a871f"
-  integrity sha512-snWcWNd3YjnIyMTP0kcB7r7TBHGLKrQsKdcevU0Mx6OpqAAGHIAzNDKd8D1t+pgzeSYscs274nM5LXvRHXfKDQ==
+"@node-dlc/core@0.10.5":
+  version "0.10.5"
+  resolved "https://registry.yarnpkg.com/@node-dlc/core/-/core-0.10.5.tgz#7fe1ed977abb3de3a9678842e09e8541b3211f8a"
+  integrity sha512-4YmQ6nE/wBtmss0dXFjG0T+/7k8f13q/B20h5l7B4tc4Fl0mzW0bHlLM724vc94XHqv0jZ95KSagD/d1u3ND7A==
   dependencies:
-    "@node-dlc/messaging" "^0.10.3"
+    "@node-dlc/messaging" "^0.10.5"
     "@node-lightning/bitcoin" "0.22.1"
     "@node-lightning/core" "0.22.1"
 
-"@node-dlc/messaging@0.10.3", "@node-dlc/messaging@^0.10.3":
-  version "0.10.3"
-  resolved "https://registry.yarnpkg.com/@node-dlc/messaging/-/messaging-0.10.3.tgz#2e9f8da19f64459d2dacd52a99cf2bc48918c1f7"
-  integrity sha512-QCD/+VPrYvXJVnlBw1cU7rfEhl3HytsqGRSsRfjMvBElWo5pmtfYCUmz5BJu3N45eAofMHCsPYHIzKphwBi81Q==
+"@node-dlc/messaging@0.10.5", "@node-dlc/messaging@^0.10.5":
+  version "0.10.5"
+  resolved "https://registry.yarnpkg.com/@node-dlc/messaging/-/messaging-0.10.5.tgz#accd023331ecc42aabe532a2a8e4659e408d3bbc"
+  integrity sha512-ZTg5PdoiV6rk/pQxs9U9G86SjSK40Zm4n4uLFZ5Cnx5En/AkrT2Uo0d91fGl7tClz/XPgRzdCXVICFklTnOr8g==
   dependencies:
     "@liquality/bitcoin-networks" "1.0.0-beta.2"
     "@liquality/utils" "1.0.0-beta.2"
@@ -1726,20 +1726,15 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-11.11.6.tgz#df929d1bb2eee5afdda598a41930fe50b43eaa6a"
   integrity sha512-Exw4yUWMBXM3X+8oqzJNRqZSwUAaS4+7NdvHqQuFi/d+synz++xmX3QIf+BFqneW8N31R8Ky+sikfZUXq07ggQ==
 
-"@types/node@^10.17.55":
-  version "10.17.60"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-10.17.60.tgz#35f3d6213daed95da7f0f73e75bcc6980e90597b"
-  integrity sha512-F0KIgDJfy2nA3zMLmWGKxcH2ZVEtCZXHHdOQs2gSaQ27+lNeEfGxzkIw90aXswATX7AZ33tahPbzy6KAfUreVw==
-
-"@types/node@^12.12.2":
-  version "12.20.13"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-12.20.13.tgz#e743bae112bd779ac9650f907197dd2caa7f0364"
-  integrity sha512-1x8W5OpxPq+T85OUsHRP6BqXeosKmeXRtjoF39STcdf/UWLqUsoehstZKOi0CunhVqHG17AyZgpj20eRVooK6A==
-
-"@types/node@^14.0.13", "@types/node@^14.14.14", "@types/node@^14.14.25":
+"@types/node@^14.14.14":
   version "14.17.1"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-14.17.1.tgz#5e07e0cb2ff793aa7a1b41deae76221e6166049f"
   integrity sha512-/tpUyFD7meeooTRwl3sYlihx2BrJE7q9XF71EguPFIySj9B7qgnRtHsHTho+0AUm4m1SvWGm6uSncrR94q6Vtw==
+
+"@types/node@^16.10.2":
+  version "16.10.2"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-16.10.2.tgz#5764ca9aa94470adb4e1185fe2e9f19458992b2e"
+  integrity sha512-zCclL4/rx+W5SQTzFs9wyvvyCwoK9QtBpratqz2IYJ3O8Umrn0m3nsTv0wQBk9sRGpvUe9CwPDrQFB10f1FIjQ==
 
 "@types/normalize-package-data@^2.4.0":
   version "2.4.0"

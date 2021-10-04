@@ -16,10 +16,12 @@
   },
   "dependencies": {
     "@liquality/types": "1.1.5",
+    "@node-dlc/messaging": "0.10.5",
     "lodash": "^4.17.20"
   },
   "devDependencies": {
-    "@types/lodash": "^4.14.160"
+    "@types/lodash": "^4.14.160",
+    "@types/node": "^16.10.2"
   },
   "publishConfig": {
     "access": "public"

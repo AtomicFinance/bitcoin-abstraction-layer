@@ -6,6 +6,7 @@ import {
   ContractInfo,
   DlcAccept,
   DlcClose,
+  DlcCloseMetadata,
   DlcOffer,
   DlcSign,
   DlcTransactions,
@@ -139,6 +140,12 @@ export interface DlcProvider {
     isOfferer?: boolean,
     _inputs?: Input[],
   ): Promise<DlcClose[]>;
+
+  verifyBatchDlcCloseUsingMetadata(
+    dlcCloseMetadata: DlcCloseMetadata,
+    _dlcCloses: DlcClose[],
+    isOfferer?: boolean,
+  ): Promise<void>;
 
   /**
    * Verify multiple DlcClose messagetypes for closing DLC with Mutual Consent

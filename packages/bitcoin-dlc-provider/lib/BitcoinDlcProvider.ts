@@ -65,6 +65,7 @@ import {
   DlcAccept,
   DlcAcceptV0,
   DlcClose,
+  DlcCloseMetadata,
   DlcCloseV0,
   DlcOffer,
   DlcOfferV0,
@@ -2351,6 +2352,22 @@ Payout Group not found',
     });
 
     return dlcCloses;
+  }
+
+  async verifyBatchDlcCloseUsingMetadata(
+    dlcCloseMetadata: DlcCloseMetadata,
+    _dlcCloses: DlcClose[],
+    isOfferer?: boolean,
+  ): Promise<void> {
+    const { dlcOffer, dlcAccept, dlcTxs } = dlcCloseMetadata.toDlcMessages();
+
+    await this.verifyBatchDlcClose(
+      dlcOffer,
+      dlcAccept,
+      dlcTxs,
+      _dlcCloses,
+      isOfferer,
+    );
   }
 
   /**
