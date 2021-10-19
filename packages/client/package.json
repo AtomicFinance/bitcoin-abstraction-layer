@@ -20,7 +20,7 @@
     "@liquality/client": "1.1.5",
     "@liquality/errors": "1.1.5",
     "@liquality/provider": "1.1.5",
-    "@node-dlc/messaging": "0.10.8",
+    "@node-dlc/messaging": "0.10.10",
     "@node-lightning/bitcoin": "0.22.1",
     "lodash": "^4.17.20"
   },
