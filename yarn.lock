@@ -1251,87 +1251,87 @@
     "@liquality/types" "^1.6.7"
     lodash "^4.17.20"
 
-"@node-dlc/core@0.10.10":
-  version "0.10.10"
-  resolved "https://registry.yarnpkg.com/@node-dlc/core/-/core-0.10.10.tgz#cbf977a6a82b5884fa4be4ba0716c27bca475759"
-  integrity sha512-O7TsRx/A2PfPD8DAnLgUdhN67reyqvhwyeDl1/z8c83/wrZiQP9vkpNr/udsw4qviYN0bZCeGn+XsZ3PTJbDCA==
+"@node-dlc/core@0.11.1":
+  version "0.11.1"
+  resolved "https://registry.yarnpkg.com/@node-dlc/core/-/core-0.11.1.tgz#e31b4d43bc84bdac27039e741e0d21532d2e692a"
+  integrity sha512-nWKfhPxvOh930u9xvixq7oXlNuj1Z1rzK3VAdKGPRSBo+sgH3hdaduZtD2vKSrg24l1k9jIVuTNhCli0bEFMsQ==
   dependencies:
-    "@node-dlc/messaging" "^0.10.10"
-    "@node-lightning/bitcoin" "0.22.1"
-    "@node-lightning/core" "0.22.1"
+    "@node-dlc/messaging" "^0.11.1"
+    "@node-lightning/bitcoin" "0.26.1"
+    "@node-lightning/core" "0.26.1"
 
-"@node-dlc/messaging@0.10.10", "@node-dlc/messaging@^0.10.10":
-  version "0.10.10"
-  resolved "https://registry.yarnpkg.com/@node-dlc/messaging/-/messaging-0.10.10.tgz#9e3444f2f59540212b34ae6ac3facd4549378ec9"
-  integrity sha512-DvIDwfGMhKIRlzgo1/affGwf0VyD8pVc9E259ZjWxJ2/rD+vJHf87GPCDmibDy2f22lb8PoivwT7wtKV9bhXBw==
+"@node-dlc/messaging@0.11.1", "@node-dlc/messaging@^0.11.1":
+  version "0.11.1"
+  resolved "https://registry.yarnpkg.com/@node-dlc/messaging/-/messaging-0.11.1.tgz#a662e476cd6e856379d7e9564a2aa52b1ab660c7"
+  integrity sha512-GAARJtYbMovwyfgNKCzxBP4LJs8Jcpl+BtO7ZKgw5YeJsmlbSq7NAeh3V6hiQHlfo3S+ky1kmvx0CthGg5AJXg==
   dependencies:
     "@liquality/bitcoin-networks" "1.0.0-beta.2"
     "@liquality/utils" "1.0.0-beta.2"
-    "@node-lightning/bitcoin" "0.22.1"
-    "@node-lightning/bufio" "0.22.1"
-    "@node-lightning/checksum" "0.22.1"
-    "@node-lightning/wire" "0.22.1"
+    "@node-lightning/bitcoin" "0.26.1"
+    "@node-lightning/bufio" "0.26.1"
+    "@node-lightning/checksum" "0.26.1"
+    "@node-lightning/wire" "0.26.1"
     bip-schnorr "0.6.3"
     bitcoinjs-lib "5.2.0"
 
-"@node-lightning/bitcoin@0.22.1", "@node-lightning/bitcoin@^0.22.1":
-  version "0.22.1"
-  resolved "https://registry.yarnpkg.com/@node-lightning/bitcoin/-/bitcoin-0.22.1.tgz#98b07e80b8292a3f12d83af4d821514627de53fa"
-  integrity sha512-421ThidlfA0HI9G5/cBUVUIsicEKcrLlOoT/ETXiVuCRiW5xMqaxI3GSJfXxtyygNfnn/MamGQdhebVmoSxCsQ==
+"@node-lightning/bitcoin@0.26.1", "@node-lightning/bitcoin@^0.26.1":
+  version "0.26.1"
+  resolved "https://registry.yarnpkg.com/@node-lightning/bitcoin/-/bitcoin-0.26.1.tgz#817e3ce561c0f7403f6e70bbec1e83edcf785ebe"
+  integrity sha512-p8YGmoEZv/hPxeiANUAxP8RXELQPHj7ni3HnfWXA0mH8wLgWo4Fp9ZK4/FzRRB1PYmlIyv0tBotkk7EFNpT4TA==
   dependencies:
-    "@node-lightning/bufio" "^0.22.1"
-    "@node-lightning/crypto" "^0.22.1"
+    "@node-lightning/bufio" "^0.26.1"
+    "@node-lightning/crypto" "^0.26.1"
 
-"@node-lightning/bufio@0.22.1", "@node-lightning/bufio@^0.22.1":
-  version "0.22.1"
-  resolved "https://registry.yarnpkg.com/@node-lightning/bufio/-/bufio-0.22.1.tgz#cac51206a4f6002006944c64c8e49e40d6c9aca1"
-  integrity sha512-RsVS8J20qGva2QFZTnFFH93g/fOQ+qBm9APtRQI2VP+oWSICIarWrery83m1GKTzZ1IjpWbiiC9PHwdk6DkSsg==
+"@node-lightning/bufio@0.26.1", "@node-lightning/bufio@^0.26.1":
+  version "0.26.1"
+  resolved "https://registry.yarnpkg.com/@node-lightning/bufio/-/bufio-0.26.1.tgz#da7efa740d5b55fe8cfdfef41948ebddaed69201"
+  integrity sha512-AxTALfvajmxa5uPz7oZ42acBP689SGAWhWmO311Rsyn2dq2f8WVqQ3uts08QZTTI0NpX4KRY4IVfgbsTUFcYRg==
 
-"@node-lightning/checksum@0.22.1", "@node-lightning/checksum@^0.22.1":
-  version "0.22.1"
-  resolved "https://registry.yarnpkg.com/@node-lightning/checksum/-/checksum-0.22.1.tgz#871cc665f822849622c3d9ca695674d2eaed5aed"
-  integrity sha512-5G3zxIuDVUUqQrWV6cxLAQ+Vvgm3CuF5G5I/jcELCqWTe7XKSDrbskVhwBq1fi6hQcGSMkiLRSeOZOs2r3/3hw==
+"@node-lightning/checksum@0.26.1", "@node-lightning/checksum@^0.26.1":
+  version "0.26.1"
+  resolved "https://registry.yarnpkg.com/@node-lightning/checksum/-/checksum-0.26.1.tgz#9d414116c0709be6c8dc0830813474032850d99f"
+  integrity sha512-/UctRMO6A+MhMueUGCuQsq7ynXeNnL5vT02sNtaPOinxryXA7HBv3vpy91jeznn3yg8JjVGHXy0fVlFr/hQjaw==
 
-"@node-lightning/core@0.22.1", "@node-lightning/core@^0.22.1":
-  version "0.22.1"
-  resolved "https://registry.yarnpkg.com/@node-lightning/core/-/core-0.22.1.tgz#ce727c3cf28fa78a14d0a0e2aebcd1a6ce6bd02f"
-  integrity sha512-pHdM1ZZYAacVQaZotkOuWG4ZUfVL0Ge3ZHkeZI30ur3czqEKqOhHrrZAf9In3i5WcK8RixuxohXy38nBpIz87w==
+"@node-lightning/core@0.26.1", "@node-lightning/core@^0.26.1":
+  version "0.26.1"
+  resolved "https://registry.yarnpkg.com/@node-lightning/core/-/core-0.26.1.tgz#24b554337caf793c298ce414e1002a7c7e04f17f"
+  integrity sha512-xVdSwNPZBF6hYHpEL4YtuQyE7YGPXyBzBwQSrG2LOsW9g0aPkVkFunTGNgN3MvJyhfGUI6jweYZyVq1Zv5cvVA==
   dependencies:
-    "@node-lightning/bitcoin" "^0.22.1"
-    "@node-lightning/bufio" "^0.22.1"
-    "@node-lightning/crypto" "^0.22.1"
+    "@node-lightning/bitcoin" "^0.26.1"
+    "@node-lightning/bufio" "^0.26.1"
+    "@node-lightning/crypto" "^0.26.1"
 
-"@node-lightning/crypto@0.22.1", "@node-lightning/crypto@^0.22.1":
-  version "0.22.1"
-  resolved "https://registry.yarnpkg.com/@node-lightning/crypto/-/crypto-0.22.1.tgz#f4ce3f3fd4ae160a7d6f5258d4b250ddd61e6aa2"
-  integrity sha512-uNnhc2/6auOvzTdZ68OrhEMzq/ePc+nNe6f+F2TU4gTFLZYlYvsdKl7UBcmzhxMnWdHxVupVmIHuvgi29r6xGA==
+"@node-lightning/crypto@0.26.1", "@node-lightning/crypto@^0.26.1":
+  version "0.26.1"
+  resolved "https://registry.yarnpkg.com/@node-lightning/crypto/-/crypto-0.26.1.tgz#a85816af3d5b2cd64986160dec9d9c9ebcedf859"
+  integrity sha512-ovTF3YMIRGkJeB2KY8hoYN7LpWJK7G9Pq473VGlFuVlN2AaT5OTVwfbpl5Q8V50xvmvF8IHIfSljMhNeaLCGZQ==
   dependencies:
     secp256k1 "^4.0.2"
 
-"@node-lightning/logger@^0.22.1":
-  version "0.22.1"
-  resolved "https://registry.yarnpkg.com/@node-lightning/logger/-/logger-0.22.1.tgz#d47842ef6ff3318cdf9627415a0710bebb0c3480"
-  integrity sha512-1hyxsHF0un2kxnh49eiLbYsj5v6CY9fCL/aG+lay57hNaE2UbvbW5mCx1FdoKS5Y9KBAG4pZu61RfBdr7Adhpg==
+"@node-lightning/logger@^0.26.1":
+  version "0.26.1"
+  resolved "https://registry.yarnpkg.com/@node-lightning/logger/-/logger-0.26.1.tgz#a9bcf9d41f476d8241d15b6c2af5ccf98f8e100a"
+  integrity sha512-rkP7h5g3j4OKyutBR5+3Bp+KsxmyKH6sfr9Rd2CKiE3xlsJP61F1yWSBTlk9qXySIdybkh7Q+uRIZUrxRZHkaQ==
 
-"@node-lightning/noise@^0.22.1":
-  version "0.22.1"
-  resolved "https://registry.yarnpkg.com/@node-lightning/noise/-/noise-0.22.1.tgz#866ad29ce88bc57cef356d685063516c2e947ba6"
-  integrity sha512-bCHIWVrUZJ3UphMPtxDLpYcaMY4KyCqRCrJAuvbnt1LHZrllKHjsUZwXy9H0UL37vsHM4NxWPwmWl2Uj7NEaaw==
+"@node-lightning/noise@^0.26.1":
+  version "0.26.1"
+  resolved "https://registry.yarnpkg.com/@node-lightning/noise/-/noise-0.26.1.tgz#b753aec5605f0fb086798544d912eb378a01f324"
+  integrity sha512-p9lG6KwjH9DpUDKWdsBFLqGA4cjPqzaCJIZkJmxsuE27PH9PtQ+xy/YBNUcmAsmdDjFwrJ4ScFcymWteqYVNOg==
   dependencies:
-    "@node-lightning/crypto" "^0.22.1"
-    "@node-lightning/logger" "^0.22.1"
+    "@node-lightning/crypto" "^0.26.1"
+    "@node-lightning/logger" "^0.26.1"
 
-"@node-lightning/wire@0.22.1":
-  version "0.22.1"
-  resolved "https://registry.yarnpkg.com/@node-lightning/wire/-/wire-0.22.1.tgz#7480bc13a0c4def78d1cf08035c864b6822372ec"
-  integrity sha512-bTUlZ9c2iCaIBJGD8VuExgKS1T5ITx38DoSKOtBk61MOk4hyKfQFSIaUZQsjNtSiFaXl9hDOC75ycg2TKEIdLQ==
+"@node-lightning/wire@0.26.1":
+  version "0.26.1"
+  resolved "https://registry.yarnpkg.com/@node-lightning/wire/-/wire-0.26.1.tgz#e1e78b17afdfb4499bc47e2afb7b5c2374283ee8"
+  integrity sha512-oNKUntAXrSxNSCL+w7er3Vqn9gbgnldQXuwiJPuLZllAt4eeBFA6rzR3hLjr5yZsv1QXBkqNKCzUyKquZGkI/Q==
   dependencies:
-    "@node-lightning/bufio" "^0.22.1"
-    "@node-lightning/checksum" "^0.22.1"
-    "@node-lightning/core" "^0.22.1"
-    "@node-lightning/crypto" "^0.22.1"
-    "@node-lightning/logger" "^0.22.1"
-    "@node-lightning/noise" "^0.22.1"
+    "@node-lightning/bufio" "^0.26.1"
+    "@node-lightning/checksum" "^0.26.1"
+    "@node-lightning/core" "^0.26.1"
+    "@node-lightning/crypto" "^0.26.1"
+    "@node-lightning/logger" "^0.26.1"
+    "@node-lightning/noise" "^0.26.1"
 
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
