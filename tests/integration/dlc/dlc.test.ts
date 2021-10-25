@@ -270,7 +270,7 @@ describe('dlc provider', () => {
           dlcOffer,
           dlcAccept,
           dlcTransactions,
-          Array.from(Array(250).keys()).map((n) => BigInt(n + 10000)),
+          [0n, ...Array.from(Array(250).keys()).map((n) => BigInt(n + 10000))],
           true,
         );
         console.timeEnd('batch-close');

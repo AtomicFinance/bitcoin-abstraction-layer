@@ -1275,12 +1275,18 @@ Payout Group not found',
         const payout = initiatorPayouts[i];
 
         offerPayoutValue = isOfferer
-          ? closeInputAmount + payout - finalizer.offerInitiatorFees
+          ? closeInputAmount +
+            (payout === BigInt(0)
+              ? payout
+              : payout - finalizer.offerInitiatorFees)
           : dlcOffer.contractInfo.totalCollateral - payout;
 
         acceptPayoutValue = isOfferer
           ? dlcOffer.contractInfo.totalCollateral - payout
-          : closeInputAmount + payout - finalizer.offerInitiatorFees;
+          : closeInputAmount +
+            (payout === BigInt(0)
+              ? payout
+              : payout - finalizer.offerInitiatorFees);
       } else {
         const dlcClose = checkTypes({ _dlcClose: _dlcCloses[i] }).dlcClose;
 
@@ -1288,16 +1294,21 @@ Payout Group not found',
         acceptPayoutValue = dlcClose.acceptPayoutSatoshis;
       }
 
-      const txOuts = [
-        {
+      const txOuts = [];
+
+      if (Number(offerPayoutValue) > 0) {
+        txOuts.push({
           address: address.fromOutputScript(dlcOffer.payoutSPK, network),
           amount: Number(offerPayoutValue),
-        },
-        {
+        });
+      }
+
+      if (Number(acceptPayoutValue) > 0) {
+        txOuts.push({
           address: address.fromOutputScript(dlcAccept.payoutSPK, network),
           amount: Number(acceptPayoutValue),
-        },
-      ];
+        });
+      }
 
       if (dlcOffer.payoutSerialId <= dlcAccept.payoutSerialId) txOuts.reverse();
 
