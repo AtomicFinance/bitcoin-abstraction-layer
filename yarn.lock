@@ -1251,19 +1251,19 @@
     "@liquality/types" "^1.6.7"
     lodash "^4.17.20"
 
-"@node-dlc/core@0.11.1":
-  version "0.11.1"
-  resolved "https://registry.yarnpkg.com/@node-dlc/core/-/core-0.11.1.tgz#e31b4d43bc84bdac27039e741e0d21532d2e692a"
-  integrity sha512-nWKfhPxvOh930u9xvixq7oXlNuj1Z1rzK3VAdKGPRSBo+sgH3hdaduZtD2vKSrg24l1k9jIVuTNhCli0bEFMsQ==
+"@node-dlc/core@0.11.5":
+  version "0.11.5"
+  resolved "https://registry.yarnpkg.com/@node-dlc/core/-/core-0.11.5.tgz#d627bd2998310345e3d06d920a976f38bb70afe3"
+  integrity sha512-5PX+Yt4ePt4voFFaAA4jWFtloQS9WHzif4Qv+Qg36ZaDT2U9OX4r74xbfHycH8gxT6NIcKkQXif3NQfEGZHL3A==
   dependencies:
-    "@node-dlc/messaging" "^0.11.1"
+    "@node-dlc/messaging" "^0.11.5"
     "@node-lightning/bitcoin" "0.26.1"
     "@node-lightning/core" "0.26.1"
 
-"@node-dlc/messaging@0.11.1", "@node-dlc/messaging@^0.11.1":
-  version "0.11.1"
-  resolved "https://registry.yarnpkg.com/@node-dlc/messaging/-/messaging-0.11.1.tgz#a662e476cd6e856379d7e9564a2aa52b1ab660c7"
-  integrity sha512-GAARJtYbMovwyfgNKCzxBP4LJs8Jcpl+BtO7ZKgw5YeJsmlbSq7NAeh3V6hiQHlfo3S+ky1kmvx0CthGg5AJXg==
+"@node-dlc/messaging@0.11.5", "@node-dlc/messaging@^0.11.5":
+  version "0.11.5"
+  resolved "https://registry.yarnpkg.com/@node-dlc/messaging/-/messaging-0.11.5.tgz#adee0d601c1196bfbb73c5d34de4b905a3c26649"
+  integrity sha512-m+alqQUzRkOlYk8HiNo47+5lWG3AoE7GF8iwL+UFJ6Gq3MdXOxWRoSVFALVKOO1M4UGMzGBdPbg3RG5WujgHtQ==
   dependencies:
     "@liquality/bitcoin-networks" "1.0.0-beta.2"
     "@liquality/utils" "1.0.0-beta.2"
