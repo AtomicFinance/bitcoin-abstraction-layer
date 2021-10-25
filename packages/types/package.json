@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/types",
   "umdName": "Types",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "CAL Finance Types",
   "author": "Atomic Finance <info@atomic.finance>",
   "homepage": "",
