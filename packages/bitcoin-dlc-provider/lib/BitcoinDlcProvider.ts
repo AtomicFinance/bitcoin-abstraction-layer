@@ -1273,20 +1273,22 @@ Payout Group not found',
 
       if (_dlcCloses.length === 0) {
         const payout = initiatorPayouts[i];
+        const payoutMinusOfferFees =
+          finalizer.offerInitiatorFees > payout
+            ? BigInt(0)
+            : payout - finalizer.offerInitiatorFees;
+        const collateralMinusPayout =
+          payout > dlcOffer.contractInfo.totalCollateral
+            ? BigInt(0)
+            : dlcOffer.contractInfo.totalCollateral - payout;
 
         offerPayoutValue = isOfferer
-          ? closeInputAmount +
-            (payout === BigInt(0)
-              ? payout
-              : payout - finalizer.offerInitiatorFees)
-          : dlcOffer.contractInfo.totalCollateral - payout;
+          ? closeInputAmount + payoutMinusOfferFees
+          : collateralMinusPayout;
 
         acceptPayoutValue = isOfferer
-          ? dlcOffer.contractInfo.totalCollateral - payout
-          : closeInputAmount +
-            (payout === BigInt(0)
-              ? payout
-              : payout - finalizer.offerInitiatorFees);
+          ? collateralMinusPayout
+          : closeInputAmount + payoutMinusOfferFees;
       } else {
         const dlcClose = checkTypes({ _dlcClose: _dlcCloses[i] }).dlcClose;
 
@@ -2340,13 +2342,23 @@ Payout Group not found',
     const dlcCloses = [];
 
     signatures.forEach((sig, i) => {
+      const payout = initiatorPayouts[i];
+      const payoutMinusOfferFees =
+        finalizer.offerInitiatorFees > payout
+          ? BigInt(0)
+          : payout - finalizer.offerInitiatorFees;
+      const collateralMinusPayout =
+        payout > dlcOffer.contractInfo.totalCollateral
+          ? BigInt(0)
+          : dlcOffer.contractInfo.totalCollateral - payout;
+
       const offerPayoutValue: bigint = isOfferer
-        ? closeInputAmount + initiatorPayouts[i] - finalizer.offerInitiatorFees
-        : dlcOffer.contractInfo.totalCollateral - initiatorPayouts[i];
+        ? closeInputAmount + payoutMinusOfferFees
+        : collateralMinusPayout;
 
       const acceptPayoutValue: bigint = isOfferer
-        ? dlcOffer.contractInfo.totalCollateral - initiatorPayouts[i]
-        : closeInputAmount + initiatorPayouts[i] - finalizer.offerInitiatorFees;
+        ? collateralMinusPayout
+        : closeInputAmount + payoutMinusOfferFees;
 
       const fundingSignatures = new FundingSignaturesV0();
 
