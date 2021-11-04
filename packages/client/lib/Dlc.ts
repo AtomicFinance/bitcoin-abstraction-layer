@@ -11,6 +11,7 @@ import {
   CreateCetResponse,
   CreateDlcTransactionsRequest,
   CreateDlcTransactionsResponse,
+  CreateDlcTxsResponse,
   CreateFundTransactionRequest,
   CreateFundTransactionResponse,
   CreateRefundTransactionRequest,
@@ -61,6 +62,19 @@ export default class Dlc {
    */
   async isOfferer(dlcOffer: DlcOffer, dlcAccept: DlcAccept): Promise<boolean> {
     return this.client.getMethod('isOfferer')(dlcOffer, dlcAccept);
+  }
+
+  /**
+   * Create DlcTxs object from DlcOffer and DlcAccept
+   * @param dlcOffer Dlc Offer Message
+   * @param dlcAccept Dlc Accept Message
+   * @returns {Promise<CreateDlcTxsResponse>}
+   */
+  async createDlcTxs(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+  ): Promise<CreateDlcTxsResponse> {
+    return this.client.getMethod('createDlcTxs')(dlcOffer, dlcAccept);
   }
 
   /**

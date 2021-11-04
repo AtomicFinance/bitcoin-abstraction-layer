@@ -378,7 +378,7 @@ export default class BitcoinDlcProvider
     }
   }
 
-  private async CreateDlcTxs(
+  public async createDlcTxs(
     _dlcOffer: DlcOffer,
     _dlcAccept: DlcAccept,
   ): Promise<CreateDlcTxsResponse> {
@@ -1765,7 +1765,7 @@ Payout Group not found',
       'fundingInputs for dlcAccept must be greater than acceptCollateralSatoshis plus acceptFees',
     );
 
-    const { dlcTransactions, messagesList } = await this.CreateDlcTxs(
+    const { dlcTransactions, messagesList } = await this.createDlcTxs(
       dlcOffer,
       dlcAccept,
     );
@@ -1824,7 +1824,7 @@ Payout Group not found',
 
     const dlcSign = new DlcSignV0();
 
-    const { dlcTransactions, messagesList } = await this.CreateDlcTxs(
+    const { dlcTransactions, messagesList } = await this.createDlcTxs(
       dlcOffer,
       dlcAccept,
     );

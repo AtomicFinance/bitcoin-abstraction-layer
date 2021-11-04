@@ -164,6 +164,31 @@ describe('dlc provider', () => {
       );
       dlcAccept = acceptDlcOfferResponse.dlcAccept;
       dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
+
+      const { dlcTransactions: dlcTxsFromMsgs } = await bob.dlc.createDlcTxs(
+        dlcOffer,
+        dlcAccept,
+      );
+
+      expect(
+        (dlcTransactions as DlcTransactionsV0).fundTx
+          .serialize()
+          .toString('hex'),
+      ).to.equal(
+        (dlcTxsFromMsgs as DlcTransactionsV0).fundTx
+          .serialize()
+          .toString('hex'),
+      );
+      expect(
+        (dlcTransactions as DlcTransactionsV0).cets[5]
+          .serialize()
+          .toString('hex'),
+      ).to.equal(
+        (dlcTxsFromMsgs as DlcTransactionsV0).cets[5]
+          .serialize()
+          .toString('hex'),
+      );
+
       console.timeEnd('accept-time');
     });
 
