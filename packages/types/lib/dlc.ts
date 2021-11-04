@@ -29,9 +29,20 @@ export interface DlcProvider {
    * Check whether wallet is offerer of DlcOffer or DlcAccept
    * @param dlcOffer Dlc Offer Message
    * @param dlcAccept Dlc Accept Message
-   * @returns {Promise<boolean>}
+   * @returns {Promise<CreateDlcTxsResponse>}
    */
   isOfferer(_dlcOffer: DlcOffer, _dlcAccept: DlcAccept): Promise<boolean>;
+
+  /**
+   * Create DlcTxs object from DlcOffer and DlcAccept
+   * @param dlcOffer Dlc Offer Message
+   * @param dlcAccept Dlc Accept Message
+   * @returns {Promise<boolean>}
+   */
+  createDlcTxs(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+  ): Promise<CreateDlcTxsResponse>;
 
   /**
    * Create DLC Offer Message
