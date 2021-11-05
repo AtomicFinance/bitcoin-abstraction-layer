@@ -970,11 +970,16 @@ export default class BitcoinDlcProvider
         groupIndex = payoutGroup.groups.findIndex((group) => {
           return group.every((msg, i) => msg === outcomesFormatted[i]);
         });
-        if (groupIndex === -1)
+        if (groupIndex === -1) {
+          console.log('outcomesFormatted', outcomesFormatted);
+          console.log('payoutGroup.groups', payoutGroup.groups);
+
           throw Error(
             'Failed to Find OutcomeIndex From HyperbolaPayoutCurvePiece. \
 Payout Group found but incorrect group index',
           );
+        }
+
         index += groupIndex;
         groupLength = payoutGroup.groups[groupIndex].length;
         break;

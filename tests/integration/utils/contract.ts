@@ -1,4 +1,4 @@
-import { CoveredCall } from '@node-dlc/core';
+import { ShortPut } from '@node-dlc/core';
 import {
   ContractDescriptorV1,
   ContractInfoV0,
@@ -52,14 +52,20 @@ export function generateContractInfo(
   const oracleInfo = new OracleInfoV0();
   oracleInfo.announcement = announcement;
 
-  const { payoutFunction, totalCollateral } = CoveredCall.buildPayoutFunction(
-    4000n,
-    1000000n,
+  const totalCollateral = 960926n;
+
+  const { payoutFunction } = ShortPut.buildPayoutFunction(
+    62000n,
+    1011502n,
+    totalCollateral,
     oracleBase,
     numDigits,
   );
 
-  const intervals = [{ beginInterval: 0n, roundingMod: 500n }];
+  const intervals = [
+    { beginInterval: 0n, roundingMod: 1011n },
+    { beginInterval: 62000n, roundingMod: 1n },
+  ];
   const roundingIntervals = new RoundingIntervalsV0();
   roundingIntervals.intervals = intervals;
 

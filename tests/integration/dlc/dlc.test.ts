@@ -142,13 +142,20 @@ describe('dlc provider', () => {
         oracleBase,
       );
 
-      const feeRatePerVb = BigInt(10);
-      const cetLocktime = 1617170572;
-      const refundLocktime = 1617170573;
+      const contractInfo2 = ContractInfoV0.deserialize(
+        Buffer.from(
+          'fdd82efd033a00000000000ea99efda7204f0012fda7263b000100000000fda72a25010100000001fe001e18cc000000010000010000000100000001ff0000000e99fe54a00000fe0003fffffe000ea99e0000fda7240a000200fd03f3fdf23001fda712fd02d9fdd824fd02d36be6b462cfc7217424ee941a9e54dea2e6687649c3dc63c0958abffe0101a78a42b82e3988061baab2e498e1ec09545bb8f3b47d157af2d40f3a9e0f6850b9e9c2d8013cff0966644ba6b4e0785d89c46712049919ccd0621f26409c83be4b7cfdd822fd026d00126be6b462cfc7217424ee941a9e54dea2e6687649c3dc63c0958abffe0101a78a41146a1940f331029d55eefef9e3c5102501647fb5a31045b4d06c56f152cadf601a4094cd3da144f072894133c554b20c3d70c9bd8953cf34b13007bab316c6a748af8ef28373928a360ede0660bf55e7000c5b96e7a9cb6d5c1e5b0a2f3ee7a45812f21043d12197600716ac1ca19b444d0e5d506cba862e54c0fc99f180c2790e7475b72c540a5d5becdb86edb37464b32c89f702ece02bbb36d065fa71e57241f480dda60047b3b6b57c24d55d4c4ebb3e7b4050bf7fb2ae05f216f606e534b7a5e98010525c5b6084d7cb4b3c5b63ca111549b2bc0c720eb796100e3b41527c6cbbdfada348bb0d782704ec8090f1a1e3d64363dec6edd63e42eeb98a2d3d627917c72b5689aa2fa855bad446eec3a03170e0515345af4f97c370f7f08d24b1649c3eaeef0cb43efd8d509b4a2815982b076bec5a04cd60eefbebeec54d10190f523f9b46c4c58bd384f4ae13a448b4ba62c784a247bab19fc786b3190a357cd19a8f21c0e25ae3a41a1ebb55b2d761e2171a42e791530c33ef88ef74c22c9aee7ae6fb74aa18d713cd753293bbeebd17f373ac527ca3072703a4bb0c09051d9ad2c9d84bede31ef2c5b9c47f7c1e56da2896dcf00afa693fd6bd802933f09d2e3af3c2f73e8686da0c042b97e92a82768118ccb04499deca590ce9291dc6379044e7b1f51ebf45ac5ffb5e2be516ce353e63f5d6eae4b25cb6e16a0e354d9a3cd2365c3a57a8a90c357748b7e1e30bea52c580cf7ac70a14534ff306e56184e480fdd80a100002000642544355534400000000001212446572696269742d4254432d354e4f563231',
+          'hex',
+        ),
+      );
+
+      const feeRatePerVb = BigInt(2);
+      const cetLocktime = 1636066483;
+      const refundLocktime = 1636671283;
 
       dlcOffer = await alice.dlc.createDlcOffer(
         contractInfo,
-        totalCollateral - BigInt(2000),
+        BigInt(946361),
         feeRatePerVb,
         cetLocktime,
         refundLocktime,
@@ -212,7 +219,7 @@ describe('dlc provider', () => {
           fundTx.serialize().toString('hex'),
         );
 
-        const outcome = 3000;
+        const outcome = 62000;
         oracleAttestation = generateOracleAttestation(
           outcome,
           oracle,
@@ -221,7 +228,7 @@ describe('dlc provider', () => {
         );
       });
 
-      it('execute', async () => {
+      it.only('execute', async () => {
         const cet = await bob.dlc.execute(
           dlcOffer,
           dlcAccept,
@@ -229,6 +236,10 @@ describe('dlc provider', () => {
           dlcTransactions,
           oracleAttestation,
           false,
+        );
+        console.log(
+          `cet.serialize().toString('hex')`,
+          cet.serialize().toString('hex'),
         );
         const cetTxId = await bob.chain.sendRawTransaction(
           cet.serialize().toString('hex'),

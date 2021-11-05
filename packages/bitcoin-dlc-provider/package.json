@@ -22,7 +22,6 @@
     "@liquality/provider": "1.1.5",
     "@liquality/types": "1.1.5",
     "@liquality/utils": "1.1.5",
-    "@node-dlc/core": "0.11.6",
     "@node-dlc/messaging": "0.11.6",
     "@node-lightning/bitcoin": "0.26.1",
     "@node-lightning/bufio": "0.26.1",
