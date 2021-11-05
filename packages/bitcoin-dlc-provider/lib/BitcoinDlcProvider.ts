@@ -1312,7 +1312,7 @@ Payout Group not found',
         });
       }
 
-      if (dlcOffer.payoutSerialId <= dlcAccept.payoutSerialId) txOuts.reverse();
+      if (dlcOffer.payoutSerialId > dlcAccept.payoutSerialId) txOuts.reverse();
 
       const rawTransactionRequest: CreateRawTransactionRequest = {
         version: 2,
@@ -2182,7 +2182,7 @@ Payout Group not found',
         initiatorPayoutSatoshis -
         finalizer.offerInitiatorFees;
 
-    const offerFirst = dlcOffer.payoutSerialId > dlcAccept.payoutSerialId;
+    const offerFirst = dlcOffer.payoutSerialId < dlcAccept.payoutSerialId;
 
     psbt.addOutput({
       value: Number(offerFirst ? offerPayoutValue : acceptPayoutValue),
@@ -2546,7 +2546,7 @@ Payout Group not found',
       (input) => input.inputSerialId === dlcClose.fundInputSerialId,
     );
 
-    const offerFirst = dlcOffer.payoutSerialId > dlcAccept.payoutSerialId;
+    const offerFirst = dlcOffer.payoutSerialId < dlcAccept.payoutSerialId;
 
     psbt.addOutput({
       value: Number(
