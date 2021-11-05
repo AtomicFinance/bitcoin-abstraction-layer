@@ -212,7 +212,7 @@ describe('dlc provider', () => {
           fundTx.serialize().toString('hex'),
         );
 
-        const outcome = 3000;
+        const outcome = 5000;
         oracleAttestation = generateOracleAttestation(
           outcome,
           oracle,
@@ -363,7 +363,21 @@ describe('dlc provider', () => {
         const closeTx = await alice.getMethod('getTransactionByHash')(
           closeTxId,
         );
+        const offerFirst =
+          (dlcOffer as DlcOfferV0).payoutSerialId <
+          (dlcAccept as DlcAcceptV0).payoutSerialId;
+
         expect(closeTx._raw.vin.length).to.equal(2);
+        expect(closeTx._raw.vout[0].scriptPubKey.hex).to.equal(
+          offerFirst
+            ? (dlcOffer as DlcOfferV0).payoutSPK.toString('hex')
+            : (dlcAccept as DlcAcceptV0).payoutSPK.toString('hex'),
+        );
+        expect(closeTx._raw.vout[1].scriptPubKey.hex).to.equal(
+          !offerFirst
+            ? (dlcOffer as DlcOfferV0).payoutSPK.toString('hex')
+            : (dlcAccept as DlcAcceptV0).payoutSPK.toString('hex'),
+        );
       });
 
       it('close with fixedInputs', async () => {
