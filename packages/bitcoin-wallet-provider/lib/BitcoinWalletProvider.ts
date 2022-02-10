@@ -514,7 +514,7 @@ export default class BitcoinWalletProvider
   }
 
   async quickFindAddress(addresses: string[]): Promise<Address> {
-    const maxAddresses = 500;
+    const maxAddresses = 5000;
     const addressesPerCall = 5;
     let index = 0;
     while (index < maxAddresses) {

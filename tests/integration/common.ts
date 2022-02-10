@@ -13,6 +13,7 @@ import { generateMnemonic } from 'bip39';
 import * as cfdJs from 'cfd-js';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+
 import BitcoinCfdProvider from '../../packages/bitcoin-cfd-provider/lib';
 import BitcoinDlcProvider from '../../packages/bitcoin-dlc-provider/lib';
 import BitcoinWalletProvider from '../../packages/bitcoin-wallet-provider/lib';
@@ -105,6 +106,27 @@ bitcoinWithJs3.addProvider(new BitcoinCfdProvider(cfdJs));
 bitcoinWithJs3.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
 bitcoinWithJs3.addProvider(new BitcoinWalletProvider(network));
 
+/**
+ * bitcoinWithJs4 corresponds to counterparty of dlc offer, accept, sign and txs messages in fixtures
+ *
+ * It was added to test the specific case where derivation path is > 500
+ * Relevant issue: https://github.com/AtomicFinance/chainabstractionlayer-finance/issues/109
+ */
+const bitcoinWithJs4 = new FinanceClient();
+bitcoinWithJs4.addProvider(mockedBitcoinRpcProvider());
+bitcoinWithJs4.addProvider(
+  new BitcoinJsWalletProvider({
+    network,
+    mnemonic:
+      'half chaos stage view guilt powder meadow dish join frog expose wise ask remove pyramid female december possible eye trial coach bench champion polar',
+    baseDerivationPath: `m/84'/${config.bitcoin.network.coinType}'/0'`,
+    addressType: bitcoin.AddressType.BECH32,
+  }) as any,
+);
+bitcoinWithJs4.addProvider(new BitcoinCfdProvider(cfdJs));
+bitcoinWithJs4.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
+bitcoinWithJs4.addProvider(new BitcoinWalletProvider(network));
+
 const chains = {
   bitcoinWithNode: {
     id: 'Bitcoin Node',
@@ -129,6 +151,12 @@ const chains = {
     id: 'Bitcoin Js',
     name: 'bitcoin',
     client: bitcoinWithJs3,
+    network: network,
+  },
+  bitcoinWithJs4: {
+    id: 'Bitcoin Js',
+    name: 'bitcoin',
+    client: bitcoinWithJs4,
     network: network,
   },
 };

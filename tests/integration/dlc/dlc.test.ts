@@ -30,6 +30,7 @@ import {
   RoundingIntervalsV0,
 } from '@node-dlc/messaging';
 import BN from 'bignumber.js';
+import { address } from 'bitcoinjs-lib';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
@@ -38,8 +39,13 @@ import {
   SignDlcAcceptResponse,
 } from '../../../packages/bitcoin-dlc-provider';
 import { chainHashFromNetwork } from '../../../packages/bitcoin-networks/lib';
-import { chains, getInput } from '../common';
+import { chains, getInput, network } from '../common';
 import f from '../fixtures/blockchain.json';
+import dlcAcceptJSON from '../fixtures/dlcaccept.json';
+import dlcAcceptFailJSON from '../fixtures/dlcacceptfail.json';
+import dlcOfferJSON from '../fixtures/dlcoffer.json';
+import dlcSignJSON from '../fixtures/dlcsign.json';
+import dlcTxsJSON from '../fixtures/dlctxs.json';
 import Oracle from '../models/Oracle';
 import {
   generateContractInfo,
@@ -54,6 +60,7 @@ const alice = chain.client;
 
 const bob = chains.bitcoinWithJs2.client;
 const carol = chains.bitcoinWithJs3.client;
+const mm = chains.bitcoinWithJs4.client;
 
 describe('bitcoin networks', () => {
   it('have correct genesis block hashes', async () => {
@@ -590,6 +597,49 @@ describe('dlc provider', () => {
         expect(newDlcSign.refundSignature).to.deep.equal(
           dlcSignV0.refundSignature,
         );
+      });
+    });
+
+    /**
+     * Currently quickFindAddress only checked the first 5000 addresses
+     * This means DlcSign would fail if any addresses are > 5000
+     * Relevant Issue: https://github.com/AtomicFinance/chainabstractionlayer-finance/issues/109
+     *
+     * This test ensures this issue is accounted for when finalizingDlcSign
+     */
+    describe('finalizeDlcSign with derivation path', () => {
+      it('should succeed if <= 4999', async () => {
+        const offer = DlcOffer.deserialize(
+          Buffer.from(dlcOfferJSON.hex, 'hex'),
+        );
+        const accept = DlcAccept.deserialize(
+          Buffer.from(dlcAcceptJSON.hex, 'hex'), // Use dlcAcceptJSON which has an address with index 4999
+        );
+        const sign = DlcSign.deserialize(Buffer.from(dlcSignJSON.hex, 'hex'));
+        const txs = DlcTransactions.deserialize(
+          Buffer.from(dlcTxsJSON.hex, 'hex'),
+        );
+        const rawTx = await mm.dlc.finalizeDlcSign(offer, accept, sign, txs);
+        const expectedTx =
+          '0200000000010721bdb9c959dad47f4e417663d3a1e187f000aa4dda3b98ceb789298efdcd023d0000000000ffffffffbb25e005ffbaa9d5b328497ddf2e40294e25f44e235fb6202da70fdbc050a6580000000000ffffffff96250b1fae645e11b2c00187be7ce3e70dda56655855a353bd89ca3cb000c4870000000000ffffffff913fb8c9a6e69c588a780e1a3d33b9b1a144bb294b34746baf23b8c962e598ec0100000000ffffffff05b68900cd23507984dc72a677e67af9c6a30c358464789587d11eaf766a9f0a0000000000ffffffff21bdb9c959dad47f4e417663d3a1e187f000aa4dda3b98ceb789298efdcd023d0100000000ffffffff5296fdb796d3969893ea06c5cebcef72634ebbf839c00f0f3d40d40dba8ae1a90100000000ffffffff0344800e0000000000220020a5d41c52084384fd1426c7886f68e4db5643563e9181f1ae076a88260dff85345ea700000000000016001412637c4cd478e69177f3c0b45d4c1c1c412abc9a9300000000000000160014998cc3a7ec7ff447f5e76e6f186e51392245862902473044022047e88ced7fc1ea4e37ead5e7ba7626a93928485bc6379aa8322f004c8907a7ec02207d7345acd2c2f7ff946677936bcc5ab5ded323e431f7c6ee33e05ce7a05d579b012102a8b5f752b98375c4fc73f5b155aa8e2c8a0f355fc1285a5cf644af4f623a9bec0246304302205b1f88aaf18e3c81adf85a74c48c29bf473de57b0dfedd2298f8c8d8e5d7fcd8021f17d4064319c318121d4568878347a53a20a3c5afb31ea63f215b7d65178d0201210278bd1462006c1583216c40e8d634475c1bbe5a2fa735c3eb0ffbe38ea9cdac2c02473044022015109c4c8f699ddf81bd476af79fda3075a23ee11c2c52695e6e17263c5132f5022007b0e48571fa8552b653b044c318d483b1eccd17ca954251c08a96fc9a7be68f0121028e26d9d0ebe43918cccd4f0722939674142209a2dbabf05e6c013edbd58c9e5a02473044022039720b2aa7b1598e37bdfbed5204581e08cf538a703f025d487a298e05180f4702201295c67f50f924f257284db4107e399ebcb8accf892f827f3287ae51c31c814801210332d8899ffd110b98112692193ec734beed7df40c5488158d2d76bc6c9449ecbf0247304402201093f715a6ceae573f86584209fe47fb7f52de8161178bc472e357e279695e6d022050c14780ab9395fdd4ce102ca8f0b84a094a7159e19720957d8ff9f4740f1c1401210306610adf999410dc8fad35a7d0a85f778210883489fc914d2a7436e8d792a37602473044022078baf325386119d08622568f3995a96101c8d6bee35f21b7ee4c9bd33319814502200255f603ca7977c3093df68ba925d2ee79f27ece6885752d6c6f7a4af0c2b4fd012103418c2e2acda2b7615584edf29b66e96cd44411990933a33e82bed8e08f2bb2a10247304402206d8e17502d22a68b554ed61260c10e00ac7cacb9df98bddb63cbbfad0d321d6302201490e74efd59f7bc7e3c60aaaa93f6141246cf07042776f046a2e5254f00a415012102b12f36d2e28af670658a54d039f12d1cff60609b7c713ddbbcb0dd2eebc649a800000000';
+        expect(expectedTx).to.equal(rawTx.serialize().toString('hex'));
+      });
+
+      it('should fail if >= 5000', async () => {
+        const offer = DlcOffer.deserialize(
+          Buffer.from(dlcOfferJSON.hex, 'hex'),
+        );
+        const accept = DlcAccept.deserialize(
+          Buffer.from(dlcAcceptFailJSON.hex, 'hex'), // Use dlcAcceptFailJSON instead of dlcAcceptJSON which has an address at index 5000
+        );
+        const sign = DlcSign.deserialize(Buffer.from(dlcSignJSON.hex, 'hex'));
+        const txs = DlcTransactions.deserialize(
+          Buffer.from(dlcTxsJSON.hex, 'hex'),
+        );
+
+        expect(
+          mm.dlc.finalizeDlcSign(offer, accept, sign, txs),
+        ).to.be.eventually.rejectedWith(Error);
       });
     });
 

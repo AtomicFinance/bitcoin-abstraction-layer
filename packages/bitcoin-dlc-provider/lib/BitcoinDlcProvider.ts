@@ -131,7 +131,15 @@ export default class BitcoinDlcProvider
 
     for (let i = 0; i < inputs.length; i++) {
       const input = inputs[i];
-      const keyPair = await this.getMethod('keyPair')(input.derivationPath);
+      let derivationPath = input.derivationPath;
+
+      if (!derivationPath) {
+        derivationPath = (
+          await this.getMethod('getWalletAddress')(input.address)
+        ).derivationPath;
+      }
+
+      const keyPair = await this.getMethod('keyPair')(derivationPath);
       const privKey = Buffer.from(keyPair.__D).toString('hex');
       privKeys.push(privKey);
     }
