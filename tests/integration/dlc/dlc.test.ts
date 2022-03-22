@@ -48,7 +48,8 @@ import dlcTxsJSON from '../fixtures/dlctxs.json';
 import Oracle from '../models/Oracle';
 import {
   generateContractInfo,
-  generateContractInfoCustomStrategyOracle,
+  generateContractInfoCustomStrategyOracle18,
+  generateContractInfoCustomStrategyOracle27,
   generateOracleAttestation,
 } from '../utils/contract';
 
@@ -104,7 +105,149 @@ describe('inputToFundingInput', () => {
   });
 });
 
-describe.only('Custom Strategy Oracle POC', () => {
+describe.only('Custom Strategy Oracle POC numdigits=27', () => {
+  const numDigits = 27;
+  const oracleBase = 2;
+  const eventId = 'strategyOutcome';
+  let dlcOffer: DlcOffer;
+  let dlcAccept: DlcAccept;
+  let dlcSign: DlcSign;
+  let dlcTransactions: DlcTransactions;
+  let oracleAttestation: OracleAttestationV0;
+  let aliceAddresses: string[] = [];
+  let oracle: Oracle;
+
+  before(async () => {
+    const aliceNonChangeAddresses: string[] = (
+      await alice.wallet.getAddresses(0, 15, false)
+    ).map((address) => address.address);
+    const aliceChangeAddresses: string[] = (
+      await alice.wallet.getAddresses(0, 15, true)
+    ).map((address) => address.address);
+
+    aliceAddresses = [...aliceNonChangeAddresses, ...aliceChangeAddresses];
+
+    for (let i = 0; i < aliceAddresses.length; i++) {
+      await alice.getMethod('jsonrpc')(
+        'importaddress',
+        aliceAddresses[i],
+        '',
+        false,
+      );
+    }
+  });
+
+  it('should complete entire flow', async () => {
+    const aliceInput = await getInput(alice);
+    const bobInput = await getInput(bob);
+
+    oracle = new Oracle('olivia', numDigits);
+
+    const {
+      contractInfo,
+      totalCollateral,
+    } = generateContractInfoCustomStrategyOracle27(
+      oracle,
+      numDigits,
+      oracleBase,
+    );
+
+    const feeRatePerVb = BigInt(10);
+    const cetLocktime = 1617170572;
+    const refundLocktime = 1617170573;
+    const premium = BigInt(50000);
+    const outcome = 105000000;
+
+    console.time('total');
+    console.time('offer');
+
+    dlcOffer = await alice.dlc.createDlcOffer(
+      contractInfo,
+      totalCollateral - premium,
+      feeRatePerVb,
+      cetLocktime,
+      refundLocktime,
+      [aliceInput],
+    );
+
+    console.timeEnd('offer');
+
+    console.time('accept');
+
+    const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
+      dlcOffer,
+      [bobInput],
+    );
+    dlcAccept = acceptDlcOfferResponse.dlcAccept;
+    dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
+
+    console.timeEnd('accept');
+
+    const { dlcTransactions: dlcTxsFromMsgs } = await bob.dlc.createDlcTxs(
+      dlcOffer,
+      dlcAccept,
+    );
+
+    console.time('sign');
+
+    const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.dlc.signDlcAccept(
+      dlcOffer,
+      dlcAccept,
+    );
+    console.timeEnd('sign');
+
+    dlcSign = signDlcAcceptResponse.dlcSign;
+
+    console.time('finalize');
+
+    const fundTx = await bob.dlc.finalizeDlcSign(
+      dlcOffer,
+      dlcAccept,
+      dlcSign,
+      dlcTransactions,
+    );
+
+    console.timeEnd('finalize');
+
+    const fundTxId = await bob.chain.sendRawTransaction(
+      fundTx.serialize().toString('hex'),
+    );
+
+    console.time('attestation');
+    oracleAttestation = generateOracleAttestation(
+      outcome,
+      oracle,
+      oracleBase,
+      numDigits,
+      eventId,
+    );
+    console.timeEnd('attestation');
+
+    console.time('execute');
+
+    const cet = await bob.dlc.execute(
+      dlcOffer,
+      dlcAccept,
+      dlcSign,
+      dlcTransactions,
+      oracleAttestation,
+      false,
+    );
+
+    console.timeEnd('execute');
+    console.timeEnd('total');
+
+    console.log('CET Outputs: ', cet.toJSON().outputs);
+
+    const cetTxId = await bob.chain.sendRawTransaction(
+      cet.serialize().toString('hex'),
+    );
+    const cetTx = await alice.getMethod('getTransactionByHash')(cetTxId);
+    expect(cetTx._raw.vin.length).to.equal(1);
+  });
+});
+
+describe.only('Custom Strategy Oracle POC numdigits=18', () => {
   const numDigits = 18;
   const oracleBase = 2;
   const eventId = 'strategyOutcome';
@@ -145,20 +288,33 @@ describe.only('Custom Strategy Oracle POC', () => {
     const {
       contractInfo,
       totalCollateral,
-    } = generateContractInfoCustomStrategyOracle(oracle, numDigits, oracleBase);
+    } = generateContractInfoCustomStrategyOracle18(
+      oracle,
+      numDigits,
+      oracleBase,
+    );
 
     const feeRatePerVb = BigInt(10);
     const cetLocktime = 1617170572;
     const refundLocktime = 1617170573;
+    const premium = BigInt(5);
+    const outcome = 10500;
+
+    console.time('total');
+    console.time('offer');
 
     dlcOffer = await alice.dlc.createDlcOffer(
       contractInfo,
-      totalCollateral - BigInt(2000),
+      totalCollateral - premium,
       feeRatePerVb,
       cetLocktime,
       refundLocktime,
       [aliceInput],
     );
+
+    console.timeEnd('offer');
+
+    console.time('accept');
 
     const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
       dlcOffer,
@@ -167,16 +323,24 @@ describe.only('Custom Strategy Oracle POC', () => {
     dlcAccept = acceptDlcOfferResponse.dlcAccept;
     dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
 
+    console.timeEnd('accept');
+
     const { dlcTransactions: dlcTxsFromMsgs } = await bob.dlc.createDlcTxs(
       dlcOffer,
       dlcAccept,
     );
 
+    console.time('sign');
+
     const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.dlc.signDlcAccept(
       dlcOffer,
       dlcAccept,
     );
+    console.timeEnd('sign');
+
     dlcSign = signDlcAcceptResponse.dlcSign;
+
+    console.time('finalize');
 
     const fundTx = await bob.dlc.finalizeDlcSign(
       dlcOffer,
@@ -185,11 +349,13 @@ describe.only('Custom Strategy Oracle POC', () => {
       dlcTransactions,
     );
 
+    console.timeEnd('finalize');
+
     const fundTxId = await bob.chain.sendRawTransaction(
       fundTx.serialize().toString('hex'),
     );
 
-    const outcome = 1100;
+    console.time('attestation');
     oracleAttestation = generateOracleAttestation(
       outcome,
       oracle,
@@ -197,6 +363,9 @@ describe.only('Custom Strategy Oracle POC', () => {
       numDigits,
       eventId,
     );
+    console.timeEnd('attestation');
+
+    console.time('execute');
 
     const cet = await bob.dlc.execute(
       dlcOffer,
@@ -206,6 +375,12 @@ describe.only('Custom Strategy Oracle POC', () => {
       oracleAttestation,
       false,
     );
+
+    console.timeEnd('execute');
+    console.timeEnd('total');
+
+    console.log('CET Outputs: ', cet.toJSON().outputs);
+
     const cetTxId = await bob.chain.sendRawTransaction(
       cet.serialize().toString('hex'),
     );
