@@ -332,11 +332,6 @@ export default class BitcoinDlcProvider
     const payoutFunction = contractDescriptor.payoutFunction as PayoutFunctionV0;
     if (payoutFunction.pieces.length === 0)
       throw Error('PayoutFunction must have at least once PayoutCurvePiece');
-    const payoutCurvePiece = payoutFunction.pieces[0]
-      .payoutCurvePiece as PolynomialPayoutCurvePiece;
-    if (payoutCurvePiece.type !== MessageType.PolynomialPayoutCurvePiece)
-      throw Error('Must be PolynomialPayoutCurvePiece');
-
     for (const piece of payoutFunction.pieces) {
       if (
         piece.payoutCurvePiece.type !== MessageType.PolynomialPayoutCurvePiece
@@ -445,6 +440,8 @@ export default class BitcoinDlcProvider
         {
           const contractDescriptorV1 = contractDescriptor as ContractDescriptorV1;
           const payoutFunction = contractDescriptorV1.payoutFunction as PayoutFunctionV0;
+
+          // TODO: add a better check for this
           const payoutCurvePiece = payoutFunction.pieces[0].payoutCurvePiece;
 
           switch (payoutCurvePiece.type) {
@@ -1222,7 +1219,7 @@ Payout Group not found',
       .reduce((acc, val, i) => acc + Number(val) * base ** i, 0);
 
     const piecesSorted = payoutFunction.pieces.sort(
-      (a, b) => Number(b.endpoint) - Number(a.endpoint),
+      (a, b) => Number(a.endpoint) - Number(b.endpoint),
     );
 
     const piece = piecesSorted.find((piece) => outcome < piece.endpoint);
