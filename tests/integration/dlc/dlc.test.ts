@@ -30,7 +30,6 @@ import {
   RoundingIntervalsV0,
 } from '@node-dlc/messaging';
 import BN from 'bignumber.js';
-import { address } from 'bitcoinjs-lib';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
@@ -39,7 +38,7 @@ import {
   SignDlcAcceptResponse,
 } from '../../../packages/bitcoin-dlc-provider';
 import { chainHashFromNetwork } from '../../../packages/bitcoin-networks/lib';
-import { chains, getInput, network } from '../common';
+import { chains, getInput } from '../common';
 import f from '../fixtures/blockchain.json';
 import dlcAcceptJSON from '../fixtures/dlcaccept.json';
 import dlcAcceptFailJSON from '../fixtures/dlcacceptfail.json';
@@ -49,6 +48,7 @@ import dlcTxsJSON from '../fixtures/dlctxs.json';
 import Oracle from '../models/Oracle';
 import {
   generateContractInfo,
+  generateContractInfoCustomStrategyOracle,
   generateOracleAttestation,
 } from '../utils/contract';
 
@@ -101,6 +101,116 @@ describe('inputToFundingInput', () => {
     expect(
       alice.dlc.inputToFundingInput(invalidInput),
     ).to.be.eventually.rejectedWith(Error);
+  });
+});
+
+describe.only('Custom Strategy Oracle POC', () => {
+  const numDigits = 18;
+  const oracleBase = 2;
+  const eventId = 'strategyOutcome';
+  let dlcOffer: DlcOffer;
+  let dlcAccept: DlcAccept;
+  let dlcSign: DlcSign;
+  let dlcTransactions: DlcTransactions;
+  let oracleAttestation: OracleAttestationV0;
+  let aliceAddresses: string[] = [];
+  let oracle: Oracle;
+
+  before(async () => {
+    const aliceNonChangeAddresses: string[] = (
+      await alice.wallet.getAddresses(0, 15, false)
+    ).map((address) => address.address);
+    const aliceChangeAddresses: string[] = (
+      await alice.wallet.getAddresses(0, 15, true)
+    ).map((address) => address.address);
+
+    aliceAddresses = [...aliceNonChangeAddresses, ...aliceChangeAddresses];
+
+    for (let i = 0; i < aliceAddresses.length; i++) {
+      await alice.getMethod('jsonrpc')(
+        'importaddress',
+        aliceAddresses[i],
+        '',
+        false,
+      );
+    }
+  });
+
+  it('should complete entire flow', async () => {
+    const aliceInput = await getInput(alice);
+    const bobInput = await getInput(bob);
+
+    oracle = new Oracle('olivia', numDigits);
+
+    const {
+      contractInfo,
+      totalCollateral,
+    } = generateContractInfoCustomStrategyOracle(oracle, numDigits, oracleBase);
+
+    const feeRatePerVb = BigInt(10);
+    const cetLocktime = 1617170572;
+    const refundLocktime = 1617170573;
+
+    dlcOffer = await alice.dlc.createDlcOffer(
+      contractInfo,
+      totalCollateral - BigInt(2000),
+      feeRatePerVb,
+      cetLocktime,
+      refundLocktime,
+      [aliceInput],
+    );
+
+    const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
+      dlcOffer,
+      [bobInput],
+    );
+    dlcAccept = acceptDlcOfferResponse.dlcAccept;
+    dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
+
+    const { dlcTransactions: dlcTxsFromMsgs } = await bob.dlc.createDlcTxs(
+      dlcOffer,
+      dlcAccept,
+    );
+
+    const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.dlc.signDlcAccept(
+      dlcOffer,
+      dlcAccept,
+    );
+    dlcSign = signDlcAcceptResponse.dlcSign;
+
+    const fundTx = await bob.dlc.finalizeDlcSign(
+      dlcOffer,
+      dlcAccept,
+      dlcSign,
+      dlcTransactions,
+    );
+
+    const fundTxId = await bob.chain.sendRawTransaction(
+      fundTx.serialize().toString('hex'),
+    );
+
+    const outcome = 1100;
+    oracleAttestation = generateOracleAttestation(
+      outcome,
+      oracle,
+      oracleBase,
+      numDigits,
+      eventId,
+    );
+
+    const cet = await bob.dlc.execute(
+      dlcOffer,
+      dlcAccept,
+      dlcSign,
+      dlcTransactions,
+      oracleAttestation,
+      false,
+    );
+    const cetTxId = await bob.chain.sendRawTransaction(
+      cet.serialize().toString('hex'),
+    );
+    const cetTx = await alice.getMethod('getTransactionByHash')(cetTxId);
+    expect(cetTx._raw.vin.length).to.equal(1);
   });
 });
 
