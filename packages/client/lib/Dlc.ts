@@ -1,4 +1,3 @@
-import Client from './Client';
 import {
   AddSignaturesToRefundTxRequest,
   AddSignaturesToRefundTxResponse,
@@ -12,6 +11,7 @@ import {
   CreateCetResponse,
   CreateDlcTransactionsRequest,
   CreateDlcTransactionsResponse,
+  CreateDlcTxsResponse,
   CreateFundTransactionRequest,
   CreateFundTransactionResponse,
   CreateRefundTransactionRequest,
@@ -20,6 +20,7 @@ import {
   GetRawFundTxSignatureResponse,
   GetRawRefundTxSignatureRequest,
   GetRawRefundTxSignatureResponse,
+  Input,
   SignCetRequest,
   SignCetResponse,
   SignFundTransactionRequest,
@@ -32,162 +33,310 @@ import {
   VerifyFundTxSignatureResponse,
   VerifyRefundTxSignatureRequest,
   VerifyRefundTxSignatureResponse,
-  Messages
-} from './@types/cfd-dlc-js';
-
+} from '@atomicfinance/types';
 import {
-  Amount,
-  Input,
-  InputDetails,
-  OracleInfo,
-  OfferMessage,
-  AcceptMessage,
-  SignMessage,
-  Contract,
-  PayoutDetails
-} from './@types/@atomicfinance/bitcoin-dlc-provider';
+  ContractInfo,
+  DlcAccept,
+  DlcClose,
+  DlcCloseMetadata,
+  DlcOffer,
+  DlcSign,
+  DlcTransactions,
+  FundingInput,
+  OracleAttestationV0,
+} from '@node-dlc/messaging';
+import { Tx } from '@node-lightning/bitcoin';
 
 export default class Dlc {
-  client: Client;
+  client: any;
 
-  constructor(client?: Client) {
+  constructor(client: any) {
     this.client = client;
   }
 
-  async initializeContractAndOffer(
-    input: InputDetails,
-    payouts: PayoutDetails[],
-    oracleInfo: OracleInfo,
-    messagesList: Messages[],
-    startingIndex: number = 0,
-    fixedInputs: Input[] = []
-  ): Promise<OfferMessage> {
-    return this.client.getMethod('initializeContractAndOffer')(
-      input,
-      payouts,
-      oracleInfo,
-      messagesList,
-      startingIndex,
-      fixedInputs
+  /**
+   * Check whether wallet is offerer of DlcOffer or DlcAccept
+   * @param dlcOffer Dlc Offer Message
+   * @param dlcAccept Dlc Accept Message
+   * @returns {Promise<boolean>}
+   */
+  async isOfferer(dlcOffer: DlcOffer, dlcAccept: DlcAccept): Promise<boolean> {
+    return this.client.getMethod('isOfferer')(dlcOffer, dlcAccept);
+  }
+
+  /**
+   * Create DlcTxs object from DlcOffer and DlcAccept
+   * @param dlcOffer Dlc Offer Message
+   * @param dlcAccept Dlc Accept Message
+   * @returns {Promise<CreateDlcTxsResponse>}
+   */
+  async createDlcTxs(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+  ): Promise<CreateDlcTxsResponse> {
+    return this.client.getMethod('createDlcTxs')(dlcOffer, dlcAccept);
+  }
+
+  /**
+   * Create DLC Offer Message
+   * @param contractInfo ContractInfo TLV (V0 or V1)
+   * @param offerCollateralSatoshis Amount DLC Initiator is putting into the contract
+   * @param feeRatePerVb Fee rate in satoshi per virtual byte that both sides use to compute fees in funding tx
+   * @param cetLocktime The nLockTime to be put on CETs
+   * @param refundLocktime The nLockTime to be put on the refund transaction
+   * @returns {Promise<DlcOffer>}
+   */
+  async createDlcOffer(
+    contractInfo: ContractInfo,
+    offerCollateralSatoshis: bigint,
+    feeRatePerVb: bigint,
+    cetLocktime: number,
+    refundLocktime: number,
+    fixedInputs?: IInput[],
+  ): Promise<DlcOffer> {
+    return this.client.getMethod('createDlcOffer')(
+      contractInfo,
+      offerCollateralSatoshis,
+      feeRatePerVb,
+      cetLocktime,
+      refundLocktime,
+      fixedInputs,
     );
   }
 
-  async confirmContractOffer(
-    offerMessage: OfferMessage,
-    startingIndex: number = 0,
-    fixedInputs: Input[] = []
-  ): Promise<AcceptMessage> {
-    return this.client.getMethod('confirmContractOffer')(
-      offerMessage,
-      startingIndex,
-      fixedInputs
+  /**
+   * Accept DLC Offer
+   * @param dlcOffer Dlc Offer Message
+   * @param fixedInputs Optional inputs to use for Funding Inputs
+   * @returns {Promise<AcceptDlcOfferResponse}
+   */
+  async acceptDlcOffer(
+    dlcOffer: DlcOffer,
+    fixedInputs?: IInput[],
+  ): Promise<AcceptDlcOfferResponse> {
+    return this.client.getMethod('acceptDlcOffer')(dlcOffer, fixedInputs);
+  }
+
+  /**
+   * Sign Dlc Accept Message
+   * @param dlcOffer Dlc Offer Message
+   * @param dlcAccept Dlc Accept Message
+   * @returns {Promise<SignDlcAcceptResponse}
+   */
+  async signDlcAccept(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+  ): Promise<SignDlcAcceptResponse> {
+    return this.client.getMethod('signDlcAccept')(dlcOffer, dlcAccept);
+  }
+
+  /**
+   * Finalize Dlc Sign
+   * @param dlcOffer Dlc Offer Message
+   * @param dlcAccept Dlc Accept Message
+   * @param dlcSign Dlc Sign Message
+   * @param dlcTxs Dlc Transactions Message
+   * @returns {Promise<Tx>}
+   */
+  async finalizeDlcSign(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    dlcSign: DlcSign,
+    dlcTxs: DlcTransactions,
+  ): Promise<Tx> {
+    return this.client.getMethod('finalizeDlcSign')(
+      dlcOffer,
+      dlcAccept,
+      dlcSign,
+      dlcTxs,
     );
   }
 
-  async signContract(acceptMessage: AcceptMessage): Promise<SignMessage> {
-    return this.client.getMethod('signContract')(acceptMessage);
-  }
-
-  async finalizeContract(signMessage: SignMessage): Promise<string> {
-    return this.client.getMethod('finalizeContract')(signMessage);
-  }
-
-  async refund(contractId: string) {
-    return this.client.getMethod('refund')(contractId);
-  }
-
-  async unilateralClose(
-    outcomeIndex: number,
-    oracleSignatures: string[],
-    contractId: string
-  ): Promise<string[]> {
-    return this.client.getMethod('unilateralClose')(
-      outcomeIndex,
-      oracleSignatures,
-      contractId
+  /**
+   * Execute DLC
+   * @param dlcOffer Dlc Offer Message
+   * @param dlcAccept Dlc Accept Message
+   * @param dlcSign Dlc Sign Message
+   * @param dlcTxs Dlc Transactions Message
+   * @param oracleAttestation Oracle Attestations TLV (V0)
+   * @param isOfferer Whether party is Dlc Offerer
+   * @returns {Promise<Tx>}
+   */
+  async execute(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    dlcSign: DlcSign,
+    dlcTxs: DlcTransactions,
+    oracleAttestation: OracleAttestationV0,
+    isOfferer?: boolean,
+  ): Promise<Tx> {
+    return this.client.getMethod('execute')(
+      dlcOffer,
+      dlcAccept,
+      dlcSign,
+      dlcTxs,
+      oracleAttestation,
+      isOfferer,
     );
   }
 
-  async buildUnilateralClose(
-    oracleSignature: string,
-    outcomeIndex: number,
-    contractId: string
-  ): Promise<string[]> {
-    return this.client.getMethod('buildUnilateralClose')(
-      oracleSignature,
-      outcomeIndex,
-      contractId
+  /**
+   * Refund DLC
+   * @param dlcOffer Dlc Offer Message
+   * @param dlcAccept Dlc Accept Message
+   * @param dlcSign Dlc Sign Message
+   * @param dlcTxs Dlc Transactions message
+   * @returns {Promise<Tx>}
+   */
+  async refund(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    dlcSign: DlcSign,
+    dlcTxs: DlcTransactions,
+  ): Promise<Tx> {
+    return this.client.getMethod('refund')(
+      dlcOffer,
+      dlcAccept,
+      dlcSign,
+      dlcTxs,
     );
   }
 
-  async getFundingUtxoAddressesForOfferMessages (offerMessages: OfferMessage[]) {
-    return this.client.getMethod('getFundingUtxoAddressesForOfferMessages')(offerMessages)
+  /**
+   * Generate DlcClose messagetype for closing DLC with Mutual Consent
+   * @param dlcOffer DlcOffer TLV (V0)
+   * @param dlcAccept DlcAccept TLV (V0)
+   * @param dlcTxs DlcTransactions TLV (V0)
+   * @param initiatorPayoutSatoshis Amount initiator expects as a payout
+   * @param isOfferer Whether offerer or not
+   * @param inputs Optionally specified closing inputs
+   * @returns {Promise<DlcClose>}
+   */
+  async createDlcClose(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    dlcTxs: DlcTransactions,
+    initiatorPayoutSatoshis: bigint,
+    isOfferer?: boolean,
+    inputs?: Input[],
+  ): Promise<DlcClose> {
+    return this.client.getMethod('createDlcClose')(
+      dlcOffer,
+      dlcAccept,
+      dlcTxs,
+      initiatorPayoutSatoshis,
+      isOfferer,
+      inputs,
+    );
   }
 
-  async getFundingUtxoAddressesForAcceptMessages (acceptMessages: AcceptMessage[]) {
-    return this.client.getMethod('getFundingUtxoAddressesForAcceptMessages')(acceptMessages)
+  /**
+   * Generate multiple DlcClose messagetypes for closing DLC with Mutual Consent
+   * @param dlcOffer DlcOffer TLV (V0)
+   * @param dlcAccept DlcAccept TLV (V0)
+   * @param dlcTxs DlcTransactions TLV (V0)
+   * @param initiatorPayouts Array of amounts initiator expects as payouts
+   * @param isOfferer Whether offerer or not
+   * @param inputs Optionally specified closing inputs
+   * @returns {Promise<DlcClose[]>}
+   */
+  async createBatchDlcClose(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    dlcTxs: DlcTransactions,
+    initiatorPayouts: bigint[],
+    isOfferer?: boolean,
+    inputs?: Input[],
+  ): Promise<DlcClose[]> {
+    return this.client.getMethod('createBatchDlcClose')(
+      dlcOffer,
+      dlcAccept,
+      dlcTxs,
+      initiatorPayouts,
+      isOfferer,
+      inputs,
+    );
   }
 
-  hasDlc(contractId: string): boolean {
-    return this.client.getMethod('hasDlc')(contractId);
+  async verifyBatchDlcCloseUsingMetadata(
+    dlcCloseMetadata: DlcCloseMetadata,
+    _dlcCloses: DlcClose[],
+    isOfferer?: boolean,
+  ): Promise<void> {
+    return this.client.getMethod('verifyBatchDlcCloseUsingMetadata')(
+      dlcCloseMetadata,
+      _dlcCloses,
+      isOfferer,
+    );
   }
 
-  async importContract(contract: Contract, startingIndex: number) {
-    return this.client.getMethod('importContract')(contract, startingIndex);
+  /**
+   * Verify multiple DlcClose messagetypes for closing DLC with Mutual Consent
+   * @param dlcOffer DlcOffer TLV (V0)
+   * @param dlcAccept DlcAccept TLV (V0)
+   * @param dlcTxs DlcTransactions TLV (V0)
+   * @param dlcCloses DlcClose[] TLV (V0)
+   * @param isOfferer Whether offerer or not
+   * @returns {Promise<void>}
+   */
+  async verifyBatchDlcClose(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    dlcTxs: DlcTransactions,
+    dlcCloses: DlcClose[],
+    isOfferer?: boolean,
+  ): Promise<void> {
+    return this.client.getMethod('verifyBatchDlcClose')(
+      dlcOffer,
+      dlcAccept,
+      dlcTxs,
+      dlcCloses,
+      isOfferer,
+    );
   }
 
-  exportContract(contractId: string): Contract {
-    return this.client.getMethod('exportContract')(contractId);
-  }
-
-  exportContracts(): Contract[] {
-    return this.client.getMethod('exportContracts')();
-  }
-
-  deleteContract (contractId: string) {
-    return this.client.getMethod('deleteContract')(contractId)
-  }
-
-  async importContractFromOfferMessage (offerMessage: OfferMessage, startingIndex: number) {
-    return this.client.getMethod('importContractFromOfferMessage')(offerMessage, startingIndex)
-  }
-
-  async importContractFromAcceptMessage (offerMessage: OfferMessage, acceptMessage: AcceptMessage, startingIndex: number) {
-    return this.client.getMethod('importContractFromAcceptMessage')(offerMessage, acceptMessage, startingIndex)
-  }
-
-  async importContractFromAcceptAndSignMessage (offerMessage: OfferMessage, acceptMessage: AcceptMessage, signMessage: SignMessage, startingIndex: number) {
-    return this.client.getMethod('importContractFromAcceptAndSignMessage')(offerMessage, acceptMessage, signMessage, startingIndex)
-  }
-
-  async importContractFromSignMessageAndCreateFinal (offerMessage: OfferMessage, acceptMessage: AcceptMessage, signMessage: SignMessage, startingIndex: number = 0) {
-    return this.client.getMethod('importContractFromSignMessageAndCreateFinal')(offerMessage, acceptMessage, signMessage, startingIndex)
-  }
-
-  outputsToPayouts(outputs: Output[], oracleInfos: OracleInfo[], rValuesMessagesList: Messages[], localCollateral: Amount, remoteCollateral: Amount, payoutLocal: boolean): { payouts: PayoutDetails[], messagesList: Messages[] } {
-    return this.client.getMethod('outputsToPayouts')(outputs, oracleInfos, rValuesMessagesList, localCollateral, remoteCollateral, payoutLocal)
+  /**
+   * Finalize Dlc Close
+   * @param dlcOffer Dlc Offer Message
+   * @param dlcAccept Dlc Accept Message
+   * @param dlcClose Dlc Close Message
+   * @param dlcTxs Dlc Transactions Message
+   * @returns {Promise<string>}
+   */
+  finalizeDlcClose(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    dlcClose: DlcClose,
+    dlcTxs: DlcTransactions,
+  ): Promise<string> {
+    return this.client.getMethod('finalizeDlcClose')(
+      dlcOffer,
+      dlcAccept,
+      dlcClose,
+      dlcTxs,
+    );
   }
 
   async AddSignatureToFundTransaction(
-    jsonObject: AddSignatureToFundTransactionRequest
+    jsonObject: AddSignatureToFundTransactionRequest,
   ): Promise<AddSignatureToFundTransactionResponse> {
     return this.client.getMethod('AddSignatureToFundTransaction')(jsonObject);
   }
 
   async CreateCetAdaptorSignature(
-    jsonObject: CreateCetAdaptorSignatureRequest
+    jsonObject: CreateCetAdaptorSignatureRequest,
   ): Promise<CreateCetAdaptorSignatureResponse> {
-    return this.client.getMethod('CreateCetAdaptorSignature')(jsonObject)
+    return this.client.getMethod('CreateCetAdaptorSignature')(jsonObject);
   }
 
   async CreateCetAdaptorSignatures(
-    jsonObject: CreateCetAdaptorSignaturesRequest
+    jsonObject: CreateCetAdaptorSignaturesRequest,
   ): Promise<CreateCetAdaptorSignaturesResponse> {
-    return this.client.getMethod('CreateCetAdaptorSignatures')(jsonObject)
+    return this.client.getMethod('CreateCetAdaptorSignatures')(jsonObject);
   }
 
   async AddSignaturesToRefundTx(
-    jsonObject: AddSignaturesToRefundTxRequest
+    jsonObject: AddSignaturesToRefundTxRequest,
   ): Promise<AddSignaturesToRefundTxResponse> {
     return this.client.getMethod('AddSignaturesToRefundTx')(jsonObject);
   }
@@ -197,73 +346,103 @@ export default class Dlc {
   }
 
   async CreateDlcTransactions(
-    jsonObject: CreateDlcTransactionsRequest
+    jsonObject: CreateDlcTransactionsRequest,
   ): Promise<CreateDlcTransactionsResponse> {
     return this.client.getMethod('CreateDlcTransactions')(jsonObject);
   }
 
   async CreateFundTransaction(
-    jsonObject: CreateFundTransactionRequest
+    jsonObject: CreateFundTransactionRequest,
   ): Promise<CreateFundTransactionResponse> {
     return this.client.getMethod('CreateFundTransaction')(jsonObject);
   }
 
   async CreateRefundTransaction(
-    jsonObject: CreateRefundTransactionRequest
+    jsonObject: CreateRefundTransactionRequest,
   ): Promise<CreateRefundTransactionResponse> {
     return this.client.getMethod('CreateRefundTransaction')(jsonObject);
   }
 
   async GetRawFundTxSignature(
-    jsonObject: GetRawFundTxSignatureRequest
+    jsonObject: GetRawFundTxSignatureRequest,
   ): Promise<GetRawFundTxSignatureResponse> {
     return this.client.getMethod('GetRawFundTxSignature')(jsonObject);
   }
 
   async GetRawRefundTxSignature(
-    jsonObject: GetRawRefundTxSignatureRequest
+    jsonObject: GetRawRefundTxSignatureRequest,
   ): Promise<GetRawRefundTxSignatureResponse> {
     return this.client.getMethod('GetRawRefundTxSignature')(jsonObject);
   }
 
-  async SignCetRequest(
-    jsonObject: SignCetRequest
-  ): Promise<SignCetResponse> {
-    return this.client.getMethod('SignCetRequest')(jsonObject)
+  async SignCetRequest(jsonObject: SignCetRequest): Promise<SignCetResponse> {
+    return this.client.getMethod('SignCetRequest')(jsonObject);
   }
 
   async SignFundTransaction(
-    jsonObject: SignFundTransactionRequest
+    jsonObject: SignFundTransactionRequest,
   ): Promise<SignFundTransactionResponse> {
     return this.client.getMethod('SignFundTransaction')(jsonObject);
   }
 
   async VerifyCetAdaptorSignature(
-    jsonObject: VerifyCetAdaptorSignatureRequest
+    jsonObject: VerifyCetAdaptorSignatureRequest,
   ): Promise<VerifyCetAdaptorSignatureResponse> {
-    return this.client.getMethod('VerifyCetAdaptorSignature')(jsonObject)
+    return this.client.getMethod('VerifyCetAdaptorSignature')(jsonObject);
   }
 
   async VerifyCetAdaptorSignaturesRequest(
-    jsonObject: VerifyCetAdaptorSignaturesRequest
+    jsonObject: VerifyCetAdaptorSignaturesRequest,
   ): Promise<VerifyCetAdaptorSignaturesResponse> {
-    return this.client.getMethod('VerifyCetAdaptorSignatures')(jsonObject)
+    return this.client.getMethod('VerifyCetAdaptorSignatures')(jsonObject);
   }
 
   async VerifyFundTxSignature(
-    jsonObject: VerifyFundTxSignatureRequest
+    jsonObject: VerifyFundTxSignatureRequest,
   ): Promise<VerifyFundTxSignatureResponse> {
     return this.client.getMethod('VerifyFundTxSignature')(jsonObject);
   }
 
   async VerifyRefundTxSignature(
-    jsonObject: VerifyRefundTxSignatureRequest
+    jsonObject: VerifyRefundTxSignatureRequest,
   ): Promise<VerifyRefundTxSignatureResponse> {
     return this.client.getMethod('VerifyRefundTxSignature')(jsonObject);
   }
+
+  async fundingInputToInput(_input: FundingInput): Promise<IInput> {
+    return this.client.getMethod('fundingInputToInput')(_input);
+  }
+
+  async inputToFundingInput(input: IInput): Promise<FundingInput> {
+    return this.client.getMethod('inputToFundingInput')(input);
+  }
 }
 
-interface Output {
-  payout: number,
-  groups: number[][]
+export interface AcceptDlcOfferResponse {
+  dlcAccept: DlcAccept;
+  dlcTransactions: DlcTransactions;
+}
+
+export interface SignDlcAcceptResponse {
+  dlcSign: DlcSign;
+  dlcTransactions: DlcTransactions;
+}
+
+export interface IInput {
+  txid: string;
+  vout: number;
+  address: string;
+  amount: number; // in BTC
+  value: number; // in sats
+  derivationPath?: string;
+  maxWitnessLength?: number;
+  redeemScript?: string;
+  inputSerialId?: bigint;
+  scriptPubKey?: string;
+  label?: string;
+  confirmations?: number;
+  spendable?: boolean;
+  solvable?: boolean;
+  safe?: boolean;
+  toUtxo: any;
 }

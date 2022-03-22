@@ -4,8 +4,8 @@
 **/.nyc_output
 **/coverage
 
-**/yarn.lock
-**/package-lock.json
+# **/yarn.lock
+# **/package-lock.json
 
 **/doc
 
@@ -24,4 +24,8 @@
 /packages/**/lib/models/*.js
 /packages/**/lib/utils/*.js
 
+/file-output/*.txt
+
 lerna-debug.log
+.vscode
+yarn-error.log

@@ -1,23 +1,50 @@
-import Client from './Client';
+import { CreateMultisigResponse, Input, Output } from '@atomicfinance/types';
+import { Transaction } from 'bitcoinjs-lib';
 
 export default class Wallet {
-  client: Client;
+  client: any;
 
-  constructor(client?: Client) {
+  constructor(client: any) {
     this.client = client;
+  }
+
+  createMultisig(m: number, pubkeys: string[]): CreateMultisigResponse {
+    return this.client.getMethod('createMultisig')(m, pubkeys);
+  }
+
+  buildMultisigPSBT(
+    m: number,
+    pubkeys: string[],
+    inputs: Input[],
+    outputs: Output[],
+  ): string {
+    return this.client.getMethod('buildMultisigPSBT')(
+      m,
+      pubkeys,
+      inputs,
+      outputs,
+    );
+  }
+
+  walletProcessPSBT(psbtString: string): Promise<string> {
+    return this.client.getMethod('walletProcessPSBT')(psbtString);
+  }
+
+  finalizePSBT(psbtString: string): Transaction {
+    return this.client.getMethod('finalizePSBT')(psbtString);
   }
 
   async buildSweepTransactionWithSetOutputs(
     externalChangeAddress: string,
     feePerByte: number,
     outputs: Output[],
-    fixedInputs: Input[]
+    fixedInputs: Input[],
   ) {
     return this.client.getMethod('buildSweepTransactionWithSetOutputs')(
       externalChangeAddress,
       feePerByte,
       outputs,
-      fixedInputs
+      fixedInputs,
     );
   }
 
@@ -25,34 +52,21 @@ export default class Wallet {
     externalChangeAddress: string,
     feePerByte: number,
     outputs: Output[],
-    fixedInputs: Input[]
+    fixedInputs: Input[],
   ) {
     return this.client.getMethod('sendSweepTransactionWithSetOutputs')(
       externalChangeAddress,
       feePerByte,
       outputs,
-      fixedInputs
+      fixedInputs,
     );
   }
-}
 
-interface Input {
-  txid: string;
-  vout: number;
-  address: string;
-  label: string;
-  scriptPubKey: string;
-  amount: number;
-  confirmations: number;
-  spendable: boolean;
-  solvable: boolean;
-  safe: boolean;
-  satoshis: number;
-  value: number;
-  derivationPath: string;
-}
+  async getUnusedAddress(change = false, numAddressPerCall = 100) {
+    return this.client.getMethod('getUnusedAddress')(change, numAddressPerCall);
+  }
 
-interface Output {
-  to: string;
-  value: number;
+  async quickFindAddress(addresses: string[]) {
+    return this.client.getMethod('quickFindAddress')(addresses);
+  }
 }

@@ -1,13 +1,13 @@
 {
-  "extends": "./tsconfig.build.json",
-
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@atomicfinance/*": ["packages/*/lib"]
-    },
+    "target": "ES2020",
+    "module": "CommonJS",
+    "declaration": true,
     "esModuleInterop": true,
-    "skipLibCheck": true,
-    "types": []
-  }
+    "removeComments": false,
+    "preserveConstEnums": true,
+    "resolveJsonModule": true,
+    "sourceMap": true
+  },
+  "exclude": ["node_modules", "**/*.spec.ts", "dist"]
 }

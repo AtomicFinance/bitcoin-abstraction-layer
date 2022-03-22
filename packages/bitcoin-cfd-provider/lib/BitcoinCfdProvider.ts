@@ -1,6 +1,4 @@
-// import CfdHelper from './cfdjsHelper';
 import Provider from '@atomicfinance/provider';
-import { sleep } from '@liquality/utils';
 import {
   AddMultisigSignRequest,
   AddMultisigSignResponse,
@@ -18,6 +16,7 @@ import {
   BlindRawTransactionResponse,
   CalculateEcSignatureRequest,
   CalculateEcSignatureResponse,
+  CfdProvider,
   ConvertAesRequest,
   ConvertAesResponse,
   ConvertEntropyToMnemonicRequest,
@@ -28,24 +27,40 @@ import {
   CreateAddressResponse,
   CreateDescriptorRequest,
   CreateDescriptorResponse,
-  CreateExtkeyRequest,
-  CreateExtkeyResponse,
-  CreateExtkeyFromParentRequest,
-  CreateExtkeyFromParentResponse,
+  CreateDestroyAmountRequest,
+  CreateDestroyAmountResponse,
+  CreateElementsSignatureHashRequest,
+  CreateElementsSignatureHashResponse,
   CreateExtkeyFromParentKeyRequest,
   CreateExtkeyFromParentKeyResponse,
   CreateExtkeyFromParentPathRequest,
   CreateExtkeyFromParentPathResponse,
+  CreateExtkeyFromParentRequest,
+  CreateExtkeyFromParentResponse,
   CreateExtkeyFromSeedRequest,
   CreateExtkeyFromSeedResponse,
+  CreateExtkeyRequest,
+  CreateExtkeyResponse,
   CreateExtPubkeyRequest,
   CreateExtPubkeyResponse,
   CreateKeyPairRequest,
   CreateKeyPairResponse,
+  CreateMultisigRequest,
+  CreateMultisigResponse,
   CreateMultisigScriptSigRequest,
   CreateMultisigScriptSigResponse,
+  CreatePegInAddressRequest,
+  CreatePegInAddressResponse,
+  CreateRawPeginRequest,
+  CreateRawPeginResponse,
+  CreateRawPegoutRequest,
+  CreateRawPegoutResponse,
+  CreateRawTransactionRequest,
+  CreateRawTransactionResponse,
   CreateScriptRequest,
   CreateScriptResponse,
+  CreateSignatureHashRequest,
+  CreateSignatureHashResponse,
   DecodeBase58Request,
   DecodeBase58Response,
   DecodeDerSignatureToRawRequest,
@@ -54,28 +69,10 @@ import {
   DecodeRawTransactionResponse,
   ElementsAddRawTransactionRequest,
   ElementsAddRawTransactionResponse,
-  CreateDestroyAmountRequest,
-  CreateDestroyAmountResponse,
-  CreatePegInAddressRequest,
-  CreatePegInAddressResponse,
-  CreateRawPeginRequest,
-  CreateRawPeginResponse,
-  CreateRawPegoutRequest,
-  CreateRawPegoutResponse,
   ElementsCreateRawTransactionRequest,
   ElementsCreateRawTransactionResponse,
   ElementsDecodeRawTransactionRequest,
   ElementsDecodeRawTransactionResponse,
-  GetConfidentialAddressRequest,
-  GetConfidentialAddressResponse,
-  GetUnblindedAddressRequest,
-  GetUnblindedAddressResponse,
-  SetRawIssueAssetRequest,
-  SetRawIssueAssetResponse,
-  SetRawReissueAssetRequest,
-  SetRawReissueAssetResponse,
-  UnblindRawTransactionRequest,
-  UnblindRawTransactionResponse,
   EncodeBase58Request,
   EncodeBase58Response,
   EncodeSignatureByDerRequest,
@@ -84,14 +81,16 @@ import {
   EstimateFeeResponse,
   FundRawTransactionRequest,
   FundRawTransactionResponse,
-  GetAddressInfoRequest,
-  GetAddressInfoResponse,
   GetAddressesFromMultisigRequest,
   GetAddressesFromMultisigResponse,
+  GetAddressInfoRequest,
+  GetAddressInfoResponse,
   GetCommitmentRequest,
   GetCommitmentResponse,
   GetCompressedPubkeyRequest,
   GetCompressedPubkeyResponse,
+  GetConfidentialAddressRequest,
+  GetConfidentialAddressResponse,
   GetDefaultBlindingKeyRequest,
   GetDefaultBlindingKeyResponse,
   GetExtkeyInfoRequest,
@@ -110,10 +109,11 @@ import {
   GetPubkeyFromExtkeyResponse,
   GetPubkeyFromPrivkeyRequest,
   GetPubkeyFromPrivkeyResponse,
+  GetSupportedFunctionResponse,
+  GetUnblindedAddressRequest,
+  GetUnblindedAddressResponse,
   GetWitnessStackNumRequest,
   GetWitnessStackNumResponse,
-  CreateMultisigRequest,
-  CreateMultisigResponse,
   ParseDescriptorRequest,
   ParseDescriptorResponse,
   ParseScriptRequest,
@@ -122,47 +122,44 @@ import {
   SelectUtxosResponse,
   SerializeLedgerFormatRequest,
   SerializeLedgerFormatResponse,
-  CreateSignatureHashRequest,
-  CreateSignatureHashResponse,
-  CreateElementsSignatureHashRequest,
-  CreateElementsSignatureHashResponse,
+  SetRawIssueAssetRequest,
+  SetRawIssueAssetResponse,
+  SetRawReissueAssetRequest,
+  SetRawReissueAssetResponse,
   SignWithPrivkeyRequest,
   SignWithPrivkeyResponse,
-  GetSupportedFunctionResponse,
-  CreateRawTransactionRequest,
-  CreateRawTransactionResponse,
+  UnblindRawTransactionRequest,
+  UnblindRawTransactionResponse,
   UpdateTxOutAmountRequest,
   UpdateTxOutAmountResponse,
   UpdateWitnessStackRequest,
   UpdateWitnessStackResponse,
-  VerifySignRequest,
-  VerifySignResponse,
   VerifySignatureRequest,
   VerifySignatureResponse,
-} from './@types/cfd-js';
-import * as isNode from 'is-node'
+  VerifySignRequest,
+  VerifySignResponse,
+} from '@atomicfinance/types';
+import { sleep } from '@liquality/utils';
 
-export default class BitcoinCfdProvider extends Provider {
-  _network: any;
+export default class BitcoinCfdProvider
+  extends Provider
+  implements Partial<CfdProvider> {
   _cfdJs: any;
 
-  constructor(network: any, cfdJs?: any) {
-    super('BitcoinCfdProvider');
+  constructor(cfdJs?: any) {
+    super();
 
-    this._network = network;
-    this._cfdJs = cfdJs
+    this._cfdJs = cfdJs;
   }
 
-  async CfdLoaded() {
-    if (!isNode) {
-      while (!this._cfdJs) {
-        await sleep(1);
-      }
+  private async CfdLoaded() {
+    while (!this._cfdJs) {
+      await sleep(10);
     }
   }
 
   async AddMultisigSign(
-    jsonObject: AddMultisigSignRequest
+    jsonObject: AddMultisigSignRequest,
   ): Promise<AddMultisigSignResponse> {
     await this.CfdLoaded();
 
@@ -170,7 +167,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async AddPubkeyHashSign(
-    jsonObject: AddPubkeyHashSignRequest
+    jsonObject: AddPubkeyHashSignRequest,
   ): Promise<AddPubkeyHashSignResponse> {
     await this.CfdLoaded();
 
@@ -178,7 +175,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async AddRawTransaction(
-    jsonObject: AddRawTransactionRequest
+    jsonObject: AddRawTransactionRequest,
   ): Promise<AddRawTransactionResponse> {
     await this.CfdLoaded();
 
@@ -186,7 +183,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async AddScriptHashSign(
-    jsonObject: AddScriptHashSignRequest
+    jsonObject: AddScriptHashSignRequest,
   ): Promise<AddScriptHashSignResponse> {
     await this.CfdLoaded();
 
@@ -200,7 +197,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async AppendDescriptorChecksum(
-    jsonObject: AppendDescriptorChecksumRequest
+    jsonObject: AppendDescriptorChecksumRequest,
   ): Promise<AppendDescriptorChecksumResponse> {
     await this.CfdLoaded();
 
@@ -208,7 +205,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async BlindRawTransaction(
-    jsonObject: BlindRawTransactionRequest
+    jsonObject: BlindRawTransactionRequest,
   ): Promise<BlindRawTransactionResponse> {
     await this.CfdLoaded();
 
@@ -216,7 +213,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CalculateEcSignature(
-    jsonObject: CalculateEcSignatureRequest
+    jsonObject: CalculateEcSignatureRequest,
   ): Promise<CalculateEcSignatureResponse> {
     await this.CfdLoaded();
 
@@ -230,7 +227,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async ConvertEntropyToMnemonic(
-    jsonObject: ConvertEntropyToMnemonicRequest
+    jsonObject: ConvertEntropyToMnemonicRequest,
   ): Promise<ConvertEntropyToMnemonicResponse> {
     await this.CfdLoaded();
 
@@ -238,7 +235,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async ConvertMnemonicToSeed(
-    jsonObject: ConvertMnemonicToSeedRequest
+    jsonObject: ConvertMnemonicToSeedRequest,
   ): Promise<ConvertMnemonicToSeedResponse> {
     await this.CfdLoaded();
 
@@ -246,7 +243,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CreateAddress(
-    jsonObject: CreateAddressRequest
+    jsonObject: CreateAddressRequest,
   ): Promise<CreateAddressResponse> {
     await this.CfdLoaded();
 
@@ -254,7 +251,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CreateDescriptor(
-    jsonObject: CreateDescriptorRequest
+    jsonObject: CreateDescriptorRequest,
   ): Promise<CreateDescriptorResponse> {
     await this.CfdLoaded();
 
@@ -262,7 +259,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CreateExtkey(
-    jsonObject: CreateExtkeyRequest
+    jsonObject: CreateExtkeyRequest,
   ): Promise<CreateExtkeyResponse> {
     await this.CfdLoaded();
 
@@ -270,7 +267,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CreateExtkeyFromParent(
-    jsonObject: CreateExtkeyFromParentRequest
+    jsonObject: CreateExtkeyFromParentRequest,
   ): Promise<CreateExtkeyFromParentResponse> {
     await this.CfdLoaded();
 
@@ -278,7 +275,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CreateExtkeyFromParentKey(
-    jsonObject: CreateExtkeyFromParentKeyRequest
+    jsonObject: CreateExtkeyFromParentKeyRequest,
   ): Promise<CreateExtkeyFromParentKeyResponse> {
     await this.CfdLoaded();
 
@@ -286,7 +283,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CreateExtkeyFromParentPath(
-    jsonObject: CreateExtkeyFromParentPathRequest
+    jsonObject: CreateExtkeyFromParentPathRequest,
   ): Promise<CreateExtkeyFromParentPathResponse> {
     await this.CfdLoaded();
 
@@ -294,7 +291,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CreateExtkeyFromSeed(
-    jsonObject: CreateExtkeyFromSeedRequest
+    jsonObject: CreateExtkeyFromSeedRequest,
   ): Promise<CreateExtkeyFromSeedResponse> {
     await this.CfdLoaded();
 
@@ -302,7 +299,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CreateExtPubkey(
-    jsonObject: CreateExtPubkeyRequest
+    jsonObject: CreateExtPubkeyRequest,
   ): Promise<CreateExtPubkeyResponse> {
     await this.CfdLoaded();
 
@@ -310,7 +307,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CreateKeyPair(
-    jsonObject: CreateKeyPairRequest
+    jsonObject: CreateKeyPairRequest,
   ): Promise<CreateKeyPairResponse> {
     await this.CfdLoaded();
 
@@ -318,7 +315,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CreateMultisigScriptSig(
-    jsonObject: CreateMultisigScriptSigRequest
+    jsonObject: CreateMultisigScriptSigRequest,
   ): Promise<CreateMultisigScriptSigResponse> {
     await this.CfdLoaded();
 
@@ -326,7 +323,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CreateScript(
-    jsonObject: CreateScriptRequest
+    jsonObject: CreateScriptRequest,
   ): Promise<CreateScriptResponse> {
     await this.CfdLoaded();
 
@@ -334,7 +331,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async DecodeBase58(
-    jsonObject: DecodeBase58Request
+    jsonObject: DecodeBase58Request,
   ): Promise<DecodeBase58Response> {
     await this.CfdLoaded();
 
@@ -342,7 +339,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async DecodeDerSignatureToRaw(
-    jsonObject: DecodeDerSignatureToRawRequest
+    jsonObject: DecodeDerSignatureToRawRequest,
   ): Promise<DecodeDerSignatureToRawResponse> {
     await this.CfdLoaded();
 
@@ -350,7 +347,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async DecodeRawTransaction(
-    jsonObject: DecodeRawTransactionRequest
+    jsonObject: DecodeRawTransactionRequest,
   ): Promise<DecodeRawTransactionResponse> {
     await this.CfdLoaded();
 
@@ -358,7 +355,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async ElementsAddRawTransaction(
-    jsonObject: ElementsAddRawTransactionRequest
+    jsonObject: ElementsAddRawTransactionRequest,
   ): Promise<ElementsAddRawTransactionResponse> {
     await this.CfdLoaded();
 
@@ -366,7 +363,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CreateDestroyAmount(
-    jsonObject: CreateDestroyAmountRequest
+    jsonObject: CreateDestroyAmountRequest,
   ): Promise<CreateDestroyAmountResponse> {
     await this.CfdLoaded();
 
@@ -374,7 +371,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CreatePegInAddress(
-    jsonObject: CreatePegInAddressRequest
+    jsonObject: CreatePegInAddressRequest,
   ): Promise<CreatePegInAddressResponse> {
     await this.CfdLoaded();
 
@@ -382,7 +379,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CreateRawPegin(
-    jsonObject: CreateRawPeginRequest
+    jsonObject: CreateRawPeginRequest,
   ): Promise<CreateRawPeginResponse> {
     await this.CfdLoaded();
 
@@ -390,7 +387,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CreateRawPegout(
-    jsonObject: CreateRawPegoutRequest
+    jsonObject: CreateRawPegoutRequest,
   ): Promise<CreateRawPegoutResponse> {
     await this.CfdLoaded();
 
@@ -398,7 +395,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async ElementsCreateRawTransaction(
-    jsonObject: ElementsCreateRawTransactionRequest
+    jsonObject: ElementsCreateRawTransactionRequest,
   ): Promise<ElementsCreateRawTransactionResponse> {
     await this.CfdLoaded();
 
@@ -406,7 +403,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async ElementsDecodeRawTransaction(
-    jsonObject: ElementsDecodeRawTransactionRequest
+    jsonObject: ElementsDecodeRawTransactionRequest,
   ): Promise<ElementsDecodeRawTransactionResponse> {
     await this.CfdLoaded();
 
@@ -414,7 +411,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async GetConfidentialAddress(
-    jsonObject: GetConfidentialAddressRequest
+    jsonObject: GetConfidentialAddressRequest,
   ): Promise<GetConfidentialAddressResponse> {
     await this.CfdLoaded();
 
@@ -422,7 +419,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async GetUnblindedAddress(
-    jsonObject: GetUnblindedAddressRequest
+    jsonObject: GetUnblindedAddressRequest,
   ): Promise<GetUnblindedAddressResponse> {
     await this.CfdLoaded();
 
@@ -430,7 +427,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async SetRawIssueAsset(
-    jsonObject: SetRawIssueAssetRequest
+    jsonObject: SetRawIssueAssetRequest,
   ): Promise<SetRawIssueAssetResponse> {
     await this.CfdLoaded();
 
@@ -438,7 +435,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async SetRawReissueAsset(
-    jsonObject: SetRawReissueAssetRequest
+    jsonObject: SetRawReissueAssetRequest,
   ): Promise<SetRawReissueAssetResponse> {
     await this.CfdLoaded();
 
@@ -446,7 +443,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async UnblindRawTransaction(
-    jsonObject: UnblindRawTransactionRequest
+    jsonObject: UnblindRawTransactionRequest,
   ): Promise<UnblindRawTransactionResponse> {
     await this.CfdLoaded();
 
@@ -454,7 +451,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async EncodeBase58(
-    jsonObject: EncodeBase58Request
+    jsonObject: EncodeBase58Request,
   ): Promise<EncodeBase58Response> {
     await this.CfdLoaded();
 
@@ -462,7 +459,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async EncodeSignatureByDer(
-    jsonObject: EncodeSignatureByDerRequest
+    jsonObject: EncodeSignatureByDerRequest,
   ): Promise<EncodeSignatureByDerResponse> {
     await this.CfdLoaded();
 
@@ -470,7 +467,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async EstimateFee(
-    jsonObject: EstimateFeeRequest
+    jsonObject: EstimateFeeRequest,
   ): Promise<EstimateFeeResponse> {
     await this.CfdLoaded();
 
@@ -478,7 +475,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async FundRawTransaction(
-    jsonObject: FundRawTransactionRequest
+    jsonObject: FundRawTransactionRequest,
   ): Promise<FundRawTransactionResponse> {
     await this.CfdLoaded();
 
@@ -486,7 +483,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async GetAddressInfo(
-    jsonObject: GetAddressInfoRequest
+    jsonObject: GetAddressInfoRequest,
   ): Promise<GetAddressInfoResponse> {
     await this.CfdLoaded();
 
@@ -494,7 +491,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async GetAddressesFromMultisig(
-    jsonObject: GetAddressesFromMultisigRequest
+    jsonObject: GetAddressesFromMultisigRequest,
   ): Promise<GetAddressesFromMultisigResponse> {
     await this.CfdLoaded();
 
@@ -502,7 +499,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async GetCommitment(
-    jsonObject: GetCommitmentRequest
+    jsonObject: GetCommitmentRequest,
   ): Promise<GetCommitmentResponse> {
     await this.CfdLoaded();
 
@@ -510,7 +507,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async GetCompressedPubkey(
-    jsonObject: GetCompressedPubkeyRequest
+    jsonObject: GetCompressedPubkeyRequest,
   ): Promise<GetCompressedPubkeyResponse> {
     await this.CfdLoaded();
 
@@ -518,7 +515,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async GetDefaultBlindingKey(
-    jsonObject: GetDefaultBlindingKeyRequest
+    jsonObject: GetDefaultBlindingKeyRequest,
   ): Promise<GetDefaultBlindingKeyResponse> {
     await this.CfdLoaded();
 
@@ -526,7 +523,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async GetExtkeyInfo(
-    jsonObject: GetExtkeyInfoRequest
+    jsonObject: GetExtkeyInfoRequest,
   ): Promise<GetExtkeyInfoResponse> {
     await this.CfdLoaded();
 
@@ -534,7 +531,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async GetIssuanceBlindingKey(
-    jsonObject: GetIssuanceBlindingKeyRequest
+    jsonObject: GetIssuanceBlindingKeyRequest,
   ): Promise<GetIssuanceBlindingKeyResponse> {
     await this.CfdLoaded();
 
@@ -542,7 +539,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async GetMnemonicWordlist(
-    jsonObject: GetMnemonicWordlistRequest
+    jsonObject: GetMnemonicWordlistRequest,
   ): Promise<GetMnemonicWordlistResponse> {
     await this.CfdLoaded();
 
@@ -550,7 +547,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async GetPrivkeyFromExtkey(
-    jsonObject: GetPrivkeyFromExtkeyRequest
+    jsonObject: GetPrivkeyFromExtkeyRequest,
   ): Promise<GetPrivkeyFromExtkeyResponse> {
     await this.CfdLoaded();
 
@@ -558,7 +555,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async GetPrivkeyFromWif(
-    jsonObject: GetPrivkeyFromWifRequest
+    jsonObject: GetPrivkeyFromWifRequest,
   ): Promise<GetPrivkeyFromWifResponse> {
     await this.CfdLoaded();
 
@@ -566,7 +563,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async GetPrivkeyWif(
-    jsonObject: GetPrivkeyWifRequest
+    jsonObject: GetPrivkeyWifRequest,
   ): Promise<GetPrivkeyWifResponse> {
     await this.CfdLoaded();
 
@@ -574,7 +571,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async GetPubkeyFromExtkey(
-    jsonObject: GetPubkeyFromExtkeyRequest
+    jsonObject: GetPubkeyFromExtkeyRequest,
   ): Promise<GetPubkeyFromExtkeyResponse> {
     await this.CfdLoaded();
 
@@ -582,7 +579,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async GetPubkeyFromPrivkey(
-    jsonObject: GetPubkeyFromPrivkeyRequest
+    jsonObject: GetPubkeyFromPrivkeyRequest,
   ): Promise<GetPubkeyFromPrivkeyResponse> {
     await this.CfdLoaded();
 
@@ -590,7 +587,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async GetWitnessStackNum(
-    jsonObject: GetWitnessStackNumRequest
+    jsonObject: GetWitnessStackNumRequest,
   ): Promise<GetWitnessStackNumResponse> {
     await this.CfdLoaded();
 
@@ -598,7 +595,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CreateMultisig(
-    jsonObject: CreateMultisigRequest
+    jsonObject: CreateMultisigRequest,
   ): Promise<CreateMultisigResponse> {
     await this.CfdLoaded();
 
@@ -606,7 +603,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async ParseDescriptor(
-    jsonObject: ParseDescriptorRequest
+    jsonObject: ParseDescriptorRequest,
   ): Promise<ParseDescriptorResponse> {
     await this.CfdLoaded();
 
@@ -614,7 +611,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async ParseScript(
-    jsonObject: ParseScriptRequest
+    jsonObject: ParseScriptRequest,
   ): Promise<ParseScriptResponse> {
     await this.CfdLoaded();
 
@@ -622,7 +619,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async SelectUtxos(
-    jsonObject: SelectUtxosRequest
+    jsonObject: SelectUtxosRequest,
   ): Promise<SelectUtxosResponse> {
     await this.CfdLoaded();
 
@@ -630,7 +627,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async SerializeLedgerFormat(
-    jsonObject: SerializeLedgerFormatRequest
+    jsonObject: SerializeLedgerFormatRequest,
   ): Promise<SerializeLedgerFormatResponse> {
     await this.CfdLoaded();
 
@@ -638,7 +635,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CreateSignatureHash(
-    jsonObject: CreateSignatureHashRequest
+    jsonObject: CreateSignatureHashRequest,
   ): Promise<CreateSignatureHashResponse> {
     await this.CfdLoaded();
 
@@ -646,7 +643,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CreateElementsSignatureHash(
-    jsonObject: CreateElementsSignatureHashRequest
+    jsonObject: CreateElementsSignatureHashRequest,
   ): Promise<CreateElementsSignatureHashResponse> {
     await this.CfdLoaded();
 
@@ -654,7 +651,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async SignWithPrivkey(
-    jsonObject: SignWithPrivkeyRequest
+    jsonObject: SignWithPrivkeyRequest,
   ): Promise<SignWithPrivkeyResponse> {
     await this.CfdLoaded();
 
@@ -668,7 +665,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async CreateRawTransaction(
-    jsonObject: CreateRawTransactionRequest
+    jsonObject: CreateRawTransactionRequest,
   ): Promise<CreateRawTransactionResponse> {
     await this.CfdLoaded();
 
@@ -676,7 +673,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async UpdateTxOutAmount(
-    jsonObject: UpdateTxOutAmountRequest
+    jsonObject: UpdateTxOutAmountRequest,
   ): Promise<UpdateTxOutAmountResponse> {
     await this.CfdLoaded();
 
@@ -684,7 +681,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async UpdateWitnessStack(
-    jsonObject: UpdateWitnessStackRequest
+    jsonObject: UpdateWitnessStackRequest,
   ): Promise<UpdateWitnessStackResponse> {
     await this.CfdLoaded();
 
@@ -698,7 +695,7 @@ export default class BitcoinCfdProvider extends Provider {
   }
 
   async VerifySignature(
-    jsonObject: VerifySignatureRequest
+    jsonObject: VerifySignatureRequest,
   ): Promise<VerifySignatureResponse> {
     await this.CfdLoaded();
 
@@ -710,7 +707,7 @@ export default class BitcoinCfdProvider extends Provider {
 
     const req = { address };
 
-    const info = this._cfdJs.GetAddressInfo(req);
+    const info = await this.GetAddressInfo(req);
     return info.lockingScript;
   }
 }
