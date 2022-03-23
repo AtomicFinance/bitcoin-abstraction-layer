@@ -77,7 +77,7 @@ describe('Custom Strategy Oracle POC numdigits=18', () => {
     }
   });
 
-  it('should complete entire flow', async () => {
+  it.only('should complete entire flow', async () => {
     const aliceInput = await getInput(alice);
     const bobInput = await getInput(bob);
 
@@ -113,6 +113,8 @@ describe('Custom Strategy Oracle POC numdigits=18', () => {
       [aliceInput],
     );
 
+    console.log(dlcOffer.serialize().toString('hex'));
+    const dlcDeserialized = DlcOffer.deserialize(dlcOffer.serialize());
     console.timeEnd('offer');
 
     console.time('accept');
