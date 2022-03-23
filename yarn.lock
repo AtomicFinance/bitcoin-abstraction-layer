@@ -1271,10 +1271,10 @@
     "@node-lightning/bitcoin" "0.26.1"
     "@node-lightning/core" "0.26.1"
 
-"@node-dlc/messaging@0.12.1":
-  version "0.12.1"
-  resolved "https://registry.npmjs.org/@node-dlc/messaging/-/messaging-0.12.1.tgz"
-  integrity sha512-LBrtjLI4m+1LrijaIKFb8fcOZCd2vg5vFiK94tK5/N0um+uYzSyqyYu4UCvo/lpt8H/AisOENaQ6CTKNU1D+8g==
+"@node-dlc/messaging@0.17.1":
+  version "0.17.1"
+  resolved "https://registry.yarnpkg.com/@node-dlc/messaging/-/messaging-0.17.1.tgz#e71de2936f977d23f4c7db22b483bb894790a490"
+  integrity sha512-t68PXXtUWUUOBHWD1YglzIF0b1yd5KbXaurronQBHPDGO5L4A82i3pTJynxnDMK062UIR3v2vZ7Hep58RlalJA==
   dependencies:
     "@liquality/bitcoin-networks" "1.0.0-beta.2"
     "@liquality/utils" "1.0.0-beta.2"
@@ -1672,6 +1672,11 @@
   version "11.11.6"
   resolved "https://registry.npmjs.org/@types/node/-/node-11.11.6.tgz"
   integrity sha512-Exw4yUWMBXM3X+8oqzJNRqZSwUAaS4+7NdvHqQuFi/d+synz++xmX3QIf+BFqneW8N31R8Ky+sikfZUXq07ggQ==
+
+"@types/node@16.10.3":
+  version "16.10.3"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-16.10.3.tgz#7a8f2838603ea314d1d22bb3171d899e15c57bd5"
+  integrity sha512-ho3Ruq+fFnBrZhUYI46n/bV2GjwzSkwuT4dTf0GkuNFmnb8nq4ny2z9JEVemFi6bdEJanHLlYfy9c6FN9B9McQ==
 
 "@types/node@^14.14.14":
   version "14.18.12"
