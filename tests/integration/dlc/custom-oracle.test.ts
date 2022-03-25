@@ -31,7 +31,7 @@ const alice = chain.client;
 
 const bob = chains.bitcoinWithJs2.client;
 
-describe('Custom Strategy Oracle POC numdigits=18', () => {
+describe.skip('Custom Strategy Oracle POC numdigits=18', () => {
   const numDigits = 18;
   const oracleBase = 2;
   const { payoutFunction } = LinearPayout.buildPayoutFunction(
@@ -357,7 +357,7 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
   });
 });
 
-describe('Custom Strategy Oracle POC numdigits=27', () => {
+describe.skip('Custom Strategy Oracle POC numdigits=27', () => {
   const numDigits = 27;
   const oracleBase = 2;
   const { payoutFunction } = LinearPayout.buildPayoutFunction(
