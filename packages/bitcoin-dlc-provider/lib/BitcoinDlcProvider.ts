@@ -52,6 +52,7 @@ import {
   DualFundingTxFinalizer,
   groupByIgnoringDigits,
   HyperbolaPayoutCurve,
+  PolynomialPayoutCurve,
   roundPayout,
 } from '@node-dlc/core';
 import {
@@ -83,6 +84,7 @@ import {
   OracleEventV0,
   OracleInfoV0,
   PayoutFunctionV0,
+  PolynomialPayoutCurvePiece,
   ScriptWitnessV0,
 } from '@node-dlc/messaging';
 import { Script, Sequence, Tx } from '@node-lightning/bitcoin';
@@ -316,6 +318,66 @@ export default class BitcoinDlcProvider
     return { payouts, payoutGroups, messagesList };
   }
 
+  private GetPayoutsFromPolynomialPayoutFunction(
+    _dlcOffer: DlcOffer,
+    contractDescriptor: ContractDescriptorV1,
+    oracleInfo: OracleInfoV0,
+    totalCollateral: bigint,
+  ): GetPayoutsResponse {
+    if (_dlcOffer.type !== MessageType.DlcOfferV0)
+      throw Error('DlcOffer must be V0');
+    const dlcOffer = _dlcOffer as DlcOfferV0;
+    if (contractDescriptor.payoutFunction.type !== MessageType.PayoutFunctionV0)
+      throw Error('PayoutFunction must be V0');
+    const payoutFunction = contractDescriptor.payoutFunction as PayoutFunctionV0;
+    if (payoutFunction.pieces.length === 0)
+      throw Error('PayoutFunction must have at least once PayoutCurvePiece');
+    for (const piece of payoutFunction.pieces) {
+      if (
+        piece.payoutCurvePiece.type !== MessageType.PolynomialPayoutCurvePiece
+      )
+        throw Error('Must be PolynomialPayoutCurvePiece');
+    }
+    const eventDescriptor = oracleInfo.announcement.oracleEvent
+      .eventDescriptor as DigitDecompositionEventDescriptorV0;
+    if (
+      eventDescriptor.type !== MessageType.DigitDecompositionEventDescriptorV0
+    )
+      throw Error('Only DigitDecomposition Oracle Events supported');
+
+    const roundingIntervals = contractDescriptor.roundingIntervals;
+    const cetPayouts = PolynomialPayoutCurve.computePayouts(
+      payoutFunction,
+      totalCollateral,
+      roundingIntervals,
+    );
+
+    const payoutGroups: PayoutGroup[] = [];
+    cetPayouts.forEach((p) => {
+      payoutGroups.push({
+        payout: p.payout,
+        groups: groupByIgnoringDigits(
+          p.indexFrom,
+          p.indexTo,
+          eventDescriptor.base,
+          contractDescriptor.numDigits,
+        ),
+      });
+    });
+
+    const rValuesMessagesList = this.GenerateMessages(oracleInfo);
+
+    const { payouts, messagesList } = outputsToPayouts(
+      payoutGroups,
+      rValuesMessagesList,
+      dlcOffer.offerCollateralSatoshis,
+      dlcOffer.contractInfo.totalCollateral - dlcOffer.offerCollateralSatoshis,
+      true,
+    );
+
+    return { payouts, payoutGroups, messagesList };
+  }
+
   private GetPayouts(_dlcOffer: DlcOffer): GetPayoutsResponse[] {
     const { dlcOffer } = checkTypes({ _dlcOffer });
 
@@ -371,18 +433,45 @@ export default class BitcoinDlcProvider
     totalCollateral: bigint,
   ) {
     switch (contractDescriptor.type) {
-      case MessageType.ContractDescriptorV0:
+      case MessageType.ContractDescriptorV0: {
         throw Error('ContractDescriptorV0 not yet supported');
+      }
       case MessageType.ContractDescriptorV1:
-        // eslint-disable-next-line no-case-declarations
-        return this.GetPayoutsFromPayoutFunction(
-          dlcOffer,
-          contractDescriptor as ContractDescriptorV1,
-          oracleInfo,
-          totalCollateral,
-        );
-      default:
+        {
+          const contractDescriptorV1 = contractDescriptor as ContractDescriptorV1;
+          const payoutFunction = contractDescriptorV1.payoutFunction as PayoutFunctionV0;
+
+          // TODO: add a better check for this
+          const payoutCurvePiece = payoutFunction.pieces[0].payoutCurvePiece;
+
+          switch (payoutCurvePiece.type) {
+            case MessageType.HyperbolaPayoutCurvePiece:
+              return this.GetPayoutsFromPayoutFunction(
+                dlcOffer,
+                contractDescriptor as ContractDescriptorV1,
+                oracleInfo,
+                totalCollateral,
+              );
+            case MessageType.OldHyperbolaPayoutCurvePiece:
+              return this.GetPayoutsFromPayoutFunction(
+                dlcOffer,
+                contractDescriptor as ContractDescriptorV1,
+                oracleInfo,
+                totalCollateral,
+              );
+            case MessageType.PolynomialPayoutCurvePiece:
+              return this.GetPayoutsFromPolynomialPayoutFunction(
+                dlcOffer,
+                contractDescriptor as ContractDescriptorV1,
+                oracleInfo,
+                totalCollateral,
+              );
+          }
+        }
+        break;
+      default: {
         throw Error('ContractDescriptor must be V0 or V1');
+      }
     }
   }
 
@@ -922,6 +1011,84 @@ export default class BitcoinDlcProvider
     return fundTx;
   }
 
+  async FindOutcomeIndexFromPolynomialPayoutCurvePiece(
+    _dlcOffer: DlcOffer,
+    contractDescriptor: ContractDescriptorV1,
+    contractOraclePairIndex: number,
+    polynomialPayoutCurvePiece: PolynomialPayoutCurvePiece,
+    oracleAttestation: OracleAttestationV0,
+    outcome: bigint,
+  ): Promise<FindOutcomeResponse> {
+    const { dlcOffer } = checkTypes({ _dlcOffer });
+
+    const polynomialCurve = PolynomialPayoutCurve.fromPayoutCurvePiece(
+      polynomialPayoutCurvePiece,
+    );
+
+    const clampBN = (val: BigNumber) =>
+      BigNumber.max(
+        0,
+        BigNumber.min(val, dlcOffer.contractInfo.totalCollateral.toString()),
+      );
+
+    const payout = clampBN(polynomialCurve.getPayout(outcome));
+
+    const payoutResponses = this.GetPayouts(dlcOffer);
+    const payoutIndexOffset = this.GetIndicesFromPayouts(payoutResponses)[
+      contractOraclePairIndex
+    ].startingMessagesIndex;
+
+    const { payoutGroups } = payoutResponses[contractOraclePairIndex];
+
+    const intervalsSorted = [
+      ...contractDescriptor.roundingIntervals.intervals,
+    ].sort((a, b) => Number(b.beginInterval) - Number(a.beginInterval));
+
+    const interval = intervalsSorted.find(
+      (interval) => Number(outcome) >= Number(interval.beginInterval),
+    );
+
+    const roundedPayout = BigInt(
+      clampBN(
+        new BigNumber(roundPayout(payout, interval.roundingMod).toString()),
+      ).toString(),
+    );
+
+    const outcomesFormatted = oracleAttestation.outcomes.map((outcome) =>
+      parseInt(outcome),
+    );
+
+    let index = 0;
+    let groupIndex = -1;
+    let groupLength = 0;
+
+    for (const payoutGroup of payoutGroups) {
+      if (payoutGroup.payout === roundedPayout) {
+        groupIndex = payoutGroup.groups.findIndex((group) => {
+          return group.every((msg, i) => msg === outcomesFormatted[i]);
+        });
+        if (groupIndex === -1)
+          throw Error(
+            'Failed to Find OutcomeIndex From PolynomialPayoutCurvePiece. \
+Payout Group found but incorrect group index',
+          );
+        index += groupIndex;
+        groupLength = payoutGroup.groups[groupIndex].length;
+        break;
+      } else {
+        index += payoutGroup.groups.length;
+      }
+    }
+
+    if (groupIndex === -1)
+      throw Error(
+        'Failed to Find OutcomeIndex From PolynomialPayoutCurvePiece. \
+Payout Group not found',
+      );
+
+    return { index: payoutIndexOffset + index, groupLength };
+  }
+
   async FindOutcomeIndexFromHyperbolaPayoutCurvePiece(
     _dlcOffer: DlcOffer,
     contractDescriptor: ContractDescriptorV1,
@@ -1052,14 +1219,21 @@ Payout Group not found',
       .reduce((acc, val, i) => acc + Number(val) * base ** i, 0);
 
     const piecesSorted = payoutFunction.pieces.sort(
-      (a, b) => Number(b.endpoint) - Number(a.endpoint),
+      (a, b) => Number(a.endpoint) - Number(b.endpoint),
     );
 
     const piece = piecesSorted.find((piece) => outcome < piece.endpoint);
 
     switch (piece.payoutCurvePiece.type) {
       case MessageType.PolynomialPayoutCurvePiece:
-        throw Error('Polynomial Curve Piece not yet supported');
+        return this.FindOutcomeIndexFromPolynomialPayoutCurvePiece(
+          dlcOffer,
+          contractDescriptor,
+          contractOraclePairIndex,
+          piece.payoutCurvePiece as PolynomialPayoutCurvePiece,
+          oracleAttestation,
+          BigInt(outcome),
+        );
       case MessageType.HyperbolaPayoutCurvePiece:
         return this.FindOutcomeIndexFromHyperbolaPayoutCurvePiece(
           dlcOffer,

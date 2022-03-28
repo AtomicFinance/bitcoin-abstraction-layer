@@ -7,6 +7,7 @@ import {
   OracleAttestationV0,
   OracleEventV0,
   OracleInfoV0,
+  PayoutFunctionV0,
   RoundingIntervalsV0,
 } from '@node-dlc/messaging';
 import { math } from 'bip-schnorr';
@@ -60,6 +61,65 @@ export function generateContractInfo(
   );
 
   const intervals = [{ beginInterval: 0n, roundingMod: 500n }];
+  const roundingIntervals = new RoundingIntervalsV0();
+  roundingIntervals.intervals = intervals;
+
+  const contractDescriptor = new ContractDescriptorV1();
+  contractDescriptor.numDigits = numDigits;
+  contractDescriptor.payoutFunction = payoutFunction;
+  contractDescriptor.roundingIntervals = roundingIntervals;
+
+  const contractInfo = new ContractInfoV0();
+  contractInfo.totalCollateral = totalCollateral;
+  contractInfo.contractDescriptor = contractDescriptor;
+  contractInfo.oracleInfo = oracleInfo;
+
+  return { contractInfo, totalCollateral };
+}
+
+export function generateContractInfoCustomStrategyOracle(
+  oracle: Oracle,
+  numDigits = 18,
+  oracleBase = 2,
+  payoutFunction: PayoutFunctionV0,
+  intervals: { beginInterval: bigint; roundingMod: bigint }[],
+  totalCollateral: bigint,
+  unit = 'BTC',
+  eventId = 'strategyOutcome',
+): { contractInfo: ContractInfoV0; totalCollateral: bigint } {
+  const oliviaInfo = oracle.GetOracleInfo();
+
+  const eventDescriptor = new DigitDecompositionEventDescriptorV0();
+  eventDescriptor.base = oracleBase;
+  eventDescriptor.isSigned = false;
+  eventDescriptor.unit = unit;
+  eventDescriptor.precision = 0;
+  eventDescriptor.nbDigits = numDigits;
+
+  const event = new OracleEventV0();
+  event.oracleNonces = oliviaInfo.rValues.map((rValue) =>
+    Buffer.from(rValue, 'hex'),
+  );
+  event.eventMaturityEpoch = 1617170572;
+  event.eventDescriptor = eventDescriptor;
+  event.eventId = eventId;
+
+  const announcement = new OracleAnnouncementV0();
+  announcement.announcementSig = Buffer.from(
+    oracle.GetSignature(
+      math
+        .taggedHash('DLC/oracle/announcement/v0', event.serialize())
+        .toString('hex'),
+    ),
+    'hex',
+  );
+
+  announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
+  announcement.oracleEvent = event;
+
+  const oracleInfo = new OracleInfoV0();
+  oracleInfo.announcement = announcement;
+
   const roundingIntervals = new RoundingIntervalsV0();
   roundingIntervals.intervals = intervals;
 
