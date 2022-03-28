@@ -1339,17 +1339,6 @@
     "@liquality/types" "^1.13.10"
     "lodash" "^4.17.20"
 
-"@node-dlc/core@0.17.2":
-  "integrity" "sha512-Dt5y3NfV6MYLFt6obiNUpwLbWZvyVYm4BPIgDA1yShlg/IhDpoCQ2QlePOO1mGW39w9MJyFmx+i2EI1qDWgVcg=="
-  "resolved" "https://registry.npmjs.org/@node-dlc/core/-/core-0.17.2.tgz"
-  "version" "0.17.2"
-  dependencies:
-    "@atomicfinance/bitcoin-networks" "^2.4.1"
-    "@liquality/bitcoin-networks" "^1.12.0"
-    "@node-dlc/messaging" "^0.17.2"
-    "@node-lightning/bitcoin" "0.26.1"
-    "@node-lightning/core" "0.26.1"
-
 "@node-dlc/core@0.18.1":
   "integrity" "sha512-FjKKo9zDGtxRPCVmOu2Fraie1Of1CnPNCsj95R8xHmHgoEKqcLbwfZUCreq9fNsBTPQocRViyDjmaw+AC6UbnQ=="
   "resolved" "https://registry.npmjs.org/@node-dlc/core/-/core-0.18.1.tgz"
@@ -1360,20 +1349,6 @@
     "@node-dlc/messaging" "^0.18.1"
     "@node-lightning/bitcoin" "0.26.1"
     "@node-lightning/core" "0.26.1"
-
-"@node-dlc/messaging@^0.17.2", "@node-dlc/messaging@0.17.2":
-  "integrity" "sha512-duAlBiIL720V/oU6HxMKMcizTt9R5HaruaioYJZmUemv+Fl5UIm09MeJVbqKL33oNyFcUOuTwJuRoIgzD2DyAw=="
-  "resolved" "https://registry.npmjs.org/@node-dlc/messaging/-/messaging-0.17.2.tgz"
-  "version" "0.17.2"
-  dependencies:
-    "@liquality/bitcoin-networks" "1.0.0-beta.2"
-    "@liquality/utils" "1.0.0-beta.2"
-    "@node-lightning/bitcoin" "0.26.1"
-    "@node-lightning/bufio" "0.26.1"
-    "@node-lightning/checksum" "0.26.1"
-    "@node-lightning/wire" "0.26.1"
-    "bip-schnorr" "0.6.3"
-    "bitcoinjs-lib" "5.2.0"
 
 "@node-dlc/messaging@^0.18.1", "@node-dlc/messaging@0.18.1":
   "integrity" "sha512-DS1R7xthPmT+IGthUU3RiJqD1aNdCOZjBEcdLiswlQlgL8T8aeOQOeBOHALbddOSztc39eR2YArvs0I9z2iq2A=="
@@ -1393,6 +1368,20 @@
   "integrity" "sha512-t68PXXtUWUUOBHWD1YglzIF0b1yd5KbXaurronQBHPDGO5L4A82i3pTJynxnDMK062UIR3v2vZ7Hep58RlalJA=="
   "resolved" "https://registry.npmjs.org/@node-dlc/messaging/-/messaging-0.17.1.tgz"
   "version" "0.17.1"
+  dependencies:
+    "@liquality/bitcoin-networks" "1.0.0-beta.2"
+    "@liquality/utils" "1.0.0-beta.2"
+    "@node-lightning/bitcoin" "0.26.1"
+    "@node-lightning/bufio" "0.26.1"
+    "@node-lightning/checksum" "0.26.1"
+    "@node-lightning/wire" "0.26.1"
+    "bip-schnorr" "0.6.3"
+    "bitcoinjs-lib" "5.2.0"
+
+"@node-dlc/messaging@0.17.2":
+  "integrity" "sha512-duAlBiIL720V/oU6HxMKMcizTt9R5HaruaioYJZmUemv+Fl5UIm09MeJVbqKL33oNyFcUOuTwJuRoIgzD2DyAw=="
+  "resolved" "https://registry.npmjs.org/@node-dlc/messaging/-/messaging-0.17.2.tgz"
+  "version" "0.17.2"
   dependencies:
     "@liquality/bitcoin-networks" "1.0.0-beta.2"
     "@liquality/utils" "1.0.0-beta.2"
