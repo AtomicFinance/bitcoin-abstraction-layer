@@ -428,7 +428,12 @@ export default class BitcoinWalletProvider
     _outputs: Output[],
     _feePerByte: number,
     fixedInputs: Input[],
-  ) {
+  ): {
+    inputs: bT.UTXO[];
+    outputs: { value: number; id?: string }[];
+    fee: number;
+    change: { value: number; id?: string };
+  } {
     const utxoBalance = fixedInputs.reduce((a, b) => a + (b['value'] || 0), 0);
     const outputBalance = _outputs.reduce((a, b) => a + (b['value'] || 0), 0);
     const amountToSend =
