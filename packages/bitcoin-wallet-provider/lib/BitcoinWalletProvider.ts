@@ -32,12 +32,14 @@ export default class BitcoinWalletProvider
   implements Partial<FinanceWalletProvider> {
   _network: BitcoinNetwork;
   _unusedAddressesBlacklist: UnusedAddressesBlacklist;
+  _maxAddressesToDerive: number;
 
   constructor(network: BitcoinNetwork) {
     super();
 
     this._network = network;
     this._unusedAddressesBlacklist = {};
+    this._maxAddressesToDerive = 5000;
   }
 
   async buildSweepTransactionWithSetOutputs(
@@ -62,6 +64,14 @@ export default class BitcoinWalletProvider
     unusedAddressesBlacklist: UnusedAddressesBlacklist,
   ) {
     this._unusedAddressesBlacklist = unusedAddressesBlacklist;
+  }
+
+  setMaxAddressesToDerive(maxAddressesToDerive: number) {
+    this._maxAddressesToDerive = maxAddressesToDerive;
+  }
+
+  getMaxAddressesToDerive() {
+    return this._maxAddressesToDerive;
   }
 
   _createMultisigPayment(m: number, pubkeys: string[]): bitcoin.Payment {
@@ -519,10 +529,9 @@ export default class BitcoinWalletProvider
   }
 
   async quickFindAddress(addresses: string[]): Promise<Address> {
-    const maxAddresses = 5000;
     const addressesPerCall = 5;
     let index = 0;
-    while (index < maxAddresses) {
+    while (index < this._maxAddressesToDerive) {
       const walletNonChangeAddresses = await this.getMethod('getAddresses')(
         index,
         addressesPerCall,
@@ -540,7 +549,15 @@ export default class BitcoinWalletProvider
       const walletAddress = walletAddresses.find((walletAddr) =>
         addresses.find((addr) => walletAddr.address === addr),
       );
-      if (walletAddress) return walletAddress;
+
+      if (walletAddress) {
+        // Increment max addresses to derive by 100, if found.
+        this._maxAddressesToDerive = Math.max(
+          this._maxAddressesToDerive,
+          index + 100,
+        );
+        return walletAddress;
+      }
       index += addressesPerCall;
     }
   }

@@ -647,9 +647,9 @@ export default class BitcoinDlcProvider
       network,
     );
 
-    const { derivationPath } = await this.getMethod('findAddress')([
-      fundingAddress,
-    ]);
+    const {
+      derivationPath,
+    } = await this.client.financewallet.quickFindAddress([fundingAddress]);
 
     const fundPrivateKeyPair = await this.getMethod('keyPair')(derivationPath);
     const fundPrivateKey = Buffer.from(fundPrivateKeyPair.__D).toString('hex');
@@ -1737,11 +1737,13 @@ Payout Group not found',
       network,
     );
 
-    let walletAddress: Address = await this.getMethod('findAddress')([
-      offerFundingAddress,
-    ]);
+    let walletAddress: Address = await this.client.financewallet.quickFindAddress(
+      [offerFundingAddress],
+    );
     if (walletAddress) return true;
-    walletAddress = await this.getMethod('findAddress')([acceptFundingAddress]);
+    walletAddress = await this.client.financewallet.quickFindAddress([
+      acceptFundingAddress,
+    ]);
     if (walletAddress) return false;
 
     throw Error('Wallet Address not found for DlcOffer or DlcAccept');
