@@ -528,6 +528,15 @@ export default class BitcoinWalletProvider
     return { hex: txb.build().toHex(), fee };
   }
 
+  /**
+   * quickGetAddresses is an optimized version of getAddresses.
+   * It removes the call to `asyncSetImmediate()`, speeding up the function by a factor of 6x.
+   *
+   * @param startingIndex
+   * @param numAddresses
+   * @param change
+   * @returns {Promise<Address[]>}
+   */
   async quickGetAddresses(
     startingIndex = 0,
     numAddresses = 1,
@@ -541,6 +550,7 @@ export default class BitcoinWalletProvider
     const lastIndex = startingIndex + numAddresses;
     const changeVal = change ? '1' : '0';
 
+    // Original wallet provider is fetched to get the base derivation path
     const originalProvider = this.client.getProviderForMethod('getAddresses');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const baseDerivationPath = (originalProvider as any)
@@ -564,6 +574,17 @@ export default class BitcoinWalletProvider
     return addresses;
   }
 
+  /**
+   * quickFindAddress is an optimized version of findAddress.
+   *
+   * It searches through both change and non-change addresses each iteration.
+   *
+   * This is in contrast to the original findAddress function which searches
+   * through all non-change addresses before moving on to change addresses.
+   *
+   * @param addresses
+   * @returns {Promise<Address[]>}
+   */
   async quickFindAddress(addresses: string[]): Promise<Address> {
     const addressesPerCall = 20;
     let index = 0;
@@ -588,7 +609,7 @@ export default class BitcoinWalletProvider
       );
 
       if (walletAddress) {
-        // Increment max addresses to derive by 100, if found.
+        // Increment max addresses to derive by 100 if found within 100 addresses of maxAddressesToDerive
         this._maxAddressesToDerive = Math.max(
           this._maxAddressesToDerive,
           index + 100,
