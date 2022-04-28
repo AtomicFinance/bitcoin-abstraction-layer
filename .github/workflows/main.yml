@@ -47,12 +47,6 @@ jobs:
 
       - run: yarn bootstrap
 
-      - name: Build cfd-dlc-js
-        if: steps.node-modules-cache.outputs.cache-hit != 'true'
-        run: npm run cmake_all
-        shell: bash
-        working-directory: ./node_modules/cfd-dlc-js
-
       - run: yarn build
       - run: yarn test
 
