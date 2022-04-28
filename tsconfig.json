@@ -9,5 +9,9 @@
     "resolveJsonModule": true,
     "sourceMap": true
   },
+  "ts-node": {
+    "transpileOnly": true,
+    "swc": true,
+  },
   "exclude": ["node_modules", "**/*.spec.ts", "dist"]
 }
