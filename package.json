@@ -65,7 +65,7 @@
     "lint": "lerna run lint",
     "lint:fix": "lerna run lint:fix",
     "build": "lerna run build",
-    "test": "nyc --reporter=text --reporter=lcov cross-env NODE_ENV=test ts-mocha -p tsconfig.spec.json --exit --timeout 150000 tests/**/*.test.ts",
+    "test": "nyc --reporter=text --reporter=lcov cross-env NODE_ENV=test mocha --parallel",
     "new:version": "lerna version --no-push --no-git-tag-version && lerna clean --yes && lerna bootstrap",
     "publish:all": "lerna publish from-package",
     "prepublishOnly": "npm run build"
