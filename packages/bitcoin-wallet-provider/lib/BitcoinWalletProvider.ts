@@ -32,12 +32,14 @@ export default class BitcoinWalletProvider
   implements Partial<FinanceWalletProvider> {
   _network: BitcoinNetwork;
   _unusedAddressesBlacklist: UnusedAddressesBlacklist;
+  _maxAddressesToDerive: number;
 
   constructor(network: BitcoinNetwork) {
     super();
 
     this._network = network;
     this._unusedAddressesBlacklist = {};
+    this._maxAddressesToDerive = 5000;
   }
 
   async buildSweepTransactionWithSetOutputs(
@@ -62,6 +64,14 @@ export default class BitcoinWalletProvider
     unusedAddressesBlacklist: UnusedAddressesBlacklist,
   ) {
     this._unusedAddressesBlacklist = unusedAddressesBlacklist;
+  }
+
+  setMaxAddressesToDerive(maxAddressesToDerive: number) {
+    this._maxAddressesToDerive = maxAddressesToDerive;
+  }
+
+  getMaxAddressesToDerive() {
+    return this._maxAddressesToDerive;
   }
 
   _createMultisigPayment(m: number, pubkeys: string[]): bitcoin.Payment {
@@ -290,7 +300,7 @@ export default class BitcoinWalletProvider
         addressCountMap.nonChange < ADDRESS_GAP
       ) {
         // Scanning for non change addr
-        nonChangeAddresses = await this.client.wallet.getAddresses(
+        nonChangeAddresses = await this.quickGetAddresses(
           addressIndex,
           numAddressPerCall,
           false,
@@ -518,17 +528,74 @@ export default class BitcoinWalletProvider
     return { hex: txb.build().toHex(), fee };
   }
 
+  /**
+   * quickGetAddresses is an optimized version of getAddresses.
+   * It removes the call to `asyncSetImmediate()`, speeding up the function by a factor of 6x.
+   *
+   * @param startingIndex
+   * @param numAddresses
+   * @param change
+   * @returns {Promise<Address[]>}
+   */
+  async quickGetAddresses(
+    startingIndex = 0,
+    numAddresses = 1,
+    change = false,
+  ): Promise<Address[]> {
+    if (numAddresses < 1) {
+      throw new Error('You must return at least one address');
+    }
+
+    const addresses = [];
+    const lastIndex = startingIndex + numAddresses;
+    const changeVal = change ? '1' : '0';
+
+    // Original wallet provider is fetched to get the base derivation path
+    const originalProvider = this.client.getProviderForMethod('getAddresses');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const baseDerivationPath = (originalProvider as any)
+      ._baseDerivationPath as string;
+
+    const getDerivationPathAddressFn: (
+      path: string,
+    ) => Promise<Address> = this.client.getMethod('getDerivationPathAddress');
+
+    for (
+      let currentIndex = startingIndex;
+      currentIndex < lastIndex;
+      currentIndex++
+    ) {
+      const subPath = changeVal + '/' + currentIndex;
+      const path = baseDerivationPath + '/' + subPath;
+      const addressObject = await getDerivationPathAddressFn(path);
+      addresses.push(addressObject);
+    }
+
+    return addresses;
+  }
+
+  /**
+   * quickFindAddress is an optimized version of findAddress.
+   *
+   * It searches through both change and non-change addresses each iteration.
+   *
+   * This is in contrast to the original findAddress function which searches
+   * through all non-change addresses before moving on to change addresses.
+   *
+   * @param addresses
+   * @returns {Promise<Address[]>}
+   */
   async quickFindAddress(addresses: string[]): Promise<Address> {
-    const maxAddresses = 5000;
-    const addressesPerCall = 5;
+    const addressesPerCall = 20;
     let index = 0;
-    while (index < maxAddresses) {
-      const walletNonChangeAddresses = await this.getMethod('getAddresses')(
+
+    while (index < this._maxAddressesToDerive) {
+      const walletNonChangeAddresses = await this.quickGetAddresses(
         index,
         addressesPerCall,
         true,
       );
-      const walletChangeAddresses = await this.getMethod('getAddresses')(
+      const walletChangeAddresses = await this.quickGetAddresses(
         index,
         addressesPerCall,
         false,
@@ -540,7 +607,15 @@ export default class BitcoinWalletProvider
       const walletAddress = walletAddresses.find((walletAddr) =>
         addresses.find((addr) => walletAddr.address === addr),
       );
-      if (walletAddress) return walletAddress;
+
+      if (walletAddress) {
+        // Increment max addresses to derive by 100 if found within 100 addresses of maxAddressesToDerive
+        this._maxAddressesToDerive = Math.max(
+          this._maxAddressesToDerive,
+          index + 100,
+        );
+        return walletAddress;
+      }
       index += addressesPerCall;
     }
   }

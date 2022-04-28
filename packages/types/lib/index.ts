@@ -1,3 +1,4 @@
+import { Provider } from '@liquality/provider';
 import { ChainProvider, SwapProvider, WalletProvider } from '@liquality/types';
 
 import { CfdProvider } from './cfd';
@@ -13,6 +14,7 @@ interface IFinanceClient {
    * @return {function} Returns method from provider instance associated with the requested method
    */
   getMethod(method: string, requestor?: any): () => any;
+  getProviderForMethod(method: string, requestor?: boolean): Provider;
 
   chain: ChainProvider;
   swap: SwapProvider;

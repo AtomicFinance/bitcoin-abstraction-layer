@@ -22,5 +22,10 @@ export interface FinanceWalletProvider {
     fixedInputs: Input[],
   );
 
+  quickGetAddresses(
+    startingIndex?: number,
+    numAddresses?: number,
+    change?: boolean,
+  );
   quickFindAddress(addresses: string[]);
 }

@@ -20,6 +20,10 @@
       "node"
     ]
   },
+  "ts-node": {
+    "transpileOnly": true,
+    "swc": true
+  },
   "files": [
     "test.ts"
   ],
