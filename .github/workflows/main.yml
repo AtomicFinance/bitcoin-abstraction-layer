@@ -45,8 +45,6 @@ jobs:
         if: steps.node-modules-cache.outputs.cache-hit != 'true'
         run: yarn install --frozen-lockfile
 
-      - run: yarn bootstrap
-
       - run: yarn build
       - run: yarn test
 

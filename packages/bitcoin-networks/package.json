@@ -8,7 +8,7 @@
   "license": "ISC",
   "main": "dist/index.js",
   "scripts": {
-    "build": "../../node_modules/.bin/swc lib --out-dir=dist --config-file=../../.swcrc",
+    "build": "../../node_modules/.bin/tsc --project tsconfig.json",
     "prepublishOnly": "yarn run build",
     "test": "yarn run build",
     "lint": "../../node_modules/.bin/eslint --ignore-path ../../.eslintignore  -c ../../.eslintrc.js .",
