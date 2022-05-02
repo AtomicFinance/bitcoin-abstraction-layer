@@ -29,3 +29,12 @@
 lerna-debug.log
 .vscode
 yarn-error.log
+.turbo
+
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+.pnp.*

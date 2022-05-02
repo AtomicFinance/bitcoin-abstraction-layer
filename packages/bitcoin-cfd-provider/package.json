@@ -1,22 +1,22 @@
 {
   "name": "@atomicfinance/bitcoin-cfd-provider",
   "umdName": "BitcoinCfdProvider",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "description": "CAL Finance Bitcoin Cfd Provider",
   "author": "Atomic Finance <info@atomic.finance>",
   "homepage": "",
   "license": "ISC",
   "main": "dist/index.js",
   "scripts": {
-    "build": "../../node_modules/.bin/swc lib --out-dir=dist --config-file=../../.swcrc",
+    "build": "../../node_modules/.bin/tsc --project tsconfig.json",
     "prepublishOnly": "yarn run build",
     "test": "yarn run build",
     "lint": "../../node_modules/.bin/eslint --ignore-path ../../.eslintignore  -c ../../.eslintrc.js .",
     "lint:fix": "../../node_modules/.bin/eslint --fix --ignore-path ../../.eslintignore  -c ../../.eslintrc.js ."
   },
   "dependencies": {
-    "@atomicfinance/provider": "^2.5.0",
-    "@atomicfinance/types": "^2.5.0",
+    "@atomicfinance/provider": "^2.5.1",
+    "@atomicfinance/types": "^2.5.1",
     "@liquality/utils": "1.1.5",
     "lodash": "^4.17.20"
   },
