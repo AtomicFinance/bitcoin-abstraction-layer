@@ -67,7 +67,8 @@
     "test": "nyc --reporter=text --reporter=lcov cross-env NODE_ENV=test mocha --parallel",
     "prepublishOnly": "yarn build",
     "changeset": "changeset",
-    "version": "yarn changeset version"
+    "version": "yarn changeset version",
+    "publish": "yarn build && yarn changeset publish"
   },
   "publishConfig": {
     "access": "public"

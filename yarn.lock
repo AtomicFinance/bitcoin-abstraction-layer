@@ -19,8 +19,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-cfd-provider@workspace:packages/bitcoin-cfd-provider"
   dependencies:
-    "@atomicfinance/provider": ^2.5.0
-    "@atomicfinance/types": ^2.5.0
+    "@atomicfinance/provider": ^2.5.1
+    "@atomicfinance/types": ^2.5.1
     "@liquality/utils": 1.1.5
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
@@ -32,9 +32,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-dlc-provider@workspace:packages/bitcoin-dlc-provider"
   dependencies:
-    "@atomicfinance/bitcoin-networks": ^2.5.0
-    "@atomicfinance/provider": ^2.5.0
-    "@atomicfinance/types": ^2.5.0
+    "@atomicfinance/bitcoin-networks": ^2.5.1
+    "@atomicfinance/provider": ^2.5.1
+    "@atomicfinance/types": ^2.5.1
     "@liquality/bitcoin-utils": 1.1.5
     "@liquality/provider": 1.1.5
     "@liquality/types": 1.1.5
@@ -55,7 +55,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/bitcoin-networks@^2.4.1, @atomicfinance/bitcoin-networks@^2.5.0, @atomicfinance/bitcoin-networks@workspace:packages/bitcoin-networks":
+"@atomicfinance/bitcoin-networks@^2.4.1, @atomicfinance/bitcoin-networks@^2.5.1, @atomicfinance/bitcoin-networks@workspace:packages/bitcoin-networks":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-networks@workspace:packages/bitcoin-networks"
   dependencies:
@@ -69,8 +69,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-wallet-provider@workspace:packages/bitcoin-wallet-provider"
   dependencies:
-    "@atomicfinance/provider": ^2.5.0
-    "@atomicfinance/types": ^2.5.0
+    "@atomicfinance/provider": ^2.5.1
+    "@atomicfinance/types": ^2.5.1
     "@liquality/bitcoin-utils": 1.1.5
     "@liquality/provider": 1.1.5
     "@liquality/types": 1.1.5
@@ -86,8 +86,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/client@workspace:packages/client"
   dependencies:
-    "@atomicfinance/provider": ^2.5.0
-    "@atomicfinance/types": ^2.5.0
+    "@atomicfinance/provider": ^2.5.1
+    "@atomicfinance/types": ^2.5.1
     "@liquality/client": 1.1.5
     "@liquality/errors": 1.1.5
     "@liquality/provider": 1.1.5
@@ -99,18 +99,18 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/provider@^2.5.0, @atomicfinance/provider@workspace:packages/provider":
+"@atomicfinance/provider@^2.5.1, @atomicfinance/provider@workspace:packages/provider":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/provider@workspace:packages/provider"
   dependencies:
-    "@atomicfinance/types": ^2.5.0
+    "@atomicfinance/types": ^2.5.1
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
     lodash: ^4.17.20
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/types@^2.5.0, @atomicfinance/types@workspace:packages/types":
+"@atomicfinance/types@^2.5.1, @atomicfinance/types@workspace:packages/types":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/types@workspace:packages/types"
   dependencies:
