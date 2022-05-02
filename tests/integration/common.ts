@@ -110,7 +110,7 @@ bitcoinWithJs3.addProvider(new BitcoinWalletProvider(network));
  * bitcoinWithJs4 corresponds to counterparty of dlc offer, accept, sign and txs messages in fixtures
  *
  * It was added to test the specific case where derivation path is > 500
- * Relevant issue: https://github.com/AtomicFinance/chainabstractionlayer-finance/issues/109
+ * Relevant issue: https://github.com/AtomicFinance/chainify-finance/issues/109
  */
 const bitcoinWithJs4 = new FinanceClient();
 bitcoinWithJs4.addProvider(mockedBitcoinRpcProvider());

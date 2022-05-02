@@ -597,7 +597,7 @@ describe('dlc provider', () => {
     /**
      * Currently quickFindAddress only checked the first 5000 addresses
      * This means DlcSign would fail if any addresses are > 5000
-     * Relevant Issue: https://github.com/AtomicFinance/chainabstractionlayer-finance/issues/109
+     * Relevant Issue: https://github.com/AtomicFinance/chainify-finance/issues/109
      *
      * This test ensures this issue is accounted for when finalizingDlcSign
      */

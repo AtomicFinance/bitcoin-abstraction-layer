@@ -4,7 +4,7 @@ export default abstract class Provider {
   client: IFinanceClient;
   /**
    * Set client to a provider instance.
-   * @param {!ChainAbstractionLayer} client - The ChainAbstractionLayer instance
+   * @param {!Chainify} client - The Chainify instance
    */
   setClient(client?: any) {
     this.client = client;
