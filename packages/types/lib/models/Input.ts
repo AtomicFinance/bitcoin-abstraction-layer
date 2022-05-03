@@ -4,18 +4,18 @@ import Amount from './Amount';
 import Utxo from './Utxo';
 
 /**
- * Class for interfacing with inputs/utxos in Liquality ChainAbstractionLayer
- * https://github.com/liquality/chainabstractionlayer
+ * Class for interfacing with inputs/utxos in Liquality Chainify
+ * https://github.com/liquality/chainify
  *
  * These inputs can have different fields for value
- * satoshis (sats): https://github.com/liquality/chainabstractionlayer/blob/dev/packages/bitcoin-esplora-api-provider/lib/BitcoinEsploraApiProvider.js#L65
- * amount (btc): https://github.com/liquality/chainabstractionlayer/blob/dev/packages/bitcoin-esplora-api-provider/lib/BitcoinEsploraApiProvider.js#L74
- * value (sats): https://github.com/liquality/chainabstractionlayer/blob/dev/packages/bitcoin-wallet-provider/lib/BitcoinWalletProvider.js#L331
+ * satoshis (sats): https://github.com/liquality/chainify/blob/dev/packages/bitcoin-esplora-api-provider/lib/BitcoinEsploraApiProvider.js#L65
+ * amount (btc): https://github.com/liquality/chainify/blob/dev/packages/bitcoin-esplora-api-provider/lib/BitcoinEsploraApiProvider.js#L74
+ * value (sats): https://github.com/liquality/chainify/blob/dev/packages/bitcoin-wallet-provider/lib/BitcoinWalletProvider.js#L331
  *
  * This will be fixed once typescript branch is merged:
- * https://github.com/liquality/chainabstractionlayer/tree/typescript
+ * https://github.com/liquality/chainify/tree/typescript
  * satoshis and amount will not be necessary, only value
- * https://github.com/liquality/chainabstractionlayer/blob/typescript/packages/types/lib/bitcoin.ts#L46
+ * https://github.com/liquality/chainify/blob/typescript/packages/types/lib/bitcoin.ts#L46
  */
 export default class Input {
   constructor(
