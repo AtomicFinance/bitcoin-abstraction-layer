@@ -1,4 +1,4 @@
-# Chain Abstraction Layer Finance
+# Chainify Finance
 
 > :warning: This project is under heavy development. Expect bugs & breaking changes.
 
