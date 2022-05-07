@@ -84,6 +84,21 @@ yarn bootstrap
 yarn watch
 ```
 
+## Changeset Versioning
+
+We use [changesets](https://github.com/changesets/changesets) to manage versioning and changelogs. When creating a pull request, include a summary of your changes in a changeset by running:
+
+```bash
+yarn changeset
+```
+
+To bump the packages to the proper semantic version and publish:
+
+```bash
+yarn version
+yarn publish
+```
+
 ## Production
 
 ```bash
