@@ -6,8 +6,6 @@
   ],
   "devDependencies": {
     "@changesets/cli": "^2.22.0",
-    "@liquality/bitcoin-node-wallet-provider": "^1.4.4",
-    "@liquality/bitcoin-rpc-provider": "^1.4.4",
     "@node-dlc/core": "0.18.3",
     "@node-dlc/messaging": "0.18.3",
     "@swc/cli": "^0.1.57",
