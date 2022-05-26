@@ -1,7 +1,5 @@
 /* eslint-env mocha */
 import Provider from '@atomicfinance/provider';
-import { BitcoinNodeWalletProvider } from '@liquality/bitcoin-node-wallet-provider';
-import { BitcoinRpcProvider } from '@liquality/bitcoin-rpc-provider';
 import BN from 'bignumber.js';
 import { generateMnemonic } from 'bip39';
 import * as cfdJs from 'cfd-js';
@@ -11,6 +9,8 @@ import chaiAsPromised from 'chai-as-promised';
 import BitcoinCfdProvider from '../../packages/bitcoin-cfd-provider/lib';
 import BitcoinDlcProvider from '../../packages/bitcoin-dlc-provider/lib';
 import { BitcoinJsWalletProvider } from '../../packages/bitcoin-js-wallet-provider';
+import { BitcoinNodeWalletProvider } from '../../packages/bitcoin-node-wallet-provider';
+import { BitcoinRpcProvider } from '../../packages/bitcoin-rpc-provider';
 import { decodeRawTransaction } from '../../packages/bitcoin-utils';
 import { Client } from '../../packages/client';
 import * as errors from '../../packages/errors';
