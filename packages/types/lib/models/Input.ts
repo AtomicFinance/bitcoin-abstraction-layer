@@ -1,5 +1,4 @@
-import { bitcoin as bT } from '@liquality/types';
-
+import * as bT from '../bitcoin';
 import Amount from './Amount';
 import Utxo from './Utxo';
 

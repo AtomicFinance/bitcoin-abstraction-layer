@@ -1,12 +1,12 @@
-import { IFinanceClient } from '@atomicfinance/types';
+import { IClient } from '@atomicfinance/types';
 
 export default abstract class Provider {
-  client: IFinanceClient;
+  client: IClient;
   /**
    * Set client to a provider instance.
-   * @param {!Chainify} client - The Chainify instance
+   * @param client - The client instance
    */
-  setClient(client?: any) {
+  setClient(client?: IClient): void {
     this.client = client;
   }
 
@@ -16,7 +16,8 @@ export default abstract class Provider {
    * @return {function} Returns a method from a provider above current Provider
    *  in the stack.
    */
-  getMethod(method: string, requestor: any = this) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getMethod(method: string, requestor: any = this): (...args: any[]) => any {
     return this.client.getMethod(method, requestor).bind(this);
   }
 }

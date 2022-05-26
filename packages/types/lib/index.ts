@@ -1,11 +1,18 @@
-import { Provider } from '@liquality/provider';
-import { ChainProvider, SwapProvider, WalletProvider } from '@liquality/types';
+import BigNumber from 'bignumber.js';
 
+import { Address } from './address';
+import * as bitcoin from './bitcoin';
+import { Block } from './block';
 import { CfdProvider } from './cfd';
+import { ChainProvider, SendOptions } from './chain';
 import { DlcProvider } from './dlc';
-import { FinanceWalletProvider } from './financewallet';
+import { FeeDetail, FeeDetails, FeeProvider } from './fees';
+import * as BitcoinJsonRpcTypes from './jsonrpc';
+import { Network } from './network';
+import { Transaction, TxStatus } from './transaction';
+import { WalletProvider } from './wallet';
 
-interface IFinanceClient {
+interface IClient {
   /**
    * Helper method that returns method from a provider.
    * @param {!string} method - Name of the method to look for in the provider stack
@@ -14,20 +21,17 @@ interface IFinanceClient {
    * @return {function} Returns method from provider instance associated with the requested method
    */
   getMethod(method: string, requestor?: any): () => any;
-  getProviderForMethod(method: string, requestor?: boolean): Provider;
+  getProviderForMethod(method: string, requestor?: boolean): any;
 
   chain: ChainProvider;
-  swap: SwapProvider;
   wallet: WalletProvider;
   cfd: CfdProvider;
   dlc: DlcProvider;
-  financewallet: FinanceWalletProvider;
 }
 
 export * from './cfd';
 export * from './common';
 export * from './dlc';
-export * from './financewallet';
 export { default as Amount } from './models/Amount';
 export { default as Input } from './models/Input';
 export { default as OracleInfo } from './models/OracleInfo';
@@ -35,4 +39,22 @@ export { default as Outcome } from './models/Outcome';
 export { default as Output } from './models/Output';
 export { default as Utxo } from './models/Utxo';
 export * from './wallet';
-export { IFinanceClient, CfdProvider, DlcProvider, FinanceWalletProvider };
+export {
+  BigNumber,
+  IClient,
+  CfdProvider,
+  DlcProvider,
+  ChainProvider,
+  WalletProvider,
+  Address,
+  SendOptions,
+  Block,
+  Transaction,
+  TxStatus,
+  FeeDetails,
+  FeeDetail,
+  FeeProvider,
+  Network,
+  BitcoinJsonRpcTypes,
+  bitcoin,
+};

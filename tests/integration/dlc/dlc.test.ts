@@ -1,7 +1,5 @@
 import 'mocha';
 
-import { Input } from '@atomicfinance/types';
-import { BitcoinNetworks } from '@liquality/bitcoin-networks';
 import {
   CoveredCall,
   groupByIgnoringDigits,
@@ -37,7 +35,9 @@ import {
   AcceptDlcOfferResponse,
   SignDlcAcceptResponse,
 } from '../../../packages/bitcoin-dlc-provider';
+import { BitcoinNetworks } from '../../../packages/bitcoin-networks';
 import { chainHashFromNetwork } from '../../../packages/bitcoin-networks/lib';
+import { Input } from '../../../packages/types';
 import { chains, getInput } from '../common';
 import f from '../fixtures/blockchain.json';
 import Oracle from '../models/Oracle';
@@ -597,7 +597,7 @@ describe('dlc provider', () => {
     /**
      * Currently quickFindAddress only checked the first 5000 addresses
      * This means DlcSign would fail if any addresses are > 5000
-     * Relevant Issue: https://github.com/AtomicFinance/chainify-finance/issues/109
+     * Relevant Issue: https://github.com/AtomicFinance/bitcoin-abstraction-layer/issues/109
      *
      * This test ensures this issue is accounted for when finalizingDlcSign
      */

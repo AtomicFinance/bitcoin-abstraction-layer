@@ -21,7 +21,7 @@ __metadata:
   dependencies:
     "@atomicfinance/provider": ^2.5.1
     "@atomicfinance/types": ^2.5.1
-    "@liquality/utils": 1.1.5
+    "@atomicfinance/utils": ^2.5.1
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
     lodash: ^4.17.20
@@ -33,12 +33,10 @@ __metadata:
   resolution: "@atomicfinance/bitcoin-dlc-provider@workspace:packages/bitcoin-dlc-provider"
   dependencies:
     "@atomicfinance/bitcoin-networks": ^2.5.1
+    "@atomicfinance/bitcoin-utils": 2.5.1
     "@atomicfinance/provider": ^2.5.1
     "@atomicfinance/types": ^2.5.1
-    "@liquality/bitcoin-utils": 1.1.5
-    "@liquality/provider": 1.1.5
-    "@liquality/types": 1.1.5
-    "@liquality/utils": 1.1.5
+    "@atomicfinance/utils": ^2.5.1
     "@node-dlc/core": 0.18.3
     "@node-dlc/messaging": 0.18.3
     "@node-lightning/bitcoin": 0.26.1
@@ -55,30 +53,102 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@atomicfinance/bitcoin-esplora-api-provider@^2.5.1, @atomicfinance/bitcoin-esplora-api-provider@workspace:packages/bitcoin-esplora-api-provider":
+  version: 0.0.0-use.local
+  resolution: "@atomicfinance/bitcoin-esplora-api-provider@workspace:packages/bitcoin-esplora-api-provider"
+  dependencies:
+    "@atomicfinance/bitcoin-networks": ^2.5.1
+    "@atomicfinance/bitcoin-utils": ^2.5.1
+    "@atomicfinance/crypto": ^2.5.1
+    "@atomicfinance/errors": ^2.5.1
+    "@atomicfinance/node-provider": ^2.5.1
+    "@atomicfinance/types": ^2.5.1
+    "@atomicfinance/utils": ^2.5.1
+    "@babel/runtime": ^7.12.1
+    "@types/lodash": ^4.14.168
+    bignumber.js: ^9.0.0
+    lodash: ^4.17.20
+    nock: ^13.0.11
+  languageName: unknown
+  linkType: soft
+
+"@atomicfinance/bitcoin-esplora-batch-api-provider@workspace:packages/bitcoin-esplora-batch-api-provider":
+  version: 0.0.0-use.local
+  resolution: "@atomicfinance/bitcoin-esplora-batch-api-provider@workspace:packages/bitcoin-esplora-batch-api-provider"
+  dependencies:
+    "@atomicfinance/bitcoin-esplora-api-provider": ^2.5.1
+    "@atomicfinance/node-provider": ^2.5.1
+    "@atomicfinance/types": ^2.5.1
+    "@atomicfinance/utils": ^2.5.1
+    "@babel/runtime": ^7.12.1
+    "@types/lodash": ^4.14.168
+    bignumber.js: ^9.0.0
+    lodash: ^4.17.20
+    nock: ^10.0.6
+  languageName: unknown
+  linkType: soft
+
+"@atomicfinance/bitcoin-js-wallet-provider@workspace:packages/bitcoin-js-wallet-provider":
+  version: 0.0.0-use.local
+  resolution: "@atomicfinance/bitcoin-js-wallet-provider@workspace:packages/bitcoin-js-wallet-provider"
+  dependencies:
+    "@atomicfinance/bitcoin-networks": ^2.5.1
+    "@atomicfinance/bitcoin-utils": ^2.5.1
+    "@atomicfinance/bitcoin-wallet-provider": ^2.5.1
+    "@atomicfinance/types": ^2.5.1
+    "@atomicfinance/utils": ^2.5.1
+    "@babel/runtime": ^7.12.1
+    bip32: ^2.0.6
+    bip39: ^3.0.2
+    bitcoinjs-lib: ^5.2.0
+    bitcoinjs-message: ^2.1.0
+    secp256k1: ^4.0.3
+  languageName: unknown
+  linkType: soft
+
 "@atomicfinance/bitcoin-networks@^2.4.1, @atomicfinance/bitcoin-networks@^2.5.1, @atomicfinance/bitcoin-networks@workspace:packages/bitcoin-networks":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-networks@workspace:packages/bitcoin-networks"
   dependencies:
-    "@liquality/bitcoin-networks": 1.1.5
+    "@atomicfinance/types": ^2.5.1
     "@types/node": 16.10.3
     bitcoinjs-lib: 5.2.0
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/bitcoin-wallet-provider@workspace:packages/bitcoin-wallet-provider":
+"@atomicfinance/bitcoin-utils@2.5.1, @atomicfinance/bitcoin-utils@^2.5.1, @atomicfinance/bitcoin-utils@workspace:packages/bitcoin-utils":
+  version: 0.0.0-use.local
+  resolution: "@atomicfinance/bitcoin-utils@workspace:packages/bitcoin-utils"
+  dependencies:
+    "@atomicfinance/bitcoin-networks": ^2.5.1
+    "@atomicfinance/crypto": ^2.5.1
+    "@atomicfinance/errors": ^2.5.1
+    "@atomicfinance/types": ^2.5.1
+    "@atomicfinance/utils": ^2.5.1
+    "@babel/runtime": ^7.12.1
+    "@types/bitcoinjs-lib": ^5.0.0
+    "@types/lodash": ^4.14.168
+    "@types/node": 16.10.3
+    bignumber.js: ^9.0.0
+    bip174: ^2.0.1
+    bitcoinjs-lib: ^5.2.0
+    coinselect: ^3.1.11
+    lodash: ^4.17.20
+  languageName: unknown
+  linkType: soft
+
+"@atomicfinance/bitcoin-wallet-provider@^2.5.1, @atomicfinance/bitcoin-wallet-provider@workspace:packages/bitcoin-wallet-provider":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-wallet-provider@workspace:packages/bitcoin-wallet-provider"
   dependencies:
+    "@atomicfinance/bitcoin-utils": ^2.5.1
     "@atomicfinance/provider": ^2.5.1
     "@atomicfinance/types": ^2.5.1
-    "@liquality/bitcoin-utils": 1.1.5
-    "@liquality/provider": 1.1.5
-    "@liquality/types": 1.1.5
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
     bitcoinjs-lib: 5.2.0
     lodash: ^4.17.20
-    secp256k1: ^4.0.2
+    memoizee: ^0.4.15
   languageName: unknown
   linkType: soft
 
@@ -86,15 +156,49 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/client@workspace:packages/client"
   dependencies:
+    "@atomicfinance/errors": ^2.5.1
     "@atomicfinance/provider": ^2.5.1
     "@atomicfinance/types": ^2.5.1
-    "@liquality/client": 1.1.5
-    "@liquality/errors": 1.1.5
-    "@liquality/provider": 1.1.5
     "@node-dlc/messaging": 0.18.3
     "@node-lightning/bitcoin": 0.26.1
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
+    ajv: ^6.10.0
+    lodash: ^4.17.20
+  languageName: unknown
+  linkType: soft
+
+"@atomicfinance/crypto@^2.5.1, @atomicfinance/crypto@workspace:packages/crypto":
+  version: 0.0.0-use.local
+  resolution: "@atomicfinance/crypto@workspace:packages/crypto"
+  dependencies:
+    "@types/bech32": ^1.1.2
+    "@types/bs58": ^4.0.1
+    bech32: ^1.1.3
+    bs58: ^4.0.1
+    crypto-hashing: ^1.0.0
+  languageName: unknown
+  linkType: soft
+
+"@atomicfinance/errors@^2.5.1, @atomicfinance/errors@workspace:packages/errors":
+  version: 0.0.0-use.local
+  resolution: "@atomicfinance/errors@workspace:packages/errors"
+  dependencies:
+    "@types/standard-error": ^1.1.0
+    standard-error: ^1.1.0
+  languageName: unknown
+  linkType: soft
+
+"@atomicfinance/node-provider@^2.5.1, @atomicfinance/node-provider@workspace:packages/node-provider":
+  version: 0.0.0-use.local
+  resolution: "@atomicfinance/node-provider@workspace:packages/node-provider"
+  dependencies:
+    "@atomicfinance/errors": ^2.5.1
+    "@atomicfinance/provider": ^2.5.1
+    "@babel/runtime": ^7.12.1
+    "@types/axios": ^0.14.0
+    "@types/lodash": ^4.14.168
+    axios: ^0.21.0
     lodash: ^4.17.20
   languageName: unknown
   linkType: soft
@@ -114,14 +218,30 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/types@workspace:packages/types"
   dependencies:
-    "@liquality/provider": 1.1.5
-    "@liquality/types": 1.1.5
     "@node-dlc/messaging": 0.18.3
     "@node-lightning/bitcoin": 0.26.1
     "@node-lightning/noise": 0.26.1
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
     lodash: ^4.17.20
+  languageName: unknown
+  linkType: soft
+
+"@atomicfinance/utils@^2.5.1, @atomicfinance/utils@workspace:packages/utils":
+  version: 0.0.0-use.local
+  resolution: "@atomicfinance/utils@workspace:packages/utils"
+  dependencies:
+    "@atomicfinance/bitcoin-networks": ^2.5.1
+    "@atomicfinance/crypto": ^2.5.1
+    "@atomicfinance/errors": ^2.5.1
+    "@atomicfinance/types": ^2.5.1
+    "@babel/runtime": ^7.12.1
+    bignumber.js: ^9.0.0
+    bip174: ^2.0.1
+    bitcoinjs-lib: ^5.2.0
+    coinselect: ^3.1.11
+    lodash: ^4.17.20
+    setimmediate: ^1.0.5
   languageName: unknown
   linkType: soft
 
@@ -1511,42 +1631,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@liquality/bitcoin-esplora-api-provider@npm:^1.4.4":
-  version: 1.13.12
-  resolution: "@liquality/bitcoin-esplora-api-provider@npm:1.13.12"
-  dependencies:
-    "@babel/runtime": ^7.12.1
-    "@liquality/bitcoin-networks": ^1.13.12
-    "@liquality/bitcoin-utils": ^1.13.12
-    "@liquality/errors": ^1.13.12
-    "@liquality/node-provider": ^1.13.12
-    "@liquality/types": ^1.13.12
-    "@liquality/utils": ^1.13.12
-    bignumber.js: ^9.0.0
-    lodash: ^4.17.20
-  checksum: 7e85eb426e3f85755c5ecb0ea9340fa3c94c44872a4700cd3001a90f0277310984ae50fe339138afe042bf82cf56caf44ae64ec91655f5a4b4175ab004ae4e39
-  languageName: node
-  linkType: hard
-
-"@liquality/bitcoin-js-wallet-provider@npm:^1.4.4":
-  version: 1.13.12
-  resolution: "@liquality/bitcoin-js-wallet-provider@npm:1.13.12"
-  dependencies:
-    "@babel/runtime": ^7.12.1
-    "@liquality/bitcoin-networks": ^1.13.12
-    "@liquality/bitcoin-utils": ^1.13.12
-    "@liquality/bitcoin-wallet-provider": ^1.13.12
-    "@liquality/types": ^1.13.12
-    "@liquality/utils": ^1.13.12
-    "@liquality/wallet-provider": ^1.13.12
-    bip32: ^2.0.6
-    bip39: ^3.0.2
-    bitcoinjs-lib: ^5.2.0
-    bitcoinjs-message: ^2.1.0
-  checksum: d1e2f7428a6275a59afb9c244d26ec3022de72b957482fc76dbacbee660b315cb5505984214c49dad4e15a7aa352471bd8f8f327919d577cb2324a685fe1441c
-  languageName: node
-  linkType: hard
-
 "@liquality/bitcoin-networks@npm:1.0.0-beta.2":
   version: 1.0.0-beta.2
   resolution: "@liquality/bitcoin-networks@npm:1.0.0-beta.2"
@@ -1558,18 +1642,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@liquality/bitcoin-networks@npm:1.1.5":
-  version: 1.1.5
-  resolution: "@liquality/bitcoin-networks@npm:1.1.5"
-  dependencies:
-    "@babel/runtime": ^7.12.1
-    "@liquality/types": ^1.1.5
-    bitcoinjs-lib: ^5.2.0
-  checksum: ae3c45cd24bad428fb0875c26545060996f0c400d4e7e209782ee2ff3ff40a708b125e8f35652be3cf332ede10f58817da0d33256958012786c80a3945775253
-  languageName: node
-  linkType: hard
-
-"@liquality/bitcoin-networks@npm:^1.1.5, @liquality/bitcoin-networks@npm:^1.12.0, @liquality/bitcoin-networks@npm:^1.13.12, @liquality/bitcoin-networks@npm:^1.4.4":
+"@liquality/bitcoin-networks@npm:^1.12.0, @liquality/bitcoin-networks@npm:^1.13.12":
   version: 1.13.12
   resolution: "@liquality/bitcoin-networks@npm:1.13.12"
   dependencies:
@@ -1616,26 +1689,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@liquality/bitcoin-utils@npm:1.1.5":
-  version: 1.1.5
-  resolution: "@liquality/bitcoin-utils@npm:1.1.5"
-  dependencies:
-    "@babel/runtime": ^7.12.1
-    "@liquality/bitcoin-networks": ^1.1.5
-    "@liquality/crypto": ^1.1.5
-    "@liquality/errors": ^1.1.5
-    "@liquality/types": ^1.1.5
-    "@liquality/utils": ^1.1.5
-    bignumber.js: ^9.0.0
-    bip174: ^2.0.1
-    bitcoinjs-lib: ^5.2.0
-    coinselect: ^3.1.11
-    lodash: ^4.17.20
-  checksum: 9f9c5c0dea1e91410c8f4ebbaec91214e127736932ea27519960bff3432f1272a1a05c6fffd851fa3c664c358d7c7b2ec1293e477d6624c65aec7425852afda3
-  languageName: node
-  linkType: hard
-
-"@liquality/bitcoin-utils@npm:^1.13.12, @liquality/bitcoin-utils@npm:^1.4.4":
+"@liquality/bitcoin-utils@npm:^1.13.12":
   version: 1.13.12
   resolution: "@liquality/bitcoin-utils@npm:1.13.12"
   dependencies:
@@ -1654,61 +1708,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@liquality/bitcoin-wallet-provider@npm:^1.13.12":
-  version: 1.13.12
-  resolution: "@liquality/bitcoin-wallet-provider@npm:1.13.12"
-  dependencies:
-    "@babel/runtime": ^7.12.1
-    "@liquality/bitcoin-networks": ^1.13.12
-    "@liquality/bitcoin-utils": ^1.13.12
-    "@liquality/errors": ^1.13.12
-    "@liquality/provider": ^1.13.12
-    "@liquality/types": ^1.13.12
-    "@liquality/utils": ^1.13.12
-    bignumber.js: ^9.0.0
-    bitcoinjs-lib: ^5.2.0
-    memoizee: ^0.4.15
-  checksum: 90f10b93f0acc2da4a3091f03cc546807c54d9b33ccbaa6eb30154a99ba390a9d4fed2f0e77fc5c6be125368d7e6dbcb8de5769ee6154e33467804065755d87f
-  languageName: node
-  linkType: hard
-
-"@liquality/client@npm:1.1.5":
-  version: 1.1.5
-  resolution: "@liquality/client@npm:1.1.5"
-  dependencies:
-    "@babel/runtime": ^7.12.1
-    "@liquality/crypto": ^1.1.5
-    "@liquality/errors": ^1.1.5
-    "@liquality/provider": ^1.1.5
-    "@liquality/schema": ^1.1.5
-    "@liquality/types": ^1.1.5
-    ajv: ^6.10.0
-    bignumber.js: ^9.0.1
-    debug: ^4.1.1
-    lodash: ^4.17.20
-  checksum: f5f15b37fff4e8ce296e9c3fe8cbe5ec42aeb3e179ba724a2b9c5be74e2f6db39044cc6a6230c0f70cfecee2f119f678e45af5967a306a94f6554d76195a885f
-  languageName: node
-  linkType: hard
-
-"@liquality/client@npm:^1.4.4":
-  version: 1.13.12
-  resolution: "@liquality/client@npm:1.13.12"
-  dependencies:
-    "@babel/runtime": ^7.12.1
-    "@liquality/crypto": ^1.13.12
-    "@liquality/errors": ^1.13.12
-    "@liquality/provider": ^1.13.12
-    "@liquality/schema": ^1.13.12
-    "@liquality/types": ^1.13.12
-    ajv: ^6.10.0
-    bignumber.js: ^9.0.1
-    debug: ^4.1.1
-    lodash: ^4.17.20
-  checksum: 08d691cffa42a8bfa24ada3aa5b0c764f8d340e517ea642802994b554ebd9f977ed4ad948aaef14c46e0fb4ffad391af5f1c4adda3e77d1caad09fd0020542a0
-  languageName: node
-  linkType: hard
-
-"@liquality/crypto@npm:^1.0.0-beta.2, @liquality/crypto@npm:^1.1.5, @liquality/crypto@npm:^1.13.12, @liquality/crypto@npm:^1.4.4":
+"@liquality/crypto@npm:^1.0.0-beta.2, @liquality/crypto@npm:^1.13.12":
   version: 1.13.12
   resolution: "@liquality/crypto@npm:1.13.12"
   dependencies:
@@ -1730,17 +1730,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@liquality/errors@npm:1.1.5":
-  version: 1.1.5
-  resolution: "@liquality/errors@npm:1.1.5"
-  dependencies:
-    "@types/standard-error": ^1.1.0
-    standard-error: ^1.1.0
-  checksum: 3b3da8287f52e77f7f9c4dc760459bf0fb5b333467bb8bd807984dce237ae405f1cc75aea72d008955e88bad23589bce5bdf7e418cedf2b74de23fc326770316
-  languageName: node
-  linkType: hard
-
-"@liquality/errors@npm:^1.0.0-beta.2, @liquality/errors@npm:^1.1.5, @liquality/errors@npm:^1.13.12, @liquality/errors@npm:^1.4.4":
+"@liquality/errors@npm:^1.0.0-beta.2, @liquality/errors@npm:^1.13.12":
   version: 1.13.12
   resolution: "@liquality/errors@npm:1.13.12"
   dependencies:
@@ -1780,16 +1770,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@liquality/provider@npm:1.1.5":
-  version: 1.1.5
-  resolution: "@liquality/provider@npm:1.1.5"
-  dependencies:
-    "@liquality/types": ^1.1.5
-  checksum: e3bab9c387bc59587a928af09f0b1bebb2d9470b8f9698b98d1abd6880dc12057c8e5771f200030dd642b882a704381ada77d170890ce90a4c9ae7106ef016fa
-  languageName: node
-  linkType: hard
-
-"@liquality/provider@npm:^1.1.5, @liquality/provider@npm:^1.13.12":
+"@liquality/provider@npm:^1.13.12":
   version: 1.13.12
   resolution: "@liquality/provider@npm:1.13.12"
   dependencies:
@@ -1798,23 +1779,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@liquality/schema@npm:^1.1.5, @liquality/schema@npm:^1.13.12":
-  version: 1.13.12
-  resolution: "@liquality/schema@npm:1.13.12"
-  checksum: a4a73ca0c7652e7c496a7a46fa185f45efa30f7230406dc10a0893df5ecf7b892a35512978e34101dfe87764dcd31434a3b972514584117a49c8aa85824449ef
-  languageName: node
-  linkType: hard
-
-"@liquality/types@npm:1.1.5":
-  version: 1.1.5
-  resolution: "@liquality/types@npm:1.1.5"
-  dependencies:
-    bignumber.js: ^9.0.1
-  checksum: 8f09f38cdb6e96ff55d1b6f5cd32cc5c10dd3e5bcfbd7285b9c6e044024471e077fb4f937431d386041380851bff2f8474c8d6a72ae3bd63758da59b6ffb5ec0
-  languageName: node
-  linkType: hard
-
-"@liquality/types@npm:^1.0.0-beta.2, @liquality/types@npm:^1.1.5, @liquality/types@npm:^1.13.12":
+"@liquality/types@npm:^1.0.0-beta.2, @liquality/types@npm:^1.13.12":
   version: 1.13.12
   resolution: "@liquality/types@npm:1.13.12"
   dependencies:
@@ -1836,20 +1801,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@liquality/utils@npm:1.1.5":
-  version: 1.1.5
-  resolution: "@liquality/utils@npm:1.1.5"
-  dependencies:
-    "@babel/runtime": ^7.12.1
-    "@liquality/crypto": ^1.1.5
-    "@liquality/errors": ^1.1.5
-    "@liquality/types": ^1.1.5
-    setimmediate: ^1.0.5
-  checksum: 67d6ee5756b74f93b78365fd84af1591c3f78074c2cc811fcd95994d6818b9f9e3e7097c7ed5359a72b38099d7009366475b0c34b49b943292c0989bd7ccf6c7
-  languageName: node
-  linkType: hard
-
-"@liquality/utils@npm:^1.1.5, @liquality/utils@npm:^1.13.12, @liquality/utils@npm:^1.4.4":
+"@liquality/utils@npm:^1.13.12":
   version: 1.13.12
   resolution: "@liquality/utils@npm:1.13.12"
   dependencies:
@@ -2442,6 +2394,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@swc/register@npm:^0.1.10":
+  version: 0.1.10
+  resolution: "@swc/register@npm:0.1.10"
+  dependencies:
+    lodash.clonedeep: ^4.5.0
+    pirates: ^4.0.1
+    source-map-support: ^0.5.13
+  peerDependencies:
+    "@swc/core": ^1.0.46
+  bin:
+    swc-node: bin/swc-node
+  checksum: 4d75413ab22dd5f988ff7213ae2153c7aebd68db8260349827bcef826fa2952a73ee89460fa3707d1b7e0214304ec415fe230a6b7dc5baebb87253aef2f48cfa
+  languageName: node
+  linkType: hard
+
 "@szmarczak/http-timer@npm:^4.0.5":
   version: 4.0.6
   resolution: "@szmarczak/http-timer@npm:4.0.6"
@@ -2499,6 +2466,33 @@ __metadata:
   dependencies:
     axios: "*"
   checksum: 12a230b9404055d81804cb57fe4739b2317111b28a39e2477b2513250e8b85725e6f6ce509fc2a9494a6da60facb8d80df875fcd747f62f6c3abebc7db60ae66
+  languageName: node
+  linkType: hard
+
+"@types/bech32@npm:^1.1.2":
+  version: 1.1.2
+  resolution: "@types/bech32@npm:1.1.2"
+  dependencies:
+    "@types/node": "*"
+  checksum: d7374a6fa08f3d6b26e1f5b6eaa6c37d3ec941e45904c75beda65e1ecd94ad03240627ecbf53f3515fb2bea8b858d5257155a7223609f895429cbfcaccba77fd
+  languageName: node
+  linkType: hard
+
+"@types/bitcoinjs-lib@npm:^5.0.0":
+  version: 5.0.0
+  resolution: "@types/bitcoinjs-lib@npm:5.0.0"
+  dependencies:
+    bitcoinjs-lib: "*"
+  checksum: 84cade22952762f9eed677a4598ee4829caa2d39bbbdaee041f5ad7bb9ff55ec989bf4a50a645a99268b8911b108f5b9bb03a58f8bb1dbe2f1b4d7ae7f5403af
+  languageName: node
+  linkType: hard
+
+"@types/bs58@npm:^4.0.1":
+  version: 4.0.1
+  resolution: "@types/bs58@npm:4.0.1"
+  dependencies:
+    base-x: ^3.0.6
+  checksum: 5063fed6bb3816f28eef3e689a05f8f85d03ce7c2e3ceefe77c349ed147023999eb024e863bf3fa81ba2bded690e5296efe4d34864c875097bd261614e37f786
   languageName: node
   linkType: hard
 
@@ -3598,7 +3592,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"base-x@npm:^3.0.2":
+"base-x@npm:^3.0.2, base-x@npm:^3.0.6":
   version: 3.0.9
   resolution: "base-x@npm:3.0.9"
   dependencies:
@@ -3642,6 +3636,13 @@ __metadata:
   version: 1.1.4
   resolution: "bech32@npm:1.1.4"
   checksum: 0e98db619191548390d6f09ff68b0253ba7ae6a55db93dfdbb070ba234c1fd3308c0606fbcc95fad50437227b10011e2698b89f0181f6e7f845c499bd14d0f4b
+  languageName: node
+  linkType: hard
+
+"bech32@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "bech32@npm:2.0.0"
+  checksum: fa15acb270b59aa496734a01f9155677b478987b773bf701f465858bf1606c6a970085babd43d71ce61895f1baa594cb41a2cd1394bd2c6698f03cc2d811300e
   languageName: node
   linkType: hard
 
@@ -3808,6 +3809,21 @@ __metadata:
   version: 1.4.1
   resolution: "bitcoin-ops@npm:1.4.1"
   checksum: 3daa3303d6af49c0727041b5d7801a20c5806d00f1cc1afa2d53099974e30a7b1e7e9e578723dd25f5e120903f2725c595c0205d5d99a6578ad65213d74d806d
+  languageName: node
+  linkType: hard
+
+"bitcoinjs-lib@npm:*":
+  version: 6.0.1
+  resolution: "bitcoinjs-lib@npm:6.0.1"
+  dependencies:
+    bech32: ^2.0.0
+    bip174: ^2.0.1
+    bs58check: ^2.1.2
+    create-hash: ^1.1.0
+    typeforce: ^1.11.3
+    varuint-bitcoin: ^1.1.2
+    wif: ^2.0.1
+  checksum: bffb9fb0f26425da6a449f981aa244f2fc0c056bcb0b9a7a0d07ebf8e2ce766852ef72ab88d5043097819524a4209a035f1595e9ed6cdea7e02674bbe5afe781
   languageName: node
   linkType: hard
 
@@ -4407,7 +4423,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chai@npm:^4.2.0":
+"chai@npm:^4.1.2, chai@npm:^4.2.0":
   version: 4.3.6
   resolution: "chai@npm:4.3.6"
   dependencies:
@@ -5447,6 +5463,20 @@ __metadata:
   dependencies:
     type-detect: ^4.0.0
   checksum: 4f4c9fb79eb994fb6e81d4aa8b063adc40c00f831588aa65e20857d5d52f15fb23034a6576ecf886f7ff6222d5ae42e71e9b7d57113e0715b1df7ea1e812b125
+  languageName: node
+  linkType: hard
+
+"deep-equal@npm:^1.0.0":
+  version: 1.1.1
+  resolution: "deep-equal@npm:1.1.1"
+  dependencies:
+    is-arguments: ^1.0.4
+    is-date-object: ^1.0.1
+    is-regex: ^1.0.4
+    object-is: ^1.0.1
+    object-keys: ^1.1.1
+    regexp.prototype.flags: ^1.2.0
+  checksum: f92686f2c5bcdf714a75a5fa7a9e47cb374a8ec9307e717b8d1ce61f56a75aaebf5619c2a12b8087a705b5a2f60d0292c35f8b58cb1f72e3268a3a15cab9f78d
   languageName: node
   linkType: hard
 
@@ -6926,6 +6956,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"functions-have-names@npm:^1.2.2":
+  version: 1.2.3
+  resolution: "functions-have-names@npm:1.2.3"
+  checksum: c3f1f5ba20f4e962efb71344ce0a40722163e85bee2101ce25f88214e78182d2d2476aa85ef37950c579eb6cf6ee811c17b3101bb84004bb75655f3e33f3fdb5
+  languageName: node
+  linkType: hard
+
 "gauge@npm:^4.0.3":
   version: 4.0.4
   resolution: "gauge@npm:4.0.4"
@@ -7945,6 +7982,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"is-arguments@npm:^1.0.4":
+  version: 1.1.1
+  resolution: "is-arguments@npm:1.1.1"
+  dependencies:
+    call-bind: ^1.0.2
+    has-tostringtag: ^1.0.0
+  checksum: 7f02700ec2171b691ef3e4d0e3e6c0ba408e8434368504bb593d0d7c891c0dbfda6d19d30808b904a6cb1929bca648c061ba438c39f296c2a8ca083229c49f27
+  languageName: node
+  linkType: hard
+
 "is-arrayish@npm:^0.2.1":
   version: 0.2.1
   resolution: "is-arrayish@npm:0.2.1"
@@ -8313,7 +8360,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"is-regex@npm:^1.1.4":
+"is-regex@npm:^1.0.4, is-regex@npm:^1.1.4":
   version: 1.1.4
   resolution: "is-regex@npm:1.1.4"
   dependencies:
@@ -8989,6 +9036,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lodash.clonedeep@npm:^4.5.0":
+  version: 4.5.0
+  resolution: "lodash.clonedeep@npm:4.5.0"
+  checksum: 92c46f094b064e876a23c97f57f81fbffd5d760bf2d8a1c61d85db6d1e488c66b0384c943abee4f6af7debf5ad4e4282e74ff83177c9e63d8ff081a4837c3489
+  languageName: node
+  linkType: hard
+
 "lodash.flattendeep@npm:^4.4.0":
   version: 4.4.0
   resolution: "lodash.flattendeep@npm:4.4.0"
@@ -9031,6 +9085,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lodash.set@npm:^4.3.2":
+  version: 4.3.2
+  resolution: "lodash.set@npm:4.3.2"
+  checksum: a9122f49eef9f2d0fc9061a33d87f8e5b8c6b23d46e8b9e9ce1529d3588d79741bd1145a3abdfa3b13082703e65af27ff18d8a07bfc22b9be32f3fc36f763f70
+  languageName: node
+  linkType: hard
+
 "lodash.startcase@npm:^4.4.0":
   version: 4.4.0
   resolution: "lodash.startcase@npm:4.4.0"
@@ -9064,7 +9125,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lodash@npm:^4, lodash@npm:^4.17.15, lodash@npm:^4.17.19, lodash@npm:^4.17.20, lodash@npm:^4.3.0, lodash@npm:^4.7.0":
+"lodash@npm:^4, lodash@npm:^4.17.15, lodash@npm:^4.17.19, lodash@npm:^4.17.20, lodash@npm:^4.17.5, lodash@npm:^4.3.0, lodash@npm:^4.7.0":
   version: 4.17.21
   resolution: "lodash@npm:4.17.21"
   checksum: eb835a2e51d381e561e508ce932ea50a8e5a68f4ebdd771ea240d3048244a8d13658acbd502cd4829768c56f2e16bdd4340b9ea141297d472517b83868e677f7
@@ -9751,7 +9812,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mkdirp@npm:>=0.5 0, mkdirp@npm:^0.5.1, mkdirp@npm:^0.5.3, mkdirp@npm:^0.5.5":
+"mkdirp@npm:>=0.5 0, mkdirp@npm:^0.5.0, mkdirp@npm:^0.5.1, mkdirp@npm:^0.5.3, mkdirp@npm:^0.5.5":
   version: 0.5.6
   resolution: "mkdirp@npm:0.5.6"
   dependencies:
@@ -9982,6 +10043,35 @@ __metadata:
   version: 1.0.5
   resolution: "nice-try@npm:1.0.5"
   checksum: 0b4af3b5bb5d86c289f7a026303d192a7eb4417231fe47245c460baeabae7277bcd8fd9c728fb6bd62c30b3e15cd6620373e2cf33353b095d8b403d3e8a15aff
+  languageName: node
+  linkType: hard
+
+"nock@npm:^10.0.6":
+  version: 10.0.6
+  resolution: "nock@npm:10.0.6"
+  dependencies:
+    chai: ^4.1.2
+    debug: ^4.1.0
+    deep-equal: ^1.0.0
+    json-stringify-safe: ^5.0.1
+    lodash: ^4.17.5
+    mkdirp: ^0.5.0
+    propagate: ^1.0.0
+    qs: ^6.5.1
+    semver: ^5.5.0
+  checksum: 42cb7b015768818335ded3a641e3908b5ef7ba0d4d2360add0de69bcea12dedb5dd07a386790f411ac2343f27984f2a37eeddf1f6ff51169001568fd55932e36
+  languageName: node
+  linkType: hard
+
+"nock@npm:^13.0.11":
+  version: 13.2.4
+  resolution: "nock@npm:13.2.4"
+  dependencies:
+    debug: ^4.1.0
+    json-stringify-safe: ^5.0.1
+    lodash.set: ^4.3.2
+    propagate: ^2.0.0
+  checksum: 2750a82ea22eebd8203eb1d7669ae09c3daae1fd573026372bad2515adad48d723a804f647bd45d7a499eb3a9a632560da406bde05bca9df762d3027db9099b5
   languageName: node
   linkType: hard
 
@@ -10493,6 +10583,16 @@ __metadata:
   version: 1.12.0
   resolution: "object-inspect@npm:1.12.0"
   checksum: 2b36d4001a9c921c6b342e2965734519c9c58c355822243c3207fbf0aac271f8d44d30d2d570d450b2cc6f0f00b72bcdba515c37827d2560e5f22b1899a31cf4
+  languageName: node
+  linkType: hard
+
+"object-is@npm:^1.0.1":
+  version: 1.1.5
+  resolution: "object-is@npm:1.1.5"
+  dependencies:
+    call-bind: ^1.0.2
+    define-properties: ^1.1.3
+  checksum: 989b18c4cba258a6b74dc1d74a41805c1a1425bce29f6cabb50dcb1a6a651ea9104a1b07046739a49a5bb1bc49727bcb00efd5c55f932f6ea04ec8927a7901fe
   languageName: node
   linkType: hard
 
@@ -11155,6 +11255,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"pirates@npm:^4.0.1":
+  version: 4.0.5
+  resolution: "pirates@npm:4.0.5"
+  checksum: c9994e61b85260bec6c4fc0307016340d9b0c4f4b6550a957afaaff0c9b1ad58fbbea5cfcf083860a25cb27a375442e2b0edf52e2e1e40e69934e08dcc52d227
+  languageName: node
+  linkType: hard
+
 "pkg-dir@npm:^3.0.0":
   version: 3.0.0
   resolution: "pkg-dir@npm:3.0.0"
@@ -11342,6 +11449,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"propagate@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "propagate@npm:1.0.0"
+  checksum: f7fbff2f68fe3624d863a6196dc0ae8389a1c85905fa63d6e619d0e038d0c3d797b75a244f58d499e99dcbda2596354d1f265a354b1fc785809dce54552d4e29
+  languageName: node
+  linkType: hard
+
+"propagate@npm:^2.0.0":
+  version: 2.0.1
+  resolution: "propagate@npm:2.0.1"
+  checksum: c4febaee2be0979e82fb6b3727878fd122a98d64a7fa3c9d09b0576751b88514a9e9275b1b92e76b364d488f508e223bd7e1dcdc616be4cdda876072fbc2a96c
+  languageName: node
+  linkType: hard
+
 "proto-list@npm:~1.2.1":
   version: 1.2.4
   resolution: "proto-list@npm:1.2.4"
@@ -11459,7 +11580,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"qs@npm:^6.9.4":
+"qs@npm:^6.5.1, qs@npm:^6.9.4":
   version: 6.10.3
   resolution: "qs@npm:6.10.3"
   dependencies:
@@ -11853,6 +11974,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"regexp.prototype.flags@npm:^1.2.0":
+  version: 1.4.3
+  resolution: "regexp.prototype.flags@npm:1.4.3"
+  dependencies:
+    call-bind: ^1.0.2
+    define-properties: ^1.1.3
+    functions-have-names: ^1.2.2
+  checksum: 51228bae732592adb3ededd5e15426be25f289e9c4ef15212f4da73f4ec3919b6140806374b8894036a86020d054a8d2657d3fee6bb9b4d35d8939c20030b7a6
+  languageName: node
+  linkType: hard
+
 "regexpp@npm:^3.1.0":
   version: 3.2.0
   resolution: "regexpp@npm:3.2.0"
@@ -12112,20 +12244,13 @@ __metadata:
   resolution: "root@workspace:."
   dependencies:
     "@changesets/cli": ^2.22.0
-    "@liquality/bitcoin-esplora-api-provider": ^1.4.4
-    "@liquality/bitcoin-js-wallet-provider": ^1.4.4
-    "@liquality/bitcoin-networks": ^1.4.4
     "@liquality/bitcoin-node-wallet-provider": ^1.4.4
     "@liquality/bitcoin-rpc-provider": ^1.4.4
-    "@liquality/bitcoin-utils": ^1.4.4
-    "@liquality/client": ^1.4.4
-    "@liquality/crypto": ^1.4.4
-    "@liquality/errors": ^1.4.4
-    "@liquality/utils": ^1.4.4
     "@node-dlc/core": 0.18.3
     "@node-dlc/messaging": 0.18.3
     "@swc/cli": ^0.1.57
     "@swc/core": ^1.2.172
+    "@swc/register": ^0.1.10
     "@types/chai": ^4.2.12
     "@types/chai-as-promised": ^7.1.4
     "@types/mocha": ^8.0.3
@@ -12288,7 +12413,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"secp256k1@npm:^4.0.2":
+"secp256k1@npm:^4.0.2, secp256k1@npm:^4.0.3":
   version: 4.0.3
   resolution: "secp256k1@npm:4.0.3"
   dependencies:
@@ -12642,7 +12767,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"source-map-support@npm:^0.5.0, source-map-support@npm:^0.5.6, source-map-support@npm:~0.5.12":
+"source-map-support@npm:^0.5.0, source-map-support@npm:^0.5.13, source-map-support@npm:^0.5.6, source-map-support@npm:~0.5.12":
   version: 0.5.21
   resolution: "source-map-support@npm:0.5.21"
   dependencies:
@@ -14209,7 +14334,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"varuint-bitcoin@npm:^1.0.1, varuint-bitcoin@npm:^1.0.4":
+"varuint-bitcoin@npm:^1.0.1, varuint-bitcoin@npm:^1.0.4, varuint-bitcoin@npm:^1.1.2":
   version: 1.1.2
   resolution: "varuint-bitcoin@npm:1.1.2"
   dependencies:

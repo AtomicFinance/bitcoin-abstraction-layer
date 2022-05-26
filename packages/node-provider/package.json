@@ -1,0 +1,38 @@
+{
+  "name": "@atomicfinance/node-provider",
+  "version": "2.5.1",
+  "description": "",
+  "module": "dist/index.js",
+  "main": "dist/index.js",
+  "directories": {
+    "dist": "dist",
+    "src": "lib"
+  },
+  "files": [
+    "dist",
+    "lib"
+  ],
+  "scripts": {
+    "build": "../../node_modules/.bin/tsc --project tsconfig.json",
+    "lint": "../../node_modules/.bin/eslint --ignore-path ../../.eslintignore  -c ../../.eslintrc.js .",
+    "lint:fix": "../../node_modules/.bin/eslint --fix --ignore-path ../../.eslintignore  -c ../../.eslintrc.js ."
+  },
+  "author": "Atomic Finance <info@atomic.finance>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14"
+  },
+  "dependencies": {
+    "@atomicfinance/errors": "^2.5.1",
+    "@atomicfinance/provider": "^2.5.1",
+    "@babel/runtime": "^7.12.1",
+    "@types/axios": "^0.14.0",
+    "@types/lodash": "^4.14.168",
+    "axios": "^0.21.0",
+    "lodash": "^4.17.20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false
+}

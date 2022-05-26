@@ -1,4 +1,4 @@
-import { BitcoinNetworks } from '@liquality/bitcoin-networks';
+import { BitcoinNetworks } from '../../packages/bitcoin-networks';
 
 export default {
   bitcoin: {
