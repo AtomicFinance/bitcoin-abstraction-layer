@@ -125,18 +125,6 @@ export default class Wallet implements WalletProvider {
     return this.client.getMethod('findAddress')(addresses);
   }
 
-  quickGetAddresses(
-    startingIndex?: number,
-    numAddresses?: number,
-    change?: boolean,
-  ) {
-    return this.client.getMethod('quickGetAddresses')(
-      startingIndex,
-      numAddresses,
-      change,
-    );
-  }
-
   setUnusedAddressesBlacklist(unusedAddressesBlacklist: any) {
     return this.client.getMethod('setUnusedAddressesBlacklist')(
       unusedAddressesBlacklist,
