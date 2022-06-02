@@ -36,8 +36,8 @@ __metadata:
     "@atomicfinance/provider": ^2.5.1
     "@atomicfinance/types": ^2.5.1
     "@atomicfinance/utils": ^2.5.1
-    "@node-dlc/core": 0.18.3
-    "@node-dlc/messaging": 0.18.3
+    "@node-dlc/core": 0.19.1
+    "@node-dlc/messaging": 0.19.1
     "@node-lightning/bitcoin": 0.26.1
     "@node-lightning/bufio": 0.26.1
     "@node-lightning/crypto": 0.26.1
@@ -105,16 +105,6 @@ __metadata:
     secp256k1: ^4.0.3
   languageName: unknown
   linkType: soft
-
-"@atomicfinance/bitcoin-networks@npm:^2.4.1":
-  version: 2.5.1
-  resolution: "@atomicfinance/bitcoin-networks@npm:2.5.1"
-  dependencies:
-    "@liquality/bitcoin-networks": 1.1.5
-    bitcoinjs-lib: 5.2.0
-  checksum: b28e16d69a919c9e046d3368c1a18ab4b2346e6fa1cd5064cdba022cdb043e8e2e2954c966007b21c9d1e69076edbd51acaa17817c27de22b4157cd2522092c0
-  languageName: node
-  linkType: hard
 
 "@atomicfinance/bitcoin-node-wallet-provider@workspace:packages/bitcoin-node-wallet-provider":
   version: 0.0.0-use.local
@@ -195,7 +185,7 @@ __metadata:
     "@atomicfinance/errors": ^2.5.1
     "@atomicfinance/provider": ^2.5.1
     "@atomicfinance/types": ^2.5.1
-    "@node-dlc/messaging": 0.18.3
+    "@node-dlc/messaging": 0.19.1
     "@node-lightning/bitcoin": 0.26.1
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
@@ -268,7 +258,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/types@workspace:packages/types"
   dependencies:
-    "@node-dlc/messaging": 0.18.3
+    "@node-dlc/messaging": 0.19.1
     "@node-lightning/bitcoin": 0.26.1
     "@node-lightning/noise": 0.26.1
     "@types/lodash": ^4.14.160
@@ -1693,82 +1683,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@liquality/bitcoin-networks@npm:1.0.0-beta.2":
-  version: 1.0.0-beta.2
-  resolution: "@liquality/bitcoin-networks@npm:1.0.0-beta.2"
-  dependencies:
-    "@babel/runtime": ^7.12.1
-    "@liquality/types": ^1.0.0-beta.2
-    bitcoinjs-lib: ^5.2.0
-  checksum: f16a8f856b724affde6f1831ea202108baa401ffb60cf2611ec5d952774154c5064bba08a0598906373b1d7fa2018e6aaa9a09bad0f864c3125a5ff3ee3b8124
-  languageName: node
-  linkType: hard
-
-"@liquality/bitcoin-networks@npm:1.1.5":
-  version: 1.1.5
-  resolution: "@liquality/bitcoin-networks@npm:1.1.5"
-  dependencies:
-    "@babel/runtime": ^7.12.1
-    "@liquality/types": ^1.1.5
-    bitcoinjs-lib: ^5.2.0
-  checksum: ae3c45cd24bad428fb0875c26545060996f0c400d4e7e209782ee2ff3ff40a708b125e8f35652be3cf332ede10f58817da0d33256958012786c80a3945775253
-  languageName: node
-  linkType: hard
-
-"@liquality/bitcoin-networks@npm:^1.12.0":
-  version: 1.13.12
-  resolution: "@liquality/bitcoin-networks@npm:1.13.12"
-  dependencies:
-    "@babel/runtime": ^7.12.1
-    "@liquality/types": ^1.13.12
-    bitcoinjs-lib: ^5.2.0
-  checksum: 7052dbf237c8376ccf468154e3068660c937613254d41b0afb3c3122a25fb4fe4d212d87dffcdfe1aa8d7f1dce55e9ba56e27c07f53b19bfbfd2e25b6b249e14
-  languageName: node
-  linkType: hard
-
-"@liquality/crypto@npm:^1.0.0-beta.2":
-  version: 1.13.12
-  resolution: "@liquality/crypto@npm:1.13.12"
-  dependencies:
-    bech32: ^1.1.3
-    bs58: ^4.0.1
-    crypto-hashing: ^1.0.0
-  checksum: 485427c165e5bd9a70ecac23fed5ffb627a80358e4837781ca9709081b04af01485f8a72ed4f9da64cb50e299acd234bbcff4eb433dd743f0c699310921a4024
-  languageName: node
-  linkType: hard
-
-"@liquality/errors@npm:^1.0.0-beta.2":
-  version: 1.13.12
-  resolution: "@liquality/errors@npm:1.13.12"
-  dependencies:
-    "@types/standard-error": ^1.1.0
-    standard-error: ^1.1.0
-  checksum: d8f0b49a2f6a20c9aef7e324bf9887fab11b256f35ff20ed17f5a8a99b9dcaacffc2d1c6ae7e30f5d15ce2dbc23b70ec1cb61ebada1af6edd6d4836af143cd4c
-  languageName: node
-  linkType: hard
-
-"@liquality/types@npm:^1.0.0-beta.2, @liquality/types@npm:^1.1.5, @liquality/types@npm:^1.13.12":
-  version: 1.13.12
-  resolution: "@liquality/types@npm:1.13.12"
-  dependencies:
-    bignumber.js: ^9.0.1
-  checksum: d7dbecaebdd40f4b311e82e0e66eb2c85da2dd16ed1796aeeb15dfba5f20ab917a4960445dd90afb792d60ed2a8268717fab10ab6f0a982c0c42f3fba36e5d36
-  languageName: node
-  linkType: hard
-
-"@liquality/utils@npm:1.0.0-beta.2":
-  version: 1.0.0-beta.2
-  resolution: "@liquality/utils@npm:1.0.0-beta.2"
-  dependencies:
-    "@babel/runtime": ^7.12.1
-    "@liquality/crypto": ^1.0.0-beta.2
-    "@liquality/errors": ^1.0.0-beta.2
-    "@liquality/types": ^1.0.0-beta.2
-    setimmediate: ^1.0.5
-  checksum: 6f3863bf221ac464057b5ddbfafcc8b0afbfcebbe65c1e627825144fccc1f5f31ad69632e81487cdff20cfb39695a166f699709eaaf611977f3de7f3c0e4e856
-  languageName: node
-  linkType: hard
-
 "@manypkg/find-root@npm:^1.1.0":
   version: 1.1.0
   resolution: "@manypkg/find-root@npm:1.1.0"
@@ -1795,48 +1709,30 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@node-dlc/core@npm:0.18.3":
-  version: 0.18.3
-  resolution: "@node-dlc/core@npm:0.18.3"
+"@node-dlc/core@npm:0.19.1":
+  version: 0.19.1
+  resolution: "@node-dlc/core@npm:0.19.1"
   dependencies:
-    "@atomicfinance/bitcoin-networks": ^2.4.1
-    "@liquality/bitcoin-networks": ^1.12.0
-    "@node-dlc/messaging": ^0.18.3
+    "@node-dlc/messaging": ^0.19.1
     "@node-lightning/bitcoin": 0.26.1
     "@node-lightning/core": 0.26.1
-  checksum: ccec294172dbf1a9617cdc10881c3750c5f03cadaff0522df2f7cd2e370652e2d0c49733431831d71894804466f04c58f4095c1d427d658ebec7579961545d14
+    bitcoin-networks: ^1.0.0
+  checksum: bf5987daaac38c29e39834ee21a3f73334c615732b18b8c7be1c93ff5a6a3f56666346eee066b62065a4cad5d0c29287d4439ae74a941da2d4e5754f2b7d6bcd
   languageName: node
   linkType: hard
 
-"@node-dlc/messaging@npm:0.18.3":
-  version: 0.18.3
-  resolution: "@node-dlc/messaging@npm:0.18.3"
+"@node-dlc/messaging@npm:0.19.1, @node-dlc/messaging@npm:^0.19.1":
+  version: 0.19.1
+  resolution: "@node-dlc/messaging@npm:0.19.1"
   dependencies:
-    "@liquality/bitcoin-networks": 1.0.0-beta.2
-    "@liquality/utils": 1.0.0-beta.2
     "@node-lightning/bitcoin": 0.26.1
     "@node-lightning/bufio": 0.26.1
     "@node-lightning/checksum": 0.26.1
     "@node-lightning/wire": 0.26.1
     bip-schnorr: 0.6.3
+    bitcoin-networks: ^1.0.0
     bitcoinjs-lib: 5.2.0
-  checksum: 502238cfd88c6b80f00ede0c6711a6948ae3cb236f09ce71ffff4f4d7052a5a2fe0bacc2d00b827280efa1b6eaf8f51568b6058b64c692b78a595672b259e0a2
-  languageName: node
-  linkType: hard
-
-"@node-dlc/messaging@npm:^0.18.3":
-  version: 0.18.4
-  resolution: "@node-dlc/messaging@npm:0.18.4"
-  dependencies:
-    "@liquality/bitcoin-networks": 1.0.0-beta.2
-    "@liquality/utils": 1.0.0-beta.2
-    "@node-lightning/bitcoin": 0.26.1
-    "@node-lightning/bufio": 0.26.1
-    "@node-lightning/checksum": 0.26.1
-    "@node-lightning/wire": 0.26.1
-    bip-schnorr: 0.6.3
-    bitcoinjs-lib: 5.2.0
-  checksum: 49f6c2c7d923109d7e53a5544f066e5b671a252dd1abb40b7d2992cc10e7c2178e3bb7ae7b8d66bc3334d9363dde5da03bfc9ba1a360f4b478b226bffa9d6112
+  checksum: 8c0031222a87967573a84838366ae6fa821d94a85f21b9197fedfd922dc31415cd0ea618ab31d56e80afc8243650bc1740074c0d573059b0afc272d432d28860
   languageName: node
   linkType: hard
 
@@ -12244,8 +12140,8 @@ __metadata:
   resolution: "root@workspace:."
   dependencies:
     "@changesets/cli": ^2.22.0
-    "@node-dlc/core": 0.18.3
-    "@node-dlc/messaging": 0.18.3
+    "@node-dlc/core": 0.19.1
+    "@node-dlc/messaging": 0.19.1
     "@swc/cli": ^0.1.57
     "@swc/core": ^1.2.172
     "@swc/register": ^0.1.10
