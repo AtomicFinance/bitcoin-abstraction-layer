@@ -15,6 +15,7 @@ import {
   BlindRawTransactionResponse,
   CalculateEcSignatureRequest,
   CalculateEcSignatureResponse,
+  CfdProvider,
   ConvertAesRequest,
   ConvertAesResponse,
   ConvertEntropyToMnemonicRequest,
@@ -138,7 +139,7 @@ import {
   VerifySignResponse,
 } from '@atomicfinance/types';
 
-export default class Cfd {
+export default class Cfd implements CfdProvider {
   client: any;
 
   constructor(client: any) {

@@ -16,6 +16,7 @@ import {
   CreateFundTransactionResponse,
   CreateRefundTransactionRequest,
   CreateRefundTransactionResponse,
+  DlcProvider,
   GetRawFundTxSignatureRequest,
   GetRawFundTxSignatureResponse,
   GetRawRefundTxSignatureRequest,
@@ -47,7 +48,7 @@ import {
 } from '@node-dlc/messaging';
 import { Tx } from '@node-lightning/bitcoin';
 
-export default class Dlc {
+export default class Dlc implements DlcProvider {
   client: any;
 
   constructor(client: any) {
@@ -389,6 +390,28 @@ export default class Dlc {
     jsonObject: VerifyCetAdaptorSignatureRequest,
   ): Promise<VerifyCetAdaptorSignatureResponse> {
     return this.client.getMethod('VerifyCetAdaptorSignature')(jsonObject);
+  }
+
+  async VerifyCetAdaptorSignatures(
+    jsonObject: VerifyCetAdaptorSignaturesRequest,
+  ): Promise<VerifyCetAdaptorSignaturesResponse> {
+    return this.client.getMethod('VerifyCetAdaptorSignatures')(jsonObject);
+  }
+
+  async GetInputsForAmount(
+    amount: bigint,
+    feeRatePerVb: bigint,
+    fixedInputs: Input[],
+  ): Promise<Input[]> {
+    return this.client.getMethod('GetInputsForAmount')(
+      amount,
+      feeRatePerVb,
+      fixedInputs,
+    );
+  }
+
+  async SignCet(jsonObject: SignCetRequest): Promise<SignCetResponse> {
+    return this.client.getMethod('SignCet')(jsonObject);
   }
 
   async VerifyCetAdaptorSignaturesRequest(

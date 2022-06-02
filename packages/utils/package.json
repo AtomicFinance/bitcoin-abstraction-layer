@@ -1,0 +1,42 @@
+{
+  "name": "@atomicfinance/utils",
+  "version": "2.5.1",
+  "description": "",
+  "module": "dist/index.js",
+  "main": "dist/index.js",
+  "directories": {
+    "dist": "dist",
+    "src": "lib"
+  },
+  "files": [
+    "dist",
+    "lib"
+  ],
+  "scripts": {
+    "build": "../../node_modules/.bin/tsc --project tsconfig.json",
+    "lint": "../../node_modules/.bin/eslint --ignore-path ../../.eslintignore  -c ../../.eslintrc.js .",
+    "lint:fix": "../../node_modules/.bin/eslint --fix --ignore-path ../../.eslintignore  -c ../../.eslintrc.js ."
+  },
+  "author": "Atomic Finance <info@atomic.finance>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14"
+  },
+  "dependencies": {
+    "@atomicfinance/crypto": "^2.5.1",
+    "@atomicfinance/errors": "^2.5.1",
+    "@atomicfinance/types": "^2.5.1",
+    "@babel/runtime": "^7.12.1",
+    "bignumber.js": "^9.0.0",
+    "bip174": "^2.0.1",
+    "bitcoin-networks": "^1.0.0",
+    "bitcoinjs-lib": "^5.2.0",
+    "coinselect": "^3.1.11",
+    "lodash": "^4.17.20",
+    "setimmediate": "^1.0.5"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false
+}

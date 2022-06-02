@@ -1,9 +1,11 @@
-import { bitcoin } from '@liquality/types';
+import 'mocha';
+
+import { bitcoin } from '@atomicfinance/types';
 import { FundingInputV0 } from '@node-dlc/messaging';
 import { expect } from 'chai';
-import 'mocha';
+
 import Client from '../../../packages/client';
-import Input from '../../../packages/types/lib/models/Input';
+import { Input } from '../../../packages/types';
 import { chains, fundAddress, getInput } from '../common';
 
 const chain = chains.bitcoinWithJs;

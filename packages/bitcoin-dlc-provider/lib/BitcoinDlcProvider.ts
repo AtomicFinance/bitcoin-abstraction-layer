@@ -1,11 +1,12 @@
-import { chainHashFromNetwork } from '@atomicfinance/bitcoin-networks';
 import Provider from '@atomicfinance/provider';
 import {
   AdaptorPair,
+  Address,
   AddSignaturesToRefundTxRequest,
   AddSignaturesToRefundTxResponse,
   AddSignatureToFundTransactionRequest,
   AddSignatureToFundTransactionResponse,
+  bitcoin,
   CalculateEcSignatureRequest,
   CreateCetAdaptorSignatureRequest,
   CreateCetAdaptorSignatureResponse,
@@ -44,9 +45,7 @@ import {
   VerifyRefundTxSignatureResponse,
   VerifySignatureRequest,
 } from '@atomicfinance/types';
-import { BitcoinNetwork } from '@liquality/bitcoin-networks';
-import { Address, bitcoin } from '@liquality/types';
-import { sleep } from '@liquality/utils';
+import { sleep } from '@atomicfinance/utils';
 import {
   DualClosingTxFinalizer,
   DualFundingTxFinalizer,
@@ -92,6 +91,7 @@ import { StreamReader } from '@node-lightning/bufio';
 import { hash160, sha256, xor } from '@node-lightning/crypto';
 import assert from 'assert';
 import BigNumber from 'bignumber.js';
+import { BitcoinNetwork, chainHashFromNetwork } from 'bitcoin-networks';
 import {
   address,
   ECPairInterface,
@@ -647,9 +647,9 @@ export default class BitcoinDlcProvider
       network,
     );
 
-    const {
-      derivationPath,
-    } = await this.client.financewallet.quickFindAddress([fundingAddress]);
+    const { derivationPath } = await this.client.wallet.findAddress([
+      fundingAddress,
+    ]);
 
     const fundPrivateKeyPair = await this.getMethod('keyPair')(derivationPath);
     const fundPrivateKey = Buffer.from(fundPrivateKeyPair.__D).toString('hex');
@@ -1737,11 +1737,11 @@ Payout Group not found',
       network,
     );
 
-    let walletAddress: Address = await this.client.financewallet.quickFindAddress(
-      [offerFundingAddress],
-    );
+    let walletAddress: Address = await this.client.wallet.findAddress([
+      offerFundingAddress,
+    ]);
     if (walletAddress) return true;
-    walletAddress = await this.client.financewallet.quickFindAddress([
+    walletAddress = await this.client.wallet.findAddress([
       acceptFundingAddress,
     ]);
     if (walletAddress) return false;
@@ -2950,9 +2950,9 @@ Payout Group not found',
     let derivationPath: string;
 
     if (findDerivationPath) {
-      const inputAddress: Address = await this.client.financewallet.quickFindAddress(
-        [_address],
-      );
+      const inputAddress: Address = await this.client.wallet.findAddress([
+        _address,
+      ]);
       if (inputAddress) {
         derivationPath = inputAddress.derivationPath;
       }
@@ -2992,6 +2992,7 @@ Payout Group not found',
         );
       }
     }
+
     const tx = Tx.decode(StreamReader.fromHex(txRaw));
 
     fundingInput.prevTx = tx;

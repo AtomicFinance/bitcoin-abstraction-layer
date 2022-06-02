@@ -16,9 +16,6 @@
 
 .DS_Store
 
-/packages/**/lib/*.d.ts
-/packages/**/lib/models/*.d.ts
-/packages/**/lib/utils/*.d.ts
 
 /packages/**/lib/*.js
 /packages/**/lib/models/*.js

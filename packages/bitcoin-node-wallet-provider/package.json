@@ -1,0 +1,54 @@
+{
+  "name": "@atomicfinance/bitcoin-node-wallet-provider",
+  "version": "2.5.1",
+  "description": "",
+  "module": "dist/index.js",
+  "main": "dist/index.js",
+  "types": "dist/lib/index.d.ts",
+  "directories": {
+    "dist": "dist",
+    "src": "lib"
+  },
+  "files": [
+    "dist",
+    "lib"
+  ],
+  "scripts": {
+    "build": "../../node_modules/.bin/tsc --project tsconfig.json",
+    "lint": "../../node_modules/.bin/eslint --ignore-path ../../.eslintignore  -c ../../.eslintrc.js .",
+    "lint:fix": "../../node_modules/.bin/eslint --fix --ignore-path ../../.eslintignore  -c ../../.eslintrc.js .",
+    "test": "../../node_modules/.bin/nyc --reporter=lcov --reporter=text --extension=.ts ../../node_modules/.bin/mocha --recursive \"tests/**/*.test.*\""
+  },
+  "author": "Atomic Finance <info@atomic.finance>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14"
+  },
+  "dependencies": {
+    "@atomicfinance/bitcoin-utils": "^2.5.1",
+    "@atomicfinance/crypto": "^2.5.1",
+    "@atomicfinance/jsonrpc-provider": "^2.5.1",
+    "@atomicfinance/types": "^2.5.1",
+    "@atomicfinance/utils": "^2.5.1",
+    "@babel/runtime": "^7.12.1",
+    "bignumber.js": "^9.0.0",
+    "bitcoin-networks": "^1.0.0",
+    "bitcoinjs-lib": "^5.2.0",
+    "lodash": "^4.17.20"
+  },
+  "homepage": "https://github.com/atomicfinance/chainabstractionlayer#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/atomicfinance/chainabstractionlayer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/atomicfinance/chainabstractionlayer/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.168"
+  },
+  "sideEffects": false
+}

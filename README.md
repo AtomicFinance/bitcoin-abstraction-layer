@@ -1,4 +1,4 @@
-# Chainify Finance
+# Bitcoin Abstraction Layer
 
 > :warning: This project is under heavy development. Expect bugs & breaking changes.
 
@@ -6,7 +6,7 @@ Query different blockchains with account management using a single and simple in
 
 ## Dependencies
 
-This repository was built as an extension to the [Chainify](https://github.com/liquality/chainify) maintained by the core contributors of [Liquality](https://liquality.io). It is necessary to include the `Client` and `providers` from the `@liquality` npm packages in order to use providers such as the `BitcoinDlcProvider`.
+This repository is a standalone project based off of [Chainify](https://github.com/liquality/chainify), with heavy modifications to the core Bitcoin wallet libaries. There are no dependencies on the upstream project.
 
 ## Chain Support
 
@@ -20,13 +20,24 @@ This repository was built as an extension to the [Chainify](https://github.com/l
 
 |Package|Version|
 |---|---|
-|[@atomicfinance/bitcoin-cfd-provider](./packages/bitcoin-cfd-provider)|[![Chainify-Finance](https://img.shields.io/npm/v/@atomicfinance/bitcoin-cfd-provider.svg)](https://npmjs.com/package/@atomicfinance/bitcoin-cfd-provider)|
-|[@atomicfinance/bitcoin-dlc-provider](./packages/bitcoin-dlc-provider)|[![Chainify-Finance](https://img.shields.io/npm/v/@atomicfinance/bitcoin-dlc-provider.svg)](https://npmjs.com/package/@atomicfinance/bitcoin-dlc-provider)|
-|[@atomicfinance/bitcoin-wallet-provider](./packages/bitcoin-wallet-provider)|[![Chainify-Finance](https://img.shields.io/npm/v/@atomicfinance/bitcoin-wallet-provider.svg)](https://npmjs.com/package/@atomicfinance/bitcoin-wallet-provider)|
-|[@atomicfinance/bitcoin-networks](./packages/bitcoin-networks)|[![Chainify-Finance](https://img.shields.io/npm/v/@atomicfinance/bitcoin-networks.svg)](https://npmjs.com/package/@atomicfinance/bitcoin-networks)|
-|[@atomicfinance/client](./packages/client)|[![Chainify-Finance](https://img.shields.io/npm/v/@atomicfinance/client.svg)](https://npmjs.com/package/@atomicfinance/client)|
-|[@atomicfinance/provider](./packages/provider)|[![Chainify-Finance](https://img.shields.io/npm/v/@atomicfinance/provider.svg)](https://npmjs.com/package/@atomicfinance/provider)
-|[@atomicfinance/types](./packages/types)|[![Chainify-Finance](https://img.shields.io/npm/v/@atomicfinance/types.svg)](https://npmjs.com/package/@atomicfinance/types)
+|[@atomicfinance/bitcoin-cfd-provider](./packages/bitcoin-cfd-provider)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/bitcoin-cfd-provider.svg)](https://npmjs.com/package/@atomicfinance/bitcoin-cfd-provider)|
+|[@atomicfinance/bitcoin-dlc-provider](./packages/bitcoin-dlc-provider)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/bitcoin-dlc-provider.svg)](https://npmjs.com/package/@atomicfinance/bitcoin-dlc-provider)|
+|[@atomicfinance/bitcoin-esplora-api-provider](./packages/bitcoin-esplora-api-provider)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/bitcoin-esplora-api-provider.svg)](https://npmjs.com/package/@atomicfinance/bitcoin-esplora-api-provider)
+|[@atomicfinance/bitcoin-esplora-batch-api-provider](./packages/bitcoin-esplora-batch-api-provider)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/bitcoin-esplora-batch-api-provider.svg)](https://npmjs.com/package/@atomicfinance/bitcoin-esplora-batch-api-provider)
+|[@atomicfinance/bitcoin-js-wallet-provider](./packages/bitcoin-js-wallet-provider)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/bitcoin-js-wallet-provider.svg)](https://npmjs.com/package/@atomicfinance/bitcoin-js-wallet-provider)
+|[@atomicfinance/bitcoin-utils](./packages/bitcoin-utils)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/bitcoin-utils.svg)](https://npmjs.com/package/@atomicfinance/bitcoin-utils)
+|[@atomicfinance/bitcoin-wallet-provider](./packages/bitcoin-wallet-provider)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/bitcoin-wallet-provider.svg)](https://npmjs.com/package/@atomicfinance/bitcoin-wallet-provider)|
+|[@atomicfinance/client](./packages/client)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/client.svg)](https://npmjs.com/package/@atomicfinance/client)|
+|[@atomicfinance/jsonrpc-provider](./packages/jsonrpc-provider)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/jsonrpc-provider.svg)](https://npmjs.com/package/@atomicfinance/jsonrpc-provider)|
+|[@atomicfinance/bitcoin-rpc-provider](./packages/bitcoin-rpc-provider)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/bitcoin-rpc-provider.svg)](https://npmjs.com/package/@atomicfinance/bitcoin-rpc-provider)|
+|[@atomicfinance/bitcoin-node-wallet-provider](./packages/bitcoin-node-wallet-provider)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/bitcoin-node-wallet-provider.svg)](https://npmjs.com/package/@atomicfinance/bitcoin-node-wallet-provider)|
+|[@atomicfinance/provider](./packages/provider)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/provider.svg)](https://npmjs.com/package/@atomicfinance/provider)
+|[@atomicfinance/types](./packages/types)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/types.svg)](https://npmjs.com/package/@atomicfinance/types)
+|[@atomicfinance/utils](./packages/utils)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/utils.svg)](https://npmjs.com/package/@atomicfinance/utils)
+|[@atomicfinance/crypto](./packages/crypto)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/crypto.svg)](https://npmjs.com/package/@atomicfinance/crypto)
+|[@atomicfinance/errors](./packages/errors)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/errors.svg)](https://npmjs.com/package/@atomicfinance/errors)
+|[@atomicfinance/node-provider](./packages/node-provider)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/node-provider.svg)](https://npmjs.com/package/@atomicfinance/node-provider)
+
 
 ## DLC Spec Compliance
 
@@ -50,28 +61,26 @@ Missing features:
 
 ## Usage
 
-```javascript
-
-import { Client } from '@liquality/bundle'
-import BitcoinNetworks from '@liquality/bitcoin-networks'
-import BitcoinRpcProvider from '@liquality/bitcoin-rpc-provider'
-import BitcoinJsWalletProvider from '@liquality/bitcoin-js-wallet-provider'
-
-import { Client as FinanceClient } from '@atomicfinance/bundle'
+```typescript
+import Client from '@atomicfinance/client'
 import BitcoinCfdProvider from '@atomicfinance/bitcoin-cfd-provider'
 import BitcoinDlcProvider from '@atomicfinance/bitcoin-dlc-provider'
 import BitcoinWalletProvider from '@atomicfinance/bitcoin-wallet-provider'
+import BitcoinJsWalletProvider from '@atomicfinance/bitcoin-js-wallet-provider'
+import BitcoinNetworks from 'bitcoin-networks'
 
 const network = BitcoinNetworks.bitcoin_testnet
 
 const bitcoin = new Client()
-const bitcoinFinance = new FinanceClient(bitcoin);
-bitcoin.finance = bitcoinFinance
-bitcoin.addProvider(new BitcoinRpcProvider('https://liquality.io/bitcointestnetrpc/', 'bitcoin', 'local321'))
-bitcoin.addProvider(new BitcoinJsWalletProvider(network, '_insert_mnemonic_', 'bech32'))
-bitcoin.finance.addProvider(new BitcoinCfdProvider(network));
-bitcoin.finance.addProvider(new BitcoinDlcProvider(network));
-bitcoin.finance.addProvider(new BitcoinWalletProvider(network));
+bitcoin.addProvider(new BitcoinJsWalletProvider({
+	network,
+	mnemonic: 'mnemonic_here',
+	baseDerivationPath: `m/84'/${network.coinType}'/0'`,
+	addressType: 'bech32',
+}))
+bitcoin.addProvider(new BitcoinCfdProvider(network));
+bitcoin.addProvider(new BitcoinDlcProvider(network));
+bitcoin.addProvider(new BitcoinWalletProvider(network));
 
 const offerMessage = await alice.dlc.createDlcOffer(...)
 ```

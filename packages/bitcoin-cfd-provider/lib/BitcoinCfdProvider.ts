@@ -139,7 +139,7 @@ import {
   VerifySignRequest,
   VerifySignResponse,
 } from '@atomicfinance/types';
-import { sleep } from '@liquality/utils';
+import { sleep } from '@atomicfinance/utils';
 
 export default class BitcoinCfdProvider
   extends Provider

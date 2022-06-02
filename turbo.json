@@ -7,9 +7,13 @@
       "outputs": ["dist/**"]
     },
     "test": {
+      "dependsOn": ["build"],
       "outputs": []
     },
     "lint": {
+      "outputs": []
+    },
+    "lint:fix": {
       "outputs": []
     },
     "dev": {

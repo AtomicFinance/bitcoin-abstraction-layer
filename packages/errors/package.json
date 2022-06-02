@@ -1,27 +1,33 @@
 {
-  "name": "@atomicfinance/bitcoin-networks",
-  "umdName": "BitcoinNetworks",
+  "name": "@atomicfinance/errors",
   "version": "2.5.1",
-  "description": "CAL Finance Bitcoin Networks Provider",
-  "author": "Atomic Finance <info@atomic.finance>",
-  "homepage": "",
-  "license": "ISC",
+  "description": "",
+  "module": "dist/index.js",
   "main": "dist/index.js",
+  "directories": {
+    "dist": "dist",
+    "src": "lib"
+  },
+  "files": [
+    "dist",
+    "lib"
+  ],
+  "author": "Atomic Finance <info@atomic.finance>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14"
+  },
   "scripts": {
     "build": "../../node_modules/.bin/tsc --project tsconfig.json",
-    "prepublishOnly": "yarn run build",
-    "test": "yarn run build",
     "lint": "../../node_modules/.bin/eslint --ignore-path ../../.eslintignore  -c ../../.eslintrc.js .",
     "lint:fix": "../../node_modules/.bin/eslint --fix --ignore-path ../../.eslintignore  -c ../../.eslintrc.js ."
   },
   "dependencies": {
-    "@liquality/bitcoin-networks": "1.1.5",
-    "bitcoinjs-lib": "5.2.0"
-  },
-  "devDependencies": {
-    "@types/node": "16.10.3"
+    "@types/standard-error": "^1.1.0",
+    "standard-error": "^1.1.0"
   },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "sideEffects": false
 }

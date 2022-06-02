@@ -1,23 +1,26 @@
-import Provider from '@atomicfinance/provider';
 import {
-  CreateMultisigResponse,
-  finalizePSBTResponse,
-  FinanceWalletProvider,
-  Input,
-  Output,
-} from '@atomicfinance/types';
-import { BitcoinNetwork } from '@liquality/bitcoin-networks';
-import {
+  CoinSelectTarget,
   decodeRawTransaction,
   normalizeTransactionObject,
   selectCoins,
-} from '@liquality/bitcoin-utils';
-import { Address, bitcoin as bT, Transaction } from '@liquality/types';
-import assert from 'assert';
+} from '@atomicfinance/bitcoin-utils';
+import { InsufficientBalanceError } from '@atomicfinance/errors';
+import Provider from '@atomicfinance/provider';
+import {
+  Address,
+  BigNumber,
+  bitcoin as bT,
+  ChainProvider,
+  SendOptions,
+  Transaction,
+  WalletProvider,
+} from '@atomicfinance/types';
+import { addressToString } from '@atomicfinance/utils';
+import { BitcoinNetwork } from 'bitcoin-networks';
 import * as bitcoin from 'bitcoinjs-lib';
-import secp256k1 from 'secp256k1';
+import { BIP32Interface } from 'bitcoinjs-lib';
+import memoize from 'memoizee';
 
-const FEE_PER_BYTE_FALLBACK = 5;
 const ADDRESS_GAP = 20;
 const NONCHANGE_ADDRESS = 0;
 const CHANGE_ADDRESS = 1;
@@ -27,596 +30,731 @@ type UnusedAddressesBlacklist = {
   [address: string]: true;
 };
 
-export default class BitcoinWalletProvider
-  extends Provider
-  implements Partial<FinanceWalletProvider> {
-  _network: BitcoinNetwork;
-  _unusedAddressesBlacklist: UnusedAddressesBlacklist;
-  _maxAddressesToDerive: number;
+export enum AddressSearchType {
+  EXTERNAL,
+  CHANGE,
+  EXTERNAL_OR_CHANGE,
+}
 
-  constructor(network: BitcoinNetwork) {
-    super();
+type DerivationCache = { [index: string]: Address };
 
-    this._network = network;
-    this._unusedAddressesBlacklist = {};
-    this._maxAddressesToDerive = 5000;
-  }
+type Constructor<T = unknown> = new (...args: any[]) => T;
 
-  async buildSweepTransactionWithSetOutputs(
-    externalChangeAddress: string,
-    feePerByte: number,
-    _outputs: Output[],
-    fixedInputs: Input[],
-  ) {
-    return this._buildSweepTransaction(
-      externalChangeAddress,
-      feePerByte,
-      _outputs,
-      fixedInputs,
-    );
-  }
+interface BitcoinWalletProviderOptions {
+  network: BitcoinNetwork;
+  baseDerivationPath: string;
+  addressType?: bT.AddressType;
+}
 
-  getUnusedAddressesBlacklist(): UnusedAddressesBlacklist {
-    return this._unusedAddressesBlacklist;
-  }
+export default <T extends Constructor<Provider>>(superclass: T) => {
+  abstract class BitcoinWalletProvider
+    extends superclass
+    implements Partial<ChainProvider>, Partial<WalletProvider> {
+    _network: BitcoinNetwork;
+    _unusedAddressesBlacklist: UnusedAddressesBlacklist;
+    _maxAddressesToDerive: number;
+    _baseDerivationPath: string;
+    _addressType: bT.AddressType;
+    _derivationCache: DerivationCache;
 
-  setUnusedAddressesBlacklist(
-    unusedAddressesBlacklist: UnusedAddressesBlacklist,
-  ) {
-    this._unusedAddressesBlacklist = unusedAddressesBlacklist;
-  }
+    constructor(...args: any[]) {
+      const options = args[0] as BitcoinWalletProviderOptions;
+      const {
+        network,
+        baseDerivationPath,
+        addressType = bT.AddressType.BECH32,
+      } = options;
+      const addressTypes = Object.values(bT.AddressType);
+      if (!addressTypes.includes(addressType)) {
+        throw new Error(`addressType must be one of ${addressTypes.join(',')}`);
+      }
 
-  setMaxAddressesToDerive(maxAddressesToDerive: number) {
-    this._maxAddressesToDerive = maxAddressesToDerive;
-  }
+      super(options);
 
-  getMaxAddressesToDerive() {
-    return this._maxAddressesToDerive;
-  }
+      this._baseDerivationPath = baseDerivationPath;
+      this._network = network;
+      this._addressType = addressType;
+      this._derivationCache = {};
+      this._unusedAddressesBlacklist = {};
+      this._maxAddressesToDerive = 5000;
+    }
 
-  _createMultisigPayment(m: number, pubkeys: string[]): bitcoin.Payment {
-    if (m > pubkeys.length) {
-      throw new Error(
-        `not enough keys supplied (got ${pubkeys.length} keys, but need at least ${m} to redeem)`,
+    abstract baseDerivationNode(): Promise<BIP32Interface>;
+    abstract _buildTransaction(
+      targets: bT.OutputTarget[],
+      feePerByte?: number,
+      fixedInputs?: bT.Input[],
+    ): Promise<{ hex: string; fee: number }>;
+    abstract _buildSweepTransaction(
+      externalChangeAddress: string,
+      feePerByte?: number,
+    ): Promise<{ hex: string; fee: number }>;
+    abstract signPSBT(
+      data: string,
+      inputs: bT.PsbtInputTarget[],
+    ): Promise<string>;
+    abstract signBatchP2SHTransaction(
+      inputs: [
+        { inputTxHex: string; index: number; vout: any; outputScript: Buffer },
+      ],
+      addresses: string,
+      tx: any,
+      lockTime?: number,
+      segwit?: boolean,
+    ): Promise<Buffer[]>;
+
+    getDerivationCache() {
+      return this._derivationCache;
+    }
+
+    async setDerivationCache(derivationCache: DerivationCache) {
+      const address = await this.getDerivationPathAddress(
+        Object.keys(derivationCache)[0],
+      );
+      if (derivationCache[address.derivationPath].address !== address.address) {
+        throw new Error(
+          `derivationCache at ${address.derivationPath} does not match`,
+        );
+      }
+      this._derivationCache = derivationCache;
+    }
+
+    sendOptionsToOutputs(transactions: SendOptions[]): bT.OutputTarget[] {
+      const targets: bT.OutputTarget[] = [];
+
+      transactions.forEach((tx) => {
+        if (tx.to && tx.value && tx.value.gt(0)) {
+          targets.push({
+            address: addressToString(tx.to),
+            value: tx.value.toNumber(),
+          });
+        }
+
+        if (tx.data) {
+          const scriptBuffer = bitcoin.script.compile([
+            bitcoin.script.OPS.OP_RETURN,
+            Buffer.from(tx.data, 'hex'),
+          ]);
+          targets.push({
+            value: 0,
+            script: scriptBuffer,
+          });
+        }
+      });
+
+      return targets;
+    }
+
+    async buildTransaction(output: bT.OutputTarget, feePerByte: number) {
+      return this._buildTransaction([output], feePerByte);
+    }
+
+    async buildBatchTransaction(outputs: bT.OutputTarget[]) {
+      return this._buildTransaction(outputs);
+    }
+
+    async _sendTransaction(
+      transactions: bT.OutputTarget[],
+      feePerByte?: number,
+    ) {
+      const { hex, fee } = await this._buildTransaction(
+        transactions,
+        feePerByte,
+      );
+      await this.getMethod('sendRawTransaction')(hex);
+      return normalizeTransactionObject(
+        decodeRawTransaction(hex, this._network),
+        fee,
       );
     }
-    // Create m-of-n multisig
-    const p2ms = bitcoin.payments.p2ms({
-      m: m,
-      pubkeys: pubkeys.map((key: string) => Buffer.from(key, 'hex')),
-      network: this._network,
-    });
 
-    // Create p2wsh for multisig
-    const p2wsh = bitcoin.payments.p2wsh({
-      redeem: p2ms,
-      network: this._network,
-    });
-
-    return p2wsh;
-  }
-
-  /**
-   * Creates a native-segwit multi-signature address (P2MS in P2WSH) with n signatures of m required keys
-   * https://developer.bitcoin.org/reference/rpc/createmultisig.html
-   * @param m the number of required signatures
-   * @param pubkeys n possible pubkeys in total
-   * @returns a json object containing the `address` and `redeemScript`
-   */
-  createMultisig(m: number, pubkeys: string[]): CreateMultisigResponse {
-    const p2wsh = this._createMultisigPayment(m, pubkeys);
-    return {
-      address: p2wsh.address,
-      redeemScript: p2wsh.redeem?.output?.toString('hex'),
-    };
-  }
-
-  /**
-   * Creates a PSBT of a native-segwit multi-signature address (P2MS in P2WSH) with n signatures of m required keys
-   * https://developer.bitcoin.org/reference/rpc/createmultisig.html
-   * https://developer.bitcoin.org/reference/rpc/createpsbt.html
-   * @param m the number of required signatures
-   * @param pubkeys n possible pubkeys in total
-   * @param inputs the Inputs to the PSBT
-   * @param ouputs the Outputs to the PSBT
-   * @returns a base64 encoded psbt string
-   */
-  buildMultisigPSBT(
-    m: number,
-    pubkeys: string[],
-    inputs: Input[],
-    outputs: Output[],
-  ): string {
-    assert(inputs.length > 0, 'no inputs found');
-    assert(outputs.length > 0, 'no outputs found');
-
-    const p2wsh = this._createMultisigPayment(m, pubkeys);
-
-    // Verify pubkeyhash for all inputs matches the p2wsh hash
-    assert(
-      inputs.every(
-        (input: Input) => p2wsh.output.toString('hex') === input.scriptPubKey,
-      ),
-      'address pubkeyhash does not match input scriptPubKey',
-    );
-
-    // creator
-    const psbt = new bitcoin.Psbt({ network: this._network });
-
-    // updater
-    inputs.forEach((input: Input) => {
-      psbt.addInput({
-        hash: input.txid,
-        index: input.vout,
-        witnessUtxo: { script: p2wsh.output, value: input.value },
-        witnessScript: p2wsh.redeem.output,
-      });
-    });
-
-    outputs.forEach((output: Output) => {
-      psbt.addOutput({
-        address: output.to,
-        value: output.value,
-      });
-    });
-
-    return psbt.toBase64();
-  }
-
-  /**
-   * Update a PSBT with input information from our wallet and then sign inputs that we can sign for
-   * https://developer.bitcoin.org/reference/rpc/walletprocesspsbt.html
-   * @param psbt a base64 encoded psbt string (P2WSH only)
-   * @returns a base64 encoded signed psbt string
-   */
-  async walletProcessPSBT(psbtString: string): Promise<string> {
-    const psbt = bitcoin.Psbt.fromBase64(psbtString);
-
-    await Promise.all(
-      psbt.data.inputs.map(async (input, i: number) => {
-        assert(
-          psbt.getInputType(i).slice(0, 5) === 'p2wsh',
-          'only accepts P2WSH inputs',
-        );
-
-        const scriptStack = bitcoin.script.decompile(input.witnessScript);
-        const pubkeys = scriptStack.filter(
-          (data) => Buffer.isBuffer(data) && secp256k1.publicKeyVerify(data),
-        );
-
-        await Promise.all(
-          pubkeys.map(async (key) => {
-            // create address using pubkey
-            const { address: addressString } = bitcoin.payments.p2wpkh({
-              pubkey: key as Buffer,
-              network: this._network,
-            });
-
-            // Retrieve address object from wallet using address
-            const address: Address = await this.quickFindAddress([
-              addressString,
-            ]);
-
-            // exit if address doesn't exist in wallet
-            if (!address) return;
-
-            // derive keypair
-            const keyPair = await this.getMethod('keyPair')(
-              address.derivationPath,
-            );
-
-            // sign PSBT using keypair
-            psbt.signInput(i, keyPair);
-          }),
-        );
-      }),
-    );
-
-    psbt.validateSignaturesOfAllInputs(); // ensure all signatures are valid!
-    return psbt.toBase64();
-  }
-
-  /**
-   * Finalize the inputs of a PSBT. If the transaction is fully signed, it will
-   * produce a network serialized transaction which can be broadcast with sendrawtransaction
-   * https://developer.bitcoin.org/reference/rpc/finalizepsbt.html
-   * @param psbt a base64 encoded psbt string
-   * @returns a json object containing `psbt` in base64, `hex` for transaction and `complete` for if
-   * the transaction has a complete set of signatures
-   */
-  finalizePSBT(psbtString: string): finalizePSBTResponse {
-    const psbt = bitcoin.Psbt.fromBase64(psbtString);
-
-    try {
-      psbt.validateSignaturesOfAllInputs(); // ensure all signatures are valid!
-      psbt.finalizeAllInputs();
-    } catch (error) {
-      return {
-        psbt: psbt.toBase64(),
-        complete: false,
-      };
+    async sendTransaction(options: SendOptions) {
+      return this._sendTransaction(
+        this.sendOptionsToOutputs([options]),
+        options.fee as number,
+      );
     }
-    return {
-      psbt: psbt.toBase64(),
-      hex: psbt.extractTransaction().toHex(),
-      complete: true,
-    };
-  }
 
-  async getUnusedAddress(change = false, numAddressPerCall = 100) {
-    const addressType = change ? CHANGE_ADDRESS : NONCHANGE_ADDRESS;
-    const key = change ? 'change' : 'nonChange';
+    async sendBatchTransaction(transactions: SendOptions[]) {
+      return this._sendTransaction(this.sendOptionsToOutputs(transactions));
+    }
 
-    const address = await this._getUsedUnusedAddresses(
-      numAddressPerCall,
-      addressType,
-    ).then(({ unusedAddress }) => unusedAddress[key]);
-    this._unusedAddressesBlacklist[address.address] = true;
-
-    return address;
-  }
-
-  async _getUsedUnusedAddresses(numAddressPerCall = 100, addressType) {
-    const usedAddresses = [];
-    const addressCountMap = { change: 0, nonChange: 0 };
-    const unusedAddressMap = { change: null, nonChange: null };
-
-    let addrList;
-    let addressIndex = 0;
-    let changeAddresses: Address[] = [];
-    let nonChangeAddresses: Address[] = [];
-
-    /* eslint-disable no-unmodified-loop-condition */
-    while (
-      (addressType === NONCHANGE_OR_CHANGE_ADDRESS &&
-        (addressCountMap.change < ADDRESS_GAP ||
-          addressCountMap.nonChange < ADDRESS_GAP)) ||
-      (addressType === NONCHANGE_ADDRESS &&
-        addressCountMap.nonChange < ADDRESS_GAP) ||
-      (addressType === CHANGE_ADDRESS && addressCountMap.change < ADDRESS_GAP)
+    async buildSweepTransaction(
+      externalChangeAddress: string,
+      feePerByte: number,
     ) {
-      /* eslint-enable no-unmodified-loop-condition */
-      addrList = [];
+      return this._buildSweepTransaction(externalChangeAddress, feePerByte);
+    }
 
-      if (
-        (addressType === NONCHANGE_OR_CHANGE_ADDRESS ||
-          addressType === CHANGE_ADDRESS) &&
-        addressCountMap.change < ADDRESS_GAP
-      ) {
-        // Scanning for change addr
-        changeAddresses = await this.client.wallet.getAddresses(
-          addressIndex,
-          numAddressPerCall,
-          true,
+    async sendSweepTransaction(
+      externalChangeAddress: Address | string,
+      feePerByte: number,
+    ) {
+      const { hex, fee } = await this._buildSweepTransaction(
+        addressToString(externalChangeAddress),
+        feePerByte,
+      );
+      await this.getMethod('sendRawTransaction')(hex);
+      return normalizeTransactionObject(
+        decodeRawTransaction(hex, this._network),
+        fee,
+      );
+    }
+
+    getUnusedAddressesBlacklist(): UnusedAddressesBlacklist {
+      return this._unusedAddressesBlacklist;
+    }
+
+    setUnusedAddressesBlacklist(
+      unusedAddressesBlacklist: UnusedAddressesBlacklist,
+    ) {
+      this._unusedAddressesBlacklist = unusedAddressesBlacklist;
+    }
+
+    setMaxAddressesToDerive(maxAddressesToDerive: number) {
+      this._maxAddressesToDerive = maxAddressesToDerive;
+    }
+
+    getMaxAddressesToDerive() {
+      return this._maxAddressesToDerive;
+    }
+
+    async updateTransactionFee(
+      tx: Transaction<bitcoin.Transaction> | string,
+      newFeePerByte: number,
+    ) {
+      const txHash = typeof tx === 'string' ? tx : tx.hash;
+      const transaction: bT.Transaction = (
+        await this.getMethod('getTransactionByHash')(txHash)
+      )._raw;
+      const fixedInputs = [transaction.vin[0]]; // TODO: should this pick more than 1 input? RBF doesn't mandate it
+
+      const lookupAddresses = transaction.vout.map(
+        (vout) => vout.scriptPubKey.addresses[0],
+      );
+      const changeAddress = await this.findAddress(lookupAddresses, true);
+      const changeOutput = transaction.vout.find(
+        (vout) => vout.scriptPubKey.addresses[0] === changeAddress.address,
+      );
+
+      let outputs = transaction.vout;
+      if (changeOutput) {
+        outputs = outputs.filter(
+          (vout) =>
+            vout.scriptPubKey.addresses[0] !==
+            changeOutput.scriptPubKey.addresses[0],
         );
-        addrList = addrList.concat(changeAddresses);
-      } else {
-        changeAddresses = [];
       }
 
-      if (
-        (addressType === NONCHANGE_OR_CHANGE_ADDRESS ||
-          addressType === NONCHANGE_ADDRESS) &&
-        addressCountMap.nonChange < ADDRESS_GAP
+      // TODO more checks?
+      const transactions = outputs.map((output) => ({
+        address: output.scriptPubKey.addresses[0],
+        value: new BigNumber(output.value).times(1e8).toNumber(),
+      }));
+      const { hex, fee } = await this._buildTransaction(
+        transactions,
+        newFeePerByte,
+        fixedInputs,
+      );
+      await this.getMethod('sendRawTransaction')(hex);
+      return normalizeTransactionObject(
+        decodeRawTransaction(hex, this._network),
+        fee,
+      );
+    }
+
+    async getUnusedAddress(change = false, numAddressPerCall = 100) {
+      const addressType = change ? CHANGE_ADDRESS : NONCHANGE_ADDRESS;
+      const key = change ? 'change' : 'nonChange';
+
+      const address = await this._getUsedUnusedAddresses(
+        numAddressPerCall,
+        addressType,
+      ).then(({ unusedAddress }) => unusedAddress[key]);
+      this._unusedAddressesBlacklist[address.address] = true;
+
+      return address;
+    }
+
+    async _getUsedUnusedAddresses(numAddressPerCall = 100, addressType) {
+      const usedAddresses = [];
+      const addressCountMap = { change: 0, nonChange: 0 };
+      const unusedAddressMap = { change: null, nonChange: null };
+
+      let addrList;
+      let addressIndex = 0;
+      let changeAddresses: Address[] = [];
+      let nonChangeAddresses: Address[] = [];
+
+      /* eslint-disable no-unmodified-loop-condition */
+      while (
+        (addressType === NONCHANGE_OR_CHANGE_ADDRESS &&
+          (addressCountMap.change < ADDRESS_GAP ||
+            addressCountMap.nonChange < ADDRESS_GAP)) ||
+        (addressType === NONCHANGE_ADDRESS &&
+          addressCountMap.nonChange < ADDRESS_GAP) ||
+        (addressType === CHANGE_ADDRESS && addressCountMap.change < ADDRESS_GAP)
       ) {
-        // Scanning for non change addr
-        nonChangeAddresses = await this.quickGetAddresses(
-          addressIndex,
-          numAddressPerCall,
-          false,
-        );
-        addrList = addrList.concat(nonChangeAddresses);
-      }
+        /* eslint-enable no-unmodified-loop-condition */
+        addrList = [];
 
-      const transactionCounts = await this.getMethod(
-        'getAddressTransactionCounts',
-      )(addrList);
-
-      for (const address of addrList) {
-        const isUsed =
-          transactionCounts[address.address] > 0 ||
-          this._unusedAddressesBlacklist[address.address];
-        const isChangeAddress = changeAddresses.find(
-          (a) => address.address === a.address,
-        );
-        const key = isChangeAddress ? 'change' : 'nonChange';
-
-        if (isUsed) {
-          usedAddresses.push(address);
-          addressCountMap[key] = 0;
-          unusedAddressMap[key] = null;
+        if (
+          (addressType === NONCHANGE_OR_CHANGE_ADDRESS ||
+            addressType === CHANGE_ADDRESS) &&
+          addressCountMap.change < ADDRESS_GAP
+        ) {
+          // Scanning for change addr
+          changeAddresses = await this.client.wallet.getAddresses(
+            addressIndex,
+            numAddressPerCall,
+            true,
+          );
+          addrList = addrList.concat(changeAddresses);
         } else {
-          addressCountMap[key]++;
+          changeAddresses = [];
+        }
 
-          if (!unusedAddressMap[key]) {
-            unusedAddressMap[key] = address;
+        if (
+          (addressType === NONCHANGE_OR_CHANGE_ADDRESS ||
+            addressType === NONCHANGE_ADDRESS) &&
+          addressCountMap.nonChange < ADDRESS_GAP
+        ) {
+          // Scanning for non change addr
+          nonChangeAddresses = await this.getAddresses(
+            addressIndex,
+            numAddressPerCall,
+            false,
+          );
+          addrList = addrList.concat(nonChangeAddresses);
+        }
+
+        const transactionCounts = await this.getMethod(
+          'getAddressTransactionCounts',
+        )(addrList);
+
+        for (const address of addrList) {
+          const isUsed =
+            transactionCounts[address.address] > 0 ||
+            this._unusedAddressesBlacklist[address.address];
+          const isChangeAddress = changeAddresses.find(
+            (a) => address.address === a.address,
+          );
+          const key = isChangeAddress ? 'change' : 'nonChange';
+
+          if (isUsed) {
+            usedAddresses.push(address);
+            addressCountMap[key] = 0;
+            unusedAddressMap[key] = null;
+          } else {
+            addressCountMap[key]++;
+
+            if (!unusedAddressMap[key]) {
+              unusedAddressMap[key] = address;
+            }
           }
         }
+
+        addressIndex += numAddressPerCall;
       }
 
-      addressIndex += numAddressPerCall;
+      let firstUnusedAddress;
+      const indexNonChange = unusedAddressMap.nonChange
+        ? unusedAddressMap.nonChange.index
+        : Infinity;
+      const indexChange = unusedAddressMap.change
+        ? unusedAddressMap.change.index
+        : Infinity;
+
+      if (indexNonChange <= indexChange)
+        firstUnusedAddress = unusedAddressMap.nonChange;
+      else firstUnusedAddress = unusedAddressMap.change;
+
+      return {
+        usedAddresses,
+        unusedAddress: unusedAddressMap,
+        firstUnusedAddress,
+      };
     }
 
-    let firstUnusedAddress;
-    const indexNonChange = unusedAddressMap.nonChange
-      ? unusedAddressMap.nonChange.index
-      : Infinity;
-    const indexChange = unusedAddressMap.change
-      ? unusedAddressMap.change.index
-      : Infinity;
+    async getWalletAddress(address: string) {
+      const foundAddress = await this.findAddress([address]);
+      if (foundAddress) return foundAddress;
 
-    if (indexNonChange <= indexChange)
-      firstUnusedAddress = unusedAddressMap.nonChange;
-    else firstUnusedAddress = unusedAddressMap.change;
+      throw new Error('Wallet does not contain address');
+    }
 
-    return {
-      usedAddresses,
-      unusedAddress: unusedAddressMap,
-      firstUnusedAddress,
-    };
-  }
+    getAddressFromPublicKey(publicKey: Buffer) {
+      return this.getPaymentVariantFromPublicKey(publicKey).address;
+    }
 
-  async sendSweepTransactionWithSetOutputs(
-    externalChangeAddress: string,
-    feePerByte: number,
-    _outputs: Output[],
-    fixedInputs: Input[],
-  ): Promise<Transaction<bT.Transaction>> {
-    const { hex, fee } = await this._buildSweepTransaction(
-      externalChangeAddress,
-      feePerByte,
-      _outputs,
-      fixedInputs,
-    );
-    await this.getMethod('sendRawTransaction')(hex);
-    return normalizeTransactionObject(
-      decodeRawTransaction(hex, this._network),
-      fee,
-    );
-  }
-
-  async _buildSweepTransaction(
-    externalChangeAddress: string,
-    feePerByte: number,
-    _outputs: Output[] = [],
-    fixedInputs: Input[],
-  ) {
-    const _feePerByte =
-      feePerByte ||
-      (await this.getMethod('getFeePerByte')()) ||
-      FEE_PER_BYTE_FALLBACK;
-    const inputs: Input[] = [];
-    const outputs: Output[] = [];
-    try {
-      const inputsForAmount = await this.getMethod('getInputsForAmount')(
-        _outputs,
-        _feePerByte,
-        fixedInputs,
-        100,
-        true,
-      );
-      if (inputsForAmount.change) {
-        throw Error('There should not be any change for sweeping transaction');
+    getPaymentVariantFromPublicKey(publicKey: Buffer) {
+      if (this._addressType === bT.AddressType.LEGACY) {
+        return bitcoin.payments.p2pkh({
+          pubkey: publicKey,
+          network: this._network,
+        });
+      } else if (this._addressType === bT.AddressType.P2SH_SEGWIT) {
+        return bitcoin.payments.p2sh({
+          redeem: bitcoin.payments.p2wpkh({
+            pubkey: publicKey,
+            network: this._network,
+          }),
+          network: this._network,
+        });
+      } else if (this._addressType === bT.AddressType.BECH32) {
+        return bitcoin.payments.p2wpkh({
+          pubkey: publicKey,
+          network: this._network,
+        });
       }
-      inputs.push(...(inputsForAmount.inputs || []));
-      outputs.push(...(inputsForAmount.outputs || []));
-    } catch (e) {
-      if (fixedInputs.length === 0) {
-        throw Error(
-          `Inputs for amount doesn't exist and no fixedInputs provided`,
+    }
+
+    async getDerivationPathAddress(path: string) {
+      if (path in this._derivationCache) {
+        return this._derivationCache[path];
+      }
+
+      const baseDerivationNode = await this.baseDerivationNode();
+      const subPath = path.replace(this._baseDerivationPath + '/', '');
+      const publicKey = baseDerivationNode.derivePath(subPath).publicKey;
+      const address = this.getAddressFromPublicKey(publicKey);
+      const addressObject = new Address({
+        address,
+        publicKey: publicKey.toString('hex'),
+        derivationPath: path,
+      });
+
+      this._derivationCache[path] = addressObject;
+      return addressObject;
+    }
+
+    /**
+     * getAddresses is an optimized version of upstream CAL's getAddresses.
+     * It removes the call to `asyncSetImmediate()`, speeding up the function by a factor of 6x.
+     *
+     * @param startingIndex
+     * @param numAddresses
+     * @param change
+     * @returns {Promise<Address[]>}
+     */
+    async getAddresses(
+      startingIndex = 0,
+      numAddresses = 1,
+      change = false,
+    ): Promise<Address[]> {
+      if (numAddresses < 1) {
+        throw new Error('You must return at least one address');
+      }
+
+      const addresses = [];
+      const lastIndex = startingIndex + numAddresses;
+      const changeVal = change ? '1' : '0';
+
+      for (
+        let currentIndex = startingIndex;
+        currentIndex < lastIndex;
+        currentIndex++
+      ) {
+        const subPath = changeVal + '/' + currentIndex;
+        const path = this._baseDerivationPath + '/' + subPath;
+        const addressObject = await this.getDerivationPathAddress(path);
+        addresses.push(addressObject);
+      }
+
+      return addresses;
+    }
+
+    /**
+     * findAddress is an optimized version of upstream CAL's findAddress.
+     *
+     * It searches through both change and non-change addresses (if change arg is not provided) each iteration.
+     *
+     * This is in contrast to the original findAddress function which searches
+     * through all non-change addresses before moving on to change addresses.
+     *
+     * @param addresses
+     * @returns {Promise<Address>}
+     */
+    async findAddress(
+      addresses: string[],
+      change: boolean | null = null,
+    ): Promise<Address> {
+      const addressesPerCall = 20;
+      let index = 0;
+
+      while (index < this._maxAddressesToDerive) {
+        const walletAddresses = [];
+
+        if (change === null || change === false) {
+          walletAddresses.push(
+            ...(await this.getAddresses(index, addressesPerCall, false)),
+          );
+        }
+
+        if (change === null || change === true) {
+          walletAddresses.push(
+            ...(await this.getAddresses(index, addressesPerCall, true)),
+          );
+        }
+
+        const walletAddress = walletAddresses.find((walletAddr) =>
+          addresses.find((addr) => walletAddr.address === addr),
         );
+
+        if (walletAddress) {
+          // Increment max addresses to derive by 100 if found within 100 addresses of maxAddressesToDerive
+          this._maxAddressesToDerive = Math.max(
+            this._maxAddressesToDerive,
+            index + 100,
+          );
+          return walletAddress;
+        }
+        index += addressesPerCall;
       }
-
-      const inputsForAmount = await this._getInputForAmountWithoutUtxoCheck(
-        _outputs,
-        _feePerByte,
-        fixedInputs,
-      );
-      inputs.push(
-        ...(inputsForAmount.inputs.map((utxo) => Input.fromUTXO(utxo)) || []),
-      );
-      outputs.push(...(inputsForAmount.outputs || []));
-    }
-    _outputs.forEach((output) => {
-      const spliceIndex = outputs.findIndex(
-        (sweepOutput: Output) => output.value === sweepOutput.value,
-      );
-      outputs.splice(spliceIndex, 1);
-    });
-    _outputs.push({
-      to: externalChangeAddress,
-      value: outputs[0].value,
-    });
-    return this._buildTransactionWithoutUtxoCheck(
-      _outputs,
-      _feePerByte,
-      inputs,
-    );
-  }
-
-  _getInputForAmountWithoutUtxoCheck(
-    _outputs: Output[],
-    _feePerByte: number,
-    fixedInputs: Input[],
-  ): {
-    inputs: bT.UTXO[];
-    outputs: { value: number; id?: string }[];
-    fee: number;
-    change: { value: number; id?: string };
-  } {
-    const utxoBalance = fixedInputs.reduce((a, b) => a + (b['value'] || 0), 0);
-    const outputBalance = _outputs.reduce((a, b) => a + (b['value'] || 0), 0);
-    const amountToSend =
-      utxoBalance -
-      _feePerByte * ((_outputs.length + 1) * 39 + fixedInputs.length * 153); // todo better calculation
-
-    const targets = _outputs.map((target, i) => ({
-      id: 'main',
-      value: target.value,
-    }));
-    if (amountToSend - outputBalance > 0) {
-      targets.push({ id: 'main', value: amountToSend - outputBalance });
     }
 
-    return selectCoins(
-      fixedInputs,
-      targets,
-      Math.ceil(_feePerByte),
-      fixedInputs,
-    );
-  }
-
-  async _buildTransactionWithoutUtxoCheck(
-    outputs: Output[],
-    feePerByte: number,
-    fixedInputs: Input[],
-  ) {
-    const network = this._network;
-
-    const { fee } = this._getInputForAmountWithoutUtxoCheck(
-      outputs,
-      feePerByte,
-      fixedInputs,
-    );
-    const inputs = fixedInputs;
-
-    const txb = new bitcoin.TransactionBuilder(network);
-
-    for (const output of outputs) {
-      const to = output.to; // Allow for OP_RETURN
-      txb.addOutput(to, output.value);
+    async getUsedAddresses(numAddressPerCall = 100) {
+      return this._getUsedUnusedAddresses(
+        numAddressPerCall,
+        AddressSearchType.EXTERNAL_OR_CHANGE,
+      ).then(({ usedAddresses }) => usedAddresses);
     }
 
-    const prevOutScriptType = 'p2wpkh';
-
-    for (let i = 0; i < inputs.length; i++) {
-      const wallet = await this.getMethod('getWalletAddress')(
-        inputs[i].address,
+    async withCachedUtxos(func: () => any) {
+      const originalGetMethod = this.getMethod;
+      const memoizedGetFeePerByte = memoize(this.getMethod('getFeePerByte'), {
+        primitive: true,
+      });
+      const memoizedGetUnspentTransactions = memoize(
+        this.getMethod('getUnspentTransactions'),
+        { primitive: true },
       );
-      const keyPair = await this.getMethod('keyPair')(wallet.derivationPath);
-      const paymentVariant = this.getMethod('getPaymentVariantFromPublicKey')(
-        keyPair.publicKey,
+      const memoizedGetAddressTransactionCounts = memoize(
+        this.getMethod('getAddressTransactionCounts'),
+        {
+          primitive: true,
+        },
       );
-
-      txb.addInput(inputs[i].txid, inputs[i].vout, 0, paymentVariant.output);
-    }
-
-    for (let i = 0; i < inputs.length; i++) {
-      const wallet = await this.getMethod('getWalletAddress')(
-        inputs[i].address,
-      );
-      const keyPair = await this.getMethod('keyPair')(wallet.derivationPath);
-      const paymentVariant = this.getMethod('getPaymentVariantFromPublicKey')(
-        keyPair.publicKey,
-      );
-      const needsWitness = true;
-
-      const signParams = {
-        prevOutScriptType,
-        vin: i,
-        keyPair,
-        witnessValue: 0,
+      this.getMethod = (method: string, requestor: any = this) => {
+        if (method === 'getFeePerByte') return memoizedGetFeePerByte;
+        if (method === 'getUnspentTransactions')
+          return memoizedGetUnspentTransactions;
+        else if (method === 'getAddressTransactionCounts')
+          return memoizedGetAddressTransactionCounts;
+        else return originalGetMethod.bind(this)(method, requestor);
       };
 
-      if (needsWitness) {
-        signParams.witnessValue = inputs[i].value;
-      }
+      const result = await func.bind(this)();
 
-      txb.sign(signParams);
+      this.getMethod = originalGetMethod;
+
+      return result;
     }
 
-    return { hex: txb.build().toHex(), fee };
-  }
-
-  /**
-   * quickGetAddresses is an optimized version of getAddresses.
-   * It removes the call to `asyncSetImmediate()`, speeding up the function by a factor of 6x.
-   *
-   * @param startingIndex
-   * @param numAddresses
-   * @param change
-   * @returns {Promise<Address[]>}
-   */
-  async quickGetAddresses(
-    startingIndex = 0,
-    numAddresses = 1,
-    change = false,
-  ): Promise<Address[]> {
-    if (numAddresses < 1) {
-      throw new Error('You must return at least one address');
-    }
-
-    const addresses = [];
-    const lastIndex = startingIndex + numAddresses;
-    const changeVal = change ? '1' : '0';
-
-    // Original wallet provider is fetched to get the base derivation path
-    const originalProvider = this.client.getProviderForMethod('getAddresses');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const baseDerivationPath = (originalProvider as any)
-      ._baseDerivationPath as string;
-
-    const getDerivationPathAddressFn: (
-      path: string,
-    ) => Promise<Address> = this.client.getMethod('getDerivationPathAddress');
-
-    for (
-      let currentIndex = startingIndex;
-      currentIndex < lastIndex;
-      currentIndex++
-    ) {
-      const subPath = changeVal + '/' + currentIndex;
-      const path = baseDerivationPath + '/' + subPath;
-      const addressObject = await getDerivationPathAddressFn(path);
-      addresses.push(addressObject);
-    }
-
-    return addresses;
-  }
-
-  /**
-   * quickFindAddress is an optimized version of findAddress.
-   *
-   * It searches through both change and non-change addresses each iteration.
-   *
-   * This is in contrast to the original findAddress function which searches
-   * through all non-change addresses before moving on to change addresses.
-   *
-   * @param addresses
-   * @returns {Promise<Address[]>}
-   */
-  async quickFindAddress(addresses: string[]): Promise<Address> {
-    const addressesPerCall = 20;
-    let index = 0;
-
-    while (index < this._maxAddressesToDerive) {
-      const walletNonChangeAddresses = await this.quickGetAddresses(
-        index,
-        addressesPerCall,
-        true,
-      );
-      const walletChangeAddresses = await this.quickGetAddresses(
-        index,
-        addressesPerCall,
-        false,
-      );
-      const walletAddresses = [
-        ...walletNonChangeAddresses,
-        ...walletChangeAddresses,
-      ];
-      const walletAddress = walletAddresses.find((walletAddr) =>
-        addresses.find((addr) => walletAddr.address === addr),
-      );
-
-      if (walletAddress) {
-        // Increment max addresses to derive by 100 if found within 100 addresses of maxAddressesToDerive
-        this._maxAddressesToDerive = Math.max(
-          this._maxAddressesToDerive,
-          index + 100,
+    async getTotalFee(opts: SendOptions, max: boolean) {
+      const targets = this.sendOptionsToOutputs([opts]);
+      if (!max) {
+        const { fee } = await this.getInputsForAmount(
+          targets,
+          opts.fee as number,
         );
-        return walletAddress;
+        return fee;
+      } else {
+        const { fee } = await this.getInputsForAmount(
+          targets.filter((t) => !t.value),
+          opts.fee as number,
+          [],
+          100,
+          true,
+        );
+        return fee;
       }
-      index += addressesPerCall;
+    }
+
+    async getTotalFees(transactions: SendOptions[], max: boolean) {
+      const fees = await this.withCachedUtxos(async () => {
+        const fees: { [index: number]: BigNumber } = {};
+        for (const tx of transactions) {
+          const fee = await this.getTotalFee(tx, max);
+          fees[tx.fee as number] = new BigNumber(fee);
+        }
+        return fees;
+      });
+      return fees;
+    }
+
+    async getInputsForAmount(
+      _targets: bT.OutputTarget[],
+      feePerByte?: number,
+      fixedInputs: bT.Input[] = [],
+      numAddressPerCall = 100,
+      sweep = false,
+    ) {
+      let addressIndex = 0;
+      let changeAddresses: Address[] = [];
+      let externalAddresses: Address[] = [];
+      const addressCountMap = {
+        change: 0,
+        nonChange: 0,
+      };
+
+      const feePerBytePromise = this.getMethod('getFeePerByte')();
+      let utxos: bT.UTXO[] = [];
+
+      while (
+        addressCountMap.change < ADDRESS_GAP ||
+        addressCountMap.nonChange < ADDRESS_GAP
+      ) {
+        let addrList: Address[] = [];
+
+        if (addressCountMap.change < ADDRESS_GAP) {
+          // Scanning for change addr
+          changeAddresses = await this.getAddresses(
+            addressIndex,
+            numAddressPerCall,
+            true,
+          );
+          addrList = addrList.concat(changeAddresses);
+        } else {
+          changeAddresses = [];
+        }
+
+        if (addressCountMap.nonChange < ADDRESS_GAP) {
+          // Scanning for non change addr
+          externalAddresses = await this.getAddresses(
+            addressIndex,
+            numAddressPerCall,
+            false,
+          );
+          addrList = addrList.concat(externalAddresses);
+        }
+
+        const fixedUtxos: bT.UTXO[] = [];
+        if (fixedInputs.length > 0) {
+          for (const input of fixedInputs) {
+            const txHex = await this.getMethod('getRawTransactionByHash')(
+              input.txid,
+            );
+            const tx = decodeRawTransaction(txHex, this._network);
+            const value = new BigNumber(tx.vout[input.vout].value)
+              .times(1e8)
+              .toNumber();
+            const address = tx.vout[input.vout].scriptPubKey.addresses[0];
+            const walletAddress = await this.getWalletAddress(address);
+            const utxo = {
+              ...input,
+              value,
+              address,
+              derivationPath: walletAddress.derivationPath,
+            };
+            fixedUtxos.push(utxo);
+          }
+        }
+
+        if (!sweep || fixedUtxos.length === 0) {
+          const _utxos: bT.UTXO[] = await this.getMethod(
+            'getUnspentTransactions',
+          )(addrList);
+          utxos.push(
+            ..._utxos.map((utxo) => {
+              const addr = addrList.find((a) => a.address === utxo.address);
+              return {
+                ...utxo,
+                derivationPath: addr.derivationPath,
+              };
+            }),
+          );
+        } else {
+          utxos = fixedUtxos;
+        }
+
+        const utxoBalance = utxos.reduce((a, b) => a + (b.value || 0), 0);
+
+        const transactionCounts: bT.AddressTxCounts = await this.getMethod(
+          'getAddressTransactionCounts',
+        )(addrList);
+
+        if (!feePerByte) feePerByte = await feePerBytePromise;
+        const minRelayFee = await this.getMethod('getMinRelayFee')();
+        if (feePerByte < minRelayFee) {
+          throw new Error(
+            `Fee supplied (${feePerByte} sat/b) too low. Minimum relay fee is ${minRelayFee} sat/b`,
+          );
+        }
+
+        let targets: CoinSelectTarget[];
+        if (sweep) {
+          const outputBalance = _targets.reduce(
+            (a, b) => a + (b['value'] || 0),
+            0,
+          );
+
+          const sweepOutputSize = 39;
+          const paymentOutputSize =
+            _targets.filter((t) => t.value && t.address).length * 39;
+          const scriptOutputSize = _targets
+            .filter((t) => !t.value && t.script)
+            .reduce((size, t) => size + 39 + t.script.byteLength, 0);
+
+          const outputSize =
+            sweepOutputSize + paymentOutputSize + scriptOutputSize;
+          const inputSize = utxos.length * 153;
+
+          const sweepFee = feePerByte * (inputSize + outputSize);
+          const amountToSend = new BigNumber(utxoBalance).minus(sweepFee);
+
+          targets = _targets.map((target) => ({
+            id: 'main',
+            value: target.value,
+            script: target.script,
+          }));
+          targets.push({
+            id: 'main',
+            value: amountToSend.minus(outputBalance).toNumber(),
+          });
+        } else {
+          targets = _targets.map((target) => ({
+            id: 'main',
+            value: target.value,
+            script: target.script,
+          }));
+        }
+
+        const { inputs, outputs, change, fee } = selectCoins(
+          utxos,
+          targets,
+          Math.ceil(feePerByte),
+          fixedUtxos,
+        );
+
+        if (inputs && outputs) {
+          return {
+            inputs,
+            change,
+            outputs,
+            fee,
+          };
+        }
+
+        for (const address of addrList) {
+          const isUsed = transactionCounts[address.address];
+          const isChangeAddress = changeAddresses.find(
+            (a) => address.address === a.address,
+          );
+          const key = isChangeAddress ? 'change' : 'nonChange';
+
+          if (isUsed) {
+            addressCountMap[key] = 0;
+          } else {
+            addressCountMap[key]++;
+          }
+        }
+
+        addressIndex += numAddressPerCall;
+      }
+
+      throw new InsufficientBalanceError('Not enough balance');
     }
   }
-}
+  return BitcoinWalletProvider;
+};

@@ -1,13 +1,5 @@
 /* eslint-env mocha */
-import { Input } from '@atomicfinance/types';
-import { BitcoinJsWalletProvider } from '@liquality/bitcoin-js-wallet-provider';
-import { BitcoinNodeWalletProvider } from '@liquality/bitcoin-node-wallet-provider';
-import { BitcoinRpcProvider } from '@liquality/bitcoin-rpc-provider';
-import { decodeRawTransaction } from '@liquality/bitcoin-utils';
-import { Client } from '@liquality/client';
-import * as errors from '@liquality/errors';
-import { bitcoin } from '@liquality/types';
-import * as utils from '@liquality/utils';
+import Provider from '@atomicfinance/provider';
 import BN from 'bignumber.js';
 import { generateMnemonic } from 'bip39';
 import * as cfdJs from 'cfd-js';
@@ -16,8 +8,15 @@ import chaiAsPromised from 'chai-as-promised';
 
 import BitcoinCfdProvider from '../../packages/bitcoin-cfd-provider/lib';
 import BitcoinDlcProvider from '../../packages/bitcoin-dlc-provider/lib';
-import BitcoinWalletProvider from '../../packages/bitcoin-wallet-provider/lib';
-import { Client as FinanceClient } from '../../packages/client/lib';
+import { BitcoinJsWalletProvider } from '../../packages/bitcoin-js-wallet-provider';
+import { BitcoinNodeWalletProvider } from '../../packages/bitcoin-node-wallet-provider';
+import { BitcoinRpcProvider } from '../../packages/bitcoin-rpc-provider';
+import { decodeRawTransaction } from '../../packages/bitcoin-utils';
+import { Client } from '../../packages/client';
+import * as errors from '../../packages/errors';
+import { bitcoin } from '../../packages/types';
+import { Input } from '../../packages/types/';
+import * as utils from '../../packages/utils';
 import config from './config';
 import { getWrappedCfdDlcJs } from './utils/WrappedCfdDlcJs';
 
@@ -49,23 +48,24 @@ function mockedBitcoinRpcProvider(): BitcoinRpcProvider {
   return bitcoinRpcProvider;
 }
 
-const bitcoinWithNode = new FinanceClient();
-bitcoinWithNode.addProvider(mockedBitcoinRpcProvider());
+const bitcoinWithNode = new Client();
 bitcoinWithNode.addProvider(
-  new BitcoinNodeWalletProvider({
+  (mockedBitcoinRpcProvider() as unknown) as Provider,
+);
+bitcoinWithNode.addProvider(
+  (new BitcoinNodeWalletProvider({
     uri: rpc.host,
     username: rpc.username,
     password: rpc.password,
     network,
     addressType: bitcoin.AddressType.BECH32,
-  }),
+  }) as unknown) as Provider,
 );
 bitcoinWithNode.addProvider(new BitcoinCfdProvider(cfdJs));
 bitcoinWithNode.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
-bitcoinWithNode.addProvider(new BitcoinWalletProvider(network));
 
-const bitcoinWithJs = new FinanceClient();
-bitcoinWithJs.addProvider(mockedBitcoinRpcProvider());
+const bitcoinWithJs = new Client();
+bitcoinWithJs.addProvider((mockedBitcoinRpcProvider() as unknown) as Provider);
 bitcoinWithJs.addProvider(
   new BitcoinJsWalletProvider({
     network,
@@ -76,10 +76,9 @@ bitcoinWithJs.addProvider(
 );
 bitcoinWithJs.addProvider(new BitcoinCfdProvider(cfdJs));
 bitcoinWithJs.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
-bitcoinWithJs.addProvider(new BitcoinWalletProvider(network));
 
-const bitcoinWithJs2 = new FinanceClient();
-bitcoinWithJs2.addProvider(mockedBitcoinRpcProvider());
+const bitcoinWithJs2 = new Client();
+bitcoinWithJs2.addProvider((mockedBitcoinRpcProvider() as unknown) as Provider);
 bitcoinWithJs2.addProvider(
   new BitcoinJsWalletProvider({
     network,
@@ -90,10 +89,9 @@ bitcoinWithJs2.addProvider(
 );
 bitcoinWithJs2.addProvider(new BitcoinCfdProvider(cfdJs));
 bitcoinWithJs2.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
-bitcoinWithJs2.addProvider(new BitcoinWalletProvider(network));
 
-const bitcoinWithJs3 = new FinanceClient();
-bitcoinWithJs3.addProvider(mockedBitcoinRpcProvider());
+const bitcoinWithJs3 = new Client();
+bitcoinWithJs3.addProvider((mockedBitcoinRpcProvider() as unknown) as Provider);
 bitcoinWithJs3.addProvider(
   new BitcoinJsWalletProvider({
     network,
@@ -104,16 +102,15 @@ bitcoinWithJs3.addProvider(
 );
 bitcoinWithJs3.addProvider(new BitcoinCfdProvider(cfdJs));
 bitcoinWithJs3.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
-bitcoinWithJs3.addProvider(new BitcoinWalletProvider(network));
 
 /**
  * bitcoinWithJs4 corresponds to counterparty of dlc offer, accept, sign and txs messages in fixtures
  *
  * It was added to test the specific case where derivation path is > 500
- * Relevant issue: https://github.com/AtomicFinance/chainify-finance/issues/109
+ * Relevant issue: https://github.com/AtomicFinance/bitcoin-abstraction-layer/issues/109
  */
-const bitcoinWithJs4 = new FinanceClient();
-bitcoinWithJs4.addProvider(mockedBitcoinRpcProvider());
+const bitcoinWithJs4 = new Client();
+bitcoinWithJs4.addProvider((mockedBitcoinRpcProvider() as unknown) as Provider);
 bitcoinWithJs4.addProvider(
   new BitcoinJsWalletProvider({
     network,
@@ -125,7 +122,6 @@ bitcoinWithJs4.addProvider(
 );
 bitcoinWithJs4.addProvider(new BitcoinCfdProvider(cfdJs));
 bitcoinWithJs4.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
-bitcoinWithJs4.addProvider(new BitcoinWalletProvider(network));
 
 const chains = {
   bitcoinWithNode: {

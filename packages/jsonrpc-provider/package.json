@@ -1,0 +1,40 @@
+{
+  "name": "@atomicfinance/jsonrpc-provider",
+  "version": "2.5.1",
+  "description": "",
+  "module": "dist/index.js",
+  "main": "dist/index.js",
+  "directories": {
+    "dist": "dist",
+    "src": "lib"
+  },
+  "files": [
+    "dist",
+    "lib"
+  ],
+  "scripts": {
+    "build": "../../node_modules/.bin/tsc --project tsconfig.json",
+    "lint": "../../node_modules/.bin/eslint --ignore-path ../../.eslintignore  -c ../../.eslintrc.js .",
+    "lint:fix": "../../node_modules/.bin/eslint --fix --ignore-path ../../.eslintignore  -c ../../.eslintrc.js ."
+  },
+  "author": "Atomic Finance <info@atomic.finance>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14"
+  },
+  "dependencies": {
+    "@atomicfinance/errors": "^2.5.1",
+    "@atomicfinance/node-provider": "^2.5.1",
+    "@babel/runtime": "^7.12.1",
+    "@types/lodash": "^4.14.168",
+    "json-bigint": "^1.0.0",
+    "lodash": "^4.17.20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/json-bigint": "^1.0.0"
+  },
+  "sideEffects": false
+}
