@@ -1,4 +1,4 @@
-# @atomicfinance/client
+# @atomicfinance/node-provider
 
 ## 3.0.0
 
@@ -10,14 +10,4 @@
 
 - Updated dependencies [a06082e]
   - @atomicfinance/provider@3.0.0
-  - @atomicfinance/types@3.0.0
   - @atomicfinance/errors@3.0.0
-
-## 2.5.1
-
-### Patch Changes
-
-- Upgrade various package dependencies
-- Updated dependencies
-  - @atomicfinance/provider@2.5.1
-  - @atomicfinance/types@2.5.1

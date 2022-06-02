@@ -1,4 +1,4 @@
-# @atomicfinance/client
+# @atomicfinance/bitcoin-esplora-api-provider
 
 ## 3.0.0
 
@@ -9,15 +9,9 @@
 ### Patch Changes
 
 - Updated dependencies [a06082e]
-  - @atomicfinance/provider@3.0.0
   - @atomicfinance/types@3.0.0
+  - @atomicfinance/bitcoin-utils@3.0.0
+  - @atomicfinance/crypto@3.0.0
   - @atomicfinance/errors@3.0.0
-
-## 2.5.1
-
-### Patch Changes
-
-- Upgrade various package dependencies
-- Updated dependencies
-  - @atomicfinance/provider@2.5.1
-  - @atomicfinance/types@2.5.1
+  - @atomicfinance/node-provider@3.0.0
+  - @atomicfinance/utils@3.0.0
