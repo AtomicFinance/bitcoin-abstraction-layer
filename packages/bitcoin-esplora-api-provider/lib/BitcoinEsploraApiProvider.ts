@@ -1,4 +1,3 @@
-import { BitcoinNetwork } from '@atomicfinance/bitcoin-networks';
 import {
   decodeRawTransaction,
   normalizeTransactionObject,
@@ -12,6 +11,7 @@ import {
   ChainProvider,
 } from '@atomicfinance/types';
 import { addressToString } from '@atomicfinance/utils';
+import { BitcoinNetwork } from 'bitcoin-networks';
 import { flatten } from 'lodash';
 
 import * as esplora from './types';

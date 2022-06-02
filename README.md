@@ -27,7 +27,6 @@ This repository is a standalone project based off of [Chainify](https://github.c
 |[@atomicfinance/bitcoin-js-wallet-provider](./packages/bitcoin-js-wallet-provider)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/bitcoin-js-wallet-provider.svg)](https://npmjs.com/package/@atomicfinance/bitcoin-js-wallet-provider)
 |[@atomicfinance/bitcoin-utils](./packages/bitcoin-utils)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/bitcoin-utils.svg)](https://npmjs.com/package/@atomicfinance/bitcoin-utils)
 |[@atomicfinance/bitcoin-wallet-provider](./packages/bitcoin-wallet-provider)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/bitcoin-wallet-provider.svg)](https://npmjs.com/package/@atomicfinance/bitcoin-wallet-provider)|
-|[@atomicfinance/bitcoin-networks](./packages/bitcoin-networks)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/bitcoin-networks.svg)](https://npmjs.com/package/@atomicfinance/bitcoin-networks)|
 |[@atomicfinance/client](./packages/client)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/client.svg)](https://npmjs.com/package/@atomicfinance/client)|
 |[@atomicfinance/jsonrpc-provider](./packages/jsonrpc-provider)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/jsonrpc-provider.svg)](https://npmjs.com/package/@atomicfinance/jsonrpc-provider)|
 |[@atomicfinance/bitcoin-rpc-provider](./packages/bitcoin-rpc-provider)|[![Bitcoin-Abstraction-Layer](https://img.shields.io/npm/v/@atomicfinance/bitcoin-rpc-provider.svg)](https://npmjs.com/package/@atomicfinance/bitcoin-rpc-provider)|
@@ -68,7 +67,7 @@ import BitcoinCfdProvider from '@atomicfinance/bitcoin-cfd-provider'
 import BitcoinDlcProvider from '@atomicfinance/bitcoin-dlc-provider'
 import BitcoinWalletProvider from '@atomicfinance/bitcoin-wallet-provider'
 import BitcoinJsWalletProvider from '@atomicfinance/bitcoin-js-wallet-provider'
-import BitcoinNetworks from '@atomicfinance/bitcoin-networks'
+import BitcoinNetworks from 'bitcoin-networks'
 
 const network = BitcoinNetworks.bitcoin_testnet
 

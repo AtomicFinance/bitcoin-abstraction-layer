@@ -32,7 +32,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-dlc-provider@workspace:packages/bitcoin-dlc-provider"
   dependencies:
-    "@atomicfinance/bitcoin-networks": ^2.5.1
     "@atomicfinance/bitcoin-utils": 2.5.1
     "@atomicfinance/provider": ^2.5.1
     "@atomicfinance/types": ^2.5.1
@@ -46,6 +45,7 @@ __metadata:
     "@types/node": 16.10.3
     bignumber.js: ^9.0.1
     bip-schnorr: 0.6.2
+    bitcoin-networks: ^1.0.0
     bitcoinjs-lib: 5.2.0
     lodash: ^4.17.20
     randombytes: 2.1.0
@@ -57,7 +57,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-esplora-api-provider@workspace:packages/bitcoin-esplora-api-provider"
   dependencies:
-    "@atomicfinance/bitcoin-networks": ^2.5.1
     "@atomicfinance/bitcoin-utils": ^2.5.1
     "@atomicfinance/crypto": ^2.5.1
     "@atomicfinance/errors": ^2.5.1
@@ -67,6 +66,7 @@ __metadata:
     "@babel/runtime": ^7.12.1
     "@types/lodash": ^4.14.168
     bignumber.js: ^9.0.0
+    bitcoin-networks: ^1.0.0
     lodash: ^4.17.20
     nock: ^13.0.11
   languageName: unknown
@@ -92,7 +92,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-js-wallet-provider@workspace:packages/bitcoin-js-wallet-provider"
   dependencies:
-    "@atomicfinance/bitcoin-networks": ^2.5.1
     "@atomicfinance/bitcoin-utils": ^2.5.1
     "@atomicfinance/bitcoin-wallet-provider": ^2.5.1
     "@atomicfinance/types": ^2.5.1
@@ -100,27 +99,27 @@ __metadata:
     "@babel/runtime": ^7.12.1
     bip32: ^2.0.6
     bip39: ^3.0.2
+    bitcoin-networks: ^1.0.0
     bitcoinjs-lib: ^5.2.0
     bitcoinjs-message: ^2.1.0
     secp256k1: ^4.0.3
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/bitcoin-networks@^2.4.1, @atomicfinance/bitcoin-networks@^2.5.1, @atomicfinance/bitcoin-networks@workspace:packages/bitcoin-networks":
-  version: 0.0.0-use.local
-  resolution: "@atomicfinance/bitcoin-networks@workspace:packages/bitcoin-networks"
+"@atomicfinance/bitcoin-networks@npm:^2.4.1":
+  version: 2.5.1
+  resolution: "@atomicfinance/bitcoin-networks@npm:2.5.1"
   dependencies:
-    "@atomicfinance/types": ^2.5.1
-    "@types/node": 16.10.3
+    "@liquality/bitcoin-networks": 1.1.5
     bitcoinjs-lib: 5.2.0
-  languageName: unknown
-  linkType: soft
+  checksum: b28e16d69a919c9e046d3368c1a18ab4b2346e6fa1cd5064cdba022cdb043e8e2e2954c966007b21c9d1e69076edbd51acaa17817c27de22b4157cd2522092c0
+  languageName: node
+  linkType: hard
 
 "@atomicfinance/bitcoin-node-wallet-provider@workspace:packages/bitcoin-node-wallet-provider":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-node-wallet-provider@workspace:packages/bitcoin-node-wallet-provider"
   dependencies:
-    "@atomicfinance/bitcoin-networks": ^2.5.1
     "@atomicfinance/bitcoin-utils": ^2.5.1
     "@atomicfinance/crypto": ^2.5.1
     "@atomicfinance/jsonrpc-provider": ^2.5.1
@@ -129,6 +128,7 @@ __metadata:
     "@babel/runtime": ^7.12.1
     "@types/lodash": ^4.14.168
     bignumber.js: ^9.0.0
+    bitcoin-networks: ^1.0.0
     bitcoinjs-lib: ^5.2.0
     lodash: ^4.17.20
   languageName: unknown
@@ -138,7 +138,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-rpc-provider@workspace:packages/bitcoin-rpc-provider"
   dependencies:
-    "@atomicfinance/bitcoin-networks": ^2.5.1
     "@atomicfinance/bitcoin-utils": ^2.5.1
     "@atomicfinance/errors": ^2.5.1
     "@atomicfinance/jsonrpc-provider": ^2.5.1
@@ -147,6 +146,7 @@ __metadata:
     "@babel/runtime": ^7.12.1
     "@types/lodash": ^4.14.168
     bignumber.js: ^9.0.0
+    bitcoin-networks: ^1.0.0
     lodash: ^4.17.20
   languageName: unknown
   linkType: soft
@@ -155,7 +155,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-utils@workspace:packages/bitcoin-utils"
   dependencies:
-    "@atomicfinance/bitcoin-networks": ^2.5.1
     "@atomicfinance/crypto": ^2.5.1
     "@atomicfinance/errors": ^2.5.1
     "@atomicfinance/types": ^2.5.1
@@ -166,6 +165,7 @@ __metadata:
     "@types/node": 16.10.3
     bignumber.js: ^9.0.0
     bip174: ^2.0.1
+    bitcoin-networks: ^1.0.0
     bitcoinjs-lib: ^5.2.0
     coinselect: ^3.1.11
     lodash: ^4.17.20
@@ -181,6 +181,7 @@ __metadata:
     "@atomicfinance/types": ^2.5.1
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
+    bitcoin-networks: ^1.0.0
     bitcoinjs-lib: 5.2.0
     lodash: ^4.17.20
     memoizee: ^0.4.15
@@ -280,13 +281,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/utils@workspace:packages/utils"
   dependencies:
-    "@atomicfinance/bitcoin-networks": ^2.5.1
     "@atomicfinance/crypto": ^2.5.1
     "@atomicfinance/errors": ^2.5.1
     "@atomicfinance/types": ^2.5.1
     "@babel/runtime": ^7.12.1
     bignumber.js: ^9.0.0
     bip174: ^2.0.1
+    bitcoin-networks: ^1.0.0
     bitcoinjs-lib: ^5.2.0
     coinselect: ^3.1.11
     lodash: ^4.17.20
@@ -473,11 +474,11 @@ __metadata:
   linkType: hard
 
 "@babel/parser@npm:^7.16.7, @babel/parser@npm:^7.18.0":
-  version: 7.18.3
-  resolution: "@babel/parser@npm:7.18.3"
+  version: 7.18.4
+  resolution: "@babel/parser@npm:7.18.4"
   bin:
     parser: ./bin/babel-parser.js
-  checksum: 6894b3266f84b6c6b52bf09e7f61526efc35d8afa72ff0ad9aecb27a4b6de02d1ebc7f61fc3ae7c0fd8ecb5ac17083d1f27c1b3176e5eac41131d7160a9a7d88
+  checksum: e05b2dc720c4b200e088258f3c2a2de5041c140444edc38181d1217b10074e881a7133162c5b62356061f26279f08df5a06ec14c5842996ee8601ad03c57a44f
   languageName: node
   linkType: hard
 
@@ -520,12 +521,12 @@ __metadata:
   linkType: hard
 
 "@babel/types@npm:^7.0.0-beta.39, @babel/types@npm:^7.16.7, @babel/types@npm:^7.17.0, @babel/types@npm:^7.18.0, @babel/types@npm:^7.18.2, @babel/types@npm:^7.8.3":
-  version: 7.18.2
-  resolution: "@babel/types@npm:7.18.2"
+  version: 7.18.4
+  resolution: "@babel/types@npm:7.18.4"
   dependencies:
     "@babel/helper-validator-identifier": ^7.16.7
     to-fast-properties: ^2.0.0
-  checksum: 3750bcb9ef6f36ecf0c1477cf6010cd23f2db5cb93f6771ba84c07c08aa005934532bc81e9067192f85214c43e16731e0e3c244773071879967fd1cd22ba2144
+  checksum: 85df59beb99c1b95e9e41590442f2ffa1e5b1b558d025489db40c9f7c906bd03a17da26c3ec486e5800e80af27c42ca7eee9506d9212ab17766d2d68d30fbf52
   languageName: node
   linkType: hard
 
@@ -1703,6 +1704,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@liquality/bitcoin-networks@npm:1.1.5":
+  version: 1.1.5
+  resolution: "@liquality/bitcoin-networks@npm:1.1.5"
+  dependencies:
+    "@babel/runtime": ^7.12.1
+    "@liquality/types": ^1.1.5
+    bitcoinjs-lib: ^5.2.0
+  checksum: ae3c45cd24bad428fb0875c26545060996f0c400d4e7e209782ee2ff3ff40a708b125e8f35652be3cf332ede10f58817da0d33256958012786c80a3945775253
+  languageName: node
+  linkType: hard
+
 "@liquality/bitcoin-networks@npm:^1.12.0":
   version: 1.13.12
   resolution: "@liquality/bitcoin-networks@npm:1.13.12"
@@ -1735,7 +1747,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@liquality/types@npm:^1.0.0-beta.2, @liquality/types@npm:^1.13.12":
+"@liquality/types@npm:^1.0.0-beta.2, @liquality/types@npm:^1.1.5, @liquality/types@npm:^1.13.12":
   version: 1.13.12
   resolution: "@liquality/types@npm:1.13.12"
   dependencies:
@@ -2199,114 +2211,114 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@swc/core-android-arm-eabi@npm:1.2.194":
-  version: 1.2.194
-  resolution: "@swc/core-android-arm-eabi@npm:1.2.194"
+"@swc/core-android-arm-eabi@npm:1.2.196":
+  version: 1.2.196
+  resolution: "@swc/core-android-arm-eabi@npm:1.2.196"
   conditions: os=android & cpu=arm
   languageName: node
   linkType: hard
 
-"@swc/core-android-arm64@npm:1.2.194":
-  version: 1.2.194
-  resolution: "@swc/core-android-arm64@npm:1.2.194"
+"@swc/core-android-arm64@npm:1.2.196":
+  version: 1.2.196
+  resolution: "@swc/core-android-arm64@npm:1.2.196"
   conditions: os=android & cpu=arm64
   languageName: node
   linkType: hard
 
-"@swc/core-darwin-arm64@npm:1.2.194":
-  version: 1.2.194
-  resolution: "@swc/core-darwin-arm64@npm:1.2.194"
+"@swc/core-darwin-arm64@npm:1.2.196":
+  version: 1.2.196
+  resolution: "@swc/core-darwin-arm64@npm:1.2.196"
   conditions: os=darwin & cpu=arm64
   languageName: node
   linkType: hard
 
-"@swc/core-darwin-x64@npm:1.2.194":
-  version: 1.2.194
-  resolution: "@swc/core-darwin-x64@npm:1.2.194"
+"@swc/core-darwin-x64@npm:1.2.196":
+  version: 1.2.196
+  resolution: "@swc/core-darwin-x64@npm:1.2.196"
   conditions: os=darwin & cpu=x64
   languageName: node
   linkType: hard
 
-"@swc/core-freebsd-x64@npm:1.2.194":
-  version: 1.2.194
-  resolution: "@swc/core-freebsd-x64@npm:1.2.194"
+"@swc/core-freebsd-x64@npm:1.2.196":
+  version: 1.2.196
+  resolution: "@swc/core-freebsd-x64@npm:1.2.196"
   conditions: os=freebsd & cpu=x64
   languageName: node
   linkType: hard
 
-"@swc/core-linux-arm-gnueabihf@npm:1.2.194":
-  version: 1.2.194
-  resolution: "@swc/core-linux-arm-gnueabihf@npm:1.2.194"
+"@swc/core-linux-arm-gnueabihf@npm:1.2.196":
+  version: 1.2.196
+  resolution: "@swc/core-linux-arm-gnueabihf@npm:1.2.196"
   conditions: os=linux & cpu=arm
   languageName: node
   linkType: hard
 
-"@swc/core-linux-arm64-gnu@npm:1.2.194":
-  version: 1.2.194
-  resolution: "@swc/core-linux-arm64-gnu@npm:1.2.194"
+"@swc/core-linux-arm64-gnu@npm:1.2.196":
+  version: 1.2.196
+  resolution: "@swc/core-linux-arm64-gnu@npm:1.2.196"
   conditions: os=linux & cpu=arm64 & libc=glibc
   languageName: node
   linkType: hard
 
-"@swc/core-linux-arm64-musl@npm:1.2.194":
-  version: 1.2.194
-  resolution: "@swc/core-linux-arm64-musl@npm:1.2.194"
+"@swc/core-linux-arm64-musl@npm:1.2.196":
+  version: 1.2.196
+  resolution: "@swc/core-linux-arm64-musl@npm:1.2.196"
   conditions: os=linux & cpu=arm64 & libc=musl
   languageName: node
   linkType: hard
 
-"@swc/core-linux-x64-gnu@npm:1.2.194":
-  version: 1.2.194
-  resolution: "@swc/core-linux-x64-gnu@npm:1.2.194"
+"@swc/core-linux-x64-gnu@npm:1.2.196":
+  version: 1.2.196
+  resolution: "@swc/core-linux-x64-gnu@npm:1.2.196"
   conditions: os=linux & cpu=x64 & libc=glibc
   languageName: node
   linkType: hard
 
-"@swc/core-linux-x64-musl@npm:1.2.194":
-  version: 1.2.194
-  resolution: "@swc/core-linux-x64-musl@npm:1.2.194"
+"@swc/core-linux-x64-musl@npm:1.2.196":
+  version: 1.2.196
+  resolution: "@swc/core-linux-x64-musl@npm:1.2.196"
   conditions: os=linux & cpu=x64 & libc=musl
   languageName: node
   linkType: hard
 
-"@swc/core-win32-arm64-msvc@npm:1.2.194":
-  version: 1.2.194
-  resolution: "@swc/core-win32-arm64-msvc@npm:1.2.194"
+"@swc/core-win32-arm64-msvc@npm:1.2.196":
+  version: 1.2.196
+  resolution: "@swc/core-win32-arm64-msvc@npm:1.2.196"
   conditions: os=win32 & cpu=arm64
   languageName: node
   linkType: hard
 
-"@swc/core-win32-ia32-msvc@npm:1.2.194":
-  version: 1.2.194
-  resolution: "@swc/core-win32-ia32-msvc@npm:1.2.194"
+"@swc/core-win32-ia32-msvc@npm:1.2.196":
+  version: 1.2.196
+  resolution: "@swc/core-win32-ia32-msvc@npm:1.2.196"
   conditions: os=win32 & cpu=ia32
   languageName: node
   linkType: hard
 
-"@swc/core-win32-x64-msvc@npm:1.2.194":
-  version: 1.2.194
-  resolution: "@swc/core-win32-x64-msvc@npm:1.2.194"
+"@swc/core-win32-x64-msvc@npm:1.2.196":
+  version: 1.2.196
+  resolution: "@swc/core-win32-x64-msvc@npm:1.2.196"
   conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
 
 "@swc/core@npm:^1.2.172":
-  version: 1.2.194
-  resolution: "@swc/core@npm:1.2.194"
+  version: 1.2.196
+  resolution: "@swc/core@npm:1.2.196"
   dependencies:
-    "@swc/core-android-arm-eabi": 1.2.194
-    "@swc/core-android-arm64": 1.2.194
-    "@swc/core-darwin-arm64": 1.2.194
-    "@swc/core-darwin-x64": 1.2.194
-    "@swc/core-freebsd-x64": 1.2.194
-    "@swc/core-linux-arm-gnueabihf": 1.2.194
-    "@swc/core-linux-arm64-gnu": 1.2.194
-    "@swc/core-linux-arm64-musl": 1.2.194
-    "@swc/core-linux-x64-gnu": 1.2.194
-    "@swc/core-linux-x64-musl": 1.2.194
-    "@swc/core-win32-arm64-msvc": 1.2.194
-    "@swc/core-win32-ia32-msvc": 1.2.194
-    "@swc/core-win32-x64-msvc": 1.2.194
+    "@swc/core-android-arm-eabi": 1.2.196
+    "@swc/core-android-arm64": 1.2.196
+    "@swc/core-darwin-arm64": 1.2.196
+    "@swc/core-darwin-x64": 1.2.196
+    "@swc/core-freebsd-x64": 1.2.196
+    "@swc/core-linux-arm-gnueabihf": 1.2.196
+    "@swc/core-linux-arm64-gnu": 1.2.196
+    "@swc/core-linux-arm64-musl": 1.2.196
+    "@swc/core-linux-x64-gnu": 1.2.196
+    "@swc/core-linux-x64-musl": 1.2.196
+    "@swc/core-win32-arm64-msvc": 1.2.196
+    "@swc/core-win32-ia32-msvc": 1.2.196
+    "@swc/core-win32-x64-msvc": 1.2.196
   dependenciesMeta:
     "@swc/core-android-arm-eabi":
       optional: true
@@ -2336,7 +2348,7 @@ __metadata:
       optional: true
   bin:
     swcx: run_swcx.js
-  checksum: 52f6e2aa73e968ea863fba0a2bb6920ef4b60e349bf3b3bc110f28ea64194b3eeb60f4242ee8e7fe0615d800e3b935bb3f13dbe0246f75e7e763b8093957de3f
+  checksum: d9d1ad3c6852ae7c0a4c6e8824b7743fa977a06a2b993b4e81382fdc4fbdacc7faea0fe231cbaee9481cd311e291c673ed214253f8926aa921c925de535dc587
   languageName: node
   linkType: hard
 
@@ -2562,9 +2574,9 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:*":
-  version: 17.0.35
-  resolution: "@types/node@npm:17.0.35"
-  checksum: 7a24946ae7fd20267ed92466384f594e448bfb151081158d565cc635d406ecb29ea8fb85fcd2a1f71efccf26fb5bd3c6f509bde56077eb8b832b847a6664bc62
+  version: 17.0.38
+  resolution: "@types/node@npm:17.0.38"
+  checksum: 9db1c39d603850ced665ab60b8f8ebce674ff9d762dfff0f776d520e71e4d73fdcd4c7f69213b804d878cf3e726911b09cae4ee66e35ae2724538de9f4838681
   languageName: node
   linkType: hard
 
@@ -2590,16 +2602,16 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:^12.7.1":
-  version: 12.20.52
-  resolution: "@types/node@npm:12.20.52"
-  checksum: b720ee939a43f1427baf1606deee97e50892ff482bf3d64ab8a1eda3a50802a80866a232aeab337621f6ea4fdc4515147d7829337653e9e99d97c3aaeec3615d
+  version: 12.20.54
+  resolution: "@types/node@npm:12.20.54"
+  checksum: 7522e98053e2242be4b54eb463270e4279c578f62caa9aa5ac794bd3d9fa4723abc7ffc8f2b5e7c15b2f20a476ae30f0d10d86ff5bf42d2f19e51b28f15e6b70
   languageName: node
   linkType: hard
 
 "@types/node@npm:^14.14.14":
-  version: 14.18.18
-  resolution: "@types/node@npm:14.18.18"
-  checksum: a165225cd2603f6e62af8407449e4a4407305e03b41c1adf6b186fdf546e1a03c8214217659b5b36c556947c0c06234993ac880d4db6378136a7a810d47e0742
+  version: 14.18.20
+  resolution: "@types/node@npm:14.18.20"
+  checksum: 999d8ef25c983c9ca7c3365d6878a7f9387a90e10fdec9b6fc26764ae0b52768b8ca4f7e3fcab6056326dcc613b730f2a58b59acacdc5d5863fa4b7a09c1f85f
   languageName: node
   linkType: hard
 
@@ -3762,6 +3774,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"bitcoin-networks@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "bitcoin-networks@npm:1.0.0"
+  dependencies:
+    bitcoinjs-lib: 5.2.0
+  checksum: 3d2310255a7e35f5bf889317616330d2392932101fc8be96d05c28f868cd4b58d6a7fa5e2254b8e6d88b1eeb17fc747c9f298c2615d87170e808d3581ad0e5ae
+  languageName: node
+  linkType: hard
+
 "bitcoin-ops@npm:^1.3.0, bitcoin-ops@npm:^1.4.0":
   version: 1.4.1
   resolution: "bitcoin-ops@npm:1.4.1"
@@ -4322,9 +4343,9 @@ __metadata:
   linkType: hard
 
 "caniuse-lite@npm:^1.0.30001332":
-  version: 1.0.30001343
-  resolution: "caniuse-lite@npm:1.0.30001343"
-  checksum: b8770c0be83e8f1bf52b26d2c9564796195c268bda995ccebc5e67bcb5540cbed9fb03a33500c954628fa99735cddb9c69c54c2af15c37da487cebbdba1f5c60
+  version: 1.0.30001346
+  resolution: "caniuse-lite@npm:1.0.30001346"
+  checksum: 951590454ffa4e2e7b772558dc593cd08604b44c83741e1188166298f54c34387f4bf34f5141a35de4a43028c012484240ad15c896e48bf4eac70dd7076a4449
   languageName: node
   linkType: hard
 
@@ -5763,9 +5784,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.4.118":
-  version: 1.4.139
-  resolution: "electron-to-chromium@npm:1.4.139"
-  checksum: b0156f56db6a84b471bdacaecc5779952c9e4612cbe29867a818c5799ff2cd6a83617b68c3c020ce94b7a396b8288db8236a23d52148a05f567fa19ee309c9c1
+  version: 1.4.144
+  resolution: "electron-to-chromium@npm:1.4.144"
+  checksum: a321bfc92485d37a16c1db84647dc9c376b47ff53136a32102d8599086118f5805ab3713f86f85936b627544b653d7d8c3f1acf9638c5bf0c3f8e6ae1ab4c395
   languageName: node
   linkType: hard
 
@@ -6671,12 +6692,12 @@ __metadata:
   linkType: hard
 
 "follow-redirects@npm:^1.14.0, follow-redirects@npm:^1.14.9":
-  version: 1.15.0
-  resolution: "follow-redirects@npm:1.15.0"
+  version: 1.15.1
+  resolution: "follow-redirects@npm:1.15.1"
   peerDependenciesMeta:
     debug:
       optional: true
-  checksum: eaec81c3e0ae57aae2422e38ad3539d0e7279b3a63f9681eeea319bb683dea67502c4e097136b8ce9721542b4e236e092b6b49e34e326cdd7733c274f0a3f378
+  checksum: 6aa4e3e3cdfa3b9314801a1cd192ba756a53479d9d8cca65bf4db3a3e8834e62139245cd2f9566147c8dfe2efff1700d3e6aefd103de4004a7b99985e71dd533
   languageName: node
   linkType: hard
 
@@ -9220,8 +9241,8 @@ __metadata:
   linkType: hard
 
 "make-fetch-happen@npm:^10.0.3":
-  version: 10.1.5
-  resolution: "make-fetch-happen@npm:10.1.5"
+  version: 10.1.6
+  resolution: "make-fetch-happen@npm:10.1.6"
   dependencies:
     agentkeepalive: ^4.2.1
     cacache: ^16.1.0
@@ -9239,7 +9260,7 @@ __metadata:
     promise-retry: ^2.0.1
     socks-proxy-agent: ^6.1.1
     ssri: ^9.0.0
-  checksum: b0b42a1ccdcbc3180749727a52cf6887d9df6218d8ca35101bb9f7ab35729dd166d99203b70149a19a818d1ba72de40b982002ddb0b308c548457f5725d6e7f6
+  checksum: e75fb1209222404a803e0432cabf20dfccf35e78b32340a4f1ac18eb6faf9e42b2e600a3488261d71f455773581af8e1d615a881f50e5bd5d5efc2ae6ec7a8ee
   languageName: node
   linkType: hard
 
@@ -10558,9 +10579,9 @@ __metadata:
   linkType: hard
 
 "object-inspect@npm:^1.12.0, object-inspect@npm:^1.9.0":
-  version: 1.12.1
-  resolution: "object-inspect@npm:1.12.1"
-  checksum: 5c7c3b641417606db7f545760cfdbc686870c4ac03c86d05f3e1194b19de39b48030f2145ef813e6e8228268d48408eceb9bdcfeb0a502d8d9e5a057982c31a0
+  version: 1.12.2
+  resolution: "object-inspect@npm:1.12.2"
+  checksum: a534fc1b8534284ed71f25ce3a496013b7ea030f3d1b77118f6b7b1713829262be9e6243acbcb3ef8c626e2b64186112cb7f6db74e37b2789b9c789ca23048b2
   languageName: node
   linkType: hard
 
@@ -12238,6 +12259,7 @@ __metadata:
     bignumber.js: ^9.0.1
     bip-schnorr: ^0.6.2
     bip39: ^3.0.2
+    bitcoin-networks: ^1.0.0
     cfd-dlc-js: "https://github.com/atomicfinance/cfd-dlc-js.git#v0.0.34"
     cfd-js: "https://github.com/cryptogarageinc/cfd-js.git#v0.3.4"
     chai: ^4.2.0
@@ -12686,13 +12708,13 @@ __metadata:
   linkType: hard
 
 "socks-proxy-agent@npm:^6.0.0, socks-proxy-agent@npm:^6.1.1":
-  version: 6.2.0
-  resolution: "socks-proxy-agent@npm:6.2.0"
+  version: 6.2.1
+  resolution: "socks-proxy-agent@npm:6.2.1"
   dependencies:
     agent-base: ^6.0.2
     debug: ^4.3.3
     socks: ^2.6.2
-  checksum: 6723fd64fb50334e2b340fd0a80fd8488ffc5bc43d85b7cf1d25612044f814dd7d6ea417fd47602159941236f7f4bd15669fa5d7e1f852598a31288e1a43967b
+  checksum: 9ca089d489e5ee84af06741135c4b0d2022977dad27ac8d649478a114cdce87849e8d82b7c22b51501a4116e231241592946fc7fae0afc93b65030ee57084f58
   languageName: node
   linkType: hard
 
@@ -13773,114 +13795,114 @@ __metadata:
   languageName: node
   linkType: hard
 
-"turbo-darwin-64@npm:1.2.14":
-  version: 1.2.14
-  resolution: "turbo-darwin-64@npm:1.2.14"
+"turbo-darwin-64@npm:1.2.15":
+  version: 1.2.15
+  resolution: "turbo-darwin-64@npm:1.2.15"
   conditions: os=darwin & cpu=x64
   languageName: node
   linkType: hard
 
-"turbo-darwin-arm64@npm:1.2.14":
-  version: 1.2.14
-  resolution: "turbo-darwin-arm64@npm:1.2.14"
+"turbo-darwin-arm64@npm:1.2.15":
+  version: 1.2.15
+  resolution: "turbo-darwin-arm64@npm:1.2.15"
   conditions: os=darwin & cpu=arm64
   languageName: node
   linkType: hard
 
-"turbo-freebsd-64@npm:1.2.14":
-  version: 1.2.14
-  resolution: "turbo-freebsd-64@npm:1.2.14"
+"turbo-freebsd-64@npm:1.2.15":
+  version: 1.2.15
+  resolution: "turbo-freebsd-64@npm:1.2.15"
   conditions: os=freebsd & cpu=x64
   languageName: node
   linkType: hard
 
-"turbo-freebsd-arm64@npm:1.2.14":
-  version: 1.2.14
-  resolution: "turbo-freebsd-arm64@npm:1.2.14"
+"turbo-freebsd-arm64@npm:1.2.15":
+  version: 1.2.15
+  resolution: "turbo-freebsd-arm64@npm:1.2.15"
   conditions: os=freebsd & cpu=arm64
   languageName: node
   linkType: hard
 
-"turbo-linux-32@npm:1.2.14":
-  version: 1.2.14
-  resolution: "turbo-linux-32@npm:1.2.14"
+"turbo-linux-32@npm:1.2.15":
+  version: 1.2.15
+  resolution: "turbo-linux-32@npm:1.2.15"
   conditions: os=linux & cpu=ia32
   languageName: node
   linkType: hard
 
-"turbo-linux-64@npm:1.2.14":
-  version: 1.2.14
-  resolution: "turbo-linux-64@npm:1.2.14"
+"turbo-linux-64@npm:1.2.15":
+  version: 1.2.15
+  resolution: "turbo-linux-64@npm:1.2.15"
   conditions: os=linux & cpu=x64
   languageName: node
   linkType: hard
 
-"turbo-linux-arm64@npm:1.2.14":
-  version: 1.2.14
-  resolution: "turbo-linux-arm64@npm:1.2.14"
+"turbo-linux-arm64@npm:1.2.15":
+  version: 1.2.15
+  resolution: "turbo-linux-arm64@npm:1.2.15"
   conditions: os=linux & cpu=arm64
   languageName: node
   linkType: hard
 
-"turbo-linux-arm@npm:1.2.14":
-  version: 1.2.14
-  resolution: "turbo-linux-arm@npm:1.2.14"
+"turbo-linux-arm@npm:1.2.15":
+  version: 1.2.15
+  resolution: "turbo-linux-arm@npm:1.2.15"
   conditions: os=linux & cpu=arm
   languageName: node
   linkType: hard
 
-"turbo-linux-mips64le@npm:1.2.14":
-  version: 1.2.14
-  resolution: "turbo-linux-mips64le@npm:1.2.14"
+"turbo-linux-mips64le@npm:1.2.15":
+  version: 1.2.15
+  resolution: "turbo-linux-mips64le@npm:1.2.15"
   conditions: os=linux & cpu=mips64el
   languageName: node
   linkType: hard
 
-"turbo-linux-ppc64le@npm:1.2.14":
-  version: 1.2.14
-  resolution: "turbo-linux-ppc64le@npm:1.2.14"
+"turbo-linux-ppc64le@npm:1.2.15":
+  version: 1.2.15
+  resolution: "turbo-linux-ppc64le@npm:1.2.15"
   conditions: os=linux & cpu=ppc64
   languageName: node
   linkType: hard
 
-"turbo-windows-32@npm:1.2.14":
-  version: 1.2.14
-  resolution: "turbo-windows-32@npm:1.2.14"
+"turbo-windows-32@npm:1.2.15":
+  version: 1.2.15
+  resolution: "turbo-windows-32@npm:1.2.15"
   conditions: os=win32 & cpu=ia32
   languageName: node
   linkType: hard
 
-"turbo-windows-64@npm:1.2.14":
-  version: 1.2.14
-  resolution: "turbo-windows-64@npm:1.2.14"
+"turbo-windows-64@npm:1.2.15":
+  version: 1.2.15
+  resolution: "turbo-windows-64@npm:1.2.15"
   conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
 
-"turbo-windows-arm64@npm:1.2.14":
-  version: 1.2.14
-  resolution: "turbo-windows-arm64@npm:1.2.14"
+"turbo-windows-arm64@npm:1.2.15":
+  version: 1.2.15
+  resolution: "turbo-windows-arm64@npm:1.2.15"
   conditions: os=win32 & cpu=arm64
   languageName: node
   linkType: hard
 
 "turbo@npm:^1.2.6":
-  version: 1.2.14
-  resolution: "turbo@npm:1.2.14"
+  version: 1.2.15
+  resolution: "turbo@npm:1.2.15"
   dependencies:
-    turbo-darwin-64: 1.2.14
-    turbo-darwin-arm64: 1.2.14
-    turbo-freebsd-64: 1.2.14
-    turbo-freebsd-arm64: 1.2.14
-    turbo-linux-32: 1.2.14
-    turbo-linux-64: 1.2.14
-    turbo-linux-arm: 1.2.14
-    turbo-linux-arm64: 1.2.14
-    turbo-linux-mips64le: 1.2.14
-    turbo-linux-ppc64le: 1.2.14
-    turbo-windows-32: 1.2.14
-    turbo-windows-64: 1.2.14
-    turbo-windows-arm64: 1.2.14
+    turbo-darwin-64: 1.2.15
+    turbo-darwin-arm64: 1.2.15
+    turbo-freebsd-64: 1.2.15
+    turbo-freebsd-arm64: 1.2.15
+    turbo-linux-32: 1.2.15
+    turbo-linux-64: 1.2.15
+    turbo-linux-arm: 1.2.15
+    turbo-linux-arm64: 1.2.15
+    turbo-linux-mips64le: 1.2.15
+    turbo-linux-ppc64le: 1.2.15
+    turbo-windows-32: 1.2.15
+    turbo-windows-64: 1.2.15
+    turbo-windows-arm64: 1.2.15
   dependenciesMeta:
     turbo-darwin-64:
       optional: true
@@ -13910,7 +13932,7 @@ __metadata:
       optional: true
   bin:
     turbo: bin/turbo
-  checksum: 1652628d22f3d24af80569a425a9ae0c4b3dcf3e0dfdc13704d4444c6a28631a63742064280f4f955e0b42dc7d8082f4ebcc090d89a43367716323a88b51382c
+  checksum: 790b5111d9a504abc885bbfac3f2edfdf084c15a637a097c0bf5de0c7c66ce43f8a36e03339d0069a6dc56905d4d27026358b3b11fa7fbdf7a80396f76cd5e76
   languageName: node
   linkType: hard
 

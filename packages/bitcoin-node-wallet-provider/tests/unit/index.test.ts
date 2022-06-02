@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 
-import { BitcoinNetworks } from '@atomicfinance/bitcoin-networks';
 import BigNumber from 'bignumber.js';
+import { BitcoinNetworks } from 'bitcoin-networks';
 import chai, { expect } from 'chai';
 
 import bitcoinRpc from '../../../../tests/mock/bitcoin/rpc';

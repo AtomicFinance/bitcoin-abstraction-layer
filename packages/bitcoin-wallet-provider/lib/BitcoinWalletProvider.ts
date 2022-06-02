@@ -1,4 +1,3 @@
-import { BitcoinNetwork } from '@atomicfinance/bitcoin-networks';
 import {
   CoinSelectTarget,
   decodeRawTransaction,
@@ -17,6 +16,7 @@ import {
   WalletProvider,
 } from '@atomicfinance/types';
 import { addressToString } from '@atomicfinance/utils';
+import { BitcoinNetwork } from 'bitcoin-networks';
 import * as bitcoin from 'bitcoinjs-lib';
 import { BIP32Interface } from 'bitcoinjs-lib';
 import memoize from 'memoizee';

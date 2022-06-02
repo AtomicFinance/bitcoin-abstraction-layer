@@ -23,13 +23,13 @@
     "node": ">=14"
   },
   "dependencies": {
-    "@atomicfinance/bitcoin-networks": "^2.5.1",
     "@atomicfinance/crypto": "^2.5.1",
     "@atomicfinance/errors": "^2.5.1",
     "@atomicfinance/types": "^2.5.1",
     "@babel/runtime": "^7.12.1",
     "bignumber.js": "^9.0.0",
     "bip174": "^2.0.1",
+    "bitcoin-networks": "^1.0.0",
     "bitcoinjs-lib": "^5.2.0",
     "coinselect": "^3.1.11",
     "lodash": "^4.17.20",

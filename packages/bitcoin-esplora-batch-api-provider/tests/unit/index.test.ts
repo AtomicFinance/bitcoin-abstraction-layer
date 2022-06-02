@@ -1,11 +1,12 @@
 /* eslint-env mocha */
 
+import { BitcoinNetworks } from 'bitcoin-networks';
 import chai, { expect } from 'chai';
 
-import { BitcoinNetworks } from '../../../bitcoin-networks/lib';
 import { Client } from '../../../client/lib';
 import { BitcoinEsploraBatchApiProvider } from '../../lib';
 import mockBatchEsploraApi from '../mock/mockBatchEsploraApi';
+
 chai.config.truncateThreshold = 0;
 
 describe('Bitcoin Esplora Api Provider', () => {

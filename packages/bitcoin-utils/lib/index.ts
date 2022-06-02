@@ -1,7 +1,3 @@
-import {
-  BitcoinNetwork,
-  BitcoinNetworks,
-} from '@atomicfinance/bitcoin-networks';
 import { base58, padHexStart } from '@atomicfinance/crypto';
 import { InvalidAddressError } from '@atomicfinance/errors';
 import {
@@ -13,6 +9,7 @@ import {
 import { addressToString } from '@atomicfinance/utils';
 import BigNumber from 'bignumber.js';
 import * as varuint from 'bip174/src/lib/converter/varint';
+import { BitcoinNetwork, BitcoinNetworks } from 'bitcoin-networks';
 import * as bitcoin from 'bitcoinjs-lib';
 import * as classify from 'bitcoinjs-lib/src/classify';
 import coinselect from 'coinselect';

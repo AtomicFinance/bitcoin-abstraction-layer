@@ -1,8 +1,8 @@
 /* eslint-env mocha */
 
-import { BitcoinNetworks } from '@atomicfinance/bitcoin-networks/lib';
 import { Address } from '@atomicfinance/types/lib';
 import { generateMnemonic } from 'bip39';
+import { BitcoinNetworks } from 'bitcoin-networks';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 

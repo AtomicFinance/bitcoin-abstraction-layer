@@ -1,4 +1,4 @@
-import { BitcoinNetworks } from '../../packages/bitcoin-networks';
+import { BitcoinNetworks } from 'bitcoin-networks';
 
 export default {
   bitcoin: {

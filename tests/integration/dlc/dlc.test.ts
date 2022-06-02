@@ -28,6 +28,7 @@ import {
   RoundingIntervalsV0,
 } from '@node-dlc/messaging';
 import BN from 'bignumber.js';
+import { BitcoinNetworks, chainHashFromNetwork } from 'bitcoin-networks';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
@@ -35,8 +36,6 @@ import {
   AcceptDlcOfferResponse,
   SignDlcAcceptResponse,
 } from '../../../packages/bitcoin-dlc-provider';
-import { BitcoinNetworks } from '../../../packages/bitcoin-networks';
-import { chainHashFromNetwork } from '../../../packages/bitcoin-networks/lib';
 import { Input } from '../../../packages/types';
 import { chains, getInput } from '../common';
 import f from '../fixtures/blockchain.json';

@@ -1,4 +1,3 @@
-import { BitcoinNetwork } from '@atomicfinance/bitcoin-networks';
 import {
   decodeRawTransaction,
   normalizeTransactionObject,
@@ -18,6 +17,7 @@ import {
 import assert from 'assert';
 import { BIP32Interface, fromSeed } from 'bip32';
 import { mnemonicToSeed } from 'bip39';
+import { BitcoinNetwork } from 'bitcoin-networks';
 import * as bitcoin from 'bitcoinjs-lib';
 import {
   ECPair,

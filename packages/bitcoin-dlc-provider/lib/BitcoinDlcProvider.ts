@@ -1,7 +1,3 @@
-import {
-  BitcoinNetwork,
-  chainHashFromNetwork,
-} from '@atomicfinance/bitcoin-networks';
 import Provider from '@atomicfinance/provider';
 import {
   AdaptorPair,
@@ -95,6 +91,7 @@ import { StreamReader } from '@node-lightning/bufio';
 import { hash160, sha256, xor } from '@node-lightning/crypto';
 import assert from 'assert';
 import BigNumber from 'bignumber.js';
+import { BitcoinNetwork, chainHashFromNetwork } from 'bitcoin-networks';
 import {
   address,
   ECPairInterface,

@@ -15,7 +15,6 @@
     "lint:fix": "../../node_modules/.bin/eslint --fix --ignore-path ../../.eslintignore  -c ../../.eslintrc.js ."
   },
   "dependencies": {
-    "@atomicfinance/bitcoin-networks": "^2.5.1",
     "@atomicfinance/bitcoin-utils": "2.5.1",
     "@atomicfinance/provider": "^2.5.1",
     "@atomicfinance/types": "^2.5.1",
@@ -27,6 +26,7 @@
     "@node-lightning/crypto": "0.26.1",
     "bignumber.js": "^9.0.1",
     "bip-schnorr": "0.6.2",
+    "bitcoin-networks": "^1.0.0",
     "bitcoinjs-lib": "5.2.0",
     "lodash": "^4.17.20",
     "randombytes": "2.1.0",

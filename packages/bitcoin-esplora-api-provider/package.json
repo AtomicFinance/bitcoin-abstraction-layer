@@ -24,7 +24,6 @@
     "node": ">=14"
   },
   "dependencies": {
-    "@atomicfinance/bitcoin-networks": "^2.5.1",
     "@atomicfinance/bitcoin-utils": "^2.5.1",
     "@atomicfinance/crypto": "^2.5.1",
     "@atomicfinance/errors": "^2.5.1",
@@ -33,6 +32,7 @@
     "@atomicfinance/utils": "^2.5.1",
     "@babel/runtime": "^7.12.1",
     "bignumber.js": "^9.0.0",
+    "bitcoin-networks": "^1.0.0",
     "lodash": "^4.17.20"
   },
   "publishConfig": {

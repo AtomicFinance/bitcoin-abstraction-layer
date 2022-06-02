@@ -1,8 +1,4 @@
 import {
-  BitcoinNetwork,
-  BitcoinNetworks,
-} from '@atomicfinance/bitcoin-networks';
-import {
   decodeRawTransaction,
   normalizeTransactionObject,
 } from '@atomicfinance/bitcoin-utils';
@@ -17,6 +13,7 @@ import {
   SendOptions,
   Transaction,
 } from '@atomicfinance/types';
+import { BitcoinNetwork, BitcoinNetworks } from 'bitcoin-networks';
 import {
   ECPair,
   Psbt,

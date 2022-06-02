@@ -18,6 +18,7 @@
     "@atomicfinance/bitcoin-utils": "^2.5.1",
     "@atomicfinance/provider": "^2.5.1",
     "@atomicfinance/types": "^2.5.1",
+    "bitcoin-networks": "^1.0.0",
     "bitcoinjs-lib": "5.2.0",
     "lodash": "^4.17.20",
     "memoizee": "^0.4.15"
