@@ -1,4 +1,4 @@
-# @atomicfinance/provider
+# @atomicfinance/bitcoin-js-wallet-provider
 
 ## 3.0.0
 
@@ -9,12 +9,7 @@
 ### Patch Changes
 
 - Updated dependencies [a06082e]
+  - @atomicfinance/bitcoin-wallet-provider@3.0.0
   - @atomicfinance/types@3.0.0
-
-## 2.5.1
-
-### Patch Changes
-
-- Upgrade various package dependencies
-- Updated dependencies
-  - @atomicfinance/types@2.5.1
+  - @atomicfinance/bitcoin-utils@3.0.0
+  - @atomicfinance/utils@3.0.0

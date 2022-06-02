@@ -1,4 +1,4 @@
-# @atomicfinance/provider
+# @atomicfinance/bitcoin-utils
 
 ## 3.0.0
 
@@ -10,11 +10,6 @@
 
 - Updated dependencies [a06082e]
   - @atomicfinance/types@3.0.0
-
-## 2.5.1
-
-### Patch Changes
-
-- Upgrade various package dependencies
-- Updated dependencies
-  - @atomicfinance/types@2.5.1
+  - @atomicfinance/crypto@3.0.0
+  - @atomicfinance/errors@3.0.0
+  - @atomicfinance/utils@3.0.0
