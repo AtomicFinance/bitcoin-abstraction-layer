@@ -26,7 +26,6 @@
     "@atomicfinance/errors": "^3.0.0",
     "@atomicfinance/provider": "^3.0.0",
     "@babel/runtime": "^7.12.1",
-    "@types/axios": "^0.14.0",
     "@types/lodash": "^4.14.168",
     "axios": "^0.21.0",
     "lodash": "^4.17.20"
