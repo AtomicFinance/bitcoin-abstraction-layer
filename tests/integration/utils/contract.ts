@@ -77,16 +77,13 @@ export function generateContractInfo(
   return { contractInfo, totalCollateral };
 }
 
-export function generateContractInfoCustomStrategyOracle(
+export function generateAnnouncementCustomStrategyOracle(
   oracle: Oracle,
   numDigits = 18,
   oracleBase = 2,
-  payoutFunction: PayoutFunctionV0,
-  intervals: { beginInterval: bigint; roundingMod: bigint }[],
-  totalCollateral: bigint,
   unit = 'BTC',
   eventId = 'strategyOutcome',
-): { contractInfo: ContractInfoV0; totalCollateral: bigint } {
+): OracleAnnouncementV0 {
   const oliviaInfo = oracle.GetOracleInfo();
 
   const eventDescriptor = new DigitDecompositionEventDescriptorV0();
@@ -116,6 +113,27 @@ export function generateContractInfoCustomStrategyOracle(
 
   announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
   announcement.oracleEvent = event;
+
+  return announcement;
+}
+
+export function generateContractInfoCustomStrategyOracle(
+  oracle: Oracle,
+  numDigits = 18,
+  oracleBase = 2,
+  payoutFunction: PayoutFunctionV0,
+  intervals: { beginInterval: bigint; roundingMod: bigint }[],
+  totalCollateral: bigint,
+  unit = 'BTC',
+  eventId = 'strategyOutcome',
+): { contractInfo: ContractInfoV0; totalCollateral: bigint } {
+  const announcement = generateAnnouncementCustomStrategyOracle(
+    oracle,
+    numDigits,
+    oracleBase,
+    unit,
+    eventId,
+  );
 
   const oracleInfo = new OracleInfoV0();
   oracleInfo.announcement = announcement;

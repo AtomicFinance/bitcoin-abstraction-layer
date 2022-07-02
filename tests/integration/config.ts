@@ -4,8 +4,8 @@ export default {
   bitcoin: {
     rpc: {
       host: 'http://localhost:18443',
-      username: 'bitcoin',
-      password: 'local321',
+      username: 'admin1',
+      password: '123',
     },
     network: BitcoinNetworks.bitcoin_regtest,
     value: 1000000,

@@ -1,6 +1,7 @@
 import 'mocha';
 
-import { LinearPayout } from '@node-dlc/core';
+import { Value } from '@node-dlc/bitcoin';
+import { buildCustomStrategyOrderOffer, LinearPayout } from '@node-dlc/core';
 import {
   DlcAccept,
   DlcAcceptV0,
@@ -9,6 +10,7 @@ import {
   DlcTransactions,
   OracleAttestationV0,
 } from '@node-dlc/messaging';
+import { BitcoinNetworks } from 'bitcoin-networks';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
@@ -19,6 +21,7 @@ import {
 import { chains, getInput } from '../common';
 import Oracle from '../models/Oracle';
 import {
+  generateAnnouncementCustomStrategyOracle,
   generateContractInfoCustomStrategyOracle,
   generateOracleAttestation,
 } from '../utils/contract';
@@ -194,7 +197,7 @@ describe.skip('Custom Strategy Oracle POC numdigits=18', () => {
   });
 });
 
-describe('Custom Strategy Oracle POC numdigits=21', () => {
+describe.only('Custom Strategy Oracle POC numdigits=21', () => {
   const numDigits = 21;
   const oracleBase = 2;
   const { payoutFunction } = LinearPayout.buildPayoutFunction(
@@ -211,6 +214,11 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
   const eventId = 'strategyOutcome';
 
   const outcome = 1020000;
+
+  const contractSize = Value.fromBitcoin(1);
+  const maxLoss = Value.fromBitcoin(0.2);
+  const maxGain = Value.fromBitcoin(0.04);
+  const rounding = Value.fromSats(25000);
 
   let dlcOffer: DlcOffer;
   let dlcAccept: DlcAccept;
@@ -246,6 +254,8 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
 
     oracle = new Oracle('olivia', numDigits);
 
+    const feeRatePerVb = BigInt(10);
+
     const {
       contractInfo,
       totalCollateral,
@@ -259,7 +269,25 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
       unit,
     );
 
-    const feeRatePerVb = BigInt(10);
+    const announcement = generateAnnouncementCustomStrategyOracle(
+      oracle,
+      numDigits,
+      oracleBase,
+      unit,
+    );
+
+    const orderOffer = buildCustomStrategyOrderOffer(
+      announcement,
+      contractSize,
+      maxLoss,
+      maxGain,
+      feeRatePerVb,
+      rounding,
+      BitcoinNetworks.bitcoin_regtest,
+    );
+
+    console.log('orderOffer', orderOffer.serialize().toString('hex'));
+
     const cetLocktime = 1617170572;
     const refundLocktime = 1617170573;
     const premium = BigInt(5);
@@ -267,14 +295,23 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
     console.time('total');
     console.time('offer');
 
+    console.log(
+      'orderOffer.contractInfo',
+      orderOffer.contractInfo.serialize().toString('hex'),
+    );
+
+    console.log('orderOffer.offer', orderOffer.offerCollateralSatoshis);
+
     dlcOffer = await alice.dlc.createDlcOffer(
-      contractInfo,
-      totalCollateral - premium,
+      orderOffer.contractInfo,
+      orderOffer.offerCollateralSatoshis,
       feeRatePerVb,
       cetLocktime,
       refundLocktime,
       [aliceInput],
     );
+
+    console.log('dlcOffer', dlcOffer.serialize().toString('hex'));
 
     console.timeEnd('offer');
 

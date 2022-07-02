@@ -1709,6 +1709,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@node-dlc/bitcoin@npm:0.19.5, @node-dlc/bitcoin@npm:^0.19.5":
+  version: 0.19.5
+  resolution: "@node-dlc/bitcoin@npm:0.19.5"
+  checksum: 378dc9d461d68c7978905f4724cf69a3e79ca504e5ed59d9f3f6d80a11fd06f53eeaab3f91e36b5a30a6753195690f0eb8e98fc4e6657d4332d598bec8399c64
+  languageName: node
+  linkType: hard
+
 "@node-dlc/core@npm:0.19.1":
   version: 0.19.1
   resolution: "@node-dlc/core@npm:0.19.1"
@@ -1718,6 +1725,19 @@ __metadata:
     "@node-lightning/core": 0.26.1
     bitcoin-networks: ^1.0.0
   checksum: bf5987daaac38c29e39834ee21a3f73334c615732b18b8c7be1c93ff5a6a3f56666346eee066b62065a4cad5d0c29287d4439ae74a941da2d4e5754f2b7d6bcd
+  languageName: node
+  linkType: hard
+
+"@node-dlc/core@npm:0.19.5":
+  version: 0.19.5
+  resolution: "@node-dlc/core@npm:0.19.5"
+  dependencies:
+    "@node-dlc/bitcoin": ^0.19.5
+    "@node-dlc/messaging": ^0.19.5
+    "@node-lightning/core": 0.26.1
+    bignumber.js: ^9.0.1
+    bitcoin-networks: ^1.0.0
+  checksum: db2f8ae733b0d4b59fe4ac910f534d532ea2bda0398243ca209e36113fa841cbec09fdbd716b37168488affb0b92527721b53424c39a835839523e3eb133b420
   languageName: node
   linkType: hard
 
@@ -1733,6 +1753,21 @@ __metadata:
     bitcoin-networks: ^1.0.0
     bitcoinjs-lib: 5.2.0
   checksum: 8c0031222a87967573a84838366ae6fa821d94a85f21b9197fedfd922dc31415cd0ea618ab31d56e80afc8243650bc1740074c0d573059b0afc272d432d28860
+  languageName: node
+  linkType: hard
+
+"@node-dlc/messaging@npm:0.19.5, @node-dlc/messaging@npm:^0.19.5":
+  version: 0.19.5
+  resolution: "@node-dlc/messaging@npm:0.19.5"
+  dependencies:
+    "@node-lightning/bitcoin": 0.26.1
+    "@node-lightning/bufio": 0.26.1
+    "@node-lightning/checksum": 0.26.1
+    "@node-lightning/wire": 0.26.1
+    bip-schnorr: 0.6.3
+    bitcoin-networks: ^1.0.0
+    bitcoinjs-lib: 5.2.0
+  checksum: 20be2de5a4ccf5b637ba3e41d1adbe1aa7f1256c53853e6a883759ca3994b2c69118945151a4c2afe81d8935d8bf0decc7276a75dd78e376b78f8a1efb168cad
   languageName: node
   linkType: hard
 
@@ -12140,8 +12175,9 @@ __metadata:
   resolution: "root@workspace:."
   dependencies:
     "@changesets/cli": ^2.22.0
-    "@node-dlc/core": 0.19.1
-    "@node-dlc/messaging": 0.19.1
+    "@node-dlc/bitcoin": 0.19.5
+    "@node-dlc/core": 0.19.5
+    "@node-dlc/messaging": 0.19.5
     "@swc/cli": ^0.1.57
     "@swc/core": ^1.2.172
     "@swc/register": ^0.1.10
