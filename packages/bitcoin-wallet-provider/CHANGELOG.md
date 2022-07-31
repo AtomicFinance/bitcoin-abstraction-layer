@@ -1,5 +1,13 @@
 # @atomicfinance/bitcoin-wallet-provider
 
+## 3.0.1
+
+### Patch Changes
+
+- @atomicfinance/bitcoin-utils@3.0.1
+- @atomicfinance/provider@3.0.1
+- @atomicfinance/types@3.0.1
+
 ## 3.0.0
 
 ### Major Changes

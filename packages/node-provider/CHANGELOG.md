@@ -1,5 +1,13 @@
 # @atomicfinance/node-provider
 
+## 3.0.1
+
+### Patch Changes
+
+- 0ff98b5: Remove @types/axios dependency
+  - @atomicfinance/errors@3.0.1
+  - @atomicfinance/provider@3.0.1
+
 ## 3.0.0
 
 ### Major Changes

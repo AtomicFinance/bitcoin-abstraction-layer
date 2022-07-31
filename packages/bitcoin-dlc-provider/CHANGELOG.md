@@ -1,5 +1,15 @@
 # @atomicfinance/bitcoin-dlc-provider
 
+## 3.0.1
+
+### Patch Changes
+
+- b836137: fixes clamp for BigNumber payouts in FindOutcomeIndexFromPolynomialPayoutCurvePiece
+  - @atomicfinance/bitcoin-utils@3.0.1
+  - @atomicfinance/provider@3.0.1
+  - @atomicfinance/types@3.0.1
+  - @atomicfinance/utils@3.0.1
+
 ## 3.0.0
 
 ### Major Changes
