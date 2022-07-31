@@ -1025,11 +1025,14 @@ export default class BitcoinDlcProvider
       polynomialPayoutCurvePiece,
     );
 
+    const payouts = polynomialPayoutCurvePiece.points.map((point) =>
+      Number(point.outcomePayout),
+    );
+    const minPayout = Math.min(...payouts);
+    const maxPayout = Math.max(...payouts);
+
     const clampBN = (val: BigNumber) =>
-      BigNumber.max(
-        0,
-        BigNumber.min(val, dlcOffer.contractInfo.totalCollateral.toString()),
-      );
+      BigNumber.max(minPayout, BigNumber.min(val, maxPayout));
 
     const payout = clampBN(polynomialCurve.getPayout(outcome));
 
