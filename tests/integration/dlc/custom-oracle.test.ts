@@ -50,7 +50,7 @@ describe.skip('Custom Strategy Oracle POC numdigits=18', () => {
   );
   const intervals = [{ beginInterval: 0n, roundingMod: 25000n }];
   const totalCollateralIn = 120000000n;
-  const unit = 'Bits';
+  const unit = 'Bits * 10^-1';
   const eventId = 'strategyOutcome';
 
   const outcome = 10500;

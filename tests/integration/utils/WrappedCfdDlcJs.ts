@@ -4,7 +4,7 @@ import { StaticPool } from 'node-worker-threads-pool';
 const FILE_PATH = './tests/integration/utils/cfdDlcJsWorker.js';
 
 const pool = new StaticPool({
-  size: 4,
+  size: 2,
   task: FILE_PATH,
 });
 
