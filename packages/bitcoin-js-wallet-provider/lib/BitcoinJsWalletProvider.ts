@@ -407,11 +407,43 @@ export default class BitcoinJsWalletProvider extends BitcoinWalletProvider(
     );
     const inputs = fixedInputs;
 
+    // const alice1 = createPayment('p2pkh');
+    // const inputData1 = await getInputData(
+    //   2e5,
+    //   alice1.payment,
+    //   false,
+    //   'noredeem',
+    // );
+
+    // const data = Buffer.from('bitcoinjs-lib', 'utf8');
+    // const embed = bitcoin.payments.embed({ data: [data] });
+
+    // const psbt = new bitcoin.Psbt({ network: regtest })
+    //   .addInput(inputData1)
+    //   .addOutput({
+    //     script: embed.output!,
+    //     value: 1000,
+    //   })
+    //   .addOutput({
+    //     address: regtestUtils.RANDOM_ADDRESS,
+    //     value: 1e5,
+    //   })
+    //   .signInput(0, alice1.keys[0]);
+
+    // assert.strictEqual(psbt.validateSignaturesOfInput(0, validator), true);
+    // psbt.finalizeAllInputs();
+
+    const psbt = new bitcoin.Psbt({ network });
+
     const txb = new bitcoin.TransactionBuilder(network);
 
     for (const output of outputs) {
       const to = output.to; // Allow for OP_RETURN
       txb.addOutput(to, output.value);
+      psbt.addOutput({
+        address: to,
+        value: output.value,
+      });
     }
 
     const prevOutScriptType = 'p2wpkh';
@@ -422,6 +454,13 @@ export default class BitcoinJsWalletProvider extends BitcoinWalletProvider(
       const paymentVariant = this.getPaymentVariantFromPublicKey(
         keyPair.publicKey,
       );
+
+      psbt.addInput({
+        hash: inputs[i].txid,
+        index: inputs[i].vout,
+        sequence: 0,
+        witnessScript: paymentVariant.output,
+      });
 
       txb.addInput(inputs[i].txid, inputs[i].vout, 0, paymentVariant.output);
     }
@@ -446,6 +485,8 @@ export default class BitcoinJsWalletProvider extends BitcoinWalletProvider(
       }
 
       txb.sign(signParams);
+
+      psbt.signInput(i, keyPair);
     }
 
     return { hex: txb.build().toHex(), fee };

@@ -15,12 +15,15 @@ import {
 } from '@atomicfinance/types';
 import { BitcoinNetwork, BitcoinNetworks } from 'bitcoin-networks';
 import {
-  ECPair,
   Psbt,
   script,
   Transaction as BitcoinJsTransaction,
 } from 'bitcoinjs-lib';
+import ECPairFactory from 'ecpair';
 import { flatten, isString, uniq } from 'lodash';
+import * as ecc from 'tiny-secp256k1';
+
+const ECPair = ECPairFactory(ecc);
 
 const BIP70_CHAIN_TO_NETWORK: { [index: string]: BitcoinNetwork } = {
   main: BitcoinNetworks.bitcoin,

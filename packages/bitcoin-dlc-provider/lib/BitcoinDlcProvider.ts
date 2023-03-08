@@ -92,13 +92,9 @@ import { hash160, sha256, xor } from '@node-lightning/crypto';
 import assert from 'assert';
 import BigNumber from 'bignumber.js';
 import { BitcoinNetwork, chainHashFromNetwork } from 'bitcoin-networks';
-import {
-  address,
-  ECPairInterface,
-  payments,
-  Psbt,
-  script,
-} from 'bitcoinjs-lib';
+import { address, payments, Psbt, script } from 'bitcoinjs-lib';
+import ECPairFactory, { ECPairInterface } from 'ecpair';
+import * as ecc from 'tiny-secp256k1';
 
 import {
   asyncForEach,
@@ -106,6 +102,14 @@ import {
   generateSerialId,
   outputsToPayouts,
 } from './utils/Utils';
+
+const ECPair = ECPairFactory(ecc);
+
+const validator = (
+  pubkey: Buffer,
+  msghash: Buffer,
+  signature: Buffer,
+): boolean => ECPair.fromPublicKey(pubkey).verify(msghash, signature);
 
 const ESTIMATED_SIZE = 312;
 
@@ -2409,7 +2413,7 @@ Payout Group not found',
     );
 
     // Validate signatures
-    psbt.validateSignaturesOfAllInputs();
+    psbt.validateSignaturesOfAllInputs(validator);
 
     // Extract close signature from psbt and decode it to only extract r and s values
     const closeSignature = await script.signature.decode(
@@ -2806,7 +2810,7 @@ Payout Group not found',
       psbt.updateInput(i, { partialSig });
     }
 
-    psbt.validateSignaturesOfAllInputs();
+    psbt.validateSignaturesOfAllInputs(validator);
     psbt.finalizeAllInputs();
 
     return psbt.extractTransaction().toHex();

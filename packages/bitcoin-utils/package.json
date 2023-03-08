@@ -32,7 +32,7 @@
     "bignumber.js": "^9.0.0",
     "bip174": "^2.0.1",
     "bitcoin-networks": "^1.0.0",
-    "bitcoinjs-lib": "^5.2.0",
+    "bitcoinjs-lib": "6.1.0",
     "coinselect": "^3.1.11",
     "lodash": "^4.17.20"
   },
