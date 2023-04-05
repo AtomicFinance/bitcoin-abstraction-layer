@@ -57,7 +57,10 @@ export default class JsonRpcProvider extends NodeProvider {
   }
 
   async jsonrpc(method: string, ...params: any[]) {
-    const data = await super.nodePost('', this._prepareRequest(method, params));
+    const data = await super.nodePost(
+      '/wallet/default',
+      this._prepareRequest(method, params),
+    );
 
     return this._parseResponse(data);
   }

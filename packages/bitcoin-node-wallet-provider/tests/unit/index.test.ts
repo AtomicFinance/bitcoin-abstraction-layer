@@ -18,14 +18,15 @@ describe('Bitcoin RPC provider', () => {
   beforeEach(() => {
     client = new Client();
     provider = new BitcoinNodeWalletProvider({
-      network: BitcoinNetworks.bitcoin_testnet,
-      uri: 'http://localhost:18443',
-      username: 'bitcoin',
-      password: 'local321',
+      network: BitcoinNetworks.bitcoin,
+      uri: 'http://localhost:8332',
+      username: '__cookie__',
+      password:
+        'fa81babcfb7e897ee9bdd457093114c9eb0bbf0e27697b03d1e33bd22ede7b48',
     });
     client.addProvider(provider);
 
-    mockJsonRpc('http://localhost:18443', bitcoinRpc, 100);
+    mockJsonRpc('http://localhost:8332', bitcoinRpc, 100);
   });
 
   describe('signMessage', () => {

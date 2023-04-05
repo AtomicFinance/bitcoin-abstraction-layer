@@ -69,7 +69,8 @@ bitcoinWithJs.addProvider((mockedBitcoinRpcProvider() as unknown) as Provider);
 bitcoinWithJs.addProvider(
   new BitcoinJsWalletProvider({
     network,
-    mnemonic: generateMnemonic(256),
+    mnemonic:
+      'mosquito worth radar beach chimney tissue prepare sudden setup else fantasy odor recall heavy swap oval meadow supreme start clerk payment own layer olympic',
     baseDerivationPath: `m/84'/${config.bitcoin.network.coinType}'/0'`,
     addressType: bitcoin.AddressType.BECH32,
   }) as any,

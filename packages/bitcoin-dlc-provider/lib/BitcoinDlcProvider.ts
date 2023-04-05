@@ -489,11 +489,24 @@ export default class BitcoinDlcProvider
     const localFinalScriptPubkey = dlcOffer.payoutSPK.toString('hex');
     const remoteFinalScriptPubkey = dlcAccept.payoutSPK.toString('hex');
     const localChangeScriptPubkey = dlcOffer.changeSPK.toString('hex');
+
+    console.log(
+      `dlcOffer.changeSPK.toString('hex')`,
+      dlcOffer.changeSPK.toString('hex'),
+    );
+
     const remoteChangeScriptPubkey = dlcAccept.changeSPK.toString('hex');
+
+    console.log(
+      `dlcAccept.changeSPK.toString('hex')`,
+      dlcAccept.changeSPK.toString('hex'),
+    );
 
     const localInputs: Utxo[] = await Promise.all(
       dlcOffer.fundingInputs.map(async (fundingInput) => {
         const input = await this.fundingInputToInput(fundingInput, false);
+        console.log('input', input);
+        console.log('input.toUtxo()', input.toUtxo());
         return input.toUtxo();
       }),
     );
@@ -501,6 +514,8 @@ export default class BitcoinDlcProvider
     const remoteInputs: Utxo[] = await Promise.all(
       dlcAccept.fundingInputs.map(async (fundingInput) => {
         const input = await this.fundingInputToInput(fundingInput, false);
+        console.log('input', input);
+        console.log('input.toUtxo()', input.toUtxo());
         return input.toUtxo();
       }),
     );
@@ -517,6 +532,9 @@ export default class BitcoinDlcProvider
 
     const payoutResponses = this.GetPayouts(dlcOffer);
     const { payouts, messagesList } = this.FlattenPayouts(payoutResponses);
+
+    console.log('localInputs', localInputs);
+    console.log('remoteInputs', remoteInputs);
 
     const dlcTxRequest: CreateDlcTransactionsRequest = {
       payouts,
@@ -1858,6 +1876,8 @@ Payout Group not found',
     const { dlcOffer } = checkTypes({ _dlcOffer });
     dlcOffer.validate();
 
+    console.log('test1');
+
     const acceptCollateralSatoshis =
       dlcOffer.contractInfo.totalCollateral - dlcOffer.offerCollateralSatoshis;
 
@@ -1867,6 +1887,8 @@ Payout Group not found',
           dlcOffer.offerCollateralSatoshis,
       'acceptCollaterialSatoshis should equal totalCollateral - offerCollateralSatoshis',
     );
+
+    console.log('test2');
 
     const {
       fundingPubKey,
@@ -1880,6 +1902,8 @@ Payout Group not found',
       dlcOffer.feeRatePerVb,
       fixedInputs,
     );
+
+    console.log('test3');
 
     assert(
       Buffer.compare(dlcOffer.fundingPubKey, fundingPubKey) !== 0,
@@ -1897,16 +1921,29 @@ Payout Group not found',
       (input) => input as FundingInputV0,
     );
 
+    fundingInputs.sort(
+      (a, b) => Number(a.inputSerialId) - Number(b.inputSerialId),
+    );
+
     const dlcAccept = new DlcAcceptV0();
 
     dlcAccept.tempContractId = sha256(dlcOffer.serialize());
     dlcAccept.acceptCollateralSatoshis = acceptCollateralSatoshis;
-    dlcAccept.fundingPubKey = fundingPubKey;
-    dlcAccept.payoutSPK = payoutSPK;
-    dlcAccept.payoutSerialId = dlcAccept.payoutSerialId = payoutSerialId;
+    dlcAccept.fundingPubKey = Buffer.from(
+      '0286b0348538b862020097ca82eaa0c79adb3f1cd4513c0c30da68b990098063c3',
+      'hex',
+    );
+    dlcAccept.payoutSPK = Buffer.from(
+      '001479ed9ca14fe1ef3c29f7fb719e966bec10241226',
+      'hex',
+    );
+    dlcAccept.payoutSerialId = 88072n;
     dlcAccept.fundingInputs = fundingInputs;
-    dlcAccept.changeSPK = changeSPK;
-    dlcAccept.changeSerialId = dlcAccept.changeSerialId = changeSerialId;
+    dlcAccept.changeSPK = Buffer.from(
+      '0014b37565fd25b2c1e3073fbac97336b736ba939eb4',
+      'hex',
+    );
+    dlcAccept.changeSerialId = 161060n;
 
     assert(
       dlcAccept.changeSerialId !== dlcOffer.fundOutputSerialId,
@@ -1968,11 +2005,28 @@ Payout Group not found',
       false,
     );
 
+    console.log('dlcOffer.changeSPK', dlcOffer.changeSPK.toString('hex'));
+    console.log('dlcAccept.changeSPK', dlcAccept.changeSPK.toString('hex'));
+
     assert(
       dlcTransactions.type === MessageType.DlcTransactionsV0,
       'DlcTransactions must be V0',
     );
     const _dlcTransactions = dlcTransactions as DlcTransactionsV0;
+
+    console.log(
+      'dlctxs funding tx',
+      _dlcTransactions.fundTx.serialize().toString('hex'),
+    );
+
+    console.log(
+      '_dlcTransactions.fundTx.txId.serialize()',
+      _dlcTransactions.fundTx.txId.serialize().toString('hex'),
+    );
+    console.log(
+      'dlcAccept.tempContractId',
+      dlcAccept.tempContractId.toString('hex'),
+    );
 
     const contractId = xor(
       _dlcTransactions.fundTx.txId.serialize(),

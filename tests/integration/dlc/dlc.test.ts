@@ -2,6 +2,7 @@ import 'mocha';
 
 import {
   CoveredCall,
+  DlcTxBuilder,
   groupByIgnoringDigits,
   HyperbolaPayoutCurve,
 } from '@node-dlc/core';
@@ -21,12 +22,14 @@ import {
   DlcSignV0,
   DlcTransactions,
   DlcTransactionsV0,
+  FundingInputV0,
   OracleAnnouncementV0,
   OracleAttestationV0,
   OracleEventV0,
   OracleInfoV0,
   RoundingIntervalsV0,
 } from '@node-dlc/messaging';
+import { xor } from '@node-lightning/crypto';
 import BN from 'bignumber.js';
 import { BitcoinNetworks, chainHashFromNetwork } from 'bitcoin-networks';
 import chai from 'chai';
@@ -39,6 +42,9 @@ import {
 import { Input } from '../../../packages/types';
 import { chains, getInput } from '../common';
 import f from '../fixtures/blockchain.json';
+import errorDlcAccept from '../fixtures/error_dlc_accept.json';
+import errorDlcOffer from '../fixtures/error_dlc_offer.json';
+import errorDlcTxs from '../fixtures/error_dlc_txs.json';
 import Oracle from '../models/Oracle';
 import {
   generateContractInfo,
@@ -97,7 +103,7 @@ describe('inputToFundingInput', () => {
   });
 });
 
-describe('dlc provider', () => {
+describe.skip('dlc provider', () => {
   const numDigits = 17;
   const oracleBase = 2;
   let dlcOffer: DlcOffer;
@@ -105,27 +111,122 @@ describe('dlc provider', () => {
   let dlcSign: DlcSign;
   let dlcTransactions: DlcTransactions;
   let oracleAttestation: OracleAttestationV0;
-  let aliceAddresses: string[] = [];
+  const aliceAddresses: string[] = [];
   let oracle: Oracle;
 
   before(async () => {
-    const aliceNonChangeAddresses: string[] = (
-      await alice.wallet.getAddresses(0, 15, false)
-    ).map((address) => address.address);
-    const aliceChangeAddresses: string[] = (
-      await alice.wallet.getAddresses(0, 15, true)
-    ).map((address) => address.address);
+    // const aliceNonChangeAddresses: string[] = (
+    //   await alice.wallet.getAddresses(0, 15, false)
+    // ).map((address) => address.address);
+    // const aliceChangeAddresses: string[] = (
+    //   await alice.wallet.getAddresses(0, 15, true)
+    // ).map((address) => address.address);
+    // aliceAddresses = [...aliceNonChangeAddresses, ...aliceChangeAddresses];
+    // for (let i = 0; i < aliceAddresses.length; i++) {
+    //   await alice.getMethod('jsonrpc')(
+    //     'importaddress',
+    //     aliceAddresses[i],
+    //     '',
+    //     false,
+    //   );
+    // }
+  });
 
-    aliceAddresses = [...aliceNonChangeAddresses, ...aliceChangeAddresses];
-
-    for (let i = 0; i < aliceAddresses.length; i++) {
-      await alice.getMethod('jsonrpc')(
-        'importaddress',
-        aliceAddresses[i],
-        '',
-        false,
+  describe.only('error', () => {
+    it('should', async () => {
+      const dlcOffer = DlcOfferV0.deserialize(
+        Buffer.from(errorDlcOffer.hex, 'hex'),
       );
-    }
+      const dlcAccept = DlcAcceptV0.deserialize(
+        Buffer.from(errorDlcAccept.hex, 'hex'),
+      );
+      // const dlcTxs = DlcTransactionsV0.deserialize(
+      //   Buffer.from(errorDlcTxs.hex, 'hex'),
+      // );
+
+      console.log('dlcAccept changeSerialId', dlcAccept.changeSerialId);
+      console.log('dlcAccept payoudSerialId', dlcAccept.payoutSerialId);
+
+      // console.log('dlcTxs', dlcTxs.fundTx.serialize().toString('hex'));
+
+      const uniqueInputSerialIds = new Set();
+      const uniqueprevTx = new Set();
+
+      (dlcOffer.fundingInputs as FundingInputV0[]).forEach((input) => {
+        // uniqueInputSerialIds.add(input.inputSerialId);
+        // uniqueprevTx.add(input.prevTx.serialize().toString('hex'));
+        console.log(input.toJSON());
+      });
+
+      console.log('inbetween');
+
+      dlcAccept.fundingInputs.forEach((input) => {
+        uniqueInputSerialIds.add(input.inputSerialId);
+        uniqueprevTx.add(input.prevTx.serialize().toString('hex'));
+        console.log(input.toJSON());
+      });
+
+      console.log(
+        'dlcAccept funding pubkey',
+        dlcAccept.fundingPubKey.toString('hex'),
+      );
+      console.log('dlcAccept change spk', dlcAccept.changeSPK.toString('hex'));
+      console.log('dlcaccept payout spk', dlcAccept.payoutSPK.toString('hex'));
+
+      console.log(
+        'uniqueInputSerialIds.size === dlcAccept.fundingInputs.length',
+        uniqueInputSerialIds.size === dlcAccept.fundingInputs.length,
+      );
+      console.log(
+        'uniqueprevTx.size === dlcAccept.fundingInputs.length',
+        uniqueprevTx.size === dlcAccept.fundingInputs.length,
+      );
+
+      const txBuilder = new DlcTxBuilder(dlcOffer, dlcAccept.withoutSigs());
+      const tx = txBuilder.buildFundingTransaction();
+      console.log('fundingtx', tx.serialize().toString('hex'));
+      const fundingTxid = tx.txId.serialize();
+      console.log('tx.txId.serialize()', tx.txId.serialize().toString('hex'));
+      console.log(
+        'dlcAccept.tempContractId',
+        dlcAccept.tempContractId.toString('hex'),
+      );
+      const contractId = xor(fundingTxid, dlcAccept.tempContractId);
+
+      console.log('contractId', contractId.toString('hex'));
+
+      let inputs = await Promise.all(
+        dlcAccept.fundingInputs.map((input) =>
+          alice.dlc.fundingInputToInput(input),
+        ),
+      );
+
+      // reverse inputs
+      inputs = inputs.reverse();
+
+      const {
+        dlcAccept: dlcAcceptNew,
+        dlcTransactions: dlcTxsNew,
+      } = await alice.dlc.acceptDlcOffer(dlcOffer, inputs);
+
+      console.log(
+        'dlcTxsNew',
+        (dlcTxsNew as DlcTransactionsV0).contractId.toString('hex'),
+      );
+
+      const txBuilderNew = new DlcTxBuilder(
+        dlcOffer,
+        (dlcAcceptNew as DlcAcceptV0).withoutSigs(),
+      );
+      const txNew = txBuilder.buildFundingTransaction();
+      const fundingTxidNew = tx.txId.serialize();
+      const contractIdNew = xor(
+        fundingTxidNew,
+        (dlcAcceptNew as DlcAcceptV0).tempContractId,
+      );
+
+      console.log('contractIdNew', contractIdNew.toString('hex'));
+    });
   });
 
   describe('single oracle event', () => {

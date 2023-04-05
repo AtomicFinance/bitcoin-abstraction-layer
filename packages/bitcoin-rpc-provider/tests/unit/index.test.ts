@@ -17,9 +17,10 @@ describe('Bitcoin RPC provider', () => {
     client = new Client();
     provider = new BitcoinRpcProvider({
       uri: 'http://localhost:18443',
-      username: 'bitcoin',
-      password: 'local321',
-      network: BitcoinNetworks.bitcoin_testnet,
+      username: '__cookie__',
+      password:
+        'fa81babcfb7e897ee9bdd457093114c9eb0bbf0e27697b03d1e33bd22ede7b48',
+      network: BitcoinNetworks.bitcoin,
     });
     client.addProvider(provider);
 
