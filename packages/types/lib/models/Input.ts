@@ -50,6 +50,7 @@ export default class Input {
       address: this.address,
       derivationPath: this.derivationPath,
       maxWitnessLength: this.maxWitnessLength ? this.maxWitnessLength : 108,
+      inputSerialId: this.inputSerialId,
       toJSON: Utxo.prototype.toJSON,
       toInput: Utxo.prototype.toInput,
     };

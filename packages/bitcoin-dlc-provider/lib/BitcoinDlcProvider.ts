@@ -1798,6 +1798,10 @@ Payout Group not found',
       (input) => input as FundingInputV0,
     );
 
+    fundingInputs.sort(
+      (a, b) => Number(a.inputSerialId) - Number(b.inputSerialId),
+    );
+
     const fundOutputSerialId = generateSerialId();
 
     assert(
@@ -1895,6 +1899,10 @@ Payout Group not found',
 
     const fundingInputs: FundingInputV0[] = _fundingInputs.map(
       (input) => input as FundingInputV0,
+    );
+
+    fundingInputs.sort(
+      (a, b) => Number(a.inputSerialId) - Number(b.inputSerialId),
     );
 
     const dlcAccept = new DlcAcceptV0();
