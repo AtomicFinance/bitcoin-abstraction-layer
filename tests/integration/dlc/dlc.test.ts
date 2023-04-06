@@ -2,6 +2,7 @@ import 'mocha';
 
 import {
   CoveredCall,
+  DlcTxBuilder,
   groupByIgnoringDigits,
   HyperbolaPayoutCurve,
 } from '@node-dlc/core';
@@ -27,6 +28,7 @@ import {
   OracleInfoV0,
   RoundingIntervalsV0,
 } from '@node-dlc/messaging';
+import { xor } from '@node-lightning/crypto';
 import BN from 'bignumber.js';
 import { BitcoinNetworks, chainHashFromNetwork } from 'bitcoin-networks';
 import chai from 'chai';
@@ -729,6 +731,21 @@ describe('dlc provider', () => {
           oracleBase,
           numDigits,
           'event_1',
+        );
+
+        const txBuilder = new DlcTxBuilder(
+          dlcOffer as DlcOfferV0,
+          (dlcAccept as DlcAcceptV0).withoutSigs(),
+        );
+        const tx = txBuilder.buildFundingTransaction();
+        const fundingTxid = tx.txId.serialize();
+        const contractId = xor(
+          fundingTxid,
+          (dlcAccept as DlcAcceptV0).tempContractId,
+        );
+
+        expect(contractId.toString('hex')).to.equal(
+          (dlcSign as DlcSignV0).contractId.toString('hex'),
         );
 
         const cet = await bob.dlc.execute(

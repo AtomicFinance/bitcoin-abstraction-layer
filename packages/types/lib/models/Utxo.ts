@@ -13,6 +13,7 @@ export default class Utxo {
     readonly address: string,
     readonly derivationPath: string,
     readonly maxWitnessLength: number,
+    readonly inputSerialId?: bigint | number,
   ) {}
 
   public toInput(): Input {
@@ -24,6 +25,7 @@ export default class Utxo {
       value: this.amount.GetSatoshiAmount(),
       derivationPath: this.derivationPath,
       maxWitnessLength: this.maxWitnessLength,
+      inputSerialId: BigInt(this.inputSerialId),
       toUtxo: Input.prototype.toUtxo,
     };
   }
@@ -36,6 +38,7 @@ export default class Utxo {
       address: this.address,
       derivationPath: this.derivationPath,
       maxWitnessLength: this.maxWitnessLength,
+      inputSerialId: this.inputSerialId,
     });
   }
 
@@ -63,4 +66,5 @@ export interface UtxoJSON {
   address: string;
   derivationPath: string;
   maxWitnessLength: number;
+  inputSerialId?: bigint | number;
 }
