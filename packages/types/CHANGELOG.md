@@ -1,5 +1,11 @@
 # @atomicfinance/types
 
+## 3.1.0
+
+### Minor Changes
+
+- c60033b: Fix DLC Input Ordering
+
 ## 3.0.1
 
 ## 3.0.0

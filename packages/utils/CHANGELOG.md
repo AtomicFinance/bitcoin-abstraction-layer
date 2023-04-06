@@ -1,5 +1,14 @@
 # @atomicfinance/utils
 
+## 3.1.0
+
+### Patch Changes
+
+- Updated dependencies [c60033b]
+  - @atomicfinance/types@3.1.0
+  - @atomicfinance/crypto@3.1.0
+  - @atomicfinance/errors@3.1.0
+
 ## 3.0.1
 
 ### Patch Changes

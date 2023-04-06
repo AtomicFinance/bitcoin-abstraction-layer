@@ -1,5 +1,18 @@
 # @atomicfinance/client
 
+## 3.1.0
+
+### Minor Changes
+
+- c60033b: Fix DLC Input Ordering
+
+### Patch Changes
+
+- Updated dependencies [c60033b]
+  - @atomicfinance/types@3.1.0
+  - @atomicfinance/errors@3.1.0
+  - @atomicfinance/provider@3.1.0
+
 ## 3.0.1
 
 ### Patch Changes
