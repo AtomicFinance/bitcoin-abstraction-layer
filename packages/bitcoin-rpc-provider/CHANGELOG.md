@@ -1,5 +1,15 @@
 # @atomicfinance/bitcoin-rpc-provider
 
+## 3.1.1
+
+### Patch Changes
+
+- @atomicfinance/bitcoin-utils@3.1.1
+- @atomicfinance/errors@3.1.1
+- @atomicfinance/jsonrpc-provider@3.1.1
+- @atomicfinance/types@3.1.1
+- @atomicfinance/utils@3.1.1
+
 ## 3.1.0
 
 ### Patch Changes

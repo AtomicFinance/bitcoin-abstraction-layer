@@ -1,5 +1,15 @@
 # @atomicfinance/bitcoin-node-wallet-provider
 
+## 3.1.1
+
+### Patch Changes
+
+- @atomicfinance/bitcoin-utils@3.1.1
+- @atomicfinance/crypto@3.1.1
+- @atomicfinance/jsonrpc-provider@3.1.1
+- @atomicfinance/types@3.1.1
+- @atomicfinance/utils@3.1.1
+
 ## 3.1.0
 
 ### Patch Changes

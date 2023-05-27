@@ -1,5 +1,14 @@
 # @atomicfinance/bitcoin-dlc-provider
 
+## 3.1.1
+
+### Patch Changes
+
+- @atomicfinance/bitcoin-utils@3.1.1
+- @atomicfinance/provider@3.1.1
+- @atomicfinance/types@3.1.1
+- @atomicfinance/utils@3.1.1
+
 ## 3.1.0
 
 ### Minor Changes

@@ -1,5 +1,16 @@
 # @atomicfinance/bitcoin-js-wallet-provider
 
+## 3.1.1
+
+### Patch Changes
+
+- 51fc309: Bump address gap from 20 to 30
+- Updated dependencies [51fc309]
+  - @atomicfinance/bitcoin-wallet-provider@3.1.1
+  - @atomicfinance/bitcoin-utils@3.1.1
+  - @atomicfinance/types@3.1.1
+  - @atomicfinance/utils@3.1.1
+
 ## 3.1.0
 
 ### Patch Changes
