@@ -21,7 +21,7 @@ import * as bitcoin from 'bitcoinjs-lib';
 import { BIP32Interface } from 'bitcoinjs-lib';
 import memoize from 'memoizee';
 
-const ADDRESS_GAP = 20;
+const ADDRESS_GAP = 30;
 const NONCHANGE_ADDRESS = 0;
 const CHANGE_ADDRESS = 1;
 const NONCHANGE_OR_CHANGE_ADDRESS = 2;
