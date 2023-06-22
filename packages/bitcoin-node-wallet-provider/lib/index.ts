@@ -1,3 +1,3 @@
-import BitcoinNodeWalletProvider from './BitcoinNodeWalletProvider'
+import BitcoinNodeWalletProvider from './BitcoinNodeWalletProvider';
 
-export { BitcoinNodeWalletProvider }
+export { BitcoinNodeWalletProvider };
