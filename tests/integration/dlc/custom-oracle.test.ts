@@ -1,20 +1,33 @@
 import 'mocha';
 
-import { LinearPayout } from '@node-dlc/core';
+import { Value } from '@node-dlc/bitcoin';
 import {
-  ContractDescriptorV0,
+  buildCustomStrategyOrderOffer,
+  buildRoundingIntervalsFromIntervals,
+  DualFundingTxFinalizer,
+  LinearPayout,
+} from '@node-dlc/core';
+import {
   ContractDescriptorV1,
   ContractInfoV0,
+  DigitDecompositionEventDescriptorV0,
   DlcAccept,
   DlcAcceptV0,
   DlcOffer,
   DlcOfferV0,
+  DlcParty,
   DlcSign,
   DlcTransactions,
+  FundingInputV0,
+  OracleAnnouncementV0,
   OracleAttestationV0,
+  OracleEventV0,
   PayoutFunctionV0,
   RoundingIntervalsV0,
 } from '@node-dlc/messaging';
+import { Tx, TxOut } from '@node-lightning/bitcoin';
+import { math } from 'bip-schnorr';
+import { BitcoinNetworks } from 'bitcoin-networks';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
@@ -36,6 +49,15 @@ const chain = chains.bitcoinWithJs;
 const alice = chain.client;
 
 const bob = chains.bitcoinWithJs2.client;
+
+// Helper function to get the absolute value of a BigInt
+function absBigInt(bigIntValue: bigint) {
+  if (bigIntValue < 0n) {
+    return -bigIntValue;
+  } else {
+    return bigIntValue;
+  }
+}
 
 describe.skip('Custom Strategy Oracle POC numdigits=18', () => {
   const numDigits = 18;
@@ -226,6 +248,7 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
   let aliceAddresses: string[] = [];
   let oracle: Oracle;
 
+  // Before the tests run, import Alice's addresses
   before(async () => {
     const aliceNonChangeAddresses: string[] = (
       await alice.wallet.getAddresses(0, 15, false)
@@ -487,6 +510,396 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
     );
     const cetTx = await alice.getMethod('getTransactionByHash')(cetTxId);
     expect(cetTx._raw.vin.length).to.equal(1);
+  });
+
+  describe('shift fees and rounding intervals', async () => {
+    let fundTx: Tx;
+    const fees = Value.zero();
+    const aliceInitialBalance = Value.fromSats(0n);
+    const bobInitialBalance = Value.fromSats(0n);
+    let aliceChangeOutput: TxOut;
+    let bobChangeOutput: TxOut;
+    const earnedNothingOutcome = 1000000;
+    const contractSize = Value.fromBitcoin(0.01);
+    const maxLoss = Value.fromBitcoin(0.5);
+    const maxGain = Value.fromBitcoin(0.04);
+    const feeRatePerVb = BigInt(30);
+    let finalizer: DualFundingTxFinalizer;
+    const highestPrecisionRounding = Value.fromSats(7000);
+    const highPrecisionRounding = Value.fromSats(25000);
+    const mediumPrecisionRounding = Value.fromSats(100000);
+    const lowPrecisionRounding = Value.fromSats(200000);
+    const shiftForFees: DlcParty = 'offeror';
+
+    before(async () => {
+      await getInput(alice);
+      const bobInput = await getInput(bob);
+
+      oracle = new Oracle('olivia', numDigits);
+
+      const oliviaInfo = oracle.GetOracleInfo();
+
+      const eventDescriptor = new DigitDecompositionEventDescriptorV0();
+      eventDescriptor.base = oracleBase;
+      eventDescriptor.isSigned = false;
+      eventDescriptor.unit = unit;
+      eventDescriptor.precision = 0;
+      eventDescriptor.nbDigits = numDigits;
+
+      const event = new OracleEventV0();
+      event.oracleNonces = oliviaInfo.rValues.map((rValue) =>
+        Buffer.from(rValue, 'hex'),
+      );
+      event.eventMaturityEpoch = 1617170572;
+      event.eventDescriptor = eventDescriptor;
+      event.eventId = eventId;
+
+      const announcement = new OracleAnnouncementV0();
+      announcement.announcementSig = Buffer.from(
+        oracle.GetSignature(
+          math
+            .taggedHash('DLC/oracle/announcement/v0', event.serialize())
+            .toString('hex'),
+        ),
+        'hex',
+      );
+
+      announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
+      announcement.oracleEvent = event;
+
+      const roundingIntervals = buildRoundingIntervalsFromIntervals(
+        contractSize,
+        [
+          { beginInterval: 0n, rounding: lowPrecisionRounding },
+          { beginInterval: 750000n, rounding: mediumPrecisionRounding },
+          { beginInterval: 850000n, rounding: highPrecisionRounding },
+          { beginInterval: 950000n, rounding: highestPrecisionRounding },
+        ],
+      );
+
+      const offer = buildCustomStrategyOrderOffer(
+        announcement,
+        contractSize,
+        maxLoss,
+        maxGain,
+        feeRatePerVb,
+        roundingIntervals,
+        BitcoinNetworks.bitcoin_regtest,
+      );
+
+      const cetLocktime = 1617170572;
+      const refundLocktime = 1617170573;
+
+      console.time('total');
+      console.time('offer');
+
+      const tempDlcOffer = await alice.dlc.createDlcOffer(
+        offer.contractInfo,
+        offer.offerCollateralSatoshis,
+        offer.feeRatePerVb,
+        cetLocktime,
+        refundLocktime,
+      );
+
+      const input = new FundingInputV0();
+      input.maxWitnessLen = 108;
+      input.redeemScript = Buffer.from('', 'hex');
+
+      const fakeSPK = Buffer.from(
+        '0014663117d27e78eb432505180654e603acb30e8a4a',
+        'hex',
+      );
+
+      const acceptInputs = Array.from({ length: 1 }, () => input);
+
+      finalizer = new DualFundingTxFinalizer(
+        (tempDlcOffer as DlcOfferV0).fundingInputs,
+        fakeSPK,
+        fakeSPK,
+        acceptInputs,
+        fakeSPK,
+        fakeSPK,
+        offer.feeRatePerVb,
+      );
+
+      fees.add(Value.fromSats(finalizer.offerFees));
+
+      const offerFinalized = buildCustomStrategyOrderOffer(
+        announcement,
+        contractSize,
+        maxLoss,
+        maxGain,
+        feeRatePerVb,
+        roundingIntervals,
+        BitcoinNetworks.bitcoin_regtest,
+        shiftForFees,
+        fees,
+      );
+
+      dlcOffer = await alice.dlc.createDlcOffer(
+        offerFinalized.contractInfo,
+        offerFinalized.offerCollateralSatoshis,
+        feeRatePerVb,
+        cetLocktime,
+        refundLocktime,
+      );
+
+      console.timeEnd('offer');
+
+      console.time('accept');
+
+      const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
+        dlcOffer,
+        [bobInput],
+      );
+      dlcAccept = acceptDlcOfferResponse.dlcAccept;
+      dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
+
+      console.log(
+        '# CETs',
+        (acceptDlcOfferResponse.dlcAccept as DlcAcceptV0).cetSignatures.sigs
+          .length,
+      );
+
+      console.timeEnd('accept');
+
+      const { dlcTransactions: dlcTxsFromMsgs } = await bob.dlc.createDlcTxs(
+        dlcOffer,
+        dlcAccept,
+      );
+
+      console.time('sign');
+
+      const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.dlc.signDlcAccept(
+        dlcOffer,
+        dlcAccept,
+      );
+      console.timeEnd('sign');
+
+      dlcSign = signDlcAcceptResponse.dlcSign;
+
+      console.time('finalize');
+
+      fundTx = await bob.dlc.finalizeDlcSign(
+        dlcOffer,
+        dlcAccept,
+        dlcSign,
+        dlcTransactions,
+      );
+
+      console.timeEnd('finalize');
+
+      await bob.chain.sendRawTransaction(fundTx.serialize().toString('hex'));
+
+      for (const input of (dlcOffer as DlcOfferV0).fundingInputs) {
+        const inputV0 = input as FundingInputV0;
+        aliceInitialBalance.add(
+          Value.fromSats(inputV0.prevTx.outputs[inputV0.prevTxVout].value.sats),
+        );
+      }
+
+      for (const input of (dlcAccept as DlcAcceptV0).fundingInputs) {
+        const inputV0 = input as FundingInputV0;
+        bobInitialBalance.add(
+          Value.fromSats(inputV0.prevTx.outputs[inputV0.prevTxVout].value.sats),
+        );
+      }
+
+      aliceChangeOutput = fundTx.outputs.find(
+        (output) =>
+          output.scriptPubKey.serialize().slice(1).toString('hex') ===
+          (dlcOffer as DlcOfferV0).changeSPK.toString('hex'),
+      );
+
+      bobChangeOutput = fundTx.outputs.find(
+        (output) =>
+          output.scriptPubKey.serialize().slice(1).toString('hex') ===
+          (dlcAccept as DlcAcceptV0).changeSPK.toString('hex'),
+      );
+
+      console.timeEnd('total');
+    });
+
+    it('should execute for highest precision outcome with breakeven', async () => {
+      oracleAttestation = generateOracleAttestation(
+        earnedNothingOutcome,
+        oracle,
+        oracleBase,
+        numDigits,
+        eventId,
+      );
+
+      const cet = await bob.dlc.execute(
+        dlcOffer,
+        dlcAccept,
+        dlcSign,
+        dlcTransactions,
+        oracleAttestation,
+        false,
+      );
+
+      await bob.chain.sendRawTransaction(cet.serialize().toString('hex'));
+
+      const bobPayoutOutput = cet.outputs.find(
+        (output) =>
+          output.scriptPubKey.serialize().slice(1).toString('hex') ===
+          (dlcAccept as DlcAcceptV0).payoutSPK.toString('hex'),
+      );
+
+      expect(
+        Number(
+          absBigInt(
+            bobInitialBalance.sats -
+              bobChangeOutput.value.sats -
+              bobPayoutOutput.value.sats,
+          ),
+        ),
+      ).to.be.lessThan(100);
+    });
+
+    it('should execute for highest precision outcome with gain', async () => {
+      const earnedPremiumsOutcome = 1012300;
+
+      oracleAttestation = generateOracleAttestation(
+        earnedPremiumsOutcome,
+        oracle,
+        oracleBase,
+        numDigits,
+        eventId,
+      );
+
+      const cet = await bob.dlc.execute(
+        dlcOffer,
+        dlcAccept,
+        dlcSign,
+        dlcTransactions,
+        oracleAttestation,
+        false,
+      );
+
+      const alicePayoutOutput = cet.outputs.find(
+        (output) =>
+          output.scriptPubKey.serialize().slice(1).toString('hex') ===
+          (dlcOffer as DlcOfferV0).payoutSPK.toString('hex'),
+      );
+      const bobPayoutOutput = cet.outputs.find(
+        (output) =>
+          output.scriptPubKey.serialize().slice(1).toString('hex') ===
+          (dlcAccept as DlcAcceptV0).payoutSPK.toString('hex'),
+      );
+
+      const satsEarned =
+        (Value.fromSats(
+          Math.abs(earnedPremiumsOutcome - earnedNothingOutcome) * 100,
+        ).sats *
+          contractSize.sats) /
+        BigInt(1e8);
+
+      const aliceFinalBalance =
+        aliceChangeOutput.value.sats +
+        alicePayoutOutput.value.sats -
+        aliceInitialBalance.sats;
+
+      const bobFinalBalance =
+        bobChangeOutput.value.sats +
+        bobPayoutOutput.value.sats -
+        bobInitialBalance.sats;
+
+      const expectedAliceFinalBalance =
+        satsEarned - finalizer.offerFees - finalizer.acceptFees;
+      const expectedBobFinalBalance = -satsEarned;
+
+      expect(
+        Number(absBigInt(aliceFinalBalance - expectedAliceFinalBalance)),
+      ).to.be.lessThan(100);
+      expect(
+        Number(absBigInt(bobFinalBalance - expectedBobFinalBalance)),
+      ).to.be.lessThan(100);
+    });
+
+    const types = ['highest', 'high', 'medium', 'low'] as const;
+    const starterOutcomes = [993843, 928300, 824934, 728343];
+
+    for (let j = 0; j < types.length; j++) {
+      const type = types[j];
+      const starterOutcome = starterOutcomes[j];
+
+      const precision = Value.zero();
+      if (type === 'highest') {
+        precision.add(highestPrecisionRounding);
+      } else if (type === 'high') {
+        precision.add(highPrecisionRounding);
+      } else if (type === 'medium') {
+        precision.add(mediumPrecisionRounding);
+      } else if (type === 'low') {
+        precision.add(lowPrecisionRounding);
+      }
+
+      const outcomes = Array.from(
+        { length: 19 },
+        (_, i) => starterOutcome - i * 10,
+      );
+      const threshold = Number(precision.sats) * contractSize.bitcoin;
+
+      for (let i = 0; i < outcomes.length; i++) {
+        const outcome = outcomes[i];
+        it(`should execute for ${type} precision outcome ${outcome}`, async () => {
+          oracleAttestation = generateOracleAttestation(
+            outcome,
+            oracle,
+            oracleBase,
+            numDigits,
+            eventId,
+          );
+
+          const cet = await bob.dlc.execute(
+            dlcOffer,
+            dlcAccept,
+            dlcSign,
+            dlcTransactions,
+            oracleAttestation,
+            false,
+          );
+
+          const alicePayoutOutput = cet.outputs.find(
+            (output) =>
+              output.scriptPubKey.serialize().slice(1).toString('hex') ===
+              (dlcOffer as DlcOfferV0).payoutSPK.toString('hex'),
+          );
+          const bobPayoutOutput = cet.outputs.find(
+            (output) =>
+              output.scriptPubKey.serialize().slice(1).toString('hex') ===
+              (dlcAccept as DlcAcceptV0).payoutSPK.toString('hex'),
+          );
+
+          const satsEarned =
+            (BigInt((outcome - earnedNothingOutcome) * 100) *
+              contractSize.sats) /
+            BigInt(1e8);
+
+          const aliceFinalBalance =
+            aliceChangeOutput.value.sats +
+            alicePayoutOutput.value.sats -
+            aliceInitialBalance.sats;
+
+          const bobFinalBalance =
+            bobChangeOutput.value.sats +
+            bobPayoutOutput.value.sats -
+            bobInitialBalance.sats;
+
+          const expectedAliceFinalBalance =
+            satsEarned - finalizer.offerFees - finalizer.acceptFees;
+          const expectedBobFinalBalance = -satsEarned;
+
+          expect(
+            Number(absBigInt(aliceFinalBalance - expectedAliceFinalBalance)),
+          ).to.be.lessThan(threshold);
+          expect(
+            Number(absBigInt(bobFinalBalance - expectedBobFinalBalance)),
+          ).to.be.lessThan(threshold);
+        });
+      }
+    }
   });
 });
 
