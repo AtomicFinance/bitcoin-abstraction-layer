@@ -1,5 +1,12 @@
 # @atomicfinance/provider
 
+## 3.2.0
+
+### Patch Changes
+
+- Updated dependencies [dc9ac8a]
+  - @atomicfinance/types@3.2.0
+
 ## 3.1.1
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@atomicfinance/utils",
-  "version": "3.1.1",
+  "version": "3.2.0",
   "description": "",
   "module": "dist/index.js",
   "main": "dist/index.js",
@@ -23,9 +23,9 @@
     "node": ">=14"
   },
   "dependencies": {
-    "@atomicfinance/crypto": "^3.1.1",
-    "@atomicfinance/errors": "^3.1.1",
-    "@atomicfinance/types": "^3.1.1",
+    "@atomicfinance/crypto": "^3.2.0",
+    "@atomicfinance/errors": "^3.2.0",
+    "@atomicfinance/types": "^3.2.0",
     "@babel/runtime": "^7.12.1",
     "bignumber.js": "^9.0.0",
     "bip174": "^2.0.1",

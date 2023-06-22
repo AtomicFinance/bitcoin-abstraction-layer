@@ -1,5 +1,20 @@
 # @atomicfinance/bitcoin-node-wallet-provider
 
+## 3.2.0
+
+### Minor Changes
+
+- dc9ac8a: Bump node-dlc to 0.21.0 for fee shifting and rounding intervals for cso
+
+### Patch Changes
+
+- Updated dependencies [dc9ac8a]
+  - @atomicfinance/types@3.2.0
+  - @atomicfinance/bitcoin-utils@3.2.0
+  - @atomicfinance/crypto@3.2.0
+  - @atomicfinance/jsonrpc-provider@3.2.0
+  - @atomicfinance/utils@3.2.0
+
 ## 3.1.1
 
 ### Patch Changes

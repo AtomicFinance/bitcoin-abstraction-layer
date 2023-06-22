@@ -1,5 +1,18 @@
 # @atomicfinance/client
 
+## 3.2.0
+
+### Minor Changes
+
+- dc9ac8a: Bump node-dlc to 0.21.0 for fee shifting and rounding intervals for cso
+
+### Patch Changes
+
+- Updated dependencies [dc9ac8a]
+  - @atomicfinance/types@3.2.0
+  - @atomicfinance/errors@3.2.0
+  - @atomicfinance/provider@3.2.0
+
 ## 3.1.1
 
 ### Patch Changes
