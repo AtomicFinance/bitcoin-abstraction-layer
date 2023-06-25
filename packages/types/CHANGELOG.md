@@ -1,5 +1,11 @@
 # @atomicfinance/types
 
+## 3.2.1
+
+### Patch Changes
+
+- f69141e: Bump @node-dlc to 0.21.2 to improve env compatibility
+
 ## 3.2.0
 
 ### Minor Changes

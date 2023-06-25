@@ -1,5 +1,15 @@
 # @atomicfinance/client
 
+## 3.2.1
+
+### Patch Changes
+
+- f69141e: Bump @node-dlc to 0.21.2 to improve env compatibility
+- Updated dependencies [f69141e]
+  - @atomicfinance/types@3.2.1
+  - @atomicfinance/errors@3.2.1
+  - @atomicfinance/provider@3.2.1
+
 ## 3.2.0
 
 ### Minor Changes

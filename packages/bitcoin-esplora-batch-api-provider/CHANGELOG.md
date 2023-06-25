@@ -1,5 +1,15 @@
 # @atomicfinance/bitcoin-esplora-batch-api-provider
 
+## 3.2.1
+
+### Patch Changes
+
+- Updated dependencies [f69141e]
+  - @atomicfinance/types@3.2.1
+  - @atomicfinance/bitcoin-esplora-api-provider@3.2.1
+  - @atomicfinance/node-provider@3.2.1
+  - @atomicfinance/utils@3.2.1
+
 ## 3.2.0
 
 ### Patch Changes
