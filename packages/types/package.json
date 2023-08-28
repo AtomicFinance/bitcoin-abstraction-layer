@@ -15,7 +15,8 @@
     "lint:fix": "../../node_modules/.bin/eslint --fix --ignore-path ../../.eslintignore  -c ../../.eslintrc.js ."
   },
   "dependencies": {
-    "@node-dlc/messaging": "0.21.2",
+    "@node-dlc/bitcoin": "file:../../../node-dlc/packages/bitcoin",
+    "@node-dlc/messaging": "file:../../../node-dlc/packages/messaging",
     "@node-lightning/bitcoin": "0.26.1",
     "@node-lightning/noise": "0.26.1",
     "lodash": "^4.17.20"

@@ -8,22 +8,23 @@ import {
   LinearPayout,
 } from '@node-dlc/core';
 import {
-  ContractDescriptorV1,
-  ContractInfoV0,
-  DigitDecompositionEventDescriptorV0,
+  NumericContractDescriptor,
+  SingleContractInfo,
+  DigitDecompositionEventDescriptorV0Pre167,
   DlcAccept,
   DlcAcceptV0,
   DlcOffer,
   DlcOfferV0,
+  DlcOfferV0Pre163,
   DlcParty,
   DlcSign,
   DlcTransactions,
-  FundingInputV0,
-  OracleAnnouncementV0,
-  OracleAttestationV0,
-  OracleEventV0,
-  PayoutFunctionV0,
-  RoundingIntervalsV0,
+  FundingInput,
+  OracleAnnouncementV0Pre167,
+  OracleAttestationV0Pre167,
+  OracleEventV0Pre167,
+  PayoutFunction,
+  RoundingIntervals,
 } from '@node-dlc/messaging';
 import { Tx, TxOut } from '@node-lightning/bitcoin';
 import { math } from 'bip-schnorr';
@@ -41,6 +42,7 @@ import {
   generateContractInfoCustomStrategyOracle,
   generateOracleAttestation,
 } from '../utils/contract';
+import { sha256 } from '@node-lightning/crypto';
 
 chai.use(chaiAsPromised);
 const expect = chai.expect;
@@ -81,7 +83,7 @@ describe.skip('Custom Strategy Oracle POC numdigits=18', () => {
   let dlcAccept: DlcAccept;
   let dlcSign: DlcSign;
   let dlcTransactions: DlcTransactions;
-  let oracleAttestation: OracleAttestationV0;
+  let oracleAttestation: OracleAttestationV0Pre167;
   let aliceAddresses: string[] = [];
   let oracle: Oracle;
 
@@ -244,7 +246,7 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
   let dlcAccept: DlcAccept;
   let dlcSign: DlcSign;
   let dlcTransactions: DlcTransactions;
-  let oracleAttestation: OracleAttestationV0;
+  let oracleAttestation: OracleAttestationV0Pre167;
   let aliceAddresses: string[] = [];
   let oracle: Oracle;
 
@@ -391,13 +393,18 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
 
     const outcome = 101000;
 
+    const serializedDlcOfferPre163 = Buffer.from(
+      'a71a0006226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910ffdd82efd03ef00000000004c353ffda720940015fda72684000300fe004c0e3b0000fda72816000200fe004c0e3b0000fe000f3e58fe004c0e3b0000fe000f3e58fe004c0e3b0000fda7281a0002fe000f3e58fe004c0e3b0000fe000f4628fe004c353f0000fe000f4628fe004c353f0000fda7281a0002fe000f4628fe004c353f0000fe001ffffffe004c353f0000fe001ffffffe004c353f0000fda72406000100fd1382fda712fd0349fdd824fd0343b01da6c607a04c05e82cda516f4c9b117ed8daefc474c9aa6d2772fb87c9eeb562c2965f37519037832b0b3e3d729f7059ba7b437d5bf5d94e627c0915a37fba49ff245fb9d1c810aeac553f1b407aeef24e9a1c4bd1e6bf32cbc32c29db68a0fdd822fd02dd001501b98d1a21300514631cc8c8b64a36e170d0d0581ad66958c27969400d521a35d0074e60674edaba1e582acb1f512518abe4dd296bea7af8a891104801937681f4868be306ccb49ca555462227aef5829888b1c52de1b9bf3305dcd6e1a46fc82479c540c1577d7dcc40c4d6d9f14bddc5de6407a75148aeae8d997141bb899801bbba2dfee5ffa2a8faa77b523272e75a7dda58389045f3663099e937defbd836e5e49e5949335d5f07f3f86ec64f90f43c90cbebb18f5644aad9852b0226133ceed7d09e250a99d4eec58ff56ab824d34472d362a09fdded088a18af0c9fa90e31aa95173054d18c15091ece970607944682e4d9ebc62545078398fd11c45886eb7e332bc97e7fbbf250c854a5220964d2c081e129bf6ab92e68b9af7d3f2e6df7eb466099994ee127f9a8c5542a97128405078e38ac121f62cd809638efc8bd8b8b48fcb0095aab94f6654f8f6d890c0cc4f16639633c486019383ade18ef3921452f2f131fe98ff8fb11cc44274e4b8bb76dd06fd1095e0d892b0a21f451e921660dc20bc2125eea20e4702d2761453078473934dbb263832d087b6bd4ca267f51b412cbf48aee8549011fbe991c0e8049f6b894acb560c63939a7e47ba7df3262d1ab636f78b53d97fa4b7dcdb78ef4ec2ac619d2d82040fdcc4a6fd171ecfbd2233f075c8cdea26cded3eb18e5c2fe1f1b28af3085e403bb77cd2b1212ebdacb76d8ec2efca61b35d5402bad3d624b9b5b3194cd7532138e6e8af35e69f4842580d4dd6da74142cca00a39155a8f4876cf1c53ed6125d122a15f7a56b761a820c8ac01a228797766621ae0d5921c07469b0bb4c19162a7a2de2df3c8acc4f695acd5c5934a7b4a20018b9e379a6551bd27a3dc32234521d1da2e4d0c78c49f836aa6346c01c2ea747545af23003d72a7b6df88de94c6d968e2c7f88aca63087d80fdd80a0e00020004626974730000000000152461746f6d69632d726962626f6e2d6d6f6e74686c792d3141554732322d323641554732320308a44427ede78398b297d26a32f57b7dcf27ea6b03adc875466b76b5d99b1f8a001600147063f51d6bce720033e5af7e05702647f5cf6e15000000000003507f00000000004c21bd0001fda714fd01b300000000000004ab019d020000000001024bad437975eba6cc800147fdb06d166a86915d7ea4685b32940c39404de4b1840200000000ffffffff4bad437975eba6cc800147fdb06d166a86915d7ea4685b32940c39404de4b1840000000000ffffffff039e6c5d050000000016001459e3d81579b0f927ba38233fa25344eeabd40a4c7042f4050000000016001439f01d158a428eeac995e90c24bd176a4e66d5163e4d4c0000000000220020890c14cc9c7f327fe20c1ccf20cdcd41e97202e5d6effd33f72dc7f13e80e82502473044022016043e0bc83cbbfbb73ffd262580a1d4f64fee918d1c5622cc013e6bdd4ab74e022056ac2412994ddf709f6b2215a5dee4a6cfe82fc8fbb26f37eac3cafb24068f0f0121028cccd5333b56cbe8abf3a3fac14df397bdf4680dc05b98207df26858b3167ebb024730440220078d5d6cdb356aa06435f2b71343989365a1d9121ceb28b431302c0f622e9b2602204fd4a8321daedbd241af67bc7d861b501ef40c651f0fc7197c3077f1e07ae09301210314598bf18ae3be9fcac0c0dd734a8aff6be41726a98ea7cdae2b112e9be795400000000000000000ffffffff006c0000001600146405bcd0fd50594cce4864bf3a05bad9082206910000000000f1c88b000000000024dd9a000000000000000362e40deb632dfe0b',
+      'hex',
+    );
     // This DlcOffer previously gave the following error
     // Error: Failed to Find OutcomeIndex From PolynomialPayoutCurvePiece. Payout Group found but incorrect group index
-    const rawDlcOffer = DlcOfferV0.deserialize(
-      Buffer.from(
-        'a71a0006226e46111a0b59caaf126043eb5bbf28c34f3a5e332a1fc7b2b73cf188910ffdd82efd03ef00000000004c353ffda720940015fda72684000300fe004c0e3b0000fda72816000200fe004c0e3b0000fe000f3e58fe004c0e3b0000fe000f3e58fe004c0e3b0000fda7281a0002fe000f3e58fe004c0e3b0000fe000f4628fe004c353f0000fe000f4628fe004c353f0000fda7281a0002fe000f4628fe004c353f0000fe001ffffffe004c353f0000fe001ffffffe004c353f0000fda72406000100fd1382fda712fd0349fdd824fd0343b01da6c607a04c05e82cda516f4c9b117ed8daefc474c9aa6d2772fb87c9eeb562c2965f37519037832b0b3e3d729f7059ba7b437d5bf5d94e627c0915a37fba49ff245fb9d1c810aeac553f1b407aeef24e9a1c4bd1e6bf32cbc32c29db68a0fdd822fd02dd001501b98d1a21300514631cc8c8b64a36e170d0d0581ad66958c27969400d521a35d0074e60674edaba1e582acb1f512518abe4dd296bea7af8a891104801937681f4868be306ccb49ca555462227aef5829888b1c52de1b9bf3305dcd6e1a46fc82479c540c1577d7dcc40c4d6d9f14bddc5de6407a75148aeae8d997141bb899801bbba2dfee5ffa2a8faa77b523272e75a7dda58389045f3663099e937defbd836e5e49e5949335d5f07f3f86ec64f90f43c90cbebb18f5644aad9852b0226133ceed7d09e250a99d4eec58ff56ab824d34472d362a09fdded088a18af0c9fa90e31aa95173054d18c15091ece970607944682e4d9ebc62545078398fd11c45886eb7e332bc97e7fbbf250c854a5220964d2c081e129bf6ab92e68b9af7d3f2e6df7eb466099994ee127f9a8c5542a97128405078e38ac121f62cd809638efc8bd8b8b48fcb0095aab94f6654f8f6d890c0cc4f16639633c486019383ade18ef3921452f2f131fe98ff8fb11cc44274e4b8bb76dd06fd1095e0d892b0a21f451e921660dc20bc2125eea20e4702d2761453078473934dbb263832d087b6bd4ca267f51b412cbf48aee8549011fbe991c0e8049f6b894acb560c63939a7e47ba7df3262d1ab636f78b53d97fa4b7dcdb78ef4ec2ac619d2d82040fdcc4a6fd171ecfbd2233f075c8cdea26cded3eb18e5c2fe1f1b28af3085e403bb77cd2b1212ebdacb76d8ec2efca61b35d5402bad3d624b9b5b3194cd7532138e6e8af35e69f4842580d4dd6da74142cca00a39155a8f4876cf1c53ed6125d122a15f7a56b761a820c8ac01a228797766621ae0d5921c07469b0bb4c19162a7a2de2df3c8acc4f695acd5c5934a7b4a20018b9e379a6551bd27a3dc32234521d1da2e4d0c78c49f836aa6346c01c2ea747545af23003d72a7b6df88de94c6d968e2c7f88aca63087d80fdd80a0e00020004626974730000000000152461746f6d69632d726962626f6e2d6d6f6e74686c792d3141554732322d323641554732320308a44427ede78398b297d26a32f57b7dcf27ea6b03adc875466b76b5d99b1f8a001600147063f51d6bce720033e5af7e05702647f5cf6e15000000000003507f00000000004c21bd0001fda714fd01b300000000000004ab019d020000000001024bad437975eba6cc800147fdb06d166a86915d7ea4685b32940c39404de4b1840200000000ffffffff4bad437975eba6cc800147fdb06d166a86915d7ea4685b32940c39404de4b1840000000000ffffffff039e6c5d050000000016001459e3d81579b0f927ba38233fa25344eeabd40a4c7042f4050000000016001439f01d158a428eeac995e90c24bd176a4e66d5163e4d4c0000000000220020890c14cc9c7f327fe20c1ccf20cdcd41e97202e5d6effd33f72dc7f13e80e82502473044022016043e0bc83cbbfbb73ffd262580a1d4f64fee918d1c5622cc013e6bdd4ab74e022056ac2412994ddf709f6b2215a5dee4a6cfe82fc8fbb26f37eac3cafb24068f0f0121028cccd5333b56cbe8abf3a3fac14df397bdf4680dc05b98207df26858b3167ebb024730440220078d5d6cdb356aa06435f2b71343989365a1d9121ceb28b431302c0f622e9b2602204fd4a8321daedbd241af67bc7d861b501ef40c651f0fc7197c3077f1e07ae09301210314598bf18ae3be9fcac0c0dd734a8aff6be41726a98ea7cdae2b112e9be795400000000000000000ffffffff006c0000001600146405bcd0fd50594cce4864bf3a05bad9082206910000000000f1c88b000000000024dd9a000000000000000362e40deb632dfe0b',
-        'hex',
-      ),
+    const rawDlcOfferPre163 = DlcOfferV0Pre163.deserialize(
+      serializedDlcOfferPre163,
+    );
+    const rawDlcOffer = DlcOfferV0.fromPre163(
+      rawDlcOfferPre163,
+      sha256(serializedDlcOfferPre163),
     );
 
     oracle = new Oracle('olivia', numDigits);
@@ -406,12 +413,12 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
       oracle,
       numDigits,
       oracleBase,
-      ((rawDlcOffer.contractInfo as ContractInfoV0)
-        .contractDescriptor as ContractDescriptorV1)
-        .payoutFunction as PayoutFunctionV0,
-      (((rawDlcOffer.contractInfo as ContractInfoV0)
-        .contractDescriptor as ContractDescriptorV1)
-        .roundingIntervals as RoundingIntervalsV0).intervals,
+      ((rawDlcOffer.contractInfo as SingleContractInfo)
+        .contractDescriptor as NumericContractDescriptor)
+        .payoutFunction as PayoutFunction,
+      (((rawDlcOffer.contractInfo as SingleContractInfo)
+        .contractDescriptor as NumericContractDescriptor)
+        .roundingIntervals as RoundingIntervals).intervals,
       rawDlcOffer.contractInfo.totalCollateral,
       unit,
     );
@@ -425,7 +432,7 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
 
     const dlcOffer = await alice.dlc.createDlcOffer(
       contractInfo,
-      rawDlcOffer.offerCollateralSatoshis,
+      rawDlcOffer.offerCollateral,
       feeRatePerVb,
       cetLocktime,
       refundLocktime,
@@ -539,14 +546,14 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
 
       const oliviaInfo = oracle.GetOracleInfo();
 
-      const eventDescriptor = new DigitDecompositionEventDescriptorV0();
+      const eventDescriptor = new DigitDecompositionEventDescriptorV0Pre167();
       eventDescriptor.base = oracleBase;
       eventDescriptor.isSigned = false;
       eventDescriptor.unit = unit;
       eventDescriptor.precision = 0;
       eventDescriptor.nbDigits = numDigits;
 
-      const event = new OracleEventV0();
+      const event = new OracleEventV0Pre167();
       event.oracleNonces = oliviaInfo.rValues.map((rValue) =>
         Buffer.from(rValue, 'hex'),
       );
@@ -554,7 +561,7 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
       event.eventDescriptor = eventDescriptor;
       event.eventId = eventId;
 
-      const announcement = new OracleAnnouncementV0();
+      const announcement = new OracleAnnouncementV0Pre167();
       announcement.announcementSig = Buffer.from(
         oracle.GetSignature(
           math
@@ -595,13 +602,13 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
 
       const tempDlcOffer = await alice.dlc.createDlcOffer(
         offer.contractInfo,
-        offer.offerCollateralSatoshis,
+        offer.offerCollateral,
         offer.feeRatePerVb,
         cetLocktime,
         refundLocktime,
       );
 
-      const input = new FundingInputV0();
+      const input = new FundingInput();
       input.maxWitnessLen = 108;
       input.redeemScript = Buffer.from('', 'hex');
 
@@ -638,7 +645,7 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
 
       dlcOffer = await alice.dlc.createDlcOffer(
         offerFinalized.contractInfo,
-        offerFinalized.offerCollateralSatoshis,
+        offerFinalized.offerCollateral,
         feeRatePerVb,
         cetLocktime,
         refundLocktime,
@@ -692,14 +699,14 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
       await bob.chain.sendRawTransaction(fundTx.serialize().toString('hex'));
 
       for (const input of (dlcOffer as DlcOfferV0).fundingInputs) {
-        const inputV0 = input as FundingInputV0;
+        const inputV0 = input as FundingInput;
         aliceInitialBalance.add(
           Value.fromSats(inputV0.prevTx.outputs[inputV0.prevTxVout].value.sats),
         );
       }
 
       for (const input of (dlcAccept as DlcAcceptV0).fundingInputs) {
-        const inputV0 = input as FundingInputV0;
+        const inputV0 = input as FundingInput;
         bobInitialBalance.add(
           Value.fromSats(inputV0.prevTx.outputs[inputV0.prevTxVout].value.sats),
         );
@@ -925,7 +932,7 @@ describe.skip('Custom Strategy Oracle POC numdigits=27', () => {
   let dlcAccept: DlcAccept;
   let dlcSign: DlcSign;
   let dlcTransactions: DlcTransactions;
-  let oracleAttestation: OracleAttestationV0;
+  let oracleAttestation: OracleAttestationV0Pre167;
   let aliceAddresses: string[] = [];
   let oracle: Oracle;
 

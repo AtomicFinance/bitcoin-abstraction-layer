@@ -1,14 +1,14 @@
 import { CoveredCall } from '@node-dlc/core';
 import {
-  ContractDescriptorV1,
-  ContractInfoV0,
-  DigitDecompositionEventDescriptorV0,
-  OracleAnnouncementV0,
-  OracleAttestationV0,
-  OracleEventV0,
-  OracleInfoV0,
-  PayoutFunctionV0,
-  RoundingIntervalsV0,
+  DigitDecompositionEventDescriptorV0Pre167,
+  NumericContractDescriptor,
+  OracleAnnouncementV0Pre167,
+  OracleAttestationV0Pre167,
+  OracleEventV0Pre167,
+  PayoutFunction,
+  RoundingIntervals,
+  SingleContractInfo,
+  SingleOracleInfo,
 } from '@node-dlc/messaging';
 import { math } from 'bip-schnorr';
 
@@ -19,17 +19,17 @@ export function generateContractInfo(
   numDigits = 18,
   oracleBase = 2,
   eventId = 'btc/usd',
-): { contractInfo: ContractInfoV0; totalCollateral: bigint } {
+): { contractInfo: SingleContractInfo; totalCollateral: bigint } {
   const oliviaInfo = oracle.GetOracleInfo();
 
-  const eventDescriptor = new DigitDecompositionEventDescriptorV0();
+  const eventDescriptor = new DigitDecompositionEventDescriptorV0Pre167();
   eventDescriptor.base = oracleBase;
   eventDescriptor.isSigned = false;
   eventDescriptor.unit = 'BTC-USD';
   eventDescriptor.precision = 0;
   eventDescriptor.nbDigits = numDigits;
 
-  const event = new OracleEventV0();
+  const event = new OracleEventV0Pre167();
   event.oracleNonces = oliviaInfo.rValues.map((rValue) =>
     Buffer.from(rValue, 'hex'),
   );
@@ -37,7 +37,7 @@ export function generateContractInfo(
   event.eventDescriptor = eventDescriptor;
   event.eventId = eventId;
 
-  const announcement = new OracleAnnouncementV0();
+  const announcement = new OracleAnnouncementV0Pre167();
   announcement.announcementSig = Buffer.from(
     oracle.GetSignature(
       math
@@ -50,7 +50,7 @@ export function generateContractInfo(
   announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
   announcement.oracleEvent = event;
 
-  const oracleInfo = new OracleInfoV0();
+  const oracleInfo = new SingleOracleInfo();
   oracleInfo.announcement = announcement;
 
   const { payoutFunction, totalCollateral } = CoveredCall.buildPayoutFunction(
@@ -61,15 +61,15 @@ export function generateContractInfo(
   );
 
   const intervals = [{ beginInterval: 0n, roundingMod: 500n }];
-  const roundingIntervals = new RoundingIntervalsV0();
+  const roundingIntervals = new RoundingIntervals();
   roundingIntervals.intervals = intervals;
 
-  const contractDescriptor = new ContractDescriptorV1();
+  const contractDescriptor = new NumericContractDescriptor();
   contractDescriptor.numDigits = numDigits;
   contractDescriptor.payoutFunction = payoutFunction;
   contractDescriptor.roundingIntervals = roundingIntervals;
 
-  const contractInfo = new ContractInfoV0();
+  const contractInfo = new SingleContractInfo();
   contractInfo.totalCollateral = totalCollateral;
   contractInfo.contractDescriptor = contractDescriptor;
   contractInfo.oracleInfo = oracleInfo;
@@ -81,22 +81,22 @@ export function generateContractInfoCustomStrategyOracle(
   oracle: Oracle,
   numDigits = 18,
   oracleBase = 2,
-  payoutFunction: PayoutFunctionV0,
+  payoutFunction: PayoutFunction,
   intervals: { beginInterval: bigint; roundingMod: bigint }[],
   totalCollateral: bigint,
   unit = 'BTC',
   eventId = 'strategyOutcome',
-): { contractInfo: ContractInfoV0; totalCollateral: bigint } {
+): { contractInfo: SingleContractInfo; totalCollateral: bigint } {
   const oliviaInfo = oracle.GetOracleInfo();
 
-  const eventDescriptor = new DigitDecompositionEventDescriptorV0();
+  const eventDescriptor = new DigitDecompositionEventDescriptorV0Pre167();
   eventDescriptor.base = oracleBase;
   eventDescriptor.isSigned = false;
   eventDescriptor.unit = unit;
   eventDescriptor.precision = 0;
   eventDescriptor.nbDigits = numDigits;
 
-  const event = new OracleEventV0();
+  const event = new OracleEventV0Pre167();
   event.oracleNonces = oliviaInfo.rValues.map((rValue) =>
     Buffer.from(rValue, 'hex'),
   );
@@ -104,7 +104,7 @@ export function generateContractInfoCustomStrategyOracle(
   event.eventDescriptor = eventDescriptor;
   event.eventId = eventId;
 
-  const announcement = new OracleAnnouncementV0();
+  const announcement = new OracleAnnouncementV0Pre167();
   announcement.announcementSig = Buffer.from(
     oracle.GetSignature(
       math
@@ -117,18 +117,18 @@ export function generateContractInfoCustomStrategyOracle(
   announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
   announcement.oracleEvent = event;
 
-  const oracleInfo = new OracleInfoV0();
+  const oracleInfo = new SingleOracleInfo();
   oracleInfo.announcement = announcement;
 
-  const roundingIntervals = new RoundingIntervalsV0();
+  const roundingIntervals = new RoundingIntervals();
   roundingIntervals.intervals = intervals;
 
-  const contractDescriptor = new ContractDescriptorV1();
+  const contractDescriptor = new NumericContractDescriptor();
   contractDescriptor.numDigits = numDigits;
   contractDescriptor.payoutFunction = payoutFunction;
   contractDescriptor.roundingIntervals = roundingIntervals;
 
-  const contractInfo = new ContractInfoV0();
+  const contractInfo = new SingleContractInfo();
   contractInfo.totalCollateral = totalCollateral;
   contractInfo.contractDescriptor = contractDescriptor;
   contractInfo.oracleInfo = oracleInfo;
@@ -142,7 +142,7 @@ export function generateOracleAttestation(
   base = 2,
   nbDigits = 18,
   eventId = 'btc/usd',
-): OracleAttestationV0 {
+): OracleAttestationV0Pre167 {
   const oracleInfo = oracle.GetOracleInfo();
 
   const outcomes = outcome.toString(base).padStart(nbDigits, '0').split('');
@@ -155,7 +155,7 @@ export function generateOracleAttestation(
     sigs.push(Buffer.from(oracle.GetSignature(m, i + 1), 'hex'));
   }
 
-  const oracleAttestation = new OracleAttestationV0();
+  const oracleAttestation = new OracleAttestationV0Pre167();
   oracleAttestation.eventId = eventId;
   oracleAttestation.oraclePubkey = Buffer.from(oracleInfo.publicKey, 'hex');
   oracleAttestation.signatures = sigs;

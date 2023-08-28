@@ -2,7 +2,7 @@
 /* eslint-disable indent */
 
 import {
-  CetAdaptorSignaturesV0,
+  CetAdaptorSignatures,
   ContractInfo,
   DlcAccept,
   DlcClose,
@@ -11,7 +11,7 @@ import {
   DlcSign,
   DlcTransactions,
   FundingInput,
-  OracleAttestationV0,
+  OracleAttestationV0Pre167,
 } from '@node-dlc/messaging';
 import { Tx } from '@node-lightning/bitcoin';
 
@@ -114,7 +114,7 @@ export interface DlcProvider {
     _dlcAccept: DlcAccept,
     _dlcSign: DlcSign,
     _dlcTxs: DlcTransactions,
-    oracleAttestation: OracleAttestationV0,
+    oracleAttestation: OracleAttestationV0Pre167,
     isOfferer?: boolean,
   ): Promise<Tx>;
 
@@ -291,7 +291,7 @@ interface ISig {
 }
 
 export interface CreateCetAdaptorAndRefundSigsResponse {
-  cetSignatures: CetAdaptorSignaturesV0;
+  cetSignatures: CetAdaptorSignatures;
   refundSignature: Buffer;
 }
 

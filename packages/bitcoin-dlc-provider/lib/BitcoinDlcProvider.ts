@@ -55,13 +55,11 @@ import {
   roundPayout,
 } from '@node-dlc/core';
 import {
-  CetAdaptorSignaturesV0,
+  CetAdaptorSignatures,
   ContractDescriptor,
-  ContractDescriptorV1,
   ContractInfo,
-  ContractInfoV0,
-  ContractInfoV1,
-  DigitDecompositionEventDescriptorV0,
+  DigitDecompositionEventDescriptorV0Pre167,
+  DisjointContractInfo,
   DlcAccept,
   DlcAcceptV0,
   DlcClose,
@@ -74,17 +72,22 @@ import {
   DlcTransactions,
   DlcTransactionsV0,
   FundingInput,
-  FundingInputV0,
-  FundingSignaturesV0,
+  FundingSignatures,
   HyperbolaPayoutCurvePiece,
   MessageType,
-  NegotiationFieldsV0,
-  OracleAttestationV0,
-  OracleEventV0,
-  OracleInfoV0,
-  PayoutFunctionV0,
+  NumericContractDescriptor,
+  OracleAttestationV0Pre167,
+  OracleEventV0Pre167,
+  OracleInfo,
+  PayoutFunction,
   PolynomialPayoutCurvePiece,
-  ScriptWitnessV0,
+  ScriptWitness,
+  SingleContractInfo,
+  SingleNegotiationFields,
+  SingleOracleInfo,
+  ContractInfoType,
+  ContractDescriptorType,
+  PayoutCurvePieceType,
 } from '@node-dlc/messaging';
 import { Script, Sequence, Tx } from '@node-lightning/bitcoin';
 import { StreamReader } from '@node-lightning/bufio';
@@ -255,8 +258,8 @@ export default class BitcoinDlcProvider
 
   private GetPayoutsFromPayoutFunction(
     _dlcOffer: DlcOffer,
-    contractDescriptor: ContractDescriptorV1,
-    oracleInfo: OracleInfoV0,
+    contractDescriptor: NumericContractDescriptor,
+    oracleInfo: OracleInfo,
     totalCollateral: bigint,
   ): GetPayoutsResponse {
     if (_dlcOffer.type !== MessageType.DlcOfferV0)
@@ -264,7 +267,7 @@ export default class BitcoinDlcProvider
     const dlcOffer = _dlcOffer as DlcOfferV0;
     if (contractDescriptor.payoutFunction.type !== MessageType.PayoutFunctionV0)
       throw Error('PayoutFunction must be V0');
-    const payoutFunction = contractDescriptor.payoutFunction as PayoutFunctionV0;
+    const payoutFunction = contractDescriptor.payoutFunction as PayoutFunction;
     if (payoutFunction.pieces.length === 0)
       throw Error('PayoutFunction must have at least once PayoutCurvePiece');
     if (payoutFunction.pieces.length > 1)
@@ -272,14 +275,16 @@ export default class BitcoinDlcProvider
     const payoutCurvePiece = payoutFunction.pieces[0]
       .payoutCurvePiece as HyperbolaPayoutCurvePiece;
     if (
-      payoutCurvePiece.type !== MessageType.HyperbolaPayoutCurvePiece &&
-      payoutCurvePiece.type !== MessageType.OldHyperbolaPayoutCurvePiece
+      payoutCurvePiece.type !== PayoutCurvePieceType.HyperbolaPayoutCurvePiece
     )
       throw Error('Must be HyperbolaPayoutCurvePiece');
-    if (payoutCurvePiece.b !== BigInt(0) || payoutCurvePiece.c !== BigInt(0))
+    if (
+      payoutCurvePiece.b.toString() !== '0' ||
+      payoutCurvePiece.c.toString() !== '0'
+    )
       throw Error('b and c HyperbolaPayoutCurvePiece values must be 0');
-    const eventDescriptor = oracleInfo.announcement.oracleEvent
-      .eventDescriptor as DigitDecompositionEventDescriptorV0;
+    const eventDescriptor = (oracleInfo as SingleOracleInfo).announcement
+      .oracleEvent.eventDescriptor as DigitDecompositionEventDescriptorV0Pre167;
     if (
       eventDescriptor.type !== MessageType.DigitDecompositionEventDescriptorV0
     )
@@ -310,8 +315,8 @@ export default class BitcoinDlcProvider
     const { payouts, messagesList } = outputsToPayouts(
       payoutGroups,
       rValuesMessagesList,
-      dlcOffer.offerCollateralSatoshis,
-      dlcOffer.contractInfo.totalCollateral - dlcOffer.offerCollateralSatoshis,
+      dlcOffer.offerCollateral,
+      dlcOffer.contractInfo.totalCollateral - dlcOffer.offerCollateral,
       true,
     );
 
@@ -320,8 +325,8 @@ export default class BitcoinDlcProvider
 
   private GetPayoutsFromPolynomialPayoutFunction(
     _dlcOffer: DlcOffer,
-    contractDescriptor: ContractDescriptorV1,
-    oracleInfo: OracleInfoV0,
+    contractDescriptor: NumericContractDescriptor,
+    oracleInfo: OracleInfo,
     totalCollateral: bigint,
   ): GetPayoutsResponse {
     if (_dlcOffer.type !== MessageType.DlcOfferV0)
@@ -329,17 +334,18 @@ export default class BitcoinDlcProvider
     const dlcOffer = _dlcOffer as DlcOfferV0;
     if (contractDescriptor.payoutFunction.type !== MessageType.PayoutFunctionV0)
       throw Error('PayoutFunction must be V0');
-    const payoutFunction = contractDescriptor.payoutFunction as PayoutFunctionV0;
+    const payoutFunction = contractDescriptor.payoutFunction as PayoutFunction;
+
     if (payoutFunction.pieces.length === 0)
       throw Error('PayoutFunction must have at least once PayoutCurvePiece');
     for (const piece of payoutFunction.pieces) {
       if (
-        piece.payoutCurvePiece.type !== MessageType.PolynomialPayoutCurvePiece
+        piece.payoutCurvePiece.type !== PayoutCurvePieceType.PolynomialPayoutCurvePiece
       )
         throw Error('Must be PolynomialPayoutCurvePiece');
     }
-    const eventDescriptor = oracleInfo.announcement.oracleEvent
-      .eventDescriptor as DigitDecompositionEventDescriptorV0;
+    const eventDescriptor = (oracleInfo as SingleOracleInfo).announcement
+      .oracleEvent.eventDescriptor as DigitDecompositionEventDescriptorV0Pre167;
     if (
       eventDescriptor.type !== MessageType.DigitDecompositionEventDescriptorV0
     )
@@ -370,8 +376,8 @@ export default class BitcoinDlcProvider
     const { payouts, messagesList } = outputsToPayouts(
       payoutGroups,
       rValuesMessagesList,
-      dlcOffer.offerCollateralSatoshis,
-      dlcOffer.contractInfo.totalCollateral - dlcOffer.offerCollateralSatoshis,
+      dlcOffer.offerCollateral,
+      dlcOffer.contractInfo.totalCollateral - dlcOffer.offerCollateral,
       true,
     );
 
@@ -429,40 +435,33 @@ export default class BitcoinDlcProvider
   private GetPayoutsFromContractDescriptor(
     dlcOffer: DlcOfferV0,
     contractDescriptor: ContractDescriptor,
-    oracleInfo: OracleInfoV0,
+    oracleInfo: OracleInfo,
     totalCollateral: bigint,
   ) {
     switch (contractDescriptor.type) {
-      case MessageType.ContractDescriptorV0: {
-        throw Error('ContractDescriptorV0 not yet supported');
+      case ContractDescriptorType.Enumerated: {
+        throw Error('Enumerated ContractDescriptor not yet supported');
       }
-      case MessageType.ContractDescriptorV1:
+      case ContractDescriptorType.Numeric:
         {
-          const contractDescriptorV1 = contractDescriptor as ContractDescriptorV1;
-          const payoutFunction = contractDescriptorV1.payoutFunction as PayoutFunctionV0;
+          const payoutFunction = (contractDescriptor as NumericContractDescriptor)
+            .payoutFunction as PayoutFunction;
 
           // TODO: add a better check for this
           const payoutCurvePiece = payoutFunction.pieces[0].payoutCurvePiece;
 
           switch (payoutCurvePiece.type) {
-            case MessageType.HyperbolaPayoutCurvePiece:
+            case PayoutCurvePieceType.HyperbolaPayoutCurvePiece:
               return this.GetPayoutsFromPayoutFunction(
                 dlcOffer,
-                contractDescriptor as ContractDescriptorV1,
+                contractDescriptor as NumericContractDescriptor,
                 oracleInfo,
                 totalCollateral,
               );
-            case MessageType.OldHyperbolaPayoutCurvePiece:
-              return this.GetPayoutsFromPayoutFunction(
-                dlcOffer,
-                contractDescriptor as ContractDescriptorV1,
-                oracleInfo,
-                totalCollateral,
-              );
-            case MessageType.PolynomialPayoutCurvePiece:
+            case PayoutCurvePieceType.PolynomialPayoutCurvePiece:
               return this.GetPayoutsFromPolynomialPayoutFunction(
                 dlcOffer,
-                contractDescriptor as ContractDescriptorV1,
+                contractDescriptor as NumericContractDescriptor,
                 oracleInfo,
                 totalCollateral,
               );
@@ -470,7 +469,7 @@ export default class BitcoinDlcProvider
         }
         break;
       default: {
-        throw Error('ContractDescriptor must be V0 or V1');
+        throw Error('ContractDescriptor must be Enumerated or Numeric');
       }
     }
   }
@@ -525,11 +524,11 @@ export default class BitcoinDlcProvider
       remoteFundPubkey,
       remoteFinalScriptPubkey,
       localInputAmount,
-      localCollateralAmount: dlcOffer.offerCollateralSatoshis,
+      localCollateralAmount: dlcOffer.offerCollateral,
       localPayoutSerialId: dlcOffer.payoutSerialId,
       localChangeSerialId: dlcOffer.changeSerialId,
       remoteInputAmount,
-      remoteCollateralAmount: dlcAccept.acceptCollateralSatoshis,
+      remoteCollateralAmount: dlcAccept.acceptCollateral,
       remotePayoutSerialId: dlcAccept.payoutSerialId,
       remoteChangeSerialId: dlcAccept.changeSerialId,
       refundLocktime: dlcOffer.refundLocktime,
@@ -563,15 +562,15 @@ export default class BitcoinDlcProvider
     return { dlcTransactions, messagesList };
   }
 
-  private GenerateEnumMessages(oracleEvent: OracleEventV0): Messages[] {
+  private GenerateEnumMessages(oracleEvent: OracleEventV0Pre167): Messages[] {
     throw Error('Only DigitDecomposition Oracle Events supported');
   }
 
   private GenerateDigitDecompositionMessages(
-    oracleEvent: OracleEventV0,
+    oracleEvent: OracleEventV0Pre167,
   ): Messages[] {
     const oracleNonces = oracleEvent.oracleNonces;
-    const eventDescriptor = oracleEvent.eventDescriptor as DigitDecompositionEventDescriptorV0;
+    const eventDescriptor = oracleEvent.eventDescriptor as DigitDecompositionEventDescriptorV0Pre167;
 
     const messagesList: Messages[] = [];
     oracleNonces.forEach(() => {
@@ -586,8 +585,9 @@ export default class BitcoinDlcProvider
     return messagesList;
   }
 
-  private GenerateMessages(oracleInfo: OracleInfoV0): Messages[] {
-    const oracleEvent = oracleInfo.announcement.oracleEvent;
+  private GenerateMessages(oracleInfo: OracleInfo): Messages[] {
+    const oracleEvent = (oracleInfo as SingleOracleInfo).announcement
+      .oracleEvent;
 
     switch (oracleEvent.eventDescriptor.type) {
       case MessageType.EnumEventDescriptorV0:
@@ -601,10 +601,10 @@ export default class BitcoinDlcProvider
 
   private GetContractOraclePairs(
     _contractInfo: ContractInfo,
-  ): { contractDescriptor: ContractDescriptor; oracleInfo: OracleInfoV0 }[] {
+  ): { contractDescriptor: ContractDescriptor; oracleInfo: OracleInfo }[] {
     switch (_contractInfo.type) {
-      case MessageType.ContractInfoV0: {
-        const contractInfo = _contractInfo as ContractInfoV0;
+      case ContractInfoType.Single: {
+        const contractInfo = _contractInfo as SingleContractInfo;
         return [
           {
             contractDescriptor: contractInfo.contractDescriptor,
@@ -612,11 +612,11 @@ export default class BitcoinDlcProvider
           },
         ];
       }
-      case MessageType.ContractInfoV1: {
-        return (_contractInfo as ContractInfoV1).contractOraclePairs;
+      case ContractInfoType.Disjoint: {
+        return (_contractInfo as DisjointContractInfo).contractOraclePairs;
       }
       default:
-        throw Error('ContractInfo must be V0 or V1');
+        throw Error('ContractInfo must be Single or Disjoint');
     }
   }
 
@@ -662,7 +662,7 @@ export default class BitcoinDlcProvider
     const sigs: ISig[][] = [];
 
     for (const [index, { oracleInfo }] of contractOraclePairs.entries()) {
-      const oracleAnnouncement = oracleInfo.announcement;
+      const oracleAnnouncement = (oracleInfo as SingleOracleInfo).announcement;
 
       const startingIndex = indices[index].startingMessagesIndex,
         endingIndex = indices[index + 1].startingMessagesIndex;
@@ -734,7 +734,7 @@ export default class BitcoinDlcProvider
       'hex',
     );
 
-    const cetSignatures = new CetAdaptorSignaturesV0();
+    const cetSignatures = new CetAdaptorSignatures();
     cetSignatures.sigs = sigs.flat();
 
     return { cetSignatures, refundSignature };
@@ -766,7 +766,7 @@ export default class BitcoinDlcProvider
     const indices = this.GetIndicesFromPayouts(this.GetPayouts(_dlcOffer));
 
     for (const [index, { oracleInfo }] of contractOraclePairs.entries()) {
-      const oracleAnnouncement = oracleInfo.announcement;
+      const oracleAnnouncement = (oracleInfo as SingleOracleInfo).announcement;
 
       const startingIndex = indices[index].startingMessagesIndex,
         endingIndex = indices[index + 1].startingMessagesIndex;
@@ -850,7 +850,7 @@ export default class BitcoinDlcProvider
     _dlcAccept: DlcAccept,
     _dlcTxs: DlcTransactions,
     isOfferer: boolean,
-  ): Promise<FundingSignaturesV0> {
+  ): Promise<FundingSignatures> {
     const { dlcOffer, dlcAccept, dlcTxs } = checkTypes({
       _dlcOffer,
       _dlcAccept,
@@ -895,16 +895,16 @@ export default class BitcoinDlcProvider
       }),
     );
 
-    const witnessElements: ScriptWitnessV0[][] = [];
+    const witnessElements: ScriptWitness[][] = [];
     for (let i = 0; i < fundTxSigs.length; i++) {
-      const sigWitness = new ScriptWitnessV0();
+      const sigWitness = new ScriptWitness();
       sigWitness.witness = Buffer.from(fundTxSigs[i], 'hex');
-      const pubKeyWitness = new ScriptWitnessV0();
+      const pubKeyWitness = new ScriptWitness();
       pubKeyWitness.witness = Buffer.from(inputPubKeys[i], 'hex');
       witnessElements.push([sigWitness, pubKeyWitness]);
     }
 
-    const fundingSignatures = new FundingSignaturesV0();
+    const fundingSignatures = new FundingSignatures();
     fundingSignatures.witnessElements = witnessElements;
 
     return fundingSignatures;
@@ -931,8 +931,8 @@ export default class BitcoinDlcProvider
       const pubkey = witnessElement[1].witness.toString('hex');
 
       const fundingInput = isOfferer
-        ? (dlcAccept.fundingInputs[i] as FundingInputV0)
-        : (dlcOffer.fundingInputs[i] as FundingInputV0);
+        ? (dlcAccept.fundingInputs[i] as FundingInput)
+        : (dlcOffer.fundingInputs[i] as FundingInput);
 
       const verifyFundSigRequest: VerifyFundTxSignatureRequest = {
         fundTxHex: dlcTxs.fundTx.serialize().toString('hex'),
@@ -966,7 +966,7 @@ export default class BitcoinDlcProvider
     _dlcAccept: DlcAccept,
     _dlcSign: DlcSign,
     _dlcTxs: DlcTransactions,
-    fundingSignatures: FundingSignaturesV0,
+    fundingSignatures: FundingSignatures,
   ): Promise<Tx> {
     const { dlcOffer, dlcAccept, dlcSign, dlcTxs } = checkTypes({
       _dlcOffer,
@@ -988,11 +988,11 @@ export default class BitcoinDlcProvider
 
     await asyncForEach(
       witnessElements,
-      async (witnessElement: ScriptWitnessV0, i: number) => {
+      async (witnessElement: ScriptWitness, i: number) => {
         const signature = witnessElement[0].witness.toString('hex');
         const pubkey = witnessElement[1].witness.toString('hex');
 
-        const fundingInput = fundingInputs[i] as FundingInputV0;
+        const fundingInput = fundingInputs[i] as FundingInput;
 
         const addSignRequest: AddSignatureToFundTransactionRequest = {
           fundTxHex,
@@ -1013,10 +1013,10 @@ export default class BitcoinDlcProvider
 
   async FindOutcomeIndexFromPolynomialPayoutCurvePiece(
     _dlcOffer: DlcOffer,
-    contractDescriptor: ContractDescriptorV1,
+    contractDescriptor: NumericContractDescriptor,
     contractOraclePairIndex: number,
     polynomialPayoutCurvePiece: PolynomialPayoutCurvePiece,
-    oracleAttestation: OracleAttestationV0,
+    oracleAttestation: OracleAttestationV0Pre167,
     outcome: bigint,
   ): Promise<FindOutcomeResponse> {
     const { dlcOffer } = checkTypes({ _dlcOffer });
@@ -1094,10 +1094,10 @@ Payout Group not found',
 
   async FindOutcomeIndexFromHyperbolaPayoutCurvePiece(
     _dlcOffer: DlcOffer,
-    contractDescriptor: ContractDescriptorV1,
+    contractDescriptor: NumericContractDescriptor,
     contractOraclePairIndex: number,
     hyperbolaPayoutCurvePiece: HyperbolaPayoutCurvePiece,
-    oracleAttestation: OracleAttestationV0,
+    oracleAttestation: OracleAttestationV0Pre167,
     outcome: bigint,
   ): Promise<FindOutcomeResponse> {
     const { dlcOffer } = checkTypes({ _dlcOffer });
@@ -1172,7 +1172,7 @@ Payout Group not found',
 
   async FindOutcomeIndex(
     _dlcOffer: DlcOffer,
-    oracleAttestation: OracleAttestationV0,
+    oracleAttestation: OracleAttestationV0Pre167,
   ): Promise<FindOutcomeResponse> {
     const { dlcOffer } = checkTypes({ _dlcOffer });
 
@@ -1182,7 +1182,7 @@ Payout Group not found',
 
     const contractOraclePairIndex = contractOraclePairs.findIndex(
       ({ oracleInfo }) =>
-        oracleInfo.announcement.oracleEvent.eventId ===
+        (oracleInfo as SingleOracleInfo).announcement.oracleEvent.eventId ===
         oracleAttestation.eventId,
     );
 
@@ -1199,11 +1199,11 @@ Payout Group not found',
     } = contractOraclePair;
 
     assert(
-      _contractDescriptor.type === MessageType.ContractDescriptorV1,
-      'ContractDescriptor must be V1',
+      _contractDescriptor.type === ContractDescriptorType.Numeric,
+      'ContractDescriptor must be Numeric',
     );
 
-    const contractDescriptor = _contractDescriptor as ContractDescriptorV1;
+    const contractDescriptor = _contractDescriptor as NumericContractDescriptor;
     const _payoutFunction = contractDescriptor.payoutFunction;
 
     assert(
@@ -1211,9 +1211,9 @@ Payout Group not found',
       'PayoutFunction must be V0',
     );
 
-    const eventDescriptor = oracleInfo.announcement.oracleEvent
-      .eventDescriptor as DigitDecompositionEventDescriptorV0;
-    const payoutFunction = _payoutFunction as PayoutFunctionV0;
+    const eventDescriptor = (oracleInfo as SingleOracleInfo).announcement
+      .oracleEvent.eventDescriptor as DigitDecompositionEventDescriptorV0Pre167;
+    const payoutFunction = _payoutFunction as PayoutFunction;
 
     const base = eventDescriptor.base;
 
@@ -1221,14 +1221,22 @@ Payout Group not found',
       .reverse()
       .reduce((acc, val, i) => acc + Number(val) * base ** i, 0);
 
-    const piecesSorted = payoutFunction.pieces.sort(
-      (a, b) => Number(a.endpoint) - Number(b.endpoint),
+    // Deep copy payoutFunction.pieces into piecesSorted to prevent sorting the
+    // original payoutFunction.pieces array with .sort()
+    const piecesSorted = Object.assign([], payoutFunction.pieces);
+    // Sort pieces by descending piece.endPoint.eventOutcome
+    piecesSorted.sort(
+      (a, b) =>
+        Number(b.endPoint.eventOutcome) - Number(a.endPoint.eventOutcome),
+    );
+    // Iterate through piecesSorted to find the first piece where
+    // outcome > piece.endPoint.eventOutcome
+    const piece = piecesSorted.find(
+      (piece) => outcome >= piece.endPoint.eventOutcome,
     );
 
-    const piece = piecesSorted.find((piece) => outcome < piece.endpoint);
-
     switch (piece.payoutCurvePiece.type) {
-      case MessageType.PolynomialPayoutCurvePiece:
+      case PayoutCurvePieceType.PolynomialPayoutCurvePiece:
         return this.FindOutcomeIndexFromPolynomialPayoutCurvePiece(
           dlcOffer,
           contractDescriptor,
@@ -1237,16 +1245,7 @@ Payout Group not found',
           oracleAttestation,
           BigInt(outcome),
         );
-      case MessageType.HyperbolaPayoutCurvePiece:
-        return this.FindOutcomeIndexFromHyperbolaPayoutCurvePiece(
-          dlcOffer,
-          contractDescriptor,
-          contractOraclePairIndex,
-          piece.payoutCurvePiece as HyperbolaPayoutCurvePiece,
-          oracleAttestation,
-          BigInt(outcome),
-        );
-      case MessageType.OldHyperbolaPayoutCurvePiece:
+      case PayoutCurvePieceType.HyperbolaPayoutCurvePiece:
         return this.FindOutcomeIndexFromHyperbolaPayoutCurvePiece(
           dlcOffer,
           contractDescriptor,
@@ -1262,38 +1261,38 @@ Payout Group not found',
 
   ValidateEvent(
     _dlcOffer: DlcOffer,
-    oracleAttestation: OracleAttestationV0,
+    oracleAttestation: OracleAttestationV0Pre167,
   ): void {
     const { dlcOffer } = checkTypes({
       _dlcOffer,
     });
 
     switch (dlcOffer.contractInfo.type) {
-      case MessageType.ContractInfoV0: {
-        const contractInfo = dlcOffer.contractInfo as ContractInfoV0;
+      case ContractInfoType.Single: {
+        const contractInfo = dlcOffer.contractInfo as SingleContractInfo;
         switch (contractInfo.contractDescriptor.type) {
-          case MessageType.ContractDescriptorV0:
-            throw Error('ContractDescriptorV0 not yet supported');
-          case MessageType.ContractDescriptorV1: {
+          case ContractDescriptorType.Enumerated:
+            throw Error('Enumerated ContractDescriptor not yet supported');
+          case ContractDescriptorType.Numeric: {
             const oracleInfo = contractInfo.oracleInfo;
             if (
-              oracleInfo.announcement.oracleEvent.eventId !==
-              oracleAttestation.eventId
+              (oracleInfo as SingleOracleInfo).announcement.oracleEvent
+                .eventId !== oracleAttestation.eventId
             )
               throw Error('Incorrect Oracle Attestation. Event Id must match.');
             break;
           }
           default:
-            throw Error('ConractDescriptor must be V0 or V1');
+            throw Error('ContractDescriptor must be Enumerated or Numeric');
         }
         break;
       }
-      case MessageType.ContractInfoV1: {
-        const contractInfo = dlcOffer.contractInfo as ContractInfoV1;
+      case ContractInfoType.Disjoint: {
+        const contractInfo = dlcOffer.contractInfo as DisjointContractInfo;
         const attestedOracleEvent = contractInfo.contractOraclePairs.find(
           ({ oracleInfo }) =>
-            oracleInfo.announcement.oracleEvent.eventId ===
-            oracleAttestation.eventId,
+            (oracleInfo as SingleOracleInfo).announcement.oracleEvent
+              .eventId === oracleAttestation.eventId,
         );
 
         if (!attestedOracleEvent)
@@ -1302,7 +1301,7 @@ Payout Group not found',
         break;
       }
       default:
-        throw Error('ContractInfo must be V0 or V1');
+        throw Error('ContractInfo must be Single or Disjoint');
     }
   }
 
@@ -1311,7 +1310,7 @@ Payout Group not found',
     _dlcAccept: DlcAccept,
     _dlcSign: DlcSign,
     _dlcTxs: DlcTransactions,
-    oracleAttestation: OracleAttestationV0,
+    oracleAttestation: OracleAttestationV0Pre167,
     isOfferer?: boolean,
   ): Promise<Tx> {
     const { dlcOffer, dlcAccept, dlcSign, dlcTxs } = checkTypes({
@@ -1755,7 +1754,7 @@ Payout Group not found',
   /**
    * Create DLC Offer Message
    * @param contractInfo ContractInfo TLV (V0 or V1)
-   * @param offerCollateralSatoshis Amount DLC Initiator is putting into the contract
+   * @param offerCollateral Amount (in satoshi) DLC Initiator is putting into the contract
    * @param feeRatePerVb Fee rate in satoshi per virtual byte that both sides use to compute fees in funding tx
    * @param cetLocktime The nLockTime to be put on CETs
    * @param refundLocktime The nLockTime to be put on the refund transaction
@@ -1763,7 +1762,7 @@ Payout Group not found',
    */
   async createDlcOffer(
     contractInfo: ContractInfo,
-    offerCollateralSatoshis: bigint,
+    offerCollateral: bigint,
     feeRatePerVb: bigint,
     cetLocktime: number,
     refundLocktime: number,
@@ -1772,7 +1771,7 @@ Payout Group not found',
     contractInfo.validate();
     const network = await this.getConnectedNetwork();
 
-    const dlcOffer = new DlcOfferV0();
+    const tempDlcOffer = new DlcOfferV0();
 
     const {
       fundingPubKey,
@@ -1781,21 +1780,10 @@ Payout Group not found',
       fundingInputs: _fundingInputs,
       changeSPK,
       changeSerialId,
-    } = await this.Initialize(
-      offerCollateralSatoshis,
-      feeRatePerVb,
-      fixedInputs,
-    );
+    } = await this.Initialize(offerCollateral, feeRatePerVb, fixedInputs);
 
-    _fundingInputs.forEach((input) =>
-      assert(
-        input.type === MessageType.FundingInputV0,
-        'FundingInput must be V0',
-      ),
-    );
-
-    const fundingInputs: FundingInputV0[] = _fundingInputs.map(
-      (input) => input as FundingInputV0,
+    const fundingInputs: FundingInput[] = _fundingInputs.map(
+      (input) => input as FundingInput,
     );
 
     fundingInputs.sort(
@@ -1809,42 +1797,46 @@ Payout Group not found',
       'changeSerialId cannot equal the fundOutputSerialId',
     );
 
-    dlcOffer.contractFlags = Buffer.from('00', 'hex');
-    dlcOffer.chainHash = chainHashFromNetwork(network);
-    dlcOffer.contractInfo = contractInfo;
-    dlcOffer.fundingPubKey = fundingPubKey;
-    dlcOffer.payoutSPK = payoutSPK;
-    dlcOffer.payoutSerialId = payoutSerialId;
-    dlcOffer.offerCollateralSatoshis = offerCollateralSatoshis;
-    dlcOffer.fundingInputs = fundingInputs;
-    dlcOffer.changeSPK = changeSPK;
-    dlcOffer.changeSerialId = changeSerialId;
-    dlcOffer.fundOutputSerialId = dlcOffer.fundOutputSerialId = fundOutputSerialId;
-    dlcOffer.feeRatePerVb = feeRatePerVb;
-    dlcOffer.cetLocktime = cetLocktime;
-    dlcOffer.refundLocktime = refundLocktime;
+    tempDlcOffer.contractFlags = 0;
+    tempDlcOffer.chainHash = chainHashFromNetwork(network);
+    tempDlcOffer.contractInfo = contractInfo;
+    tempDlcOffer.fundingPubKey = fundingPubKey;
+    tempDlcOffer.payoutSPK = payoutSPK;
+    tempDlcOffer.payoutSerialId = payoutSerialId;
+    tempDlcOffer.offerCollateral = offerCollateral;
+    tempDlcOffer.fundingInputs = fundingInputs;
+    tempDlcOffer.changeSPK = changeSPK;
+    tempDlcOffer.changeSerialId = changeSerialId;
+    tempDlcOffer.fundOutputSerialId = fundOutputSerialId;
+    tempDlcOffer.feeRatePerVb = feeRatePerVb;
+    tempDlcOffer.cetLocktime = cetLocktime;
+    tempDlcOffer.refundLocktime = refundLocktime;
 
     assert(
       (() => {
         const finalizer = new DualFundingTxFinalizer(
-          dlcOffer.fundingInputs,
-          dlcOffer.payoutSPK,
-          dlcOffer.changeSPK,
+          tempDlcOffer.fundingInputs,
+          tempDlcOffer.payoutSPK,
+          tempDlcOffer.changeSPK,
           null,
           null,
           null,
-          dlcOffer.feeRatePerVb,
+          tempDlcOffer.feeRatePerVb,
         );
         const funding = fundingInputs.reduce((total, input) => {
           return total + input.prevTx.outputs[input.prevTxVout].value.sats;
         }, BigInt(0));
 
-        return funding >= offerCollateralSatoshis + finalizer.offerFees;
+        return funding >= offerCollateral + finalizer.offerFees;
       })(),
-      'fundingInputs for dlcOffer must be greater than offerCollateralSatoshis plus offerFees',
+      'fundingInputs for dlcOffer must be greater than offerCollateral plus offerFees',
     );
 
-    dlcOffer.validate();
+    tempDlcOffer.validate();
+
+    // Assign unique temporaryContractId to finalize DLC offer
+    const dlcOffer = tempDlcOffer;
+    dlcOffer.temporaryContractId = sha256(tempDlcOffer.serialize());
 
     return dlcOffer;
   }
@@ -1862,14 +1854,13 @@ Payout Group not found',
     const { dlcOffer } = checkTypes({ _dlcOffer });
     dlcOffer.validate();
 
-    const acceptCollateralSatoshis =
-      dlcOffer.contractInfo.totalCollateral - dlcOffer.offerCollateralSatoshis;
+    const acceptCollateral =
+      dlcOffer.contractInfo.totalCollateral - dlcOffer.offerCollateral;
 
     assert(
-      acceptCollateralSatoshis ===
-        dlcOffer.contractInfo.totalCollateral -
-          dlcOffer.offerCollateralSatoshis,
-      'acceptCollaterialSatoshis should equal totalCollateral - offerCollateralSatoshis',
+      acceptCollateral ===
+        dlcOffer.contractInfo.totalCollateral - dlcOffer.offerCollateral,
+      'acceptCollateral should equal totalCollateral - offerCollateral',
     );
 
     const {
@@ -1880,7 +1871,7 @@ Payout Group not found',
       changeSPK,
       changeSerialId,
     } = await this.Initialize(
-      acceptCollateralSatoshis,
+      acceptCollateral,
       dlcOffer.feeRatePerVb,
       fixedInputs,
     );
@@ -1890,15 +1881,8 @@ Payout Group not found',
       'DlcOffer and DlcAccept FundingPubKey cannot be the same',
     );
 
-    _fundingInputs.forEach((input) =>
-      assert(
-        input.type === MessageType.FundingInputV0,
-        'FundingInput must be V0',
-      ),
-    );
-
-    const fundingInputs: FundingInputV0[] = _fundingInputs.map(
-      (input) => input as FundingInputV0,
+    const fundingInputs: FundingInput[] = _fundingInputs.map(
+      (input) => input as FundingInput,
     );
 
     fundingInputs.sort(
@@ -1907,8 +1891,8 @@ Payout Group not found',
 
     const dlcAccept = new DlcAcceptV0();
 
-    dlcAccept.tempContractId = sha256(dlcOffer.serialize());
-    dlcAccept.acceptCollateralSatoshis = acceptCollateralSatoshis;
+    dlcAccept.temporaryContractId = dlcOffer.temporaryContractId;
+    dlcAccept.acceptCollateral = acceptCollateral;
     dlcAccept.fundingPubKey = fundingPubKey;
     dlcAccept.payoutSPK = payoutSPK;
     dlcAccept.payoutSerialId = dlcAccept.payoutSerialId = payoutSerialId;
@@ -1955,9 +1939,9 @@ Payout Group not found',
           return total + input.prevTx.outputs[input.prevTxVout].value.sats;
         }, BigInt(0));
 
-        return funding >= acceptCollateralSatoshis + finalizer.acceptFees;
+        return funding >= acceptCollateral + finalizer.acceptFees;
       })(),
-      'fundingInputs for dlcAccept must be greater than acceptCollateralSatoshis plus acceptFees',
+      'fundingInputs for dlcAccept must be greater than acceptCollateral plus acceptFees',
     );
 
     const { dlcTransactions, messagesList } = await this.createDlcTxs(
@@ -1984,13 +1968,16 @@ Payout Group not found',
 
     const contractId = xor(
       _dlcTransactions.fundTx.txId.serialize(),
-      dlcAccept.tempContractId,
+      dlcAccept.temporaryContractId,
     );
     _dlcTransactions.contractId = contractId;
 
     dlcAccept.cetSignatures = cetSignatures;
     dlcAccept.refundSignature = refundSignature;
-    dlcAccept.negotiationFields = new NegotiationFieldsV0();
+
+    // The following line is commented out because specifying empty
+    // negotiationFields causes dlcAccept serialization to fail
+    // dlcAccept.negotiationFields = new SingleNegotiationFields();
 
     return { dlcAccept, dlcTransactions: _dlcTransactions };
   }
@@ -2055,15 +2042,15 @@ Payout Group not found',
 
     const contractId = xor(
       dlcTxs.fundTx.txId.serialize(),
-      dlcAccept.tempContractId,
+      dlcAccept.temporaryContractId,
     );
 
     assert(
       Buffer.compare(
         contractId,
-        xor(dlcTxs.fundTx.txId.serialize(), dlcAccept.tempContractId),
+        xor(dlcTxs.fundTx.txId.serialize(), dlcAccept.temporaryContractId),
       ) === 0,
-      'contractId must be the xor of funding txid, fundingOutputIndex and the tempContractId',
+      'contractId must be the xor of funding txid, fundingOutputIndex and the temporaryContractId',
     );
 
     dlcTxs.contractId = contractId;
@@ -2144,7 +2131,7 @@ Payout Group not found',
     _dlcAccept: DlcAccept,
     _dlcSign: DlcSign,
     _dlcTxs: DlcTransactions,
-    oracleAttestation: OracleAttestationV0,
+    oracleAttestation: OracleAttestationV0Pre167,
     isOfferer?: boolean,
   ): Promise<Tx> {
     const { dlcOffer, dlcAccept, dlcSign, dlcTxs } = checkTypes({
@@ -2430,15 +2417,15 @@ Payout Group not found',
       .map((input) => input.partialSig[0]);
 
     // create fundingSignatures
-    const witnessElements: ScriptWitnessV0[][] = [];
+    const witnessElements: ScriptWitness[][] = [];
     for (let i = 0; i < inputSigs.length; i++) {
-      const sigWitness = new ScriptWitnessV0();
+      const sigWitness = new ScriptWitness();
       sigWitness.witness = inputSigs[i].signature;
-      const pubKeyWitness = new ScriptWitnessV0();
+      const pubKeyWitness = new ScriptWitness();
       pubKeyWitness.witness = inputSigs[i].pubkey;
       witnessElements.push([sigWitness, pubKeyWitness]);
     }
-    const fundingSignatures = new FundingSignaturesV0();
+    const fundingSignatures = new FundingSignatures();
     fundingSignatures.witnessElements = witnessElements;
 
     // Create DlcClose
@@ -2453,7 +2440,7 @@ Payout Group not found',
     dlcClose.fundInputSerialId = fundingInputSerialId; // randomly generated serial id
     dlcClose.closeSignature = closeSignature;
     dlcClose.fundingSignatures = fundingSignatures;
-    dlcClose.fundingInputs = fundingInputs as FundingInputV0[];
+    dlcClose.fundingInputs = fundingInputs as FundingInput[];
     dlcClose.validate();
 
     return dlcClose;
@@ -2555,7 +2542,7 @@ Payout Group not found',
         ? collateralMinusPayout
         : closeInputAmount + payoutMinusOfferFees;
 
-      const fundingSignatures = new FundingSignaturesV0();
+      const fundingSignatures = new FundingSignatures();
 
       const dlcClose = new DlcCloseV0();
       dlcClose.contractId = dlcTxs.contractId;
@@ -2948,12 +2935,8 @@ Payout Group not found',
     _input: FundingInput,
     findDerivationPath = true,
   ): Promise<Input> {
-    assert(
-      _input.type === MessageType.FundingInputV0,
-      'FundingInput must be V0',
-    );
     const network = await this.getConnectedNetwork();
-    const input = _input as FundingInputV0;
+    const input = _input as FundingInput;
     const prevTx = input.prevTx;
     const prevTxOut = prevTx.outputs[input.prevTxVout];
     const scriptPubKey = prevTxOut.scriptPubKey.serialize().slice(1);
@@ -2987,7 +2970,7 @@ Payout Group not found',
   }
 
   async inputToFundingInput(input: Input): Promise<FundingInput> {
-    const fundingInput = new FundingInputV0();
+    const fundingInput = new FundingInput();
     fundingInput.prevTxVout = input.vout;
 
     let txRaw = '';
@@ -3062,7 +3045,7 @@ interface ISig {
 }
 
 export interface CreateCetAdaptorAndRefundSigsResponse {
-  cetSignatures: CetAdaptorSignaturesV0;
+  cetSignatures: CetAdaptorSignatures;
   refundSignature: Buffer;
 }
 

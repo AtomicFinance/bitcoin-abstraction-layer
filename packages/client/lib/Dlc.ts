@@ -44,7 +44,7 @@ import {
   DlcSign,
   DlcTransactions,
   FundingInput,
-  OracleAttestationV0,
+  OracleAttestationV0Pre167,
 } from '@node-dlc/messaging';
 import { Tx } from '@node-lightning/bitcoin';
 
@@ -168,7 +168,7 @@ export default class Dlc implements DlcProvider {
     dlcAccept: DlcAccept,
     dlcSign: DlcSign,
     dlcTxs: DlcTransactions,
-    oracleAttestation: OracleAttestationV0,
+    oracleAttestation: OracleAttestationV0Pre167,
     isOfferer?: boolean,
   ): Promise<Tx> {
     return this.client.getMethod('execute')(
