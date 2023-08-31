@@ -1114,6 +1114,8 @@ Payout Group not found',
 
     const payout = clampBN(hyperbolaCurve.getPayout(outcome));
 
+    console.log('payout', payout.integerValue().toString());
+
     const payoutResponses = this.GetPayouts(dlcOffer);
     const payoutIndexOffset = this.GetIndicesFromPayouts(payoutResponses)[
       contractOraclePairIndex
@@ -1220,6 +1222,8 @@ Payout Group not found',
     const outcome: number = [...oracleAttestation.outcomes]
       .reverse()
       .reduce((acc, val, i) => acc + Number(val) * base ** i, 0);
+
+    console.log('outcome', outcome);
 
     const piecesSorted = payoutFunction.pieces.sort(
       (a, b) => Number(a.endpoint) - Number(b.endpoint),

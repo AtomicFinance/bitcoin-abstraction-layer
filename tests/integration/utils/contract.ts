@@ -14,12 +14,12 @@ import { math } from 'bip-schnorr';
 
 import Oracle from '../models/Oracle';
 
-export function generateContractInfo(
+export function generateOracleAnnouncement(
   oracle: Oracle,
   numDigits = 18,
   oracleBase = 2,
   eventId = 'btc/usd',
-): { contractInfo: ContractInfoV0; totalCollateral: bigint } {
+): OracleAnnouncementV0 {
   const oliviaInfo = oracle.GetOracleInfo();
 
   const eventDescriptor = new DigitDecompositionEventDescriptorV0();
@@ -50,16 +50,15 @@ export function generateContractInfo(
   announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
   announcement.oracleEvent = event;
 
-  const oracleInfo = new OracleInfoV0();
-  oracleInfo.announcement = announcement;
+  return announcement;
+}
 
-  const { payoutFunction, totalCollateral } = CoveredCall.buildPayoutFunction(
-    4000n,
-    1000000n,
-    oracleBase,
-    numDigits,
-  );
-
+export function generateContractInfoFromPayoutFunction(
+  numDigits = 18,
+  payoutFunction: PayoutFunctionV0,
+  totalCollateral: bigint,
+  oracleInfo: OracleInfoV0,
+): ContractInfoV0 {
   const intervals = [{ beginInterval: 0n, roundingMod: 500n }];
   const roundingIntervals = new RoundingIntervalsV0();
   roundingIntervals.intervals = intervals;
@@ -73,6 +72,39 @@ export function generateContractInfo(
   contractInfo.totalCollateral = totalCollateral;
   contractInfo.contractDescriptor = contractDescriptor;
   contractInfo.oracleInfo = oracleInfo;
+
+  return contractInfo;
+}
+
+export function generateContractInfo(
+  oracle: Oracle,
+  numDigits = 18,
+  oracleBase = 2,
+  eventId = 'btc/usd',
+): { contractInfo: ContractInfoV0; totalCollateral: bigint } {
+  const announcement = generateOracleAnnouncement(
+    oracle,
+    numDigits,
+    oracleBase,
+    eventId,
+  );
+
+  const oracleInfo = new OracleInfoV0();
+  oracleInfo.announcement = announcement;
+
+  const { payoutFunction, totalCollateral } = CoveredCall.buildPayoutFunction(
+    4000n,
+    1000000n,
+    oracleBase,
+    numDigits,
+  );
+
+  const contractInfo = generateContractInfoFromPayoutFunction(
+    numDigits,
+    payoutFunction,
+    totalCollateral,
+    oracleInfo,
+  );
 
   return { contractInfo, totalCollateral };
 }

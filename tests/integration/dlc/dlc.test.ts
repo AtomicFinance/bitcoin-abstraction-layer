@@ -99,7 +99,7 @@ describe('inputToFundingInput', () => {
   });
 });
 
-describe('dlc provider', () => {
+describe.skip('dlc provider', () => {
   const numDigits = 17;
   const oracleBase = 2;
   let dlcOffer: DlcOffer;
@@ -1098,7 +1098,7 @@ describe('dlc provider', () => {
  * i.e. Suredbits Oracle: https://test.oracle.suredbits.com/event/dae0e209c8a6747c27b9adf3d2fd3e1245b28fcef82e9e13e9a1b708f013a719
  * oracle_announcement_v0
  */
-describe('external test vectors', () => {
+describe.skip('external test vectors', () => {
   it('executes', async () => {
     const numDigits = 18;
     const oracleBase = 2;

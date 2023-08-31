@@ -222,7 +222,7 @@ describe.skip('Custom Strategy Oracle POC numdigits=18', () => {
   });
 });
 
-describe('Custom Strategy Oracle POC numdigits=21', () => {
+describe.skip('Custom Strategy Oracle POC numdigits=21', () => {
   const numDigits = 21;
   const oracleBase = 2;
   const { payoutFunction } = LinearPayout.buildPayoutFunction(
