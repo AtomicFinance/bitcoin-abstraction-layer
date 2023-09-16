@@ -44,6 +44,7 @@ interface BitcoinWalletProviderOptions {
   network: BitcoinNetwork;
   baseDerivationPath: string;
   addressType?: bT.AddressType;
+  addressIndex?: number;
 }
 
 export default <T extends Constructor<Provider>>(superclass: T) => {
@@ -55,6 +56,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
     _maxAddressesToDerive: number;
     _baseDerivationPath: string;
     _addressType: bT.AddressType;
+    _addressIndex: number;
     _derivationCache: DerivationCache;
 
     constructor(...args: any[]) {
@@ -63,6 +65,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
         network,
         baseDerivationPath,
         addressType = bT.AddressType.BECH32,
+        addressIndex = 0,
       } = options;
       const addressTypes = Object.values(bT.AddressType);
       if (!addressTypes.includes(addressType)) {
@@ -74,6 +77,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
       this._baseDerivationPath = baseDerivationPath;
       this._network = network;
       this._addressType = addressType;
+      this._addressIndex = addressIndex;
       this._derivationCache = {};
       this._unusedAddressesBlacklist = {};
       this._maxAddressesToDerive = 5000;
@@ -282,7 +286,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
       const unusedAddressMap = { change: null, nonChange: null };
 
       let addrList;
-      let addressIndex = 0;
+      let addressIndex = this._addressIndex;
       let changeAddresses: Address[] = [];
       let nonChangeAddresses: Address[] = [];
 

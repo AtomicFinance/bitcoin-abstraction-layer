@@ -59,6 +59,7 @@
     "test": "yarn run test:unit && yarn run test:integration",
     "test:unit": "turbo run test",
     "test:integration": "nyc --reporter=text --reporter=lcov cross-env NODE_ENV=test mocha --parallel",
+    "test:integration:single": "nyc --reporter=text --reporter=lcov cross-env NODE_ENV=test mocha",
     "prepublishOnly": "yarn build",
     "changeset": "changeset",
     "version": "yarn changeset version",

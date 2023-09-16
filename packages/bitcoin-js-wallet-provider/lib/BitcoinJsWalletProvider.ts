@@ -38,6 +38,7 @@ interface BitcoinJsWalletProviderOptions {
   mnemonic: string;
   baseDerivationPath: string;
   addressType?: bT.AddressType;
+  addressIndex?: number;
 }
 
 export default class BitcoinJsWalletProvider extends BitcoinWalletProvider(
@@ -53,8 +54,9 @@ export default class BitcoinJsWalletProvider extends BitcoinWalletProvider(
       mnemonic,
       baseDerivationPath,
       addressType = bT.AddressType.BECH32,
+      addressIndex = 0,
     } = options;
-    super({ network, baseDerivationPath, addressType });
+    super({ network, baseDerivationPath, addressType, addressIndex });
 
     if (!mnemonic) throw new Error('Mnemonic should not be empty');
 

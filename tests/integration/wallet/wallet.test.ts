@@ -16,8 +16,8 @@ import * as fixtures from '../fixtures/wallet.json';
 
 const chain = chains.bitcoinWithJs;
 const alice = chain.client;
-
 const bob = chains.bitcoinWithJs2.client;
+const frank = chains.bitcoinWithJs5.client; // custom starting addressIndex provided
 
 describe('wallet provider', () => {
   describe('getUnusedAddress', () => {
@@ -34,6 +34,13 @@ describe('wallet provider', () => {
       const blacklist = await bob.getMethod('getUnusedAddressesBlacklist')();
       const n = Object.keys(blacklist).length - 1;
       expect(Object.keys(blacklist)[n]).to.equal(unusedAddress.address);
+    });
+  });
+
+  describe('getAddress with addressIndex', () => {
+    it('should get address at custom derivation path', async () => {
+      const unusedAddress = await frank.wallet.getUnusedAddress();
+      expect(unusedAddress.derivationPath).to.equal("m/84'/1'/0'/0/100");
     });
   });
 
