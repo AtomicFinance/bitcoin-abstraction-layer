@@ -1,5 +1,16 @@
 # @atomicfinance/bitcoin-js-wallet-provider
 
+## 3.2.2
+
+### Patch Changes
+
+- e5ff4c2: custom starting addressIndex
+- Updated dependencies [e5ff4c2]
+  - @atomicfinance/bitcoin-wallet-provider@3.2.2
+  - @atomicfinance/bitcoin-utils@3.2.2
+  - @atomicfinance/types@3.2.2
+  - @atomicfinance/utils@3.2.2
+
 ## 3.2.1
 
 ### Patch Changes

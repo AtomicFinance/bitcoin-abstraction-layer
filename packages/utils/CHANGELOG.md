@@ -1,5 +1,13 @@
 # @atomicfinance/utils
 
+## 3.2.2
+
+### Patch Changes
+
+- @atomicfinance/crypto@3.2.2
+- @atomicfinance/errors@3.2.2
+- @atomicfinance/types@3.2.2
+
 ## 3.2.1
 
 ### Patch Changes

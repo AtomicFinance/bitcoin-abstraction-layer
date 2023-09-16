@@ -1,5 +1,13 @@
 # @atomicfinance/bitcoin-cfd-provider
 
+## 3.2.2
+
+### Patch Changes
+
+- @atomicfinance/provider@3.2.2
+- @atomicfinance/types@3.2.2
+- @atomicfinance/utils@3.2.2
+
 ## 3.2.1
 
 ### Patch Changes
