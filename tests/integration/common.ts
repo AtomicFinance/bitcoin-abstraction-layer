@@ -1,5 +1,6 @@
 /* eslint-env mocha */
 import Provider from '@atomicfinance/provider';
+import { Transaction } from '@atomicfinance/types/lib';
 import BN from 'bignumber.js';
 import { generateMnemonic } from 'bip39';
 import * as cfdJs from 'cfd-js';
@@ -123,6 +124,20 @@ bitcoinWithJs4.addProvider(
 bitcoinWithJs4.addProvider(new BitcoinCfdProvider(cfdJs));
 bitcoinWithJs4.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
 
+const bitcoinWithJs5 = new Client();
+bitcoinWithJs5.addProvider((mockedBitcoinRpcProvider() as unknown) as Provider);
+bitcoinWithJs5.addProvider(
+  new BitcoinJsWalletProvider({
+    network,
+    mnemonic: generateMnemonic(256),
+    baseDerivationPath: `m/84'/${config.bitcoin.network.coinType}'/0'`,
+    addressType: bitcoin.AddressType.BECH32,
+    addressIndex: 100, // custom starting addressIndex
+  }) as any,
+);
+bitcoinWithJs5.addProvider(new BitcoinCfdProvider(cfdJs));
+bitcoinWithJs5.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
+
 const chains = {
   bitcoinWithNode: {
     id: 'Bitcoin Node',
@@ -155,9 +170,15 @@ const chains = {
     client: bitcoinWithJs4,
     network: network,
   },
+  bitcoinWithJs5: {
+    id: 'Bitcoin Js',
+    name: 'bitcoin',
+    client: bitcoinWithJs5,
+    network: network,
+  },
 };
 
-async function fundAddress(address: string) {
+async function fundAddress(address: string): Promise<Transaction<any>> {
   const tx = await chains.bitcoinWithNode.client.chain.sendTransaction({
     to: address,
     value: new BN(CONSTANTS.BITCOIN_ADDRESS_DEFAULT_BALANCE),
@@ -166,11 +187,11 @@ async function fundAddress(address: string) {
   return tx;
 }
 
-async function importAddresses(chain: Chain) {
+async function importAddresses(chain: Chain): Promise<void> {
   return chain.client.getMethod('importAddresses')();
 }
 
-async function mineBlock() {
+async function mineBlock(): Promise<void> {
   try {
     await chains.bitcoinWithNode.client.chain.generateBlock(1);
   } catch (e) {
