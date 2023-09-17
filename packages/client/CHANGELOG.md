@@ -1,5 +1,13 @@
 # @atomicfinance/client
 
+## 3.2.3
+
+### Patch Changes
+
+- @atomicfinance/errors@3.2.3
+- @atomicfinance/provider@3.2.3
+- @atomicfinance/types@3.2.3
+
 ## 3.2.2
 
 ### Patch Changes
