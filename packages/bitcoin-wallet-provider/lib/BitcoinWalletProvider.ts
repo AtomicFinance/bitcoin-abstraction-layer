@@ -45,6 +45,7 @@ interface BitcoinWalletProviderOptions {
   baseDerivationPath: string;
   addressType?: bT.AddressType;
   addressIndex?: number;
+  changeAddressIndex?: number;
 }
 
 export default <T extends Constructor<Provider>>(superclass: T) => {
@@ -57,6 +58,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
     _baseDerivationPath: string;
     _addressType: bT.AddressType;
     _addressIndex: number;
+    _changeAddressIndex: number;
     _derivationCache: DerivationCache;
 
     constructor(...args: any[]) {
@@ -66,6 +68,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
         baseDerivationPath,
         addressType = bT.AddressType.BECH32,
         addressIndex = 0,
+        changeAddressIndex = 0,
       } = options;
       const addressTypes = Object.values(bT.AddressType);
       if (!addressTypes.includes(addressType)) {
@@ -78,6 +81,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
       this._network = network;
       this._addressType = addressType;
       this._addressIndex = addressIndex;
+      this._changeAddressIndex = changeAddressIndex;
       this._derivationCache = {};
       this._unusedAddressesBlacklist = {};
       this._maxAddressesToDerive = 5000;
@@ -287,6 +291,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
 
       let addrList;
       let addressIndex = this._addressIndex;
+      let changeAddressIndex = this._changeAddressIndex;
       let changeAddresses: Address[] = [];
       let nonChangeAddresses: Address[] = [];
 
@@ -309,7 +314,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
         ) {
           // Scanning for change addr
           changeAddresses = await this.client.wallet.getAddresses(
-            addressIndex,
+            changeAddressIndex,
             numAddressPerCall,
             true,
           );
@@ -359,6 +364,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
         }
 
         addressIndex += numAddressPerCall;
+        changeAddressIndex += numAddressPerCall;
       }
 
       let firstUnusedAddress;

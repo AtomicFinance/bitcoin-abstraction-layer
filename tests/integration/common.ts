@@ -133,6 +133,7 @@ bitcoinWithJs5.addProvider(
     baseDerivationPath: `m/84'/${config.bitcoin.network.coinType}'/0'`,
     addressType: bitcoin.AddressType.BECH32,
     addressIndex: 100, // custom starting addressIndex
+    changeAddressIndex: 100, // custom starting changeAddressIndex
   }) as any,
 );
 bitcoinWithJs5.addProvider(new BitcoinCfdProvider(cfdJs));

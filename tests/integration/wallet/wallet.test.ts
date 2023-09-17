@@ -42,6 +42,11 @@ describe('wallet provider', () => {
       const unusedAddress = await frank.wallet.getUnusedAddress();
       expect(unusedAddress.derivationPath).to.equal("m/84'/1'/0'/0/100");
     });
+
+    it('should get change address at custom derivation path', async () => {
+      const unusedAddress = await frank.wallet.getUnusedAddress(true);
+      expect(unusedAddress.derivationPath).to.equal("m/84'/1'/0'/1/100");
+    });
   });
 
   describe('createMultisig (m-of-n)', () => {
