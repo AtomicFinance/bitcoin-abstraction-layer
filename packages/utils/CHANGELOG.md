@@ -1,5 +1,15 @@
 # @atomicfinance/utils
 
+## 3.2.4
+
+### Patch Changes
+
+- 177b76a: Upgrade node-dlc to 0.22.4
+- Updated dependencies [177b76a]
+  - @atomicfinance/crypto@3.2.4
+  - @atomicfinance/errors@3.2.4
+  - @atomicfinance/types@3.2.4
+
 ## 3.2.3
 
 ### Patch Changes

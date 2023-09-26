@@ -1,6 +1,6 @@
 {
   "name": "@atomicfinance/jsonrpc-provider",
-  "version": "3.2.3",
+  "version": "3.2.4",
   "description": "",
   "module": "dist/index.js",
   "main": "dist/index.js",
@@ -23,8 +23,8 @@
     "node": ">=14"
   },
   "dependencies": {
-    "@atomicfinance/errors": "^3.2.3",
-    "@atomicfinance/node-provider": "^3.2.3",
+    "@atomicfinance/errors": "^3.2.4",
+    "@atomicfinance/node-provider": "^3.2.4",
     "@babel/runtime": "^7.12.1",
     "@types/lodash": "^4.14.168",
     "json-bigint": "^1.0.0",

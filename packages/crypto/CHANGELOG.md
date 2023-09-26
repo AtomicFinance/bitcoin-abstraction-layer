@@ -1,5 +1,11 @@
 # @atomicfinance/crypto
 
+## 3.2.4
+
+### Patch Changes
+
+- 177b76a: Upgrade node-dlc to 0.22.4
+
 ## 3.2.3
 
 ## 3.2.2
