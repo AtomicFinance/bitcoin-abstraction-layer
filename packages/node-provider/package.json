@@ -1,6 +1,6 @@
 {
   "name": "@atomicfinance/node-provider",
-  "version": "3.2.4",
+  "version": "3.2.5",
   "description": "",
   "module": "dist/index.js",
   "main": "dist/index.js",
@@ -23,8 +23,8 @@
     "node": ">=14"
   },
   "dependencies": {
-    "@atomicfinance/errors": "^3.2.4",
-    "@atomicfinance/provider": "^3.2.4",
+    "@atomicfinance/errors": "^3.2.5",
+    "@atomicfinance/provider": "^3.2.5",
     "@babel/runtime": "^7.12.1",
     "@types/lodash": "^4.14.168",
     "axios": "^0.21.0",

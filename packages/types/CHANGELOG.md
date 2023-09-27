@@ -1,5 +1,11 @@
 # @atomicfinance/types
 
+## 3.2.5
+
+### Patch Changes
+
+- a72c7b9: Bump node-dlc to 0.22.4 for all packages
+
 ## 3.2.4
 
 ### Patch Changes

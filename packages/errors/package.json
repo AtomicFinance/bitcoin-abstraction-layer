@@ -1,6 +1,6 @@
 {
   "name": "@atomicfinance/errors",
-  "version": "3.2.4",
+  "version": "3.2.5",
   "description": "",
   "module": "dist/index.js",
   "main": "dist/index.js",
