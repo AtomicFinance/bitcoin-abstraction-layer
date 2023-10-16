@@ -1,5 +1,6 @@
 import 'mocha';
 
+import { Value } from '@node-dlc/bitcoin';
 import {
   CoveredCall,
   DlcTxBuilder,
@@ -43,7 +44,9 @@ import { chains, getInput } from '../common';
 import f from '../fixtures/blockchain.json';
 import Oracle from '../models/Oracle';
 import {
+  calculateNetworkFees,
   generateContractInfo,
+  generateLongCallOffer,
   generateOracleAttestation,
 } from '../utils/contract';
 
@@ -55,7 +58,6 @@ const alice = chain.client;
 
 const bob = chains.bitcoinWithJs2.client;
 const carol = chains.bitcoinWithJs3.client;
-const mm = chains.bitcoinWithJs4.client;
 
 describe('bitcoin networks', () => {
   it('have correct genesis block hashes', async () => {
@@ -592,6 +594,274 @@ describe('dlc provider', () => {
         expect(newDlcSign.refundSignature).to.deep.equal(
           dlcSignV0.refundSignature,
         );
+      });
+    });
+
+    // Test to make sure payout groups find index works properly
+    describe('Finding payout index works for long calls', () => {
+      it('finds payout index correctly for payout that does not match rounded payout', async () => {
+        console.time('offer-get-time');
+        const aliceInput = await getInput(alice);
+        const bobInput = await getInput(bob);
+
+        oracle = new Oracle('olivia', 18);
+
+        const feePerByte = 5;
+
+        const LONG_OPTION_MAX_GAIN = Value.fromBitcoin(0.005);
+
+        const contractPrice = 0.0108;
+
+        const networkFees = Value.fromSats(
+          calculateNetworkFees(BigInt(feePerByte)),
+        );
+
+        const contractSize = 0.1;
+
+        console.log('networkFees.bitcoin', networkFees.bitcoin);
+
+        const maxGain = Value.fromBitcoin(
+          LONG_OPTION_MAX_GAIN.bitcoin * contractSize +
+            contractPrice * contractSize +
+            networkFees.bitcoin,
+        );
+        const premium = Value.fromBitcoin(
+          contractPrice * contractSize + networkFees.bitcoin,
+        );
+
+        const offer = generateLongCallOffer(
+          oracle,
+          18,
+          2,
+          'atomic-deribit-BTC-13OCT23',
+          29000,
+          maxGain,
+          premium,
+          feePerByte,
+          5000,
+          'bitcoin_regtest',
+        );
+
+        const cetLocktime = 1617170572;
+        const refundLocktime = 1617170573;
+
+        dlcOffer = await alice.dlc.createDlcOffer(
+          offer.contractInfo,
+          offer.offerCollateralSatoshis,
+          offer.feeRatePerVb,
+          cetLocktime,
+          refundLocktime,
+          [aliceInput],
+        );
+
+        console.timeEnd('offer-get-time');
+
+        console.time('accept-time');
+        const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
+          dlcOffer,
+          [bobInput],
+        );
+        dlcAccept = acceptDlcOfferResponse.dlcAccept;
+        dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
+
+        const { dlcTransactions: dlcTxsFromMsgs } = await bob.dlc.createDlcTxs(
+          dlcOffer,
+          dlcAccept,
+        );
+
+        expect(
+          (dlcTransactions as DlcTransactionsV0).fundTx
+            .serialize()
+            .toString('hex'),
+        ).to.equal(
+          (dlcTxsFromMsgs as DlcTransactionsV0).fundTx
+            .serialize()
+            .toString('hex'),
+        );
+        expect(
+          (dlcTransactions as DlcTransactionsV0).cets[5]
+            .serialize()
+            .toString('hex'),
+        ).to.equal(
+          (dlcTxsFromMsgs as DlcTransactionsV0).cets[5]
+            .serialize()
+            .toString('hex'),
+        );
+
+        console.timeEnd('accept-time');
+
+        console.time('sign-time');
+        const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.dlc.signDlcAccept(
+          dlcOffer,
+          dlcAccept,
+        );
+        dlcSign = signDlcAcceptResponse.dlcSign;
+        console.timeEnd('sign-time');
+
+        const fundTx = await bob.dlc.finalizeDlcSign(
+          dlcOffer,
+          dlcAccept,
+          dlcSign,
+          dlcTransactions,
+        );
+        const fundTxId = await bob.chain.sendRawTransaction(
+          fundTx.serialize().toString('hex'),
+        );
+
+        const outcome = 37000;
+        oracleAttestation = generateOracleAttestation(
+          outcome,
+          oracle,
+          oracleBase,
+          18,
+          'atomic-deribit-BTC-13OCT23',
+        );
+
+        const cet = await bob.dlc.execute(
+          dlcOffer,
+          dlcAccept,
+          dlcSign,
+          dlcTransactions,
+          oracleAttestation,
+          false,
+        );
+        const cetTxId = await bob.chain.sendRawTransaction(
+          cet.serialize().toString('hex'),
+        );
+        const cetTx = await alice.getMethod('getTransactionByHash')(cetTxId);
+        expect(cetTx._raw.vin.length).to.equal(1);
+      });
+
+      it('finds payout index correctly for payout that does match rounded payout', async () => {
+        console.time('offer-get-time');
+        const aliceInput = await getInput(alice);
+        const bobInput = await getInput(bob);
+
+        oracle = new Oracle('olivia', 18);
+
+        const feePerByte = 5;
+
+        const LONG_OPTION_MAX_GAIN = Value.fromBitcoin(0.005);
+
+        const contractPrice = 0.0108;
+
+        const networkFees = Value.fromSats(
+          calculateNetworkFees(BigInt(feePerByte)),
+        );
+
+        const contractSize = 0.1;
+
+        console.log('networkFees.bitcoin', networkFees.bitcoin);
+
+        const maxGain = Value.fromBitcoin(
+          LONG_OPTION_MAX_GAIN.bitcoin * contractSize +
+            contractPrice * contractSize,
+        );
+        const premium = Value.fromBitcoin(
+          contractPrice * contractSize + networkFees.bitcoin,
+        );
+
+        const offer = generateLongCallOffer(
+          oracle,
+          18,
+          2,
+          'atomic-deribit-BTC-13OCT23',
+          29000,
+          maxGain,
+          premium,
+          feePerByte,
+          5000,
+          'bitcoin_regtest',
+        );
+
+        const cetLocktime = 1617170572;
+        const refundLocktime = 1617170573;
+
+        dlcOffer = await alice.dlc.createDlcOffer(
+          offer.contractInfo,
+          offer.offerCollateralSatoshis,
+          offer.feeRatePerVb,
+          cetLocktime,
+          refundLocktime,
+          [aliceInput],
+        );
+
+        console.timeEnd('offer-get-time');
+
+        console.time('accept-time');
+        const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
+          dlcOffer,
+          [bobInput],
+        );
+        dlcAccept = acceptDlcOfferResponse.dlcAccept;
+        dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
+
+        const { dlcTransactions: dlcTxsFromMsgs } = await bob.dlc.createDlcTxs(
+          dlcOffer,
+          dlcAccept,
+        );
+
+        expect(
+          (dlcTransactions as DlcTransactionsV0).fundTx
+            .serialize()
+            .toString('hex'),
+        ).to.equal(
+          (dlcTxsFromMsgs as DlcTransactionsV0).fundTx
+            .serialize()
+            .toString('hex'),
+        );
+        expect(
+          (dlcTransactions as DlcTransactionsV0).cets[5]
+            .serialize()
+            .toString('hex'),
+        ).to.equal(
+          (dlcTxsFromMsgs as DlcTransactionsV0).cets[5]
+            .serialize()
+            .toString('hex'),
+        );
+
+        console.timeEnd('accept-time');
+
+        console.time('sign-time');
+        const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.dlc.signDlcAccept(
+          dlcOffer,
+          dlcAccept,
+        );
+        dlcSign = signDlcAcceptResponse.dlcSign;
+        console.timeEnd('sign-time');
+
+        const fundTx = await bob.dlc.finalizeDlcSign(
+          dlcOffer,
+          dlcAccept,
+          dlcSign,
+          dlcTransactions,
+        );
+        const fundTxId = await bob.chain.sendRawTransaction(
+          fundTx.serialize().toString('hex'),
+        );
+
+        const outcome = 38000;
+        oracleAttestation = generateOracleAttestation(
+          outcome,
+          oracle,
+          oracleBase,
+          18,
+          'atomic-deribit-BTC-13OCT23',
+        );
+
+        const cet = await bob.dlc.execute(
+          dlcOffer,
+          dlcAccept,
+          dlcSign,
+          dlcTransactions,
+          oracleAttestation,
+          false,
+        );
+        const cetTxId = await bob.chain.sendRawTransaction(
+          cet.serialize().toString('hex'),
+        );
+        const cetTx = await alice.getMethod('getTransactionByHash')(cetTxId);
+        expect(cetTx._raw.vin.length).to.equal(1);
       });
     });
 
