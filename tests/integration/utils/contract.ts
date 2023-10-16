@@ -1,12 +1,19 @@
-import { CoveredCall } from '@node-dlc/core';
+import { Value } from '@node-dlc/bitcoin';
+import {
+  buildLongCallOrderOffer,
+  CoveredCall,
+  DualFundingTxFinalizer,
+} from '@node-dlc/core';
 import {
   ContractDescriptorV1,
   ContractInfoV0,
   DigitDecompositionEventDescriptorV0,
+  FundingInputV0,
   OracleAnnouncementV0,
   OracleAttestationV0,
   OracleEventV0,
   OracleInfoV0,
+  OrderOfferV0,
   PayoutFunctionV0,
   RoundingIntervalsV0,
 } from '@node-dlc/messaging';
@@ -136,6 +143,66 @@ export function generateContractInfoCustomStrategyOracle(
   return { contractInfo, totalCollateral };
 }
 
+export function generateLongCallOffer(
+  oracle: Oracle,
+  numDigits = 18,
+  oracleBase = 2,
+  eventId = 'btc/usd',
+  strikePrice: number,
+  maxGain: Value,
+  premium: Value,
+  feePerByte: number,
+  roundingInterval: number,
+  networkName: string,
+): OrderOfferV0 {
+  const oliviaInfo = oracle.GetOracleInfo();
+
+  const eventDescriptor = new DigitDecompositionEventDescriptorV0();
+  eventDescriptor.base = oracleBase;
+  eventDescriptor.isSigned = false;
+  eventDescriptor.unit = 'BTC-USD';
+  eventDescriptor.precision = 0;
+  eventDescriptor.nbDigits = numDigits;
+
+  const event = new OracleEventV0();
+  event.oracleNonces = oliviaInfo.rValues.map((rValue) =>
+    Buffer.from(rValue, 'hex'),
+  );
+  event.eventMaturityEpoch = 1617170572;
+  event.eventDescriptor = eventDescriptor;
+  event.eventId = eventId;
+
+  const announcement = new OracleAnnouncementV0();
+  announcement.announcementSig = Buffer.from(
+    oracle.GetSignature(
+      math
+        .taggedHash('DLC/oracle/announcement/v0', event.serialize())
+        .toString('hex'),
+    ),
+    'hex',
+  );
+
+  announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
+  announcement.oracleEvent = event;
+
+  const oracleInfo = new OracleInfoV0();
+  oracleInfo.announcement = announcement;
+
+  const contractSize = Value.fromBitcoin(1); // Adjust this value as needed
+  const orderOffer = buildLongCallOrderOffer(
+    oracleInfo.announcement,
+    contractSize,
+    strikePrice,
+    maxGain,
+    premium,
+    feePerByte,
+    roundingInterval,
+    networkName,
+  );
+
+  return orderOffer;
+}
+
 export function generateOracleAttestation(
   outcome,
   oracle: Oracle,
@@ -163,3 +230,39 @@ export function generateOracleAttestation(
 
   return oracleAttestation;
 }
+
+export const DEFAULT_NUM_OFFER_INPUTS = 2;
+export const DEFAULT_NUM_ACCEPT_INPUTS = 3;
+
+export const calculateNetworkFees = (feeRate: bigint): number => {
+  const input = new FundingInputV0();
+  input.maxWitnessLen = 108;
+  input.redeemScript = Buffer.from('', 'hex');
+
+  const fakeSPK = Buffer.from(
+    '0014663117d27e78eb432505180654e603acb30e8a4a',
+    'hex',
+  );
+
+  const offerInputs = Array.from(
+    { length: DEFAULT_NUM_OFFER_INPUTS },
+    () => input,
+  );
+
+  const acceptInputs = Array.from(
+    { length: DEFAULT_NUM_ACCEPT_INPUTS },
+    () => input,
+  );
+
+  const finalizer = new DualFundingTxFinalizer(
+    offerInputs,
+    fakeSPK,
+    fakeSPK,
+    acceptInputs,
+    fakeSPK,
+    fakeSPK,
+    feeRate,
+  );
+
+  return Number(finalizer.offerFees + finalizer.acceptFees);
+};

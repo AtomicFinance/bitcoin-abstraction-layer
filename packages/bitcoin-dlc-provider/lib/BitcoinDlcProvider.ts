@@ -1142,30 +1142,52 @@ Payout Group not found',
     let index = 0;
     let groupIndex = -1;
     let groupLength = 0;
+    const payoutGroupFound = false;
 
-    for (const payoutGroup of payoutGroups) {
+    for (const [i, payoutGroup] of payoutGroups.entries()) {
       if (payoutGroup.payout === roundedPayout) {
         groupIndex = payoutGroup.groups.findIndex((group) => {
           return group.every((msg, i) => msg === outcomesFormatted[i]);
         });
-        if (groupIndex === -1)
-          throw Error(
-            'Failed to Find OutcomeIndex From HyperbolaPayoutCurvePiece. \
-Payout Group found but incorrect group index',
-          );
-        index += groupIndex;
-        groupLength = payoutGroup.groups[groupIndex].length;
-        break;
+        if (groupIndex !== -1) {
+          index += groupIndex;
+          groupLength = payoutGroup.groups[groupIndex].length;
+          break;
+        }
+      } else if (payoutGroup.payout === BigInt(payout.toString())) {
+        // Edge case to account for case where payout is maximum payout for DLC
+        // But rounded payout does not round down
+        if (payoutGroups[i - 1].payout === roundedPayout) {
+          // Ensure that the previous payout group causes index to be incremented
+          index += payoutGroups[i - 1].groups.length;
+        }
+
+        groupIndex = payoutGroup.groups.findIndex((group) => {
+          return group.every((msg, i) => msg === outcomesFormatted[i]);
+        });
+        if (groupIndex !== -1) {
+          index += groupIndex;
+          groupLength = payoutGroup.groups[groupIndex].length;
+          break;
+        }
       } else {
         index += payoutGroup.groups.length;
       }
     }
 
-    if (groupIndex === -1)
-      throw Error(
-        'Failed to Find OutcomeIndex From HyperbolaPayoutCurvePiece. \
-Payout Group not found',
-      );
+    if (groupIndex === -1) {
+      if (payoutGroupFound) {
+        throw Error(
+          'Failed to Find OutcomeIndex From HyperbolaPayoutCurvePiece. \
+Payout Group found but incorrect group index',
+        );
+      } else {
+        throw Error(
+          'Failed to Find OutcomeIndex From HyperbolaPayoutCurvePiece. \
+  Payout Group not found',
+        );
+      }
+    }
 
     return { index: payoutIndexOffset + index, groupLength };
   }
