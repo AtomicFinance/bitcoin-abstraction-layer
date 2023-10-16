@@ -1,5 +1,20 @@
 # @atomicfinance/bitcoin-node-wallet-provider
 
+## 3.3.0
+
+### Minor Changes
+
+- 4a512ee: Fix find outcome index for hyperbola payout curve edge case
+
+### Patch Changes
+
+- Updated dependencies [4a512ee]
+  - @atomicfinance/bitcoin-utils@3.3.0
+  - @atomicfinance/crypto@3.3.0
+  - @atomicfinance/jsonrpc-provider@3.3.0
+  - @atomicfinance/types@3.3.0
+  - @atomicfinance/utils@3.3.0
+
 ## 3.2.5
 
 ### Patch Changes

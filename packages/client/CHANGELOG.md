@@ -1,5 +1,18 @@
 # @atomicfinance/client
 
+## 3.3.0
+
+### Minor Changes
+
+- 4a512ee: Fix find outcome index for hyperbola payout curve edge case
+
+### Patch Changes
+
+- Updated dependencies [4a512ee]
+  - @atomicfinance/errors@3.3.0
+  - @atomicfinance/provider@3.3.0
+  - @atomicfinance/types@3.3.0
+
 ## 3.2.5
 
 ### Patch Changes

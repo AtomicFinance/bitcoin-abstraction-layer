@@ -1,5 +1,11 @@
 # @atomicfinance/types
 
+## 3.3.0
+
+### Minor Changes
+
+- 4a512ee: Fix find outcome index for hyperbola payout curve edge case
+
 ## 3.2.5
 
 ### Patch Changes
