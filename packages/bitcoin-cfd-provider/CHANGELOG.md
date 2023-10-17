@@ -1,5 +1,15 @@
 # @atomicfinance/bitcoin-cfd-provider
 
+## 3.3.1
+
+### Patch Changes
+
+- 7f6f4a8: Fix rounding error with find payout
+- Updated dependencies [7f6f4a8]
+  - @atomicfinance/provider@3.3.1
+  - @atomicfinance/types@3.3.1
+  - @atomicfinance/utils@3.3.1
+
 ## 3.3.0
 
 ### Minor Changes

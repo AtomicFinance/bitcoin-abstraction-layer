@@ -1,5 +1,11 @@
 # @atomicfinance/types
 
+## 3.3.1
+
+### Patch Changes
+
+- 7f6f4a8: Fix rounding error with find payout
+
 ## 3.3.0
 
 ### Minor Changes

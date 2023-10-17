@@ -1,6 +1,6 @@
 {
   "name": "@atomicfinance/bitcoin-rpc-provider",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "description": "",
   "module": "dist/index.js",
   "main": "dist/index.js",
@@ -25,11 +25,11 @@
     "node": ">=14"
   },
   "dependencies": {
-    "@atomicfinance/bitcoin-utils": "^3.3.0",
-    "@atomicfinance/errors": "^3.3.0",
-    "@atomicfinance/jsonrpc-provider": "^3.3.0",
-    "@atomicfinance/types": "^3.3.0",
-    "@atomicfinance/utils": "^3.3.0",
+    "@atomicfinance/bitcoin-utils": "^3.3.1",
+    "@atomicfinance/errors": "^3.3.1",
+    "@atomicfinance/jsonrpc-provider": "^3.3.1",
+    "@atomicfinance/types": "^3.3.1",
+    "@atomicfinance/utils": "^3.3.1",
     "@babel/runtime": "^7.12.1",
     "bignumber.js": "^9.0.0",
     "bitcoin-networks": "^1.0.0",
