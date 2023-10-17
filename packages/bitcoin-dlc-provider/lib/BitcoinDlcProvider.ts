@@ -1154,7 +1154,9 @@ Payout Group not found',
           groupLength = payoutGroup.groups[groupIndex].length;
           break;
         }
-      } else if (payoutGroup.payout === BigInt(payout.toString())) {
+      } else if (
+        payoutGroup.payout === BigInt(Math.round(Number(payout.toString())))
+      ) {
         // Edge case to account for case where payout is maximum payout for DLC
         // But rounded payout does not round down
         if (payoutGroups[i - 1].payout === roundedPayout) {
