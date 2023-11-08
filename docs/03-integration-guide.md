@@ -9,7 +9,6 @@ After you've set up BAL providers in the [02-getting-started.md](./02-getting-st
 The [Chain](../packages/client/lib/Chain.ts) class provides methods for interacting with the blockchain. Here are the methods you should expose:
 
 ```ts
-- generateBlock(numberOfBlocks: number): Promise<void>
 - getBlockByHash(blockHash: string, includeTx = false): Promise<Block>
 - getBlockByNumber(blockNumber: number, includeTx = false): Promise<Block>
 - getBlockHeight(): Promise<number>
