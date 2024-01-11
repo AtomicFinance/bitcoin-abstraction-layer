@@ -229,6 +229,23 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@atomicfinance/liquid-rpc-provider@workspace:packages/liquid-rpc-provider":
+  version: 0.0.0-use.local
+  resolution: "@atomicfinance/liquid-rpc-provider@workspace:packages/liquid-rpc-provider"
+  dependencies:
+    "@atomicfinance/bitcoin-utils": ^3.3.1
+    "@atomicfinance/errors": ^3.3.1
+    "@atomicfinance/jsonrpc-provider": ^3.3.1
+    "@atomicfinance/types": ^3.3.1
+    "@atomicfinance/utils": ^3.3.1
+    "@babel/runtime": ^7.12.1
+    "@types/lodash": ^4.14.168
+    bignumber.js: ^9.0.0
+    bitcoin-networks: ^1.0.0
+    lodash: ^4.17.20
+  languageName: unknown
+  linkType: soft
+
 "@atomicfinance/node-provider@^3.3.1, @atomicfinance/node-provider@workspace:packages/node-provider":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/node-provider@workspace:packages/node-provider"
