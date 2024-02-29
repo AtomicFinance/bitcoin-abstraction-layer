@@ -24,6 +24,10 @@ export function generateSerialId(): bigint {
   return randomBytes(4).reduce((acc, num, i) => acc + num ** i, 0);
 }
 
+export function generateSerialIds(count: number): bigint[] {
+  return Array.from({ length: count }, () => generateSerialId());
+}
+
 export function checkTypes(types: ICheckTypesRequest): ICheckTypesResponse {
   const { _dlcOffer, _dlcAccept, _dlcSign, _dlcClose, _dlcTxs } = types;
   if (_dlcOffer && _dlcOffer.type !== MessageType.DlcOfferV0)

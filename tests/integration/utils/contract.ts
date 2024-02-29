@@ -3,6 +3,7 @@ import {
   buildLongCallOrderOffer,
   CoveredCall,
   DualFundingTxFinalizer,
+  PolynomialPayoutCurve,
 } from '@node-dlc/core';
 import {
   ContractDescriptorV1,
@@ -17,6 +18,7 @@ import {
   PayoutFunctionV0,
   RoundingIntervalsV0,
 } from '@node-dlc/messaging';
+import BN from 'bignumber.js';
 import { math } from 'bip-schnorr';
 
 import Oracle from '../models/Oracle';
@@ -266,3 +268,120 @@ export const calculateNetworkFees = (feeRate: bigint): number => {
 
   return Number(finalizer.offerFees + finalizer.acceptFees);
 };
+
+const buildPayoutFunction = (
+  maxLossPayout: bigint,
+  maxLossOutcome: bigint,
+  minLossOutcome: bigint,
+  belowThresholdPayout: bigint,
+  aboveOrEqualThresholdPayout: bigint,
+  thresholdOutcome: bigint,
+  oracleBase: number,
+  oracleDigits: number,
+): { payoutFunction: PayoutFunctionV0 } => {
+  // Max outcome limited by the oracle
+  const maxOutcome = BigInt(
+    new BN(oracleBase).pow(oracleDigits).minus(1).toString(10),
+  );
+
+  const payoutCurveMaxLoss = new PolynomialPayoutCurve([
+    { outcome: new BN(0), payout: new BN(Number(maxLossPayout)) },
+    {
+      outcome: new BN(Number(maxLossOutcome)),
+      payout: new BN(Number(maxLossPayout)),
+    },
+  ]);
+
+  const payoutCurveLoss = new PolynomialPayoutCurve([
+    {
+      outcome: new BN(Number(maxLossOutcome)),
+      payout: new BN(Number(maxLossPayout)),
+    },
+    {
+      outcome: new BN(Number(minLossOutcome)),
+      payout: new BN(Number(belowThresholdPayout)),
+    },
+  ]);
+
+  // payout for outcomes below threshold
+  const payoutCurveBelowThreshold = new PolynomialPayoutCurve([
+    {
+      outcome: new BN(Number(minLossOutcome)),
+      payout: new BN(Number(belowThresholdPayout)),
+    },
+    {
+      outcome: new BN(Number(thresholdOutcome) - 1),
+      payout: new BN(Number(belowThresholdPayout)),
+    },
+  ]);
+
+  // payout line
+  const payoutCurve = new PolynomialPayoutCurve([
+    {
+      outcome: new BN(Number(thresholdOutcome) - 1),
+      payout: new BN(Number(belowThresholdPayout)),
+    },
+    {
+      outcome: new BN(Number(thresholdOutcome)),
+      payout: new BN(Number(aboveOrEqualThresholdPayout)),
+    },
+  ]);
+
+  // payout for outcomes above or equal to x
+  const payoutCurveAboveOrEqualThreshold = new PolynomialPayoutCurve([
+    {
+      outcome: new BN(Number(thresholdOutcome)),
+      payout: new BN(Number(aboveOrEqualThresholdPayout)),
+    },
+    {
+      outcome: new BN(Number(maxOutcome)),
+      payout: new BN(Number(aboveOrEqualThresholdPayout)),
+    },
+  ]);
+
+  const payoutFunction = new PayoutFunctionV0();
+  payoutFunction.endpoint0 = BigInt(0);
+  payoutFunction.endpointPayout0 = maxLossPayout;
+  payoutFunction.extraPrecision0 = 0;
+
+  payoutFunction.pieces.push({
+    payoutCurvePiece: payoutCurveMaxLoss.toPayoutCurvePiece(),
+    endpoint: maxLossOutcome,
+    endpointPayout: maxLossPayout,
+    extraPrecision: 0,
+  });
+
+  payoutFunction.pieces.push({
+    payoutCurvePiece: payoutCurveLoss.toPayoutCurvePiece(),
+    endpoint: minLossOutcome,
+    endpointPayout: belowThresholdPayout,
+    extraPrecision: 0,
+  });
+
+  payoutFunction.pieces.push({
+    payoutCurvePiece: payoutCurveBelowThreshold.toPayoutCurvePiece(),
+    endpoint: thresholdOutcome - BigInt(1),
+    endpointPayout: belowThresholdPayout,
+    extraPrecision: 0,
+  });
+
+  payoutFunction.pieces.push({
+    payoutCurvePiece: payoutCurve.toPayoutCurvePiece(),
+    endpoint: thresholdOutcome,
+    endpointPayout: aboveOrEqualThresholdPayout,
+    extraPrecision: 0,
+  });
+
+  payoutFunction.pieces.push({
+    payoutCurvePiece: payoutCurveAboveOrEqualThreshold.toPayoutCurvePiece(),
+    endpoint: maxOutcome,
+    endpointPayout: aboveOrEqualThresholdPayout,
+    extraPrecision: 0,
+  });
+
+  return {
+    payoutFunction,
+  };
+};
+
+export const EnginePayout = { buildPayoutFunction };

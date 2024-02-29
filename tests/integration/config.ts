@@ -1,11 +1,15 @@
 import { BitcoinNetworks } from 'bitcoin-networks';
+import * as dotenv from 'dotenv';
+import findConfig from 'find-config';
+
+dotenv.config({ path: findConfig('.env') });
 
 export default {
   bitcoin: {
     rpc: {
       host: 'http://localhost:18443',
-      username: 'bitcoin',
-      password: 'local321',
+      username: process.env.RPC_USER || 'bitcoin',
+      password: process.env.RPC_PASS || 'local321',
     },
     network: BitcoinNetworks.bitcoin_regtest,
     value: 1000000,

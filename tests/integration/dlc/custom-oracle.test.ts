@@ -6,6 +6,7 @@ import {
   buildRoundingIntervalsFromIntervals,
   DualFundingTxFinalizer,
   LinearPayout,
+  PolynomialPayoutCurve,
 } from '@node-dlc/core';
 import {
   ContractDescriptorV1,
@@ -33,11 +34,14 @@ import chaiAsPromised from 'chai-as-promised';
 
 import {
   AcceptDlcOfferResponse,
+  BatchAcceptDlcOfferResponse,
   SignDlcAcceptResponse,
 } from '../../../packages/bitcoin-dlc-provider';
+import { BatchSignDlcAcceptResponse } from '../../../packages/bitcoin-dlc-provider/lib';
 import { chains, getInput } from '../common';
 import Oracle from '../models/Oracle';
 import {
+  EnginePayout,
   generateContractInfoCustomStrategyOracle,
   generateOracleAttestation,
 } from '../utils/contract';
@@ -189,6 +193,8 @@ describe.skip('Custom Strategy Oracle POC numdigits=18', () => {
     const fundTxId = await bob.chain.sendRawTransaction(
       fundTx.serialize().toString('hex'),
     );
+
+    expect(fundTxId).to.be.a('string');
 
     console.time('attestation');
     oracleAttestation = generateOracleAttestation(
@@ -1063,5 +1069,284 @@ describe.skip('Custom Strategy Oracle POC numdigits=27', () => {
     );
     const cetTx = await alice.getMethod('getTransactionByHash')(cetTxId);
     expect(cetTx._raw.vin.length).to.equal(1);
+  });
+});
+
+describe('Custom Strategy Oracle POC numdigits=21 split trades', () => {
+  const numDigits = 21;
+  const oracleBase = 2;
+
+  const maxLossPayout = Value.fromBitcoin(0.158).sats;
+  const maxLossOutcome = BigInt(958000);
+  const minLossOutcome = BigInt(963000);
+  const belowThresholdPayout = Value.fromBitcoin(0.163).sats;
+  const aboveOrEqualThresholdPayout = Value.fromBitcoin(0.201).sats;
+  const thresholdOutcome = BigInt(1001000);
+
+  const { payoutFunction } = EnginePayout.buildPayoutFunction(
+    maxLossPayout,
+    maxLossOutcome,
+    minLossOutcome,
+    belowThresholdPayout,
+    aboveOrEqualThresholdPayout,
+    thresholdOutcome,
+    oracleBase,
+    numDigits,
+  );
+
+  const intervals = [{ beginInterval: 0n, roundingMod: 50000n }];
+  const roundingIntervals = new RoundingIntervalsV0();
+  roundingIntervals.intervals = intervals;
+
+  const totalCollateralIn = Value.fromBitcoin(0.201).sats;
+  const unit = 'bits';
+  const eventId = 'strategyOutcome';
+
+  const outcome = 961000;
+
+  let dlcOffer: DlcOffer;
+  let dlcAccept: DlcAccept;
+  let dlcSign: DlcSign;
+  let dlcTransactions: DlcTransactions;
+  let oracleAttestation: OracleAttestationV0;
+  let aliceAddresses: string[] = [];
+  let oracle: Oracle;
+
+  let dlcOffers: DlcOffer[];
+  let dlcAcceptsResponse: BatchAcceptDlcOfferResponse;
+  let dlcSignsResponse: BatchSignDlcAcceptResponse;
+
+  // Before the tests run, import Alice's addresses
+  before(async () => {
+    const aliceNonChangeAddresses: string[] = (
+      await alice.wallet.getAddresses(0, 15, false)
+    ).map((address) => address.address);
+    const aliceChangeAddresses: string[] = (
+      await alice.wallet.getAddresses(0, 15, true)
+    ).map((address) => address.address);
+
+    aliceAddresses = [...aliceNonChangeAddresses, ...aliceChangeAddresses];
+
+    for (let i = 0; i < aliceAddresses.length; i++) {
+      await alice.getMethod('jsonrpc')(
+        'importaddress',
+        aliceAddresses[i],
+        '',
+        false,
+      );
+    }
+  });
+
+  it('should complete entire flow', async () => {
+    const aliceInput = await getInput(alice);
+    const bobInput = await getInput(bob);
+
+    oracle = new Oracle('olivia', numDigits);
+
+    const { contractInfo } = generateContractInfoCustomStrategyOracle(
+      oracle,
+      numDigits,
+      oracleBase,
+      payoutFunction,
+      intervals,
+      totalCollateralIn,
+      unit,
+    );
+
+    const feeRatePerVb = BigInt(10);
+    const cetLocktime = 1617170572;
+    const refundLocktime = 1617170573;
+
+    console.time('total');
+    console.time('offer');
+
+    dlcOffer = await alice.dlc.createDlcOffer(
+      contractInfo,
+      Value.fromBitcoin(0.2).sats,
+      feeRatePerVb,
+      cetLocktime,
+      refundLocktime,
+      [aliceInput],
+    );
+
+    console.timeEnd('offer');
+
+    console.time('accept');
+
+    const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
+      dlcOffer,
+      [bobInput],
+    );
+    dlcAccept = acceptDlcOfferResponse.dlcAccept;
+    dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
+
+    console.log(
+      '# CETs',
+      (acceptDlcOfferResponse.dlcAccept as DlcAcceptV0).cetSignatures.sigs
+        .length,
+    );
+
+    console.timeEnd('accept');
+
+    const { dlcTransactions: dlcTxsFromMsgs } = await bob.dlc.createDlcTxs(
+      dlcOffer,
+      dlcAccept,
+    );
+
+    console.time('sign');
+
+    const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.dlc.signDlcAccept(
+      dlcOffer,
+      dlcAccept,
+    );
+    console.timeEnd('sign');
+
+    dlcSign = signDlcAcceptResponse.dlcSign;
+
+    console.time('finalize');
+
+    const fundTx = await bob.dlc.finalizeDlcSign(
+      dlcOffer,
+      dlcAccept,
+      dlcSign,
+      dlcTransactions,
+    );
+
+    console.timeEnd('finalize');
+
+    const fundTxId = await bob.chain.sendRawTransaction(
+      fundTx.serialize().toString('hex'),
+    );
+    expect(fundTxId).to.be.a('string');
+
+    console.time('attestation');
+    oracleAttestation = generateOracleAttestation(
+      outcome,
+      oracle,
+      oracleBase,
+      numDigits,
+      eventId,
+    );
+    console.timeEnd('attestation');
+
+    console.time('execute');
+
+    const cet = await bob.dlc.execute(
+      dlcOffer,
+      dlcAccept,
+      dlcSign,
+      dlcTransactions,
+      oracleAttestation,
+      false,
+    );
+
+    console.timeEnd('execute');
+    console.timeEnd('total');
+
+    const cetTxId = await bob.chain.sendRawTransaction(
+      cet.serialize().toString('hex'),
+    );
+    const cetTx = await alice.getMethod('getTransactionByHash')(cetTxId);
+    expect(dlcTxsFromMsgs.type).to.equal(61230);
+    expect(cetTxId).to.be.a('string');
+    expect(cetTx._raw.vin.length).to.equal(1);
+  });
+
+  it('should succeed in creating batch dlc transaction', async () => {
+    const aliceInput = await getInput(alice);
+    const bobInput = await getInput(bob);
+
+    oracle = new Oracle('olivia', numDigits);
+
+    const { contractInfo } = generateContractInfoCustomStrategyOracle(
+      oracle,
+      numDigits,
+      oracleBase,
+      payoutFunction,
+      intervals,
+      totalCollateralIn,
+      unit,
+    );
+
+    const feeRatePerVb = BigInt(10);
+    const cetLocktime = 1617170572;
+    const refundLocktime = 1617170573;
+
+    console.time('total');
+    console.time('offer');
+
+    dlcOffers = await alice.dlc.batchCreateDlcOffer(
+      [contractInfo, contractInfo, contractInfo, contractInfo, contractInfo],
+      [
+        Value.fromBitcoin(0.2).sats,
+        Value.fromBitcoin(0.2).sats,
+        Value.fromBitcoin(0.2).sats,
+        Value.fromBitcoin(0.2).sats,
+        Value.fromBitcoin(0.2).sats,
+      ],
+      feeRatePerVb,
+      cetLocktime,
+      [
+        refundLocktime,
+        refundLocktime,
+        refundLocktime,
+        refundLocktime,
+        refundLocktime,
+      ],
+      [aliceInput],
+    );
+
+    dlcAcceptsResponse = await bob.dlc.batchAcceptDlcOffer(dlcOffers, [
+      bobInput,
+    ]);
+
+    const dlcAccepts = dlcAcceptsResponse.dlcAccepts;
+
+    dlcSignsResponse = await alice.dlc.batchSignDlcAccept(
+      dlcOffers,
+      dlcAccepts,
+    );
+
+    const dlcSigns = dlcSignsResponse.dlcSigns;
+    const dlcTxsList = dlcSignsResponse.dlcTransactionsList;
+
+    const fundTx = await bob.dlc.batchFinalizeDlcSign(
+      dlcOffers,
+      dlcAccepts,
+      dlcSigns,
+      dlcTxsList,
+    );
+
+    const fundTxId = await bob.chain.sendRawTransaction(
+      fundTx.serialize().toString('hex'),
+    );
+
+    expect(fundTxId).to.be.a('string');
+
+    oracleAttestation = generateOracleAttestation(
+      outcome,
+      oracle,
+      oracleBase,
+      numDigits,
+      eventId,
+    );
+
+    for (let i = 0; i < dlcOffers.length; i++) {
+      const cet = await bob.dlc.execute(
+        dlcOffers[i],
+        dlcAccepts[i],
+        dlcSigns[i],
+        dlcTxsList[i],
+        oracleAttestation,
+        false,
+      );
+
+      const cetTxId = await bob.chain.sendRawTransaction(
+        cet.serialize().toString('hex'),
+      );
+      expect(cetTxId).to.be.a('string');
+      const cetTx = await alice.getMethod('getTransactionByHash')(cetTxId);
+      expect(cetTx._raw.vin.length).to.equal(1);
+    }
   });
 });
