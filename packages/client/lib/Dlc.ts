@@ -3,6 +3,8 @@ import {
   AddSignaturesToRefundTxResponse,
   AddSignatureToFundTransactionRequest,
   AddSignatureToFundTransactionResponse,
+  BatchAcceptDlcOfferResponse,
+  BatchSignDlcAcceptResponse,
   CreateCetAdaptorSignatureRequest,
   CreateCetAdaptorSignatureResponse,
   CreateCetAdaptorSignaturesRequest,
@@ -105,6 +107,24 @@ export default class Dlc implements DlcProvider {
     );
   }
 
+  async batchCreateDlcOffer(
+    contractInfos: ContractInfo[],
+    offerCollaterals: bigint[],
+    feeRatePerVb: bigint,
+    cetLocktime: number,
+    refundLocktimes: number[],
+    fixedInputs?: IInput[],
+  ): Promise<DlcOffer[]> {
+    return this.client.getMethod('batchCreateDlcOffer')(
+      contractInfos,
+      offerCollaterals,
+      feeRatePerVb,
+      cetLocktime,
+      refundLocktimes,
+      fixedInputs,
+    );
+  }
+
   /**
    * Accept DLC Offer
    * @param dlcOffer Dlc Offer Message
@@ -119,6 +139,19 @@ export default class Dlc implements DlcProvider {
   }
 
   /**
+   * Accept DLC Offer
+   * @param dlcOffers Dlc Offer Messages
+   * @param fixedInputs Optional inputs to use for Funding Inputs
+   * @returns {Promise<BatchAcceptDlcOfferResponse}
+   */
+  async batchAcceptDlcOffer(
+    dlcOffers: DlcOffer[],
+    fixedInputs?: IInput[],
+  ): Promise<BatchAcceptDlcOfferResponse> {
+    return this.client.getMethod('batchAcceptDlcOffer')(dlcOffers, fixedInputs);
+  }
+
+  /**
    * Sign Dlc Accept Message
    * @param dlcOffer Dlc Offer Message
    * @param dlcAccept Dlc Accept Message
@@ -129,6 +162,19 @@ export default class Dlc implements DlcProvider {
     dlcAccept: DlcAccept,
   ): Promise<SignDlcAcceptResponse> {
     return this.client.getMethod('signDlcAccept')(dlcOffer, dlcAccept);
+  }
+
+  /**
+   * Batch Sign Dlc Accept Messages
+   * @param dlcOffers Dlc Offer Messages
+   * @param dlcAccepts Dlc Accept Messages
+   * @returns {Promise<BatchSignDlcAcceptResponse}
+   */
+  async batchSignDlcAccept(
+    dlcOffers: DlcOffer[],
+    dlcAccepts: DlcAccept[],
+  ): Promise<BatchSignDlcAcceptResponse> {
+    return this.client.getMethod('batchSignDlcAccept')(dlcOffers, dlcAccepts);
   }
 
   /**
@@ -150,6 +196,20 @@ export default class Dlc implements DlcProvider {
       dlcAccept,
       dlcSign,
       dlcTxs,
+    );
+  }
+
+  async batchFinalizeDlcSign(
+    dlcOffers: DlcOffer[],
+    dlcAccepts: DlcAccept[],
+    dlcSigns: DlcSign[],
+    dlcTxsList: DlcTransactions[],
+  ): Promise<Tx> {
+    return this.client.getMethod('batchFinalizeDlcSign')(
+      dlcOffers,
+      dlcAccepts,
+      dlcSigns,
+      dlcTxsList,
     );
   }
 

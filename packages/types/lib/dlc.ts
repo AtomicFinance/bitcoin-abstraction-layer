@@ -269,9 +269,19 @@ export interface AcceptDlcOfferResponse {
   dlcTransactions: DlcTransactions;
 }
 
+export interface BatchAcceptDlcOfferResponse {
+  dlcAccepts: DlcAccept[];
+  dlcTransactionsList: DlcTransactions[];
+}
+
 export interface SignDlcAcceptResponse {
   dlcSign: DlcSign;
   dlcTransactions: DlcTransactions;
+}
+
+export interface BatchSignDlcAcceptResponse {
+  dlcSigns: DlcSign[];
+  dlcTransactionsList: DlcTransactions[];
 }
 
 export interface GetPayoutsResponse {
@@ -428,6 +438,40 @@ export interface CreateDlcTransactionsResponse {
   fundTxHex: string;
   cetsHex: string[];
   refundTxHex: string;
+} /** Create Batch Dlc transactions */
+
+/** Create Batch Dlc transactions */
+export interface CreateBatchDlcTransactionsRequest {
+  localPayouts: (bigint | number)[];
+  remotePayouts: (bigint | number)[];
+  numPayouts: (bigint | number)[];
+  localFundPubkeys: string[];
+  localFinalScriptPubkeys: string[];
+  remoteFundPubkeys: string[];
+  remoteFinalScriptPubkeys: string[];
+  localInputAmount: bigint | number;
+  localCollateralAmounts: (bigint | number)[];
+  localPayoutSerialIds: (bigint | number)[];
+  localChangeSerialId: bigint | number;
+  remoteInputAmount: bigint | number;
+  remoteCollateralAmounts: (bigint | number)[];
+  remotePayoutSerialIds: (bigint | number)[];
+  remoteChangeSerialId: bigint | number;
+  refundLocktimes: (bigint | number)[];
+  localInputs: TxInInfoRequest[];
+  localChangeScriptPubkey: string;
+  remoteInputs: TxInInfoRequest[];
+  remoteChangeScriptPubkey: string;
+  feeRate: number;
+  cetLockTime?: bigint | number;
+  fundLockTime?: bigint | number;
+  fundOutputSerialIds?: (bigint | number)[];
+}
+
+export interface CreateBatchDlcTransactionsResponse {
+  fundTxHex: string;
+  cetsHexList: string[];
+  refundTxHexList: string[];
 }
 
 /** Create a fund transaction */
@@ -449,6 +493,26 @@ export interface CreateFundTransactionRequest {
 }
 
 export interface CreateFundTransactionResponse {
+  hex: string;
+}
+
+/** Create a batch fund transaction */
+export interface CreateBatchFundTransactionRequest {
+  localPubkeys: string[];
+  remotePubkeys: string[];
+  outputAmounts: (bigint | number)[];
+  localInputs: TxInInfoRequest[];
+  localChange: TxOutRequest;
+  remoteInputs: TxInInfoRequest[];
+  remoteChange: TxOutRequest;
+  feeRate: bigint | number;
+  lockTime?: bigint | number;
+  localSerialId?: bigint | number;
+  remoteSerialId?: bigint | number;
+  outputSerialIds: (bigint | number)[];
+}
+
+export interface CreateBatchFundTransactionResponse {
   hex: string;
 }
 

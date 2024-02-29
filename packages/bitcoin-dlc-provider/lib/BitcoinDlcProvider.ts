@@ -8,6 +8,10 @@ import {
   AddSignatureToFundTransactionResponse,
   bitcoin,
   CalculateEcSignatureRequest,
+  CreateBatchDlcTransactionsRequest,
+  CreateBatchDlcTransactionsResponse,
+  CreateBatchFundTransactionRequest,
+  CreateBatchFundTransactionResponse,
   CreateCetAdaptorSignatureRequest,
   CreateCetAdaptorSignatureResponse,
   CreateCetAdaptorSignaturesRequest,
@@ -104,6 +108,7 @@ import {
   asyncForEach,
   checkTypes,
   generateSerialId,
+  generateSerialIds,
   outputsToPayouts,
 } from './utils/Utils';
 
@@ -242,6 +247,71 @@ export default class BitcoinDlcProvider
       changeSPK,
       changeSerialId,
     };
+  }
+
+  private async BatchInitialize(
+    collaterals: bigint[],
+    feeRatePerVb: bigint,
+    fixedInputs: Input[],
+  ): Promise<BatchInitializeResponse> {
+    const network = await this.getConnectedNetwork();
+
+    const collateral = collaterals.reduce((a, b) => a + b, BigInt(0));
+
+    const inputs: Input[] = await this.GetInputsForAmount(
+      collateral,
+      feeRatePerVb,
+      fixedInputs,
+    );
+
+    const fundingInputs: FundingInput[] = await Promise.all(
+      inputs.map(async (input) => {
+        return this.inputToFundingInput(input);
+      }),
+    );
+
+    const initializeResponses: BatchBaseInitializeResponse[] = [];
+
+    const changeSerialId: bigint = generateSerialId();
+
+    const changeAddress: Address = await this.client.wallet.getUnusedAddress(
+      true,
+    );
+    const changeSPK: Buffer = address.toOutputScript(
+      changeAddress.address,
+      network,
+    );
+
+    for (let i = 0; i < collaterals.length; i++) {
+      const payoutAddress: Address = await this.client.wallet.getUnusedAddress(
+        false,
+      );
+      const payoutSPK: Buffer = address.toOutputScript(
+        payoutAddress.address,
+        network,
+      );
+
+      const fundingAddress: Address = await this.client.wallet.getUnusedAddress(
+        false,
+      );
+      const fundingPubKey: Buffer = Buffer.from(
+        fundingAddress.publicKey,
+        'hex',
+      );
+
+      if (fundingAddress.address === payoutAddress.address)
+        throw Error('Address reuse');
+
+      const payoutSerialId: bigint = generateSerialId();
+
+      initializeResponses.push({
+        fundingPubKey,
+        payoutSPK,
+        payoutSerialId,
+      });
+    }
+
+    return { fundingInputs, initializeResponses, changeSerialId, changeSPK };
   }
 
   /**
@@ -561,6 +631,150 @@ export default class BitcoinDlcProvider
     });
 
     return { dlcTransactions, messagesList };
+  }
+
+  public async createBatchDlcTxs(
+    _dlcOffers: DlcOffer[],
+    _dlcAccepts: DlcAccept[],
+  ): Promise<CreateBatchDlcTxsResponse> {
+    const dlcOffers = _dlcOffers.map((dlcOffer) => {
+      return checkTypes({ _dlcOffer: dlcOffer }).dlcOffer;
+    });
+    const dlcAccepts = _dlcAccepts.map((dlcAccept) => {
+      return checkTypes({ _dlcAccept: dlcAccept }).dlcAccept;
+    });
+
+    const localFundPubkeys = dlcOffers.map((dlcOffer) =>
+      dlcOffer.fundingPubKey.toString('hex'),
+    );
+    const remoteFundPubkeys = dlcAccepts.map((dlcAccept) =>
+      dlcAccept.fundingPubKey.toString('hex'),
+    );
+    const localFinalScriptPubkeys = dlcOffers.map((dlcOffer) =>
+      dlcOffer.payoutSPK.toString('hex'),
+    );
+    const remoteFinalScriptPubkeys = dlcAccepts.map((dlcAccept) =>
+      dlcAccept.payoutSPK.toString('hex'),
+    );
+    const localChangeScriptPubkey = dlcOffers[0].changeSPK.toString('hex');
+    const remoteChangeScriptPubkey = dlcAccepts[0].changeSPK.toString('hex');
+
+    const localInputs: Utxo[] = await Promise.all(
+      dlcOffers[0].fundingInputs.map(async (fundingInput) => {
+        const input = await this.fundingInputToInput(fundingInput, false);
+        return input.toUtxo();
+      }),
+    );
+
+    const remoteInputs: Utxo[] = await Promise.all(
+      dlcAccepts[0].fundingInputs.map(async (fundingInput) => {
+        const input = await this.fundingInputToInput(fundingInput, false);
+        return input.toUtxo();
+      }),
+    );
+
+    const localInputAmount = localInputs.reduce<number>(
+      (prev, cur) => prev + cur.amount.GetSatoshiAmount(),
+      0,
+    );
+
+    const remoteInputAmount = remoteInputs.reduce<number>(
+      (prev, cur) => prev + cur.amount.GetSatoshiAmount(),
+      0,
+    );
+
+    const localPayouts: (bigint | number)[] = [];
+    const remotePayouts: (bigint | number)[] = [];
+    const numPayouts: (bigint | number)[] = [];
+
+    const nestedMessagesList: Messages[][] = [];
+
+    // loop through all dlc offers, get payouts, and add to localPayouts and remotePayouts
+    for (const dlcOffer of dlcOffers) {
+      const payoutResponses = this.GetPayouts(dlcOffer);
+      const { payouts, messagesList } = this.FlattenPayouts(payoutResponses);
+      const tempLocalPayouts = payouts.map((payout) => payout.local);
+      const tempRemotePayouts = payouts.map((payout) => payout.remote);
+      localPayouts.push(...tempLocalPayouts);
+      remotePayouts.push(...tempRemotePayouts);
+      numPayouts.push(tempLocalPayouts.length);
+      nestedMessagesList.push(messagesList);
+    }
+
+    const batchDlcTxRequest: CreateBatchDlcTransactionsRequest = {
+      localPayouts,
+      remotePayouts,
+      numPayouts,
+      localFundPubkeys,
+      localFinalScriptPubkeys,
+      remoteFundPubkeys,
+      remoteFinalScriptPubkeys,
+      localInputAmount,
+      localCollateralAmounts: dlcOffers.map(
+        (dlcOffer) => dlcOffer.offerCollateralSatoshis,
+      ),
+      localPayoutSerialIds: dlcOffers.map(
+        (dlcOffer) => dlcOffer.payoutSerialId,
+      ),
+      localChangeSerialId: dlcOffers[0].changeSerialId,
+      remoteInputAmount,
+      remoteCollateralAmounts: dlcAccepts.map(
+        (dlcAccept) => dlcAccept.acceptCollateralSatoshis,
+      ),
+      remotePayoutSerialIds: dlcAccepts.map(
+        (dlcAccept) => dlcAccept.payoutSerialId,
+      ),
+      remoteChangeSerialId: dlcAccepts[0].changeSerialId,
+      refundLocktimes: dlcOffers.map((dlcOffer) => dlcOffer.refundLocktime),
+      localInputs,
+      remoteInputs,
+      localChangeScriptPubkey,
+      remoteChangeScriptPubkey,
+      feeRate: Number(dlcOffers[0].feeRatePerVb),
+      cetLockTime: dlcOffers[0].cetLocktime,
+      fundOutputSerialIds: dlcOffers.map(
+        (dlcOffer) => dlcOffer.fundOutputSerialId,
+      ),
+    };
+
+    const dlcTxs = await this.CreateBatchDlcTransactions(batchDlcTxRequest);
+
+    const dlcTransactionsList: DlcTransactionsV0[] = [];
+
+    let start = 0;
+    for (let i = 0; i < dlcTxs.refundTxHexList.length; i++) {
+      const dlcTransactions = new DlcTransactionsV0();
+
+      dlcTransactions.fundTx = Tx.decode(
+        StreamReader.fromHex(dlcTxs.fundTxHex),
+      );
+
+      dlcTransactions.fundTxVout = [
+        BigInt(dlcOffers[i].changeSerialId),
+        BigInt(dlcAccepts[i].changeSerialId),
+        ...dlcOffers.map((dlcOffer) => dlcOffer.fundOutputSerialId),
+      ]
+        .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+        .findIndex(
+          (j) => BigInt(j) === BigInt(dlcOffers[i].fundOutputSerialId),
+        );
+
+      dlcTransactions.refundTx = Tx.decode(
+        StreamReader.fromHex(dlcTxs.refundTxHexList[i]),
+      );
+
+      // slice cetsHexList based on numPayouts
+      const end = start + Number(numPayouts[i]);
+      const cetsHexList = dlcTxs.cetsHexList.slice(start, end);
+      start = end;
+      dlcTransactions.cets = cetsHexList.map((cetHex) => {
+        return Tx.decode(StreamReader.fromHex(cetHex));
+      });
+
+      dlcTransactionsList.push(dlcTransactions);
+    }
+
+    return { dlcTransactionsList, nestedMessagesList };
   }
 
   private GenerateEnumMessages(oracleEvent: OracleEventV0): Messages[] {
@@ -1873,6 +2087,109 @@ Payout Group found but incorrect group index',
     return dlcOffer;
   }
 
+  async batchCreateDlcOffer(
+    contractInfos: ContractInfo[],
+    offerCollaterals: bigint[],
+    feeRatePerVb: bigint,
+    cetLocktime: number,
+    refundLocktimes: number[],
+    fixedInputs?: Input[],
+  ): Promise<DlcOffer[]> {
+    if (
+      contractInfos.length !== offerCollaterals.length ||
+      contractInfos.length !== refundLocktimes.length
+    ) {
+      throw new Error(
+        'The number of contractInfos, offerCollateralSatoshis, and refundLocktimes must be the same',
+      );
+    }
+
+    const dlcOffers: DlcOfferV0[] = [];
+
+    for (let i = 0; i < contractInfos.length; i++) {
+      contractInfos[i].validate();
+    }
+
+    const network = await this.getConnectedNetwork();
+
+    const {
+      fundingInputs: _fundingInputs,
+      changeSPK,
+      changeSerialId,
+      initializeResponses,
+    } = await this.BatchInitialize(offerCollaterals, feeRatePerVb, fixedInputs);
+
+    _fundingInputs.forEach((input) =>
+      assert(
+        input.type === MessageType.FundingInputV0,
+        'FundingInput must be V0',
+      ),
+    );
+
+    const fundingInputs: FundingInputV0[] = _fundingInputs.map(
+      (input) => input as FundingInputV0,
+    );
+
+    fundingInputs.sort(
+      (a, b) => Number(a.inputSerialId) - Number(b.inputSerialId),
+    );
+
+    const fundOutputsSerialIds = generateSerialIds(contractInfos.length);
+
+    for (let i = 0; i < contractInfos.length; i++) {
+      const contractInfo = contractInfos[i];
+      const offerCollateralSatoshis = offerCollaterals[i];
+      const fundOutputSerialId = fundOutputsSerialIds[i];
+      const { fundingPubKey, payoutSPK, payoutSerialId } = initializeResponses[
+        i
+      ];
+      const refundLocktime = refundLocktimes[i];
+
+      const dlcOffer = new DlcOfferV0();
+
+      dlcOffer.contractFlags = Buffer.from('00', 'hex');
+      dlcOffer.chainHash = chainHashFromNetwork(network);
+      dlcOffer.contractInfo = contractInfo;
+      dlcOffer.fundingPubKey = fundingPubKey;
+      dlcOffer.payoutSPK = payoutSPK;
+      dlcOffer.payoutSerialId = payoutSerialId;
+      dlcOffer.offerCollateralSatoshis = offerCollateralSatoshis;
+      dlcOffer.fundingInputs = fundingInputs;
+      dlcOffer.changeSPK = changeSPK;
+      dlcOffer.changeSerialId = changeSerialId;
+      dlcOffer.fundOutputSerialId = fundOutputSerialId;
+      dlcOffer.feeRatePerVb = feeRatePerVb;
+      dlcOffer.cetLocktime = cetLocktime;
+      dlcOffer.refundLocktime = refundLocktime;
+
+      assert(
+        (() => {
+          const finalizer = new DualFundingTxFinalizer(
+            dlcOffer.fundingInputs,
+            dlcOffer.payoutSPK,
+            dlcOffer.changeSPK,
+            null,
+            null,
+            null,
+            dlcOffer.feeRatePerVb,
+          );
+          const funding = fundingInputs.reduce((total, input) => {
+            return total + input.prevTx.outputs[input.prevTxVout].value.sats;
+          }, BigInt(0));
+
+          return funding >= offerCollateralSatoshis + finalizer.offerFees;
+        })(),
+        'fundingInputs for dlcOffer must be greater than offerCollateralSatoshis plus offerFees',
+      );
+
+      dlcOffer.validate();
+
+      dlcOffers.push(dlcOffer);
+    }
+
+    return dlcOffers;
+  }
+
   /**
    * Accept DLC Offer
    * @param _dlcOffer Dlc Offer Message
@@ -2019,6 +2336,168 @@ Payout Group found but incorrect group index',
     return { dlcAccept, dlcTransactions: _dlcTransactions };
   }
 
+  async batchAcceptDlcOffer(
+    _dlcOffers: DlcOffer[],
+    fixedInputs?: Input[],
+  ): Promise<BatchAcceptDlcOfferResponse> {
+    const dlcOffers = _dlcOffers.map((_dlcOffer) => {
+      const { dlcOffer } = checkTypes({ _dlcOffer });
+      dlcOffer.validate();
+      return dlcOffer;
+    });
+
+    const acceptCollaterals = dlcOffers.map(
+      (dlcOffer) =>
+        dlcOffer.contractInfo.totalCollateral -
+        dlcOffer.offerCollateralSatoshis,
+    );
+
+    const {
+      fundingInputs: _fundingInputs,
+      changeSPK,
+      changeSerialId,
+      initializeResponses,
+    } = await this.BatchInitialize(
+      acceptCollaterals,
+      dlcOffers[0].feeRatePerVb,
+      fixedInputs,
+    );
+
+    // Check that none of the funding pubkeys are the same between the
+    // dlcOffers and the dlcAccepts (from initializeResponses)
+    dlcOffers.forEach((dlcOffer) => {
+      initializeResponses.forEach((initializeResponse) => {
+        assert(
+          Buffer.compare(
+            dlcOffer.fundingPubKey,
+            initializeResponse.fundingPubKey,
+          ) !== 0,
+          'DlcOffer and DlcAccept FundingPubKey cannot be the same',
+        );
+      });
+    });
+
+    _fundingInputs.forEach((input) =>
+      assert(
+        input.type === MessageType.FundingInputV0,
+        'FundingInput must be V0',
+      ),
+    );
+
+    const fundingInputs: FundingInputV0[] = _fundingInputs.map(
+      (input) => input as FundingInputV0,
+    );
+
+    fundingInputs.sort(
+      (a, b) => Number(a.inputSerialId) - Number(b.inputSerialId),
+    );
+
+    const dlcAccepts: DlcAcceptV0[] = [];
+
+    initializeResponses.forEach((initializeResponse, i) => {
+      const dlcOffer = dlcOffers[i];
+      const dlcAccept = new DlcAcceptV0();
+
+      const { fundingPubKey, payoutSPK, payoutSerialId } = initializeResponse;
+
+      dlcAccept.tempContractId = sha256(dlcOffers[i].serialize());
+      dlcAccept.acceptCollateralSatoshis = acceptCollaterals[i];
+      dlcAccept.fundingPubKey = fundingPubKey;
+      dlcAccept.payoutSPK = payoutSPK;
+      dlcAccept.payoutSerialId = payoutSerialId;
+      dlcAccept.fundingInputs = fundingInputs;
+      dlcAccept.changeSPK = changeSPK;
+      dlcAccept.changeSerialId = changeSerialId;
+
+      assert(
+        dlcAccept.changeSerialId !== dlcOffer.fundOutputSerialId,
+        'changeSerialId cannot equal the fundOutputSerialId',
+      );
+
+      assert(
+        dlcOffer.payoutSerialId !== dlcAccept.payoutSerialId,
+        'offer.payoutSerialId cannot equal accept.payoutSerialId',
+      );
+
+      assert(
+        (() => {
+          const ids = [
+            dlcOffer.changeSerialId,
+            dlcAccept.changeSerialId,
+            dlcOffer.fundOutputSerialId,
+          ];
+          return new Set(ids).size === ids.length;
+        })(),
+        'offer.changeSerialID, accept.changeSerialId and fundOutputSerialId must be unique',
+      );
+
+      dlcAccept.validate();
+
+      assert(
+        (() => {
+          const finalizer = new DualFundingTxFinalizer(
+            dlcOffer.fundingInputs,
+            dlcOffer.payoutSPK,
+            dlcOffer.changeSPK,
+            dlcAccept.fundingInputs,
+            dlcAccept.payoutSPK,
+            dlcAccept.changeSPK,
+            dlcOffer.feeRatePerVb,
+          );
+          const funding = fundingInputs.reduce((total, input) => {
+            return total + input.prevTx.outputs[input.prevTxVout].value.sats;
+          }, BigInt(0));
+
+          return funding >= acceptCollaterals[i] + finalizer.acceptFees;
+        })(),
+        'fundingInputs for dlcAccept must be greater than acceptCollateralSatoshis plus acceptFees',
+      );
+
+      dlcAccepts.push(dlcAccept);
+    });
+
+    const {
+      dlcTransactionsList,
+      nestedMessagesList,
+    } = await this.createBatchDlcTxs(dlcOffers, dlcAccepts);
+
+    for (let i = 0; i < dlcAccepts.length; i++) {
+      const dlcOffer = dlcOffers[i];
+      const dlcAccept = dlcAccepts[i];
+      const dlcTransactions = dlcTransactionsList[i];
+      const messagesList = nestedMessagesList[i];
+
+      const {
+        cetSignatures,
+        refundSignature,
+      } = await this.CreateCetAdaptorAndRefundSigs(
+        dlcOffer,
+        dlcAccept,
+        dlcTransactions,
+        messagesList,
+        false,
+      );
+
+      assert(
+        dlcTransactions.type === MessageType.DlcTransactionsV0,
+        'DlcTransactions must be V0',
+      );
+      const _dlcTransactions = dlcTransactions as DlcTransactionsV0;
+
+      const contractId = xor(
+        _dlcTransactions.fundTx.txId.serialize(),
+        dlcAccept.tempContractId,
+      );
+      _dlcTransactions.contractId = contractId;
+
+      dlcAccepts[i].cetSignatures = cetSignatures;
+      dlcAccepts[i].refundSignature = refundSignature;
+      dlcAccepts[i].negotiationFields = new NegotiationFieldsV0();
+    }
+
+    return { dlcAccepts, dlcTransactionsList };
+  }
+
   /**
    * Sign Dlc Accept Message
    * @param _dlcOffer Dlc Offer Message
@@ -2100,6 +2579,84 @@ Payout Group found but incorrect group index',
     return { dlcSign, dlcTransactions: dlcTxs };
   }
 
+  async batchSignDlcAccept(
+    _dlcOffers: DlcOffer[],
+    _dlcAccepts: DlcAccept[],
+  ): Promise<BatchSignDlcAcceptResponse> {
+    const dlcOffers = _dlcOffers.map((_dlcOffer) => {
+      const { dlcOffer } = checkTypes({ _dlcOffer });
+      dlcOffer.validate();
+      return dlcOffer;
+    });
+
+    const dlcAccepts = _dlcAccepts.map((_dlcAccept) => {
+      const { dlcAccept } = checkTypes({ _dlcAccept });
+      dlcAccept.validate();
+      return dlcAccept;
+    });
+
+    const {
+      dlcTransactionsList,
+      nestedMessagesList,
+    } = await this.createBatchDlcTxs(dlcOffers, dlcAccepts);
+
+    const dlcSigns: DlcSignV0[] = [];
+
+    const fundingSignatures = await this.CreateFundingSigs(
+      dlcOffers[0],
+      dlcAccepts[0],
+      dlcTransactionsList[0],
+      true,
+    );
+
+    for (let i = 0; i < dlcAccepts.length; i++) {
+      const dlcOffer = dlcOffers[i];
+      const dlcAccept = dlcAccepts[i];
+      const dlcTransactions = dlcTransactionsList[i];
+      const messagesList = nestedMessagesList[i];
+
+      const dlcSign = new DlcSignV0();
+
+      await this.VerifyCetAdaptorAndRefundSigs(
+        dlcOffer,
+        dlcAccept,
+        dlcSign,
+        dlcTransactions,
+        messagesList,
+        true,
+      );
+
+      const {
+        cetSignatures,
+        refundSignature,
+      } = await this.CreateCetAdaptorAndRefundSigs(
+        dlcOffer,
+        dlcAccept,
+        dlcTransactions,
+        messagesList,
+        true,
+      );
+
+      const dlcTxs = dlcTransactions as DlcTransactionsV0;
+
+      const contractId = xor(
+        dlcTxs.fundTx.txId.serialize(),
+        dlcAccept.tempContractId,
+      );
+
+      dlcTxs.contractId = contractId;
+
+      dlcSign.contractId = contractId;
+      dlcSign.cetSignatures = cetSignatures;
+      dlcSign.refundSignature = refundSignature;
+      dlcSign.fundingSignatures = fundingSignatures;
+
+      dlcSigns.push(dlcSign);
+    }
+
+    return { dlcSigns, dlcTransactionsList };
+  }
+
   /**
    * Finalize Dlc Sign
    * @param _dlcOffer Dlc Offer Message
@@ -2147,6 +2704,79 @@ Payout Group found but incorrect group index',
       dlcAccept,
       dlcSign,
       dlcTxs,
+      fundingSignatures,
+    );
+
+    return fundTx;
+  }
+
+  async batchFinalizeDlcSign(
+    _dlcOffers: DlcOffer[],
+    _dlcAccepts: DlcAccept[],
+    _dlcSigns: DlcSign[],
+    _dlcTxsList: DlcTransactions[],
+  ): Promise<Tx> {
+    const dlcOffers = _dlcOffers.map((_dlcOffer) => {
+      const { dlcOffer } = checkTypes({ _dlcOffer });
+      dlcOffer.validate();
+      return dlcOffer;
+    });
+
+    const dlcAccepts = _dlcAccepts.map((_dlcAccept) => {
+      const { dlcAccept } = checkTypes({ _dlcAccept });
+      dlcAccept.validate();
+      return dlcAccept;
+    });
+
+    const dlcSigns = _dlcSigns.map((_dlcSign) => {
+      const { dlcSign } = checkTypes({ _dlcSign });
+      return dlcSign;
+    });
+
+    const dlcTxsList = _dlcTxsList.map((_dlcTxs) => {
+      const { dlcTxs } = checkTypes({ _dlcTxs });
+      return dlcTxs;
+    });
+
+    await this.VerifyFundingSigs(
+      dlcOffers[0],
+      dlcAccepts[0],
+      dlcSigns[0],
+      dlcTxsList[0],
+      false,
+    );
+
+    for (let i = 0; i < dlcOffers.length; i++) {
+      const dlcOffer = dlcOffers[i];
+      const dlcAccept = dlcAccepts[i];
+      const dlcSign = dlcSigns[i];
+      const dlcTxs = dlcTxsList[i];
+
+      const payoutResponses = this.GetPayouts(dlcOffer);
+      const { messagesList } = this.FlattenPayouts(payoutResponses);
+
+      await this.VerifyCetAdaptorAndRefundSigs(
+        dlcOffer,
+        dlcAccept,
+        dlcSign,
+        dlcTxs,
+        messagesList,
+        false,
+      );
+    }
+
+    const fundingSignatures = await this.CreateFundingSigs(
+      dlcOffers[0],
+      dlcAccepts[0],
+      dlcTxsList[0],
+      false,
+    );
+
+    const fundTx = await this.CreateFundingTx(
+      dlcOffers[0],
+      dlcAccepts[0],
+      dlcSigns[0],
+      dlcTxsList[0],
       fundingSignatures,
     );
 
@@ -2890,12 +3520,28 @@ Payout Group found but incorrect group index',
     return this._cfdDlcJs.CreateDlcTransactions(jsonObject);
   }
 
+  async CreateBatchDlcTransactions(
+    jsonObject: CreateBatchDlcTransactionsRequest,
+  ): Promise<CreateBatchDlcTransactionsResponse> {
+    await this.CfdLoaded();
+
+    return this._cfdDlcJs.CreateBatchDlcTransactions(jsonObject);
+  }
+
   async CreateFundTransaction(
     jsonObject: CreateFundTransactionRequest,
   ): Promise<CreateFundTransactionResponse> {
     await this.CfdLoaded();
 
     return this._cfdDlcJs.CreateFundTransaction(jsonObject);
+  }
+
+  async CreateBatchFundTransaction(
+    jsonObject: CreateBatchFundTransactionRequest,
+  ): Promise<CreateBatchFundTransactionResponse> {
+    await this.CfdLoaded();
+
+    return this._cfdDlcJs.CreateBatchFundTransaction(jsonObject);
   }
 
   async CreateRefundTransaction(
@@ -3050,10 +3696,26 @@ Payout Group found but incorrect group index',
   }
 }
 
-export interface InitializeResponse {
+export interface BasicInitializeResponse {
   fundingPubKey: Buffer;
   payoutSPK: Buffer;
   payoutSerialId: bigint;
+  changeSPK: Buffer;
+  changeSerialId: bigint;
+}
+
+export interface InitializeResponse extends BasicInitializeResponse {
+  fundingInputs: FundingInput[];
+}
+
+export interface BatchBaseInitializeResponse {
+  fundingPubKey: Buffer;
+  payoutSPK: Buffer;
+  payoutSerialId: bigint;
+}
+
+export interface BatchInitializeResponse {
+  initializeResponses: BatchBaseInitializeResponse[];
   fundingInputs: FundingInput[];
   changeSPK: Buffer;
   changeSerialId: bigint;
@@ -3064,9 +3726,19 @@ export interface AcceptDlcOfferResponse {
   dlcTransactions: DlcTransactions;
 }
 
+export interface BatchAcceptDlcOfferResponse {
+  dlcAccepts: DlcAccept[];
+  dlcTransactionsList: DlcTransactions[];
+}
+
 export interface SignDlcAcceptResponse {
   dlcSign: DlcSign;
   dlcTransactions: DlcTransactions;
+}
+
+export interface BatchSignDlcAcceptResponse {
+  dlcSigns: DlcSign[];
+  dlcTransactionsList: DlcTransactions[];
 }
 
 export interface GetPayoutsResponse {
@@ -3078,6 +3750,11 @@ export interface GetPayoutsResponse {
 export interface CreateDlcTxsResponse {
   dlcTransactions: DlcTransactions;
   messagesList: Messages[];
+}
+
+export interface CreateBatchDlcTxsResponse {
+  dlcTransactionsList: DlcTransactions[];
+  nestedMessagesList: Messages[][];
 }
 
 interface ISig {

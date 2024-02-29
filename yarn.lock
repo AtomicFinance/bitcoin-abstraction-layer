@@ -4240,9 +4240,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cfd-dlc-js@https://github.com/atomicfinance/cfd-dlc-js.git#v0.0.34":
-  version: 0.0.34
-  resolution: "cfd-dlc-js@https://github.com/atomicfinance/cfd-dlc-js.git#commit=73e80be4be04d05b50ee227e620794a65b985330"
+"cfd-dlc-js@https://github.com/atomicfinance/cfd-dlc-js.git#v0.0.41":
+  version: 0.0.41
+  resolution: "cfd-dlc-js@https://github.com/atomicfinance/cfd-dlc-js.git#commit=033ddb2465901bd404a44872d0e060eb2e287663"
   dependencies:
     big-integer: ^1.6.26
     cmake-js: ^5.3.2
@@ -4252,7 +4252,7 @@ __metadata:
     npm-run-all: ^4.1.5
     prebuild-install: ^7.0.0
     run-script-os: ^1.1.5
-  checksum: e837c32366ba1d4574ab8fcf982dc9c499c3dd29b51c1ee2e8e22a84ae5ea4e5f23a269eadd42d072d6eae105e46732cada404088f25060ebd7a9b56fd01a613
+  checksum: 8e8efc1570bbfa3d926637bd31aa0ac01cef46eb7bb8555a9c1cc31660616f464821e485db4ba5d3a8d8dad801a6324c9853d1264f10f1c706294f0dbe58be56
   languageName: node
   linkType: hard
 
@@ -5608,6 +5608,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"dotenv@npm:16.3.1":
+  version: 16.3.1
+  resolution: "dotenv@npm:16.3.1"
+  checksum: 15d75e7279018f4bafd0ee9706593dd14455ddb71b3bcba9c52574460b7ccaf67d5cf8b2c08a5af1a9da6db36c956a04a1192b101ee102a3e0cf8817bbcf3dfd
+  languageName: node
+  linkType: hard
+
 "drbg.js@npm:^1.0.1":
   version: 1.0.1
   resolution: "drbg.js@npm:1.0.1"
@@ -6466,6 +6473,15 @@ __metadata:
     make-dir: ^3.0.2
     pkg-dir: ^4.1.0
   checksum: 1e61c2e64f5c0b1c535bd85939ae73b0e5773142713273818cc0b393ee3555fb0fd44e1a5b161b8b6c3e03e98c2fcc9c227d784850a13a90a8ab576869576817
+  languageName: node
+  linkType: hard
+
+"find-config@npm:1.0.0":
+  version: 1.0.0
+  resolution: "find-config@npm:1.0.0"
+  dependencies:
+    user-home: ^2.0.0
+  checksum: 446c8c11551b4946ef8adaca00d595119826141c31d306f433a763d02162da4f4bc1de53ccbf2e0f6ccc76782951dca0c69b9a65c76a37bfbaa1705d0a1401b1
   languageName: node
   linkType: hard
 
@@ -12133,17 +12149,19 @@ __metadata:
     bip-schnorr: ^0.6.2
     bip39: ^3.0.2
     bitcoin-networks: ^1.0.0
-    cfd-dlc-js: "https://github.com/atomicfinance/cfd-dlc-js.git#v0.0.34"
+    cfd-dlc-js: "https://github.com/atomicfinance/cfd-dlc-js.git#v0.0.41"
     cfd-js: "https://github.com/cryptogarageinc/cfd-js.git#v0.3.4"
     chai: ^4.2.0
     chai-as-promised: ^7.1.1
     coveralls: ^3.1.1
     cross-env: ^7.0.2
+    dotenv: 16.3.1
     eslint: ^7.22.0
     eslint-config-prettier: ^8.1.0
     eslint-plugin-prettier: ^3.3.1
     eslint-plugin-simple-import-sort: 7.0.0
     exports-loader: ^1.1.0
+    find-config: 1.0.0
     fs: 0.0.1-security
     lerna: ^4.0.0
     lodash: ^4.17.20
@@ -14120,6 +14138,15 @@ __metadata:
   version: 3.1.1
   resolution: "use@npm:3.1.1"
   checksum: 08a130289f5238fcbf8f59a18951286a6e660d17acccc9d58d9b69dfa0ee19aa038e8f95721b00b432c36d1629a9e32a464bf2e7e0ae6a244c42ddb30bdd8b33
+  languageName: node
+  linkType: hard
+
+"user-home@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "user-home@npm:2.0.0"
+  dependencies:
+    os-homedir: ^1.0.0
+  checksum: a3329faa959fcd9e3e01a03347ca974f7f6b8896e6a634f29c61d8d5b61557d853c6fc5a6dff1a28e2da85b400d0e4490368a28de452ba8c41a2bf3a92cb110a
   languageName: node
   linkType: hard
 
