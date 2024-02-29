@@ -1,5 +1,19 @@
 # @atomicfinance/bitcoin-utils
 
+## 3.4.0
+
+### Minor Changes
+
+- 314d7d7: Add batch dlc funding transactions
+
+### Patch Changes
+
+- Updated dependencies [314d7d7]
+  - @atomicfinance/types@3.4.0
+  - @atomicfinance/crypto@3.4.0
+  - @atomicfinance/errors@3.4.0
+  - @atomicfinance/utils@3.4.0
+
 ## 3.3.1
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @atomicfinance/crypto
 
+## 3.4.0
+
+### Minor Changes
+
+- 314d7d7: Add batch dlc funding transactions
+
 ## 3.3.1
 
 ### Patch Changes

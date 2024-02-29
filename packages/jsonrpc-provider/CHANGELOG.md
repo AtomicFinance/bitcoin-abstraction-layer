@@ -1,5 +1,17 @@
 # @atomicfinance/jsonrpc-provider
 
+## 3.4.0
+
+### Minor Changes
+
+- 314d7d7: Add batch dlc funding transactions
+
+### Patch Changes
+
+- Updated dependencies [314d7d7]
+  - @atomicfinance/errors@3.4.0
+  - @atomicfinance/node-provider@3.4.0
+
 ## 3.3.1
 
 ### Patch Changes
