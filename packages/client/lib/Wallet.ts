@@ -1,12 +1,15 @@
+import { CoinSelectTarget } from '@atomicfinance/bitcoin-utils';
 import {
   InvalidProviderResponseError,
   UnimplementedMethodError,
 } from '@atomicfinance/errors';
 import {
   Address,
+  bitcoin as bT,
   CreateMultisigResponse,
   Input,
   Output,
+  Transaction as Tx,
   WalletProvider,
 } from '@atomicfinance/types';
 import { Transaction } from 'bitcoinjs-lib';
@@ -121,8 +124,11 @@ export default class Wallet implements WalletProvider {
     return this.client.getMethod('exportPrivateKey')();
   }
 
-  findAddress(addresses: string[]) {
-    return this.client.getMethod('findAddress')(addresses);
+  async findAddress(
+    addresses: string[],
+    change: boolean | null = null,
+  ): Promise<Address> {
+    return this.client.getMethod('findAddress')(addresses, change);
   }
 
   setUnusedAddressesBlacklist(unusedAddressesBlacklist: any) {
@@ -166,7 +172,10 @@ export default class Wallet implements WalletProvider {
     feePerByte: number,
     outputs: Output[],
     fixedInputs: Input[],
-  ) {
+  ): Promise<{
+    hex: string;
+    fee: number;
+  }> {
     return this.client.getMethod('buildSweepTransactionWithSetOutputs')(
       externalChangeAddress,
       feePerByte,
@@ -180,12 +189,50 @@ export default class Wallet implements WalletProvider {
     feePerByte: number,
     outputs: Output[],
     fixedInputs: Input[],
-  ) {
+  ): Promise<Tx<bT.Transaction>> {
     return this.client.getMethod('sendSweepTransactionWithSetOutputs')(
       externalChangeAddress,
       feePerByte,
       outputs,
       fixedInputs,
+    );
+  }
+
+  async getInputsForAmount(
+    _targets: bT.OutputTarget[],
+    feePerByte?: number,
+    fixedInputs: bT.Input[] = [],
+    numAddressPerCall = 100,
+    sweep = false,
+  ): Promise<{
+    inputs: bT.UTXO[];
+    change: CoinSelectTarget;
+    outputs: CoinSelectTarget[];
+    fee: number;
+  }> {
+    return this.client.getMethod('getInputsForAmount')(
+      _targets,
+      feePerByte,
+      fixedInputs,
+      numAddressPerCall,
+      sweep,
+    );
+  }
+
+  async getInputsForDualFunding(
+    collaterals: number[],
+    feePerByte?: number,
+    fixedInputs: bT.Input[] = [],
+    numAddressPerCall = 100,
+  ): Promise<{
+    inputs: bT.UTXO[];
+    fee: bigint;
+  }> {
+    return this.client.getMethod('getInputsForDualFunding')(
+      collaterals,
+      feePerByte,
+      fixedInputs,
+      numAddressPerCall,
     );
   }
 }

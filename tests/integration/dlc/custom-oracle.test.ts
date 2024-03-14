@@ -596,9 +596,6 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
       const cetLocktime = 1617170572;
       const refundLocktime = 1617170573;
 
-      console.time('total');
-      console.time('offer');
-
       const tempDlcOffer = await alice.dlc.createDlcOffer(
         offer.contractInfo,
         offer.offerCollateralSatoshis,
