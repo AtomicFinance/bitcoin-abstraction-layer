@@ -1,5 +1,13 @@
 # @atomicfinance/provider
 
+## 3.4.1
+
+### Patch Changes
+
+- 9781efe: Add getInputsForDualFunding functionality and bump @node-dlc
+- Updated dependencies [9781efe]
+  - @atomicfinance/types@3.4.1
+
 ## 3.4.0
 
 ### Minor Changes
