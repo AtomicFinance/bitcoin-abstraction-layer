@@ -20,7 +20,7 @@ import Input from './models/Input';
 
 export interface DlcProvider {
   GetInputsForAmount(
-    amount: bigint,
+    amounts: bigint[],
     feeRatePerVb: bigint,
     fixedInputs: Input[],
   ): Promise<Input[]>;

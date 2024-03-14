@@ -18,34 +18,34 @@ import { findKey } from 'lodash';
 
 const AddressTypes = ['legacy', 'p2sh-segwit', 'bech32'];
 
-function calculateFee(
+const calculateFee = (
   numInputs: number,
   numOutputs: number,
   feePerByte: number,
-) {
+): number => {
   return (numInputs * 148 + numOutputs * 34 + 10) * feePerByte;
-}
+};
 
 /**
  * Get compressed pubKey from pubKey.
  * @param {!string} pubKey - 65 byte string with prefix, x, y.
  * @return {string} Returns the compressed pubKey of uncompressed pubKey.
  */
-function compressPubKey(pubKey: string) {
+const compressPubKey = (pubKey: string): string => {
   const x = pubKey.substring(2, 66);
   const y = pubKey.substring(66, 130);
   const even = parseInt(y.substring(62, 64), 16) % 2 === 0;
   const prefix = even ? '02' : '03';
 
   return prefix + x;
-}
+};
 
 /**
  * Get a network object from an address
  * @param {string} address The bitcoin address
  * @return {Network}
  */
-function getAddressNetwork(address: string) {
+const getAddressNetwork = (address: string): BitcoinNetwork => {
   // TODO: can this be simplified using just bitcoinjs-lib??
   let networkKey;
   // bech32
@@ -62,7 +62,7 @@ function getAddressNetwork(address: string) {
     });
   }
   return (BitcoinNetworks as { [key: string]: BitcoinNetwork })[networkKey];
-}
+};
 
 type CoinSelectTarget = {
   value: number;
@@ -83,12 +83,12 @@ type CoinSelectFunction = (
   feePerByte: number,
 ) => CoinSelectResponse;
 
-function selectCoins(
+const selectCoins = (
   utxos: bT.UTXO[],
   targets: CoinSelectTarget[],
   feePerByte: number,
   fixedInputs: bT.UTXO[] = [],
-) {
+): CoinSelectResponse => {
   let selectUtxos = utxos;
 
   // Default coinselect won't accumulate some inputs
@@ -121,17 +121,17 @@ function selectCoins(
   }
 
   return { inputs, outputs, fee, change };
-}
+};
 
 const OUTPUT_TYPES_MAP = {
   [classify.types.P2WPKH]: 'witness_v0_keyhash',
   [classify.types.P2WSH]: 'witness_v0_scripthash',
 };
 
-function decodeRawTransaction(
+const decodeRawTransaction = (
   hex: string,
   network: BitcoinNetwork,
-): bT.Transaction {
+): bT.Transaction => {
   const bjsTx = bitcoin.Transaction.fromHex(hex);
 
   const vin = bjsTx.ins.map((input) => {
@@ -184,13 +184,13 @@ function decodeRawTransaction(
     vout,
     hex,
   };
-}
+};
 
-function normalizeTransactionObject(
+const normalizeTransactionObject = (
   tx: bT.Transaction,
   fee: number,
   block?: { number: number; hash: string },
-): Transaction<bT.Transaction> {
+): Transaction<bT.Transaction> => {
   const value = tx.vout.reduce(
     (p, n) => p.plus(new BigNumber(n.value).times(1e8)),
     new BigNumber(0),
@@ -220,11 +220,11 @@ function normalizeTransactionObject(
   }
 
   return result;
-}
+};
 
 // TODO: This is copy pasta because it's not exported from bitcoinjs-lib
 // https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/csv.spec.ts#L477
-function witnessStackToScriptWitness(witness: Buffer[]): Buffer {
+const witnessStackToScriptWitness = (witness: Buffer[]): Buffer => {
   let buffer = Buffer.allocUnsafe(0);
 
   function writeSlice(slice: Buffer): void {
@@ -252,9 +252,9 @@ function witnessStackToScriptWitness(witness: Buffer[]): Buffer {
   writeVector(witness);
 
   return buffer;
-}
+};
 
-function getPubKeyHash(address: string, network: BitcoinNetwork) {
+const getPubKeyHash = (address: string, network: BitcoinNetwork): Buffer => {
   const outputScript = bitcoin.address.toOutputScript(address, network);
   const type = classify.output(outputScript);
   if (![classify.types.P2PKH, classify.types.P2WPKH].includes(type)) {
@@ -270,9 +270,12 @@ function getPubKeyHash(address: string, network: BitcoinNetwork) {
     const base58 = bitcoin.address.fromBase58Check(address);
     return base58.hash;
   }
-}
+};
 
-function validateAddress(_address: Address | string, network: BitcoinNetwork) {
+const validateAddress = (
+  _address: Address | string,
+  network: BitcoinNetwork,
+): void => {
   const address = addressToString(_address);
 
   if (typeof address !== 'string') {
@@ -291,7 +294,7 @@ function validateAddress(_address: Address | string, network: BitcoinNetwork) {
   if (!pubKeyHash) {
     throw new InvalidAddressError(`Invalid Address: ${address}`);
   }
-}
+};
 
 export {
   calculateFee,

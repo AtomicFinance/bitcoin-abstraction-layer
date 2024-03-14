@@ -146,7 +146,7 @@ export default class Client implements IClient {
    *  above the requestor in the stack.
    * @return {function} Returns method from provider instance associated with the requested method
    */
-  getMethod(method: string, requestor?: any) {
+  getMethod(method: string, requestor?: any): (...args: any[]) => any {
     const provider = this.getProviderForMethod(method, requestor);
     return (<any>provider)[method].bind(provider);
   }

@@ -19,9 +19,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-cfd-provider@workspace:packages/bitcoin-cfd-provider"
   dependencies:
-    "@atomicfinance/provider": ^3.3.1
-    "@atomicfinance/types": ^3.3.1
-    "@atomicfinance/utils": ^3.3.1
+    "@atomicfinance/provider": ^3.4.0
+    "@atomicfinance/types": ^3.4.0
+    "@atomicfinance/utils": ^3.4.0
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
     lodash: ^4.17.20
@@ -32,12 +32,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-dlc-provider@workspace:packages/bitcoin-dlc-provider"
   dependencies:
-    "@atomicfinance/bitcoin-utils": 3.3.1
-    "@atomicfinance/provider": ^3.3.1
-    "@atomicfinance/types": ^3.3.1
-    "@atomicfinance/utils": ^3.3.1
-    "@node-dlc/core": 0.22.4
-    "@node-dlc/messaging": 0.22.4
+    "@atomicfinance/bitcoin-utils": 3.4.0
+    "@atomicfinance/provider": ^3.4.0
+    "@atomicfinance/types": ^3.4.0
+    "@atomicfinance/utils": ^3.4.0
+    "@node-dlc/core": 0.23.0
+    "@node-dlc/messaging": 0.23.0
     "@node-lightning/bitcoin": 0.26.1
     "@node-lightning/bufio": 0.26.1
     "@node-lightning/crypto": 0.26.1
@@ -53,16 +53,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/bitcoin-esplora-api-provider@^3.3.1, @atomicfinance/bitcoin-esplora-api-provider@workspace:packages/bitcoin-esplora-api-provider":
+"@atomicfinance/bitcoin-esplora-api-provider@^3.4.0, @atomicfinance/bitcoin-esplora-api-provider@workspace:packages/bitcoin-esplora-api-provider":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-esplora-api-provider@workspace:packages/bitcoin-esplora-api-provider"
   dependencies:
-    "@atomicfinance/bitcoin-utils": ^3.3.1
-    "@atomicfinance/crypto": ^3.3.1
-    "@atomicfinance/errors": ^3.3.1
-    "@atomicfinance/node-provider": ^3.3.1
-    "@atomicfinance/types": ^3.3.1
-    "@atomicfinance/utils": ^3.3.1
+    "@atomicfinance/bitcoin-utils": ^3.4.0
+    "@atomicfinance/crypto": ^3.4.0
+    "@atomicfinance/errors": ^3.4.0
+    "@atomicfinance/node-provider": ^3.4.0
+    "@atomicfinance/types": ^3.4.0
+    "@atomicfinance/utils": ^3.4.0
     "@babel/runtime": ^7.12.1
     "@types/lodash": ^4.14.168
     bignumber.js: ^9.0.0
@@ -76,10 +76,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-esplora-batch-api-provider@workspace:packages/bitcoin-esplora-batch-api-provider"
   dependencies:
-    "@atomicfinance/bitcoin-esplora-api-provider": ^3.3.1
-    "@atomicfinance/node-provider": ^3.3.1
-    "@atomicfinance/types": ^3.3.1
-    "@atomicfinance/utils": ^3.3.1
+    "@atomicfinance/bitcoin-esplora-api-provider": ^3.4.0
+    "@atomicfinance/node-provider": ^3.4.0
+    "@atomicfinance/types": ^3.4.0
+    "@atomicfinance/utils": ^3.4.0
     "@babel/runtime": ^7.12.1
     "@types/lodash": ^4.14.168
     bignumber.js: ^9.0.0
@@ -92,11 +92,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-js-wallet-provider@workspace:packages/bitcoin-js-wallet-provider"
   dependencies:
-    "@atomicfinance/bitcoin-utils": ^3.3.1
-    "@atomicfinance/bitcoin-wallet-provider": ^3.3.1
-    "@atomicfinance/types": ^3.3.1
-    "@atomicfinance/utils": ^3.3.1
+    "@atomicfinance/bitcoin-utils": ^3.4.0
+    "@atomicfinance/bitcoin-wallet-provider": ^3.4.0
+    "@atomicfinance/types": ^3.4.0
+    "@atomicfinance/utils": ^3.4.0
     "@babel/runtime": ^7.12.1
+    "@node-dlc/core": 0.23.0
     bip32: ^2.0.6
     bip39: ^3.0.2
     bitcoin-networks: ^1.0.0
@@ -110,11 +111,11 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-node-wallet-provider@workspace:packages/bitcoin-node-wallet-provider"
   dependencies:
-    "@atomicfinance/bitcoin-utils": ^3.3.1
-    "@atomicfinance/crypto": ^3.3.1
-    "@atomicfinance/jsonrpc-provider": ^3.3.1
-    "@atomicfinance/types": ^3.3.1
-    "@atomicfinance/utils": ^3.3.1
+    "@atomicfinance/bitcoin-utils": ^3.4.0
+    "@atomicfinance/crypto": ^3.4.0
+    "@atomicfinance/jsonrpc-provider": ^3.4.0
+    "@atomicfinance/types": ^3.4.0
+    "@atomicfinance/utils": ^3.4.0
     "@babel/runtime": ^7.12.1
     "@types/lodash": ^4.14.168
     bignumber.js: ^9.0.0
@@ -128,11 +129,11 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-rpc-provider@workspace:packages/bitcoin-rpc-provider"
   dependencies:
-    "@atomicfinance/bitcoin-utils": ^3.3.1
-    "@atomicfinance/errors": ^3.3.1
-    "@atomicfinance/jsonrpc-provider": ^3.3.1
-    "@atomicfinance/types": ^3.3.1
-    "@atomicfinance/utils": ^3.3.1
+    "@atomicfinance/bitcoin-utils": ^3.4.0
+    "@atomicfinance/errors": ^3.4.0
+    "@atomicfinance/jsonrpc-provider": ^3.4.0
+    "@atomicfinance/types": ^3.4.0
+    "@atomicfinance/utils": ^3.4.0
     "@babel/runtime": ^7.12.1
     "@types/lodash": ^4.14.168
     bignumber.js: ^9.0.0
@@ -141,14 +142,14 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/bitcoin-utils@3.3.1, @atomicfinance/bitcoin-utils@^3.3.1, @atomicfinance/bitcoin-utils@workspace:packages/bitcoin-utils":
+"@atomicfinance/bitcoin-utils@3.4.0, @atomicfinance/bitcoin-utils@^3.4.0, @atomicfinance/bitcoin-utils@workspace:packages/bitcoin-utils":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-utils@workspace:packages/bitcoin-utils"
   dependencies:
-    "@atomicfinance/crypto": ^3.3.1
-    "@atomicfinance/errors": ^3.3.1
-    "@atomicfinance/types": ^3.3.1
-    "@atomicfinance/utils": ^3.3.1
+    "@atomicfinance/crypto": ^3.4.0
+    "@atomicfinance/errors": ^3.4.0
+    "@atomicfinance/types": ^3.4.0
+    "@atomicfinance/utils": ^3.4.0
     "@babel/runtime": ^7.12.1
     "@types/bitcoinjs-lib": ^5.0.0
     "@types/lodash": ^4.14.168
@@ -162,13 +163,14 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/bitcoin-wallet-provider@^3.3.1, @atomicfinance/bitcoin-wallet-provider@workspace:packages/bitcoin-wallet-provider":
+"@atomicfinance/bitcoin-wallet-provider@^3.4.0, @atomicfinance/bitcoin-wallet-provider@workspace:packages/bitcoin-wallet-provider":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-wallet-provider@workspace:packages/bitcoin-wallet-provider"
   dependencies:
-    "@atomicfinance/bitcoin-utils": ^3.3.1
-    "@atomicfinance/provider": ^3.3.1
-    "@atomicfinance/types": ^3.3.1
+    "@atomicfinance/bitcoin-utils": ^3.4.0
+    "@atomicfinance/provider": ^3.4.0
+    "@atomicfinance/types": ^3.4.0
+    "@node-dlc/core": 0.23.0
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
     bitcoin-networks: ^1.0.0
@@ -182,10 +184,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/client@workspace:packages/client"
   dependencies:
-    "@atomicfinance/errors": ^3.3.1
-    "@atomicfinance/provider": ^3.3.1
-    "@atomicfinance/types": ^3.3.1
-    "@node-dlc/messaging": 0.22.4
+    "@atomicfinance/errors": ^3.4.0
+    "@atomicfinance/provider": ^3.4.0
+    "@atomicfinance/types": ^3.4.0
+    "@node-dlc/messaging": 0.23.0
     "@node-lightning/bitcoin": 0.26.1
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
@@ -194,7 +196,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/crypto@^3.3.1, @atomicfinance/crypto@workspace:packages/crypto":
+"@atomicfinance/crypto@^3.4.0, @atomicfinance/crypto@workspace:packages/crypto":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/crypto@workspace:packages/crypto"
   dependencies:
@@ -206,7 +208,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/errors@^3.3.1, @atomicfinance/errors@workspace:packages/errors":
+"@atomicfinance/errors@^3.4.0, @atomicfinance/errors@workspace:packages/errors":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/errors@workspace:packages/errors"
   dependencies:
@@ -215,12 +217,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/jsonrpc-provider@^3.3.1, @atomicfinance/jsonrpc-provider@workspace:packages/jsonrpc-provider":
+"@atomicfinance/jsonrpc-provider@^3.4.0, @atomicfinance/jsonrpc-provider@workspace:packages/jsonrpc-provider":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/jsonrpc-provider@workspace:packages/jsonrpc-provider"
   dependencies:
-    "@atomicfinance/errors": ^3.3.1
-    "@atomicfinance/node-provider": ^3.3.1
+    "@atomicfinance/errors": ^3.4.0
+    "@atomicfinance/node-provider": ^3.4.0
     "@babel/runtime": ^7.12.1
     "@types/json-bigint": ^1.0.0
     "@types/lodash": ^4.14.168
@@ -229,12 +231,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/node-provider@^3.3.1, @atomicfinance/node-provider@workspace:packages/node-provider":
+"@atomicfinance/node-provider@^3.4.0, @atomicfinance/node-provider@workspace:packages/node-provider":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/node-provider@workspace:packages/node-provider"
   dependencies:
-    "@atomicfinance/errors": ^3.3.1
-    "@atomicfinance/provider": ^3.3.1
+    "@atomicfinance/errors": ^3.4.0
+    "@atomicfinance/provider": ^3.4.0
     "@babel/runtime": ^7.12.1
     "@types/lodash": ^4.14.168
     axios: ^0.21.0
@@ -242,22 +244,22 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/provider@^3.3.1, @atomicfinance/provider@workspace:packages/provider":
+"@atomicfinance/provider@^3.4.0, @atomicfinance/provider@workspace:packages/provider":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/provider@workspace:packages/provider"
   dependencies:
-    "@atomicfinance/types": ^3.3.1
+    "@atomicfinance/types": ^3.4.0
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
     lodash: ^4.17.20
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/types@^3.3.1, @atomicfinance/types@workspace:packages/types":
+"@atomicfinance/types@^3.4.0, @atomicfinance/types@workspace:packages/types":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/types@workspace:packages/types"
   dependencies:
-    "@node-dlc/messaging": 0.22.4
+    "@node-dlc/messaging": 0.23.0
     "@node-lightning/bitcoin": 0.26.1
     "@node-lightning/noise": 0.26.1
     "@types/lodash": ^4.14.160
@@ -266,13 +268,13 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/utils@^3.3.1, @atomicfinance/utils@workspace:packages/utils":
+"@atomicfinance/utils@^3.4.0, @atomicfinance/utils@workspace:packages/utils":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/utils@workspace:packages/utils"
   dependencies:
-    "@atomicfinance/crypto": ^3.3.1
-    "@atomicfinance/errors": ^3.3.1
-    "@atomicfinance/types": ^3.3.1
+    "@atomicfinance/crypto": ^3.4.0
+    "@atomicfinance/errors": ^3.4.0
+    "@atomicfinance/types": ^3.4.0
     "@babel/runtime": ^7.12.1
     bignumber.js: ^9.0.0
     bip174: ^2.0.1
@@ -1708,30 +1710,32 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@node-dlc/bitcoin@npm:^0.22.4":
-  version: 0.22.4
-  resolution: "@node-dlc/bitcoin@npm:0.22.4"
-  checksum: e6b9a27d45d34fa8fc99b8bc986e08113f3e8787ca2cb9d4b1c085d58ca64a46f317e8ae5d120f86ab3de65290e0980a9d3c0d42f070509567e5685878fe1f55
+"@node-dlc/bitcoin@npm:0.23.0, @node-dlc/bitcoin@npm:^0.23.0":
+  version: 0.23.0
+  resolution: "@node-dlc/bitcoin@npm:0.23.0"
+  checksum: d02574689870f33dedaeaf262da449ce01f8b136d0077e110d3149fe48cee4615871527e09cdf48723764313fb017c223b22f99c2c2b2dbb3d59ae3cbfa0fad8
   languageName: node
   linkType: hard
 
-"@node-dlc/core@npm:0.22.4":
-  version: 0.22.4
-  resolution: "@node-dlc/core@npm:0.22.4"
+"@node-dlc/core@npm:0.23.0":
+  version: 0.23.0
+  resolution: "@node-dlc/core@npm:0.23.0"
   dependencies:
-    "@node-dlc/bitcoin": ^0.22.4
-    "@node-dlc/messaging": ^0.22.4
+    "@node-dlc/bitcoin": ^0.23.0
+    "@node-dlc/messaging": ^0.23.0
     "@node-lightning/core": 0.26.1
     bignumber.js: ^9.0.1
     bitcoin-networks: ^1.0.0
-  checksum: 7ae45b57d3fdcc9c759d6cda0d037cfae1483512ae74e86f2388f89ddf352d0c23634b4744e726a35fdff7c1900bf95936a4c1b55fac3b257746a9025b0b11c3
+    decimal.js: 10.4.3
+  checksum: 6ef03625c43db7fea523d2bf7e0660b6cdb580af15e029850653424e1697a54b16a5e06b26247a5cc647a3a6723a2704ed0e2ef4e93f466b33e7204e347234ea
   languageName: node
   linkType: hard
 
-"@node-dlc/messaging@npm:0.22.4, @node-dlc/messaging@npm:^0.22.4":
-  version: 0.22.4
-  resolution: "@node-dlc/messaging@npm:0.22.4"
+"@node-dlc/messaging@npm:0.23.0, @node-dlc/messaging@npm:^0.23.0":
+  version: 0.23.0
+  resolution: "@node-dlc/messaging@npm:0.23.0"
   dependencies:
+    "@node-dlc/bitcoin": ^0.23.0
     "@node-lightning/bitcoin": 0.26.1
     "@node-lightning/bufio": 0.26.1
     "@node-lightning/checksum": 0.26.1
@@ -1739,7 +1743,7 @@ __metadata:
     bip-schnorr: 0.6.3
     bitcoin-networks: ^1.0.0
     bitcoinjs-lib: 5.2.0
-  checksum: bd1bbd83682242fca385dfc8f02ac3e123cc5c4278cac09005d9ca2afca709f2400076e8ff1ea28849913f7d37fac4369ef035b573a6b0ddd5ef5dacaaa70e2a
+  checksum: 68665b62029de291407705a1137db347df6e97cacf4f3610baad64dc53e0ea3ade9989dac6819c4ab49495655d80f3e24e462a2c4bf1c9bdd19cfdc510ffad4a
   languageName: node
   linkType: hard
 
@@ -5284,6 +5288,13 @@ __metadata:
   version: 4.0.0
   resolution: "decamelize@npm:4.0.0"
   checksum: b7d09b82652c39eead4d6678bb578e3bebd848add894b76d0f6b395bc45b2d692fb88d977e7cfb93c4ed6c119b05a1347cef261174916c2e75c0a8ca57da1809
+  languageName: node
+  linkType: hard
+
+"decimal.js@npm:10.4.3":
+  version: 10.4.3
+  resolution: "decimal.js@npm:10.4.3"
+  checksum: 796404dcfa9d1dbfdc48870229d57f788b48c21c603c3f6554a1c17c10195fc1024de338b0cf9e1efe0c7c167eeb18f04548979bcc5fdfabebb7cc0ae3287bae
   languageName: node
   linkType: hard
 
@@ -12133,8 +12144,9 @@ __metadata:
   resolution: "root@workspace:."
   dependencies:
     "@changesets/cli": ^2.22.0
-    "@node-dlc/core": 0.22.4
-    "@node-dlc/messaging": 0.22.4
+    "@node-dlc/bitcoin": 0.23.0
+    "@node-dlc/core": 0.23.0
+    "@node-dlc/messaging": 0.23.0
     "@swc/cli": ^0.1.57
     "@swc/core": ^1.2.172
     "@swc/register": ^0.1.10

@@ -303,7 +303,10 @@ export default class BitcoinJsWalletProvider extends BitcoinWalletProvider(
     feePerByte: number,
     _outputs: Output[],
     fixedInputs: Input[],
-  ) {
+  ): Promise<{
+    hex: string;
+    fee: number;
+  }> {
     return this._buildSweepTransactionWithSetOutputs(
       externalChangeAddress,
       feePerByte,
@@ -317,7 +320,10 @@ export default class BitcoinJsWalletProvider extends BitcoinWalletProvider(
     feePerByte: number,
     _outputs: Output[] = [],
     fixedInputs: Input[],
-  ) {
+  ): Promise<{
+    hex: string;
+    fee: number;
+  }> {
     const _feePerByte =
       feePerByte ||
       (await this.getMethod('getFeePerByte')()) ||
@@ -605,7 +611,7 @@ export default class BitcoinJsWalletProvider extends BitcoinWalletProvider(
     tx: any,
     _lockTime?: number,
     segwit?: boolean,
-  ) {
+  ): Promise<Buffer[]> {
     const keyPairs = [];
     for (const address of addresses) {
       const wallet = await this.getWalletAddress(address);
@@ -613,7 +619,7 @@ export default class BitcoinJsWalletProvider extends BitcoinWalletProvider(
       keyPairs.push(keyPair);
     }
 
-    const sigs = [];
+    const sigs: Buffer[] = [];
     for (let i = 0; i < inputs.length; i++) {
       const index = inputs[i].txInputIndex
         ? inputs[i].txInputIndex

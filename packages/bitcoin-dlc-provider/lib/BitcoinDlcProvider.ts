@@ -6,7 +6,6 @@ import {
   AddSignaturesToRefundTxResponse,
   AddSignatureToFundTransactionRequest,
   AddSignatureToFundTransactionResponse,
-  bitcoin,
   CalculateEcSignatureRequest,
   CreateBatchDlcTransactionsRequest,
   CreateBatchDlcTransactionsResponse,
@@ -112,8 +111,6 @@ import {
   outputsToPayouts,
 } from './utils/Utils';
 
-const ESTIMATED_SIZE = 312;
-
 export default class BitcoinDlcProvider
   extends Provider
   implements Partial<DlcProvider> {
@@ -168,26 +165,27 @@ export default class BitcoinDlcProvider
   }
 
   async GetInputsForAmount(
-    amount: bigint,
+    amounts: bigint[],
     feeRatePerVb: bigint,
     fixedInputs: Input[] = [],
   ): Promise<Input[]> {
-    if (amount === BigInt(0)) return [];
-    const targets: bitcoin.OutputTarget[] = [
-      {
-        address: BurnAddress,
-        value: Number(amount) + ESTIMATED_SIZE * (Number(feeRatePerVb) - 1),
-      },
-    ];
+    if (amounts.length === 0) return [];
+
+    const fixedUtxos = fixedInputs.map((input) => input.toUtxo());
+
     let inputs: Input[];
     try {
-      const inputsForAmount: InputsForAmountResponse = await this.getMethod(
-        'getInputsForAmount',
-      )(targets, Number(feeRatePerVb), fixedInputs);
+      const inputsForAmount: InputsForDualAmountResponse = await this.getMethod(
+        'getInputsForDualFunding',
+      )(amounts, feeRatePerVb, fixedUtxos);
+
       inputs = inputsForAmount.inputs;
     } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
       if (fixedInputs.length === 0) {
-        throw Error('Not enough balance getInputsForAmount');
+        throw Error(
+          `Not enough balance getInputsForAmount. Error: ${errorMessage}`,
+        );
       } else {
         inputs = fixedInputs;
       }
@@ -226,7 +224,7 @@ export default class BitcoinDlcProvider
       throw Error('Address reuse');
 
     const inputs: Input[] = await this.GetInputsForAmount(
-      collateral,
+      [collateral],
       feeRatePerVb,
       fixedInputs,
     );
@@ -256,10 +254,8 @@ export default class BitcoinDlcProvider
   ): Promise<BatchInitializeResponse> {
     const network = await this.getConnectedNetwork();
 
-    const collateral = collaterals.reduce((a, b) => a + b, BigInt(0));
-
     const inputs: Input[] = await this.GetInputsForAmount(
-      collateral,
+      collaterals,
       feeRatePerVb,
       fixedInputs,
     );
@@ -2928,7 +2924,7 @@ Payout Group found but incorrect group index',
     let inputs: Input[] = _inputs;
     if (!_inputs) {
       const tempInputs = await this.GetInputsForAmount(
-        BigInt(20000),
+        [BigInt(20000)],
         dlcOffer.feeRatePerVb,
         _inputs,
       );
@@ -3790,6 +3786,11 @@ export interface InputsForAmountResponse {
   inputs: Input[];
   change: Change;
   outputs: Output[];
+  fee: number;
+}
+
+export interface InputsForDualAmountResponse {
+  inputs: Input[];
   fee: number;
 }
 
