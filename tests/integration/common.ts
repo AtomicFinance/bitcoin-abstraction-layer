@@ -192,9 +192,9 @@ async function importAddresses(chain: Chain): Promise<void> {
   return chain.client.getMethod('importAddresses')();
 }
 
-async function mineBlock(): Promise<void> {
+async function mineBlock(numBlocks = 1): Promise<void> {
   try {
-    await chains.bitcoinWithNode.client.chain.generateBlock(1);
+    await chains.bitcoinWithNode.client.chain.generateBlock(numBlocks);
   } catch (e) {
     if (!(e instanceof errors.UnimplementedMethodError)) throw e;
     console.log(

@@ -6,7 +6,6 @@ import {
   buildRoundingIntervalsFromIntervals,
   DualFundingTxFinalizer,
   LinearPayout,
-  PolynomialPayoutCurve,
 } from '@node-dlc/core';
 import {
   ContractDescriptorV1,
@@ -38,7 +37,7 @@ import {
   SignDlcAcceptResponse,
 } from '../../../packages/bitcoin-dlc-provider';
 import { BatchSignDlcAcceptResponse } from '../../../packages/bitcoin-dlc-provider/lib';
-import { chains, getInput } from '../common';
+import { chains, getInput, mineBlock } from '../common';
 import Oracle from '../models/Oracle';
 import {
   EnginePayout,
@@ -556,7 +555,7 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
       event.oracleNonces = oliviaInfo.rValues.map((rValue) =>
         Buffer.from(rValue, 'hex'),
       );
-      event.eventMaturityEpoch = 1617170572;
+      event.eventMaturityEpoch = Math.floor(new Date().getTime() / 1000);
       event.eventDescriptor = eventDescriptor;
       event.eventId = eventId;
 
@@ -593,11 +592,8 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
         BitcoinNetworks.bitcoin_regtest,
       );
 
-      const cetLocktime = 1617170572;
-      const refundLocktime = 1617170573;
-
-      console.time('total');
-      console.time('offer');
+      const cetLocktime = Math.floor(new Date().getTime() / 1000);
+      const refundLocktime = Math.floor(new Date().getTime() / 1000) + 1;
 
       const tempDlcOffer = await alice.dlc.createDlcOffer(
         offer.contractInfo,
@@ -734,6 +730,8 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
         numDigits,
         eventId,
       );
+
+      await mineBlock(6);
 
       const cet = await bob.dlc.execute(
         dlcOffer,

@@ -618,8 +618,6 @@ describe('dlc provider', () => {
 
         const contractSize = 0.1;
 
-        console.log('networkFees.bitcoin', networkFees.bitcoin);
-
         const maxGain = Value.fromBitcoin(
           LONG_OPTION_MAX_GAIN.bitcoin * contractSize +
             contractPrice * contractSize +

@@ -459,12 +459,12 @@ export default class Dlc implements DlcProvider {
   }
 
   async GetInputsForAmount(
-    amount: bigint,
+    amounts: bigint[],
     feeRatePerVb: bigint,
     fixedInputs: Input[],
   ): Promise<Input[]> {
     return this.client.getMethod('GetInputsForAmount')(
-      amount,
+      amounts,
       feeRatePerVb,
       fixedInputs,
     );
