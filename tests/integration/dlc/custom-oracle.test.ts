@@ -2,12 +2,15 @@ import 'mocha';
 
 import { Value } from '@node-dlc/bitcoin';
 import {
+  BatchDlcTxBuilder,
   buildCustomStrategyOrderOffer,
   buildRoundingIntervalsFromIntervals,
   DualFundingTxFinalizer,
   LinearPayout,
 } from '@node-dlc/core';
 import {
+  CetAdaptorSignaturesV0,
+  ContractDescriptorV0,
   ContractDescriptorV1,
   ContractInfoV0,
   DigitDecompositionEventDescriptorV0,
@@ -18,16 +21,21 @@ import {
   DlcParty,
   DlcSign,
   DlcTransactions,
+  EnumEventDescriptorV0,
   FundingInputV0,
+  NegotiationFields,
+  NegotiationFieldsV0,
   OracleAnnouncementV0,
   OracleAttestationV0,
   OracleEventV0,
+  OracleInfoV0,
   PayoutFunctionV0,
   RoundingIntervalsV0,
 } from '@node-dlc/messaging';
-import { Tx, TxOut } from '@node-lightning/bitcoin';
+import { HashByteOrder, Sequence, Tx, TxOut } from '@node-lightning/bitcoin';
+import { sha256 } from '@node-lightning/crypto';
 import { math } from 'bip-schnorr';
-import { BitcoinNetworks } from 'bitcoin-networks';
+import { BitcoinNetworks, chainHashFromNetwork } from 'bitcoin-networks';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
@@ -1315,11 +1323,22 @@ describe('Custom Strategy Oracle POC numdigits=21 split trades', () => {
       dlcTxsList,
     );
 
+    const txBuilder = new BatchDlcTxBuilder(
+      dlcOffers as DlcOfferV0[],
+      dlcAccepts.map((dlcAccept) => (dlcAccept as DlcAcceptV0).withoutSigs()),
+    );
+
+    // Ensure node-dlc tx builder builds identical transaction to cfd-dlc C++ implementation
+    const fundTxIdNodeDlc = txBuilder
+      .buildFundingTransaction()
+      .txId.toString(HashByteOrder.RPC);
+
     const fundTxId = await bob.chain.sendRawTransaction(
       fundTx.serialize().toString('hex'),
     );
 
     expect(fundTxId).to.be.a('string');
+    expect(fundTxId).to.equal(fundTxIdNodeDlc); // validates that node-dlc tx builder built identical tx
 
     oracleAttestation = generateOracleAttestation(
       outcome,

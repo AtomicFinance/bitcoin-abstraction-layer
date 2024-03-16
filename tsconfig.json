@@ -13,5 +13,5 @@
     "transpileOnly": true,
     "swc": true,
   },
-  "exclude": ["node_modules", "**/*.spec.ts", "dist"]
+  "exclude": ["node_modules", "**/*.spec.ts", "dist"],
 }
