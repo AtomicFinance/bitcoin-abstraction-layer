@@ -1,5 +1,11 @@
 # @atomicfinance/crypto
 
+## 3.4.2
+
+### Patch Changes
+
+- e701ba6: Bump node-dlc- to 0.23.1 and add node-dlc batch tx builder validation tests
+
 ## 3.4.1
 
 ### Patch Changes

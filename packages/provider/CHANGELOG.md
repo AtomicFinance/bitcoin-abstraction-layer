@@ -1,5 +1,13 @@
 # @atomicfinance/provider
 
+## 3.4.2
+
+### Patch Changes
+
+- e701ba6: Bump node-dlc- to 0.23.1 and add node-dlc batch tx builder validation tests
+- Updated dependencies [e701ba6]
+  - @atomicfinance/types@3.4.2
+
 ## 3.4.1
 
 ### Patch Changes
