@@ -1,5 +1,11 @@
 # @atomicfinance/crypto
 
+## 3.4.3
+
+### Patch Changes
+
+- db49017: Bump node-dlc to 0.23.2 for all packages
+
 ## 3.4.2
 
 ### Patch Changes

@@ -1,5 +1,17 @@
 # @atomicfinance/bitcoin-rpc-provider
 
+## 3.4.3
+
+### Patch Changes
+
+- db49017: Bump node-dlc to 0.23.2 for all packages
+- Updated dependencies [db49017]
+  - @atomicfinance/types@3.4.3
+  - @atomicfinance/bitcoin-utils@3.4.3
+  - @atomicfinance/errors@3.4.3
+  - @atomicfinance/jsonrpc-provider@3.4.3
+  - @atomicfinance/utils@3.4.3
+
 ## 3.4.2
 
 ### Patch Changes
