@@ -36,8 +36,8 @@ __metadata:
     "@atomicfinance/provider": ^3.4.2
     "@atomicfinance/types": ^3.4.2
     "@atomicfinance/utils": ^3.4.2
-    "@node-dlc/core": 0.23.1
-    "@node-dlc/messaging": 0.23.1
+    "@node-dlc/core": 0.23.2
+    "@node-dlc/messaging": 0.23.2
     "@node-lightning/bitcoin": 0.26.1
     "@node-lightning/bufio": 0.26.1
     "@node-lightning/crypto": 0.26.1
@@ -97,7 +97,7 @@ __metadata:
     "@atomicfinance/types": ^3.4.2
     "@atomicfinance/utils": ^3.4.2
     "@babel/runtime": ^7.12.1
-    "@node-dlc/core": 0.23.1
+    "@node-dlc/core": 0.23.2
     bip32: ^2.0.6
     bip39: ^3.0.2
     bitcoin-networks: ^1.0.0
@@ -170,7 +170,7 @@ __metadata:
     "@atomicfinance/bitcoin-utils": ^3.4.2
     "@atomicfinance/provider": ^3.4.2
     "@atomicfinance/types": ^3.4.2
-    "@node-dlc/core": 0.23.1
+    "@node-dlc/core": 0.23.2
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
     bitcoin-networks: ^1.0.0
@@ -188,7 +188,7 @@ __metadata:
     "@atomicfinance/errors": ^3.4.2
     "@atomicfinance/provider": ^3.4.2
     "@atomicfinance/types": ^3.4.2
-    "@node-dlc/messaging": 0.23.1
+    "@node-dlc/messaging": 0.23.2
     "@node-lightning/bitcoin": 0.26.1
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
@@ -260,7 +260,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/types@workspace:packages/types"
   dependencies:
-    "@node-dlc/messaging": 0.23.1
+    "@node-dlc/messaging": 0.23.2
     "@node-lightning/bitcoin": 0.26.1
     "@node-lightning/noise": 0.26.1
     "@types/lodash": ^4.14.160
@@ -1711,32 +1711,32 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@node-dlc/bitcoin@npm:0.23.1, @node-dlc/bitcoin@npm:^0.23.1":
-  version: 0.23.1
-  resolution: "@node-dlc/bitcoin@npm:0.23.1"
-  checksum: ed3deb07ad2b649badd3b918d6a2e6a18b870e889220d3fba540e2f5350ed367c9295cd1c655325388a67c87f6511c646d3c60eac996632d7a421a98740d4b58
+"@node-dlc/bitcoin@npm:0.23.2, @node-dlc/bitcoin@npm:^0.23.2":
+  version: 0.23.2
+  resolution: "@node-dlc/bitcoin@npm:0.23.2"
+  checksum: 9c3fec0282f425692fb150e137f47cfa1a2cf2bd26c2be47bec087674db5db941ca786deddbd5e730c48ddc070a5dad23a7a2c98afcc9b6fea499200583f5e19
   languageName: node
   linkType: hard
 
-"@node-dlc/core@npm:0.23.1":
-  version: 0.23.1
-  resolution: "@node-dlc/core@npm:0.23.1"
+"@node-dlc/core@npm:0.23.2":
+  version: 0.23.2
+  resolution: "@node-dlc/core@npm:0.23.2"
   dependencies:
-    "@node-dlc/bitcoin": ^0.23.1
-    "@node-dlc/messaging": ^0.23.1
+    "@node-dlc/bitcoin": ^0.23.2
+    "@node-dlc/messaging": ^0.23.2
     "@node-lightning/core": 0.26.1
     bignumber.js: ^9.0.1
     bitcoin-networks: ^1.0.0
     decimal.js: 10.4.3
-  checksum: 5f91ad82e800b59ee42f4fa5fdd778d8e7d040b6e13a92b92ad4bf26c39edc1ea3c1b7db93840662c52d5fe2936962d9003992cbb7bdbfa450837b76d7231372
+  checksum: b1bdf76ff08327faba27dc1427931a777491a8653186492df5ce928b4360ad30ec3185f19fe103d8fbc11df3efac75df98013a6d1ffe7d53a0961516c895489a
   languageName: node
   linkType: hard
 
-"@node-dlc/messaging@npm:0.23.1, @node-dlc/messaging@npm:^0.23.1":
-  version: 0.23.1
-  resolution: "@node-dlc/messaging@npm:0.23.1"
+"@node-dlc/messaging@npm:0.23.2, @node-dlc/messaging@npm:^0.23.2":
+  version: 0.23.2
+  resolution: "@node-dlc/messaging@npm:0.23.2"
   dependencies:
-    "@node-dlc/bitcoin": ^0.23.1
+    "@node-dlc/bitcoin": ^0.23.2
     "@node-lightning/bitcoin": 0.26.1
     "@node-lightning/bufio": 0.26.1
     "@node-lightning/checksum": 0.26.1
@@ -1744,7 +1744,7 @@ __metadata:
     bip-schnorr: 0.6.3
     bitcoin-networks: ^1.0.0
     bitcoinjs-lib: 5.2.0
-  checksum: 7e6f5a9544698e717d454189b2196b359d3750c78829461ef320629e2532e42133d555b12a947af634208defe4cec36f7c822357689f49148358c1f58e0c52c6
+  checksum: ab3b8965c40c6a8eef28ad34bc33673b61cfd945367bbbae0f941d811a53f1731b3ddc8a8e077174a9ad3b4661ff83e26c9ff81dc274196c4fcf4f3e9dd4b94a
   languageName: node
   linkType: hard
 
@@ -12145,9 +12145,9 @@ __metadata:
   resolution: "root@workspace:."
   dependencies:
     "@changesets/cli": ^2.22.0
-    "@node-dlc/bitcoin": 0.23.1
-    "@node-dlc/core": 0.23.1
-    "@node-dlc/messaging": 0.23.1
+    "@node-dlc/bitcoin": 0.23.2
+    "@node-dlc/core": 0.23.2
+    "@node-dlc/messaging": 0.23.2
     "@swc/cli": ^0.1.57
     "@swc/core": ^1.2.172
     "@swc/register": ^0.1.10
