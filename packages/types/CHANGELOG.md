@@ -1,5 +1,11 @@
 # @atomicfinance/types
 
+## 3.4.4
+
+### Patch Changes
+
+- cc8f06a: Bump node-dlc to 0.23.3
+
 ## 3.4.3
 
 ### Patch Changes
