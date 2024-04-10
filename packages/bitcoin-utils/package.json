@@ -1,6 +1,6 @@
 {
   "name": "@atomicfinance/bitcoin-utils",
-  "version": "3.4.4",
+  "version": "3.4.5",
   "description": "",
   "module": "dist/index.js",
   "main": "dist/index.js",
@@ -24,10 +24,10 @@
     "node": ">=14"
   },
   "dependencies": {
-    "@atomicfinance/crypto": "^3.4.4",
-    "@atomicfinance/errors": "^3.4.4",
-    "@atomicfinance/types": "^3.4.4",
-    "@atomicfinance/utils": "^3.4.4",
+    "@atomicfinance/crypto": "^3.4.5",
+    "@atomicfinance/errors": "^3.4.5",
+    "@atomicfinance/types": "^3.4.5",
+    "@atomicfinance/utils": "^3.4.5",
     "@babel/runtime": "^7.12.1",
     "bignumber.js": "^9.0.0",
     "bip174": "^2.0.1",

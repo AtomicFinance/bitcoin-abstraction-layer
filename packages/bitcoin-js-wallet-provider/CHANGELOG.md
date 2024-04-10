@@ -1,5 +1,16 @@
 # @atomicfinance/bitcoin-js-wallet-provider
 
+## 3.4.5
+
+### Patch Changes
+
+- 74b7a4f: Bump node-dlc to 0.23.4
+- Updated dependencies [74b7a4f]
+  - @atomicfinance/bitcoin-wallet-provider@3.4.5
+  - @atomicfinance/types@3.4.5
+  - @atomicfinance/bitcoin-utils@3.4.5
+  - @atomicfinance/utils@3.4.5
+
 ## 3.4.4
 
 ### Patch Changes
