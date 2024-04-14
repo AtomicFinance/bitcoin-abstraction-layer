@@ -1,5 +1,15 @@
 # @atomicfinance/bitcoin-cfd-provider
 
+## 3.4.6
+
+### Patch Changes
+
+- b765b9c: Bump nodep-dlc to 0.23.5
+- Updated dependencies [b765b9c]
+  - @atomicfinance/types@3.4.6
+  - @atomicfinance/provider@3.4.6
+  - @atomicfinance/utils@3.4.6
+
 ## 3.4.5
 
 ### Patch Changes
