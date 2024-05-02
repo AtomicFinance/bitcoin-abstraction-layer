@@ -19,7 +19,7 @@
     "@atomicfinance/errors": "^3.4.6",
     "@atomicfinance/provider": "^3.4.6",
     "@atomicfinance/types": "^3.4.6",
-    "@node-dlc/messaging": "0.23.5",
+    "@node-dlc/messaging": "0.23.6",
     "@node-lightning/bitcoin": "0.26.1",
     "ajv": "^6.10.0",
     "lodash": "^4.17.20"
