@@ -1,5 +1,11 @@
 # @atomicfinance/errors
 
+## 3.4.7
+
+### Patch Changes
+
+- 0ba01ef: Bump @node-dlc to 0.23.6
+
 ## 3.4.6
 
 ### Patch Changes

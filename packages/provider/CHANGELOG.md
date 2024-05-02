@@ -1,5 +1,13 @@
 # @atomicfinance/provider
 
+## 3.4.7
+
+### Patch Changes
+
+- 0ba01ef: Bump @node-dlc to 0.23.6
+- Updated dependencies [0ba01ef]
+  - @atomicfinance/types@3.4.7
+
 ## 3.4.6
 
 ### Patch Changes
