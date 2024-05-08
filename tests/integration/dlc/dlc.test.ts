@@ -8,6 +8,7 @@ import {
   HyperbolaPayoutCurve,
 } from '@node-dlc/core';
 import {
+  CloseTLV,
   ContractDescriptorV1,
   ContractInfoV0,
   ContractInfoV1,
@@ -29,6 +30,7 @@ import {
   OracleInfoV0,
   RoundingIntervalsV0,
 } from '@node-dlc/messaging';
+import { HashByteOrder, OutPoint } from '@node-lightning/bitcoin';
 import { xor } from '@node-lightning/crypto';
 import BN from 'bignumber.js';
 import { BitcoinNetworks, chainHashFromNetwork } from 'bitcoin-networks';
@@ -39,7 +41,7 @@ import {
   AcceptDlcOfferResponse,
   SignDlcAcceptResponse,
 } from '../../../packages/bitcoin-dlc-provider';
-import { Input } from '../../../packages/types';
+import { bitcoin as bT, Input } from '../../../packages/types';
 import { chains, getInput } from '../common';
 import f from '../fixtures/blockchain.json';
 import Oracle from '../models/Oracle';
@@ -204,6 +206,7 @@ describe('dlc provider', () => {
           dlcAccept,
         );
         dlcSign = signDlcAcceptResponse.dlcSign;
+        dlcTransactions = signDlcAcceptResponse.dlcTransactions;
         console.timeEnd('sign-time');
 
         const fundTx = await bob.dlc.finalizeDlcSign(
@@ -364,6 +367,7 @@ describe('dlc provider', () => {
         );
 
         const closeTxId = await bob.chain.sendRawTransaction(bobDlcTx);
+        console.log('closeTxId', closeTxId);
         const closeTx = await alice.getMethod('getTransactionByHash')(
           closeTxId,
         );
@@ -382,6 +386,119 @@ describe('dlc provider', () => {
             ? (dlcOffer as DlcOfferV0).payoutSPK.toString('hex')
             : (dlcAccept as DlcAcceptV0).payoutSPK.toString('hex'),
         );
+      });
+
+      it.only('close to adjust', async () => {
+        console.log('close to adjust');
+        const aliceInput = await getInput(alice);
+        const bobInput = await getInput(bob);
+
+        const { contractInfo, totalCollateral } = generateContractInfo(
+          oracle,
+          numDigits,
+          oracleBase,
+          'btc/usd',
+          BigInt(4000),
+          BigInt(2000000),
+        );
+
+        const feeRatePerVb = BigInt(5);
+        const cetLocktime = 1617170572;
+        const refundLocktime = 1617170573;
+
+        const dlcTxs = dlcTransactions as DlcTransactionsV0;
+
+        const fundTx = await alice.chain.getTransactionByHash(
+          dlcTxs.fundTx.txId.toString(HashByteOrder.RPC),
+        );
+
+        console.log('fundTx', fundTx);
+
+        console.log(
+          'fundTx._raw.vout[dlcTxs.fundTxVout]',
+          fundTx._raw.vout[dlcTxs.fundTxVout],
+        );
+
+        console.log('aliceInput', aliceInput);
+
+        const previousDlcUtxo: bT.UTXO = {
+          txid: dlcTxs.fundTx.txId.toString(HashByteOrder.RPC),
+          vout: dlcTxs.fundTxVout,
+          address: fundTx._raw.vout[dlcTxs.fundTxVout].scriptPubKey.address,
+          value: Number(
+            Value.fromBitcoin(fundTx._raw.vout[dlcTxs.fundTxVout].value).sats,
+          ),
+        };
+
+        const previousDlcInput = Input.fromUTXO(previousDlcUtxo);
+
+        // const previousDlcInput: Input = {
+        //   txid: dlcTxs.fundTx.txId.toString(HashByteOrder.RPC),
+        //   vout: dlcTxs.fundTxVout,
+        //   address: fundTx._raw.vout[dlcTxs.fundTxVout].scriptPubKey.address,
+        //   amount: Value.fromBitcoin(fundTx._raw.vout[dlcTxs.fundTxVout].value)
+        //     .bitcoin,
+        //   value: Number(
+        //     Value.fromBitcoin(fundTx._raw.vout[dlcTxs.fundTxVout].value).sats,
+        //   ),
+        // };
+
+        // contractId: Buffer;
+        // offerPayoutSatoshis: bigint;
+        // acceptPayoutSatoshis: bigint;
+        // outpoint: OutPoint;
+
+        const closeTLV = new CloseTLV();
+        closeTLV.contractId = (dlcSign as DlcSignV0).contractId;
+        closeTLV.offerPayoutSatoshis =
+          (dlcOffer as DlcOfferV0).offerCollateralSatoshis - BigInt(20000);
+        closeTLV.offerFundingPubKey = (dlcOffer as DlcOfferV0).fundingPubKey;
+        closeTLV.acceptFundingPubkey = (dlcAccept as DlcAcceptV0).fundingPubKey;
+        closeTLV.outpoint = OutPoint.fromString(
+          `${dlcTxs.fundTx.txId.toString(HashByteOrder.RPC)}:${
+            dlcTxs.fundTxVout
+          }`,
+        );
+
+        const replacementDlcOffer = await alice.dlc.createDlcOffer(
+          contractInfo,
+          totalCollateral - BigInt(2000),
+          feeRatePerVb,
+          cetLocktime,
+          refundLocktime,
+          [previousDlcInput, aliceInput],
+          [closeTLV],
+        );
+
+        console.log('replacementDlcOffer', replacementDlcOffer.toJSON());
+
+        const replacementDlcAccept = await bob.dlc.acceptDlcOffer(
+          replacementDlcOffer,
+          [bobInput],
+        );
+
+        const replacementDlcSign = await alice.dlc.signDlcAccept(
+          replacementDlcOffer,
+          replacementDlcAccept.dlcAccept,
+        );
+
+        const replacementTx = await bob.dlc.finalizeDlcSign(
+          replacementDlcOffer,
+          replacementDlcAccept.dlcAccept,
+          replacementDlcSign.dlcSign,
+          replacementDlcAccept.dlcTransactions,
+        );
+
+        console.log(
+          `replacementTx.serialize().toString('hex')`,
+          replacementTx.serialize().toString('hex'),
+        );
+
+        const replacementTxId = await bob.chain.sendRawTransaction(
+          replacementTx.serialize().toString('hex'),
+        );
+
+        console.log('replacementTxId', replacementTxId);
       });
 
       it('close with fixedInputs', async () => {

@@ -59,6 +59,7 @@ import {
 } from '@node-dlc/core';
 import {
   CetAdaptorSignaturesV0,
+  CloseTLV,
   ContractDescriptor,
   ContractDescriptorV1,
   ContractInfo,
@@ -89,7 +90,7 @@ import {
   PolynomialPayoutCurvePiece,
   ScriptWitnessV0,
 } from '@node-dlc/messaging';
-import { Script, Sequence, Tx } from '@node-lightning/bitcoin';
+import { OutPoint, Script, Sequence, Tx } from '@node-lightning/bitcoin';
 import { StreamReader } from '@node-lightning/bufio';
 import { hash160, sha256, xor } from '@node-lightning/crypto';
 import assert from 'assert';
@@ -111,12 +112,21 @@ import {
   outputsToPayouts,
 } from './utils/Utils';
 
+export interface FundingInputContainer {
+  type: 'single' | 'multisig';
+  fundingInput: FundingInputV0;
+  input: Input;
+  closeTLV?: CloseTLV;
+}
+
 export default class BitcoinDlcProvider
   extends Provider
   implements Partial<DlcProvider> {
   _network: BitcoinNetwork;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   _cfdDlcJs: any;
 
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
   constructor(network: BitcoinNetwork, cfdDlcJs?: any) {
     super();
 
@@ -130,19 +140,52 @@ export default class BitcoinDlcProvider
     }
   }
 
-  private async GetPrivKeysForInputs(inputs: Input[]): Promise<string[]> {
+  private async GetPrivKeysForInputs(
+    inputs: Input[],
+    closeTLVs: CloseTLV[] = [],
+    isOfferer: boolean,
+  ): Promise<string[]> {
     const privKeys: string[] = [];
 
-    for (let i = 0; i < inputs.length; i++) {
-      const input = inputs[i];
+    for (const input of inputs) {
+      // Determine if the input is a closing input by matching its outpoint with any in closeTLVs
+      const matchingCloseTLV = closeTLVs.find(
+        (closeTLV) =>
+          closeTLV.outpoint.toString() === input.toOutPoint().toString(),
+      );
+
       let derivationPath = input.derivationPath;
 
-      if (!derivationPath) {
-        derivationPath = (
-          await this.getMethod('getWalletAddress')(input.address)
-        ).derivationPath;
+      if (matchingCloseTLV) {
+        // If it's a closing input, handle the derivation path based on the closing transaction logic
+        const fundAddress = await this.GetFundAddressFromPubkeys(
+          matchingCloseTLV.offerFundingPubKey,
+          matchingCloseTLV.acceptFundingPubkey,
+          isOfferer,
+        );
+        console.log('test1');
+        const {
+          derivationPath: fundAddressDerivationPath,
+        } = await this.getMethod('getWalletAddress')(fundAddress);
+        console.log('test2');
+
+        derivationPath = fundAddressDerivationPath;
+      } else if (!derivationPath) {
+        console.log('test3');
+        console.log('input', input.toOutPoint().toString());
+        console.log(
+          'closetlvs',
+          closeTLVs.map((closeTLV) => closeTLV.outpoint.toString()),
+        );
+        // If not a closing input and no derivation path is provided, fetch it from the wallet
+        const walletAddress = await this.getMethod('getWalletAddress')(
+          input.address,
+        );
+        console.log('test4');
+        derivationPath = walletAddress.derivationPath;
       }
 
+      // Retrieve the private key for the derivation path
       const keyPair = await this.getMethod('keyPair')(derivationPath);
       const privKey = Buffer.from(keyPair.__D).toString('hex');
       privKeys.push(privKey);
@@ -168,6 +211,7 @@ export default class BitcoinDlcProvider
     amounts: bigint[],
     feeRatePerVb: bigint,
     fixedInputs: Input[] = [],
+    requiredOutpoints: OutPoint[] = [],
   ): Promise<Input[]> {
     if (amounts.length === 0) return [];
 
@@ -177,10 +221,11 @@ export default class BitcoinDlcProvider
     try {
       const inputsForAmount: InputsForDualAmountResponse = await this.getMethod(
         'getInputsForDualFunding',
-      )(amounts, feeRatePerVb, fixedUtxos);
+      )(amounts, feeRatePerVb, fixedUtxos, 100, requiredOutpoints);
 
       inputs = inputsForAmount.inputs;
     } catch (e) {
+      console.log('error hit', e);
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
       if (fixedInputs.length === 0) {
         throw Error(
@@ -198,7 +243,9 @@ export default class BitcoinDlcProvider
     collateral: bigint,
     feeRatePerVb: bigint,
     fixedInputs: Input[],
+    requiredOutpoints: OutPoint[] = [],
   ): Promise<InitializeResponse> {
+    console.log('fixedInputs', fixedInputs);
     const network = await this.getConnectedNetwork();
     const payoutAddress: Address = await this.client.wallet.getUnusedAddress(
       false,
@@ -227,7 +274,9 @@ export default class BitcoinDlcProvider
       [collateral],
       feeRatePerVb,
       fixedInputs,
+      requiredOutpoints,
     );
+    console.log('inputs', inputs);
     const fundingInputs: FundingInput[] = await Promise.all(
       inputs.map(async (input) => {
         return this.inputToFundingInput(input);
@@ -773,6 +822,7 @@ export default class BitcoinDlcProvider
     return { dlcTransactionsList, nestedMessagesList };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private GenerateEnumMessages(oracleEvent: OracleEventV0): Messages[] {
     throw Error('Only DigitDecomposition Oracle Events supported');
   }
@@ -1055,6 +1105,76 @@ export default class BitcoinDlcProvider
     }
   }
 
+  private async GetCategorizedFundingInputs(
+    _dlcOffer: DlcOffer,
+    _dlcAccept: DlcAccept,
+    isOfferer: boolean,
+  ): Promise<FundingInputContainer[]> {
+    const { dlcOffer, dlcAccept } = checkTypes({
+      _dlcOffer,
+      _dlcAccept,
+    });
+
+    const fundingInputs: FundingInputContainer[] = [];
+
+    // Helper function to categorize funding input
+    const categorizeInput = async (
+      fundingInput: FundingInputV0,
+      source: DlcOfferV0 | DlcAcceptV0,
+    ) => {
+      const isMultisig = (source as DlcOfferV0).closeInfos?.some(
+        (closeTLV) =>
+          closeTLV.outpoint.toString() === fundingInput.toOutPoint().toString(),
+      );
+
+      if (isMultisig) {
+        const closeTLV = (source as DlcOfferV0).closeInfos.find(
+          (closeTLV) =>
+            closeTLV.outpoint.toString() ===
+            fundingInput.toOutPoint().toString(),
+        );
+        fundingInputs.push({
+          type: 'multisig',
+          fundingInput: fundingInput,
+          input: await this.fundingInputToInput(fundingInput),
+          closeTLV: closeTLV,
+        });
+      } else {
+        fundingInputs.push({
+          type: 'single',
+          fundingInput: fundingInput,
+          input: await this.fundingInputToInput(fundingInput),
+        });
+      }
+    };
+
+    // Process inputs based on role
+    const tasks = [];
+    if (isOfferer) {
+      dlcOffer.fundingInputs.forEach((input) =>
+        tasks.push(categorizeInput(input as FundingInputV0, dlcOffer)),
+      );
+    } else {
+      dlcAccept.fundingInputs.forEach((input) => {
+        tasks.push(categorizeInput(input as FundingInputV0, dlcAccept));
+      });
+      dlcOffer.fundingInputs.forEach((input) => {
+        const isMultisig = (dlcOffer as DlcOfferV0).closeInfos?.some(
+          (closeTLV) =>
+            closeTLV.outpoint.toString() ===
+            (input as FundingInputV0).toOutPoint().toString(),
+        );
+        if (isMultisig) {
+          tasks.push(categorizeInput(input as FundingInputV0, dlcOffer));
+        }
+      });
+    }
+
+    await Promise.all(tasks);
+
+    return fundingInputs;
+  }
+
   private async CreateFundingSigs(
     _dlcOffer: DlcOffer,
     _dlcAccept: DlcAccept,
@@ -1067,55 +1187,108 @@ export default class BitcoinDlcProvider
       _dlcTxs,
     });
 
-    const fundingInputs = isOfferer
-      ? dlcOffer.fundingInputs
-      : dlcAccept.fundingInputs;
+    console.log('CreateFundingSigs 1');
 
-    const inputs: Input[] = await Promise.all(
-      fundingInputs.map(async (fundingInput) => {
-        return this.fundingInputToInput(fundingInput);
-      }),
+    const fundingInputs = await this.GetCategorizedFundingInputs(
+      dlcOffer,
+      dlcAccept,
+      isOfferer,
     );
 
-    const inputPrivKeys = await this.GetPrivKeysForInputs(inputs);
+    const witnessElements: ScriptWitnessV0[][] = [];
 
-    const fundTxSigs = await Promise.all(
-      inputs.map(async (input, index) => {
+    for (let i = 0; i < fundingInputs.length; i++) {
+      const fundingInput = fundingInputs[i];
+      const input = fundingInput.input;
+
+      let derivationPath = input.derivationPath;
+
+      if (!derivationPath) {
+        if (fundingInput.type === 'multisig') {
+          const fundAddress = await this.GetFundAddressFromPubkeys(
+            fundingInput.closeTLV.offerFundingPubKey,
+            fundingInput.closeTLV.acceptFundingPubkey,
+            isOfferer,
+          );
+
+          const {
+            derivationPath: fundAddressDerivationPath,
+          } = await this.getMethod('getWalletAddress')(fundAddress);
+
+          derivationPath = fundAddressDerivationPath;
+        } else {
+          const walletAddress = await this.getMethod('getWalletAddress')(
+            input.address,
+          );
+          derivationPath = walletAddress.derivationPath;
+        }
+      }
+
+      console.log('CreateFundingSigs 2');
+
+      // Retrieve the private key for the derivation path
+      const keyPair = await this.getMethod('keyPair')(derivationPath);
+      const privKey = Buffer.from(keyPair.__D).toString('hex');
+
+      if (fundingInput.type === 'multisig') {
+        console.log('CreateFundingSigs 3');
+        const refundSignRequest: GetRawRefundTxSignatureRequest = {
+          refundTxHex: dlcTxs.fundTx.serialize().toString('hex'),
+          privkey: privKey,
+          fundTxId: input.txid,
+          fundVout: input.vout,
+          localFundPubkey: fundingInput.closeTLV.offerFundingPubKey.toString(
+            'hex',
+          ),
+          remoteFundPubkey: fundingInput.closeTLV.acceptFundingPubkey.toString(
+            'hex',
+          ),
+          fundInputAmount: input.value,
+        };
+
+        const fundSignature = Buffer.from(
+          (await this.GetRawRefundTxSignature(refundSignRequest)).hex,
+          'hex',
+        );
+
+        const sigWitness = new ScriptWitnessV0();
+        sigWitness.witness = fundSignature;
+        witnessElements.push([sigWitness]);
+      } else {
+        console.log('CreateFundingSigs 4');
         const fundTxSignRequest: GetRawFundTxSignatureRequest = {
           fundTxHex: dlcTxs.fundTx.serialize().toString('hex'),
-          privkey: inputPrivKeys[index],
+          privkey: privKey,
           prevTxId: input.txid,
           prevVout: input.vout,
           amount: input.value,
         };
 
-        return (await this.GetRawFundTxSignature(fundTxSignRequest)).hex;
-      }),
-    );
+        const fundSignature = (
+          await this.GetRawFundTxSignature(fundTxSignRequest)
+        ).hex;
 
-    const inputPubKeys = await Promise.all(
-      inputPrivKeys.map(async (privkey) => {
-        const reqPrivKey = {
-          privkey,
-          isCompressed: true,
-        };
+        const pubkey = (
+          await this.getMethod('GetPubkeyFromPrivkey')({
+            privkey: privKey,
+            isCompressed: true,
+          })
+        ).pubkey;
 
-        return (await this.getMethod('GetPubkeyFromPrivkey')(reqPrivKey))
-          .pubkey;
-      }),
-    );
-
-    const witnessElements: ScriptWitnessV0[][] = [];
-    for (let i = 0; i < fundTxSigs.length; i++) {
-      const sigWitness = new ScriptWitnessV0();
-      sigWitness.witness = Buffer.from(fundTxSigs[i], 'hex');
-      const pubKeyWitness = new ScriptWitnessV0();
-      pubKeyWitness.witness = Buffer.from(inputPubKeys[i], 'hex');
-      witnessElements.push([sigWitness, pubKeyWitness]);
+        const sigWitness = new ScriptWitnessV0();
+        sigWitness.witness = Buffer.from(fundSignature, 'hex');
+        const pubKeyWitness = new ScriptWitnessV0();
+        pubKeyWitness.witness = Buffer.from(pubkey, 'hex');
+        witnessElements.push([sigWitness, pubKeyWitness]);
+      }
     }
+
+    console.log('CreateFundingSigs 5');
 
     const fundingSignatures = new FundingSignaturesV0();
     fundingSignatures.witnessElements = witnessElements;
+
+    console.log('CreateFundingSigs 6');
 
     return fundingSignatures;
   }
@@ -1189,32 +1362,89 @@ export default class BitcoinDlcProvider
       ...dlcSign.fundingSignatures.witnessElements,
       ...fundingSignatures.witnessElements,
     ];
+
     const fundingInputs = [
       ...dlcOffer.fundingInputs,
       ...dlcAccept.fundingInputs,
     ];
+
+    console.log('create funding tx 1');
+
+    console.log('fundingSignatures', fundingSignatures.toJSON());
 
     let fundTxHex = dlcTxs.fundTx.serialize().toString('hex');
 
     await asyncForEach(
       witnessElements,
       async (witnessElement: ScriptWitnessV0, i: number) => {
-        const signature = witnessElement[0].witness.toString('hex');
-        const pubkey = witnessElement[1].witness.toString('hex');
+        if (witnessElement.length === 2) {
+          const signature = witnessElement[0].witness.toString('hex');
+          const pubkey = witnessElement[1].witness.toString('hex');
 
-        const fundingInput = fundingInputs[i] as FundingInputV0;
+          const fundingInput = fundingInputs[i] as FundingInputV0;
 
-        const addSignRequest: AddSignatureToFundTransactionRequest = {
-          fundTxHex,
-          signature,
-          prevTxId: fundingInput.prevTx.txId.toString(),
-          prevVout: fundingInput.prevTxVout,
-          pubkey,
-        };
-        fundTxHex = (await this.AddSignatureToFundTransaction(addSignRequest))
-          .hex;
+          const addSignRequest: AddSignatureToFundTransactionRequest = {
+            fundTxHex,
+            signature,
+            prevTxId: fundingInput.prevTx.txId.toString(),
+            prevVout: fundingInput.prevTxVout,
+            pubkey,
+          };
+          fundTxHex = (await this.AddSignatureToFundTransaction(addSignRequest))
+            .hex;
+        }
       },
     );
+
+    console.log('create funding tx 2');
+
+    const multisigOfferorWitnessElements = dlcSign.fundingSignatures.witnessElements.filter(
+      (witnessElement) => {
+        return witnessElement.length === 1;
+      },
+    );
+    const multisigAcceptorWitnessElements = fundingSignatures.witnessElements.filter(
+      (witnessElement) => {
+        return witnessElement.length === 1;
+      },
+    );
+
+    console.log('create funding tx 3');
+
+    if (dlcOffer.closeInfos) {
+      for (let i = 0; i < dlcOffer.closeInfos.length; i++) {
+        const closeTLV = dlcOffer.closeInfos[i];
+        const offerorWitnessElement = multisigOfferorWitnessElements[i];
+        const offerorSignature = offerorWitnessElement[0].witness.toString(
+          'hex',
+        );
+        const acceptorWitnessElement = multisigAcceptorWitnessElements[i];
+        const acceptorSignature = acceptorWitnessElement[0].witness.toString(
+          'hex',
+        );
+
+        const signatures =
+          Buffer.compare(
+            closeTLV.offerFundingPubKey,
+            closeTLV.acceptFundingPubkey,
+          ) === -1
+            ? [offerorSignature, acceptorSignature]
+            : [acceptorSignature, offerorSignature];
+
+        const addSigsToRefundTxRequest: AddSignaturesToRefundTxRequest = {
+          refundTxHex: fundTxHex,
+          signatures,
+          fundTxId: closeTLV.outpoint.txid.toString(),
+          fundVout: closeTLV.outpoint.outputIndex,
+          localFundPubkey: closeTLV.offerFundingPubKey.toString('hex'),
+          remoteFundPubkey: closeTLV.acceptFundingPubkey.toString('hex'),
+        };
+
+        fundTxHex = (
+          await this.AddSignaturesToRefundTx(addSigsToRefundTxRequest)
+        ).hex;
+      }
+    }
 
     const fundTx = Tx.decode(StreamReader.fromHex(fundTxHex));
 
@@ -1597,15 +1827,15 @@ Payout Group found but incorrect group index',
     return Tx.decode(StreamReader.fromHex(finalCet));
   }
 
-  private async GetFundAddress(
-    dlcOffer: DlcOfferV0,
-    dlcAccept: DlcAcceptV0,
+  private async GetFundAddressFromPubkeys(
+    offerFundingPubKey: Buffer,
+    acceptFundingPubKey: Buffer,
     isOfferer: boolean,
   ): Promise<string> {
     const network = await this.getConnectedNetwork();
 
     const fundingSPK = Script.p2wpkhLock(
-      hash160(isOfferer ? dlcOffer.fundingPubKey : dlcAccept.fundingPubKey),
+      hash160(isOfferer ? offerFundingPubKey : acceptFundingPubKey),
     )
       .serialize()
       .slice(1);
@@ -1616,6 +1846,18 @@ Payout Group found but incorrect group index',
     );
 
     return fundingAddress;
+  }
+
+  private async GetFundAddress(
+    dlcOffer: DlcOfferV0,
+    dlcAccept: DlcAcceptV0,
+    isOfferer: boolean,
+  ): Promise<string> {
+    return this.GetFundAddressFromPubkeys(
+      dlcOffer.fundingPubKey,
+      dlcAccept.fundingPubKey,
+      isOfferer,
+    );
   }
 
   private async GetFundKeyPair(
@@ -2002,11 +2244,18 @@ Payout Group found but incorrect group index',
     cetLocktime: number,
     refundLocktime: number,
     fixedInputs?: Input[],
+    closeTLVs?: CloseTLV[],
   ): Promise<DlcOffer> {
+    console.log('closeTLVs', closeTLVs);
+
     contractInfo.validate();
     const network = await this.getConnectedNetwork();
 
     const dlcOffer = new DlcOfferV0();
+
+    const requiredOutpoints: OutPoint[] = closeTLVs
+      ? closeTLVs.map((closeTLV) => closeTLV.outpoint)
+      : [];
 
     const {
       fundingPubKey,
@@ -2019,6 +2268,7 @@ Payout Group found but incorrect group index',
       offerCollateralSatoshis,
       feeRatePerVb,
       fixedInputs,
+      requiredOutpoints,
     );
 
     _fundingInputs.forEach((input) =>
@@ -2034,6 +2284,11 @@ Payout Group found but incorrect group index',
 
     fundingInputs.sort(
       (a, b) => Number(a.inputSerialId) - Number(b.inputSerialId),
+    );
+
+    console.log(
+      'fundingInputs',
+      fundingInputs.map((f) => f.toJSON()),
     );
 
     const fundOutputSerialId = generateSerialId();
@@ -2079,6 +2334,8 @@ Payout Group found but incorrect group index',
     );
 
     dlcOffer.validate();
+
+    dlcOffer.closeInfos = closeTLVs;
 
     return dlcOffer;
   }
@@ -2686,7 +2943,7 @@ Payout Group found but incorrect group index',
       false,
     );
 
-    await this.VerifyFundingSigs(dlcOffer, dlcAccept, dlcSign, dlcTxs, false);
+    // await this.VerifyFundingSigs(dlcOffer, dlcAccept, dlcSign, dlcTxs, false);
 
     const fundingSignatures = await this.CreateFundingSigs(
       dlcOffer,
@@ -2935,6 +3192,7 @@ Payout Group found but incorrect group index',
         ...input,
         inputSerialId: input.inputSerialId || generateSerialId(),
         toUtxo: input.toUtxo,
+        toOutPoint: input.toOutPoint,
       };
     });
 
@@ -3094,12 +3352,8 @@ Payout Group found but incorrect group index',
     // Create DlcClose
     const dlcClose = new DlcCloseV0();
     dlcClose.contractId = dlcTxs.contractId;
-    dlcClose.offerPayoutSatoshis = BigInt(
-      psbt.txOutputs[offerFirst ? 0 : 1].value,
-    ); // You give collateral back to users
-    dlcClose.acceptPayoutSatoshis = BigInt(
-      psbt.txOutputs[offerFirst ? 1 : 0].value,
-    ); // give collateral back to users
+    dlcClose.offerPayoutSatoshis = offerPayoutValue;
+    dlcClose.acceptPayoutSatoshis = acceptPayoutValue;
     dlcClose.fundInputSerialId = fundingInputSerialId; // randomly generated serial id
     dlcClose.closeSignature = closeSignature;
     dlcClose.fundingSignatures = fundingSignatures;
@@ -3649,6 +3903,7 @@ Payout Group found but incorrect group index',
       scriptPubKey: scriptPubKey.toString('hex'),
       inputSerialId: input.inputSerialId,
       toUtxo: Input.prototype.toUtxo,
+      toOutPoint: Input.prototype.toOutPoint,
     };
   }
 

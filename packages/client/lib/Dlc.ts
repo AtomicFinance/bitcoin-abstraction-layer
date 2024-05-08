@@ -38,6 +38,7 @@ import {
   VerifyRefundTxSignatureResponse,
 } from '@atomicfinance/types';
 import {
+  CloseTLV,
   ContractInfo,
   DlcAccept,
   DlcClose,
@@ -96,6 +97,7 @@ export default class Dlc implements DlcProvider {
     cetLocktime: number,
     refundLocktime: number,
     fixedInputs?: IInput[],
+    closeTLVs?: CloseTLV[],
   ): Promise<DlcOffer> {
     return this.client.getMethod('createDlcOffer')(
       contractInfo,
@@ -104,6 +106,7 @@ export default class Dlc implements DlcProvider {
       cetLocktime,
       refundLocktime,
       fixedInputs,
+      closeTLVs,
     );
   }
 
@@ -528,4 +531,5 @@ export interface IInput {
   solvable?: boolean;
   safe?: boolean;
   toUtxo: any;
+  toOutPoint: any;
 }

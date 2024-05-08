@@ -1,3 +1,5 @@
+import { OutPoint } from '@node-lightning/bitcoin';
+
 import * as bT from '../bitcoin';
 import Amount from './Amount';
 import Utxo from './Utxo';
@@ -56,16 +58,19 @@ export default class Input {
     };
   }
 
+  toOutPoint(): OutPoint {
+    return new OutPoint(this.txid, this.vout);
+  }
+
   static fromUTXO(utxo: bT.UTXO): Input {
     const amount: Amount = Amount.FromSatoshis(utxo.value);
 
-    return {
-      txid: utxo.txid,
-      vout: utxo.vout,
-      address: utxo.address,
-      value: utxo.value,
-      amount: amount.GetBitcoinAmount(),
-      toUtxo: Input.prototype.toUtxo,
-    };
+    return new Input(
+      utxo.txid,
+      utxo.vout,
+      utxo.address,
+      amount.GetBitcoinAmount(),
+      utxo.value,
+    );
   }
 }

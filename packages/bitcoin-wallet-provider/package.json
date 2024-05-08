@@ -18,7 +18,7 @@
     "@atomicfinance/bitcoin-utils": "^3.4.7",
     "@atomicfinance/provider": "^3.4.7",
     "@atomicfinance/types": "^3.4.7",
-    "@node-dlc/core": "0.23.6",
+    "@node-dlc/core": "file:../../../node-dlc/packages/core",
     "bitcoin-networks": "^1.0.0",
     "bitcoinjs-lib": "5.2.0",
     "lodash": "^4.17.20",

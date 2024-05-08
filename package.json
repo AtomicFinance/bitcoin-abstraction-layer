@@ -6,9 +6,9 @@
   ],
   "devDependencies": {
     "@changesets/cli": "^2.22.0",
-    "@node-dlc/bitcoin": "0.23.6",
-    "@node-dlc/core": "0.23.6",
-    "@node-dlc/messaging": "0.23.6",
+    "@node-dlc/bitcoin": "file:../node-dlc/packages/bitcoin",
+    "@node-dlc/core": "file:../node-dlc/packages/core",
+    "@node-dlc/messaging": "file:../node-dlc/packages/messaging",
     "@swc/cli": "^0.1.57",
     "@swc/core": "^1.2.172",
     "@swc/register": "^0.1.10",

@@ -28,6 +28,8 @@ export function generateContractInfo(
   numDigits = 18,
   oracleBase = 2,
   eventId = 'btc/usd',
+  strikePrice = BigInt(4000),
+  contractSize = BigInt(1000000), // TODO: this should probably be called collateral
 ): { contractInfo: ContractInfoV0; totalCollateral: bigint } {
   const oliviaInfo = oracle.GetOracleInfo();
 
@@ -63,8 +65,8 @@ export function generateContractInfo(
   oracleInfo.announcement = announcement;
 
   const { payoutFunction, totalCollateral } = CoveredCall.buildPayoutFunction(
-    4000n,
-    1000000n,
+    strikePrice,
+    contractSize,
     oracleBase,
     numDigits,
   );

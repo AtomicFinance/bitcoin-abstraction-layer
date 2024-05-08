@@ -15,7 +15,9 @@ import {
 import randomBytes from 'randombytes';
 
 export const asyncForEach = async (
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
   array: any,
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
   callback: any,
 ): Promise<void> => {
   for (let index = 0; index < array.length; index++) {
