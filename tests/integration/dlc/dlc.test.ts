@@ -389,7 +389,6 @@ describe('dlc provider', () => {
       });
 
       it.only('close to adjust', async () => {
-        console.log('close to adjust');
         const aliceInput = await getInput(alice);
         const bobInput = await getInput(bob);
 
@@ -412,15 +411,6 @@ describe('dlc provider', () => {
           dlcTxs.fundTx.txId.toString(HashByteOrder.RPC),
         );
 
-        console.log('fundTx', fundTx);
-
-        console.log(
-          'fundTx._raw.vout[dlcTxs.fundTxVout]',
-          fundTx._raw.vout[dlcTxs.fundTxVout],
-        );
-
-        console.log('aliceInput', aliceInput);
-
         const previousDlcUtxo: bT.UTXO = {
           txid: dlcTxs.fundTx.txId.toString(HashByteOrder.RPC),
           vout: dlcTxs.fundTxVout,
@@ -431,22 +421,6 @@ describe('dlc provider', () => {
         };
 
         const previousDlcInput = Input.fromUTXO(previousDlcUtxo);
-
-        // const previousDlcInput: Input = {
-        //   txid: dlcTxs.fundTx.txId.toString(HashByteOrder.RPC),
-        //   vout: dlcTxs.fundTxVout,
-        //   address: fundTx._raw.vout[dlcTxs.fundTxVout].scriptPubKey.address,
-        //   amount: Value.fromBitcoin(fundTx._raw.vout[dlcTxs.fundTxVout].value)
-        //     .bitcoin,
-        //   value: Number(
-        //     Value.fromBitcoin(fundTx._raw.vout[dlcTxs.fundTxVout].value).sats,
-        //   ),
-        // };
-
-        // contractId: Buffer;
-        // offerPayoutSatoshis: bigint;
-        // acceptPayoutSatoshis: bigint;
-        // outpoint: OutPoint;
 
         const closeTLV = new CloseTLV();
         closeTLV.contractId = (dlcSign as DlcSignV0).contractId;
@@ -460,6 +434,10 @@ describe('dlc provider', () => {
           }`,
         );
 
+        console.log('=======================================');
+
+        console.time('offer-replace-time');
+
         const replacementDlcOffer = await alice.dlc.createDlcOffer(
           contractInfo,
           totalCollateral - BigInt(2000),
@@ -470,17 +448,27 @@ describe('dlc provider', () => {
           [closeTLV],
         );
 
-        console.log('replacementDlcOffer', replacementDlcOffer.toJSON());
+        console.timeEnd('offer-replace-time');
+
+        console.time('accept-replace-time');
 
         const replacementDlcAccept = await bob.dlc.acceptDlcOffer(
           replacementDlcOffer,
           [bobInput],
         );
 
+        console.timeEnd('accept-replace-time');
+
+        console.time('sign-replace-time');
+
         const replacementDlcSign = await alice.dlc.signDlcAccept(
           replacementDlcOffer,
           replacementDlcAccept.dlcAccept,
         );
+
+        console.timeEnd('sign-replace-time');
+
+        console.time('finalize-replace-time');
 
         const replacementTx = await bob.dlc.finalizeDlcSign(
           replacementDlcOffer,
@@ -488,6 +476,8 @@ describe('dlc provider', () => {
           replacementDlcSign.dlcSign,
           replacementDlcAccept.dlcTransactions,
         );
+
+        console.timeEnd('finalize-replace-time');
 
         console.log(
           `replacementTx.serialize().toString('hex')`,

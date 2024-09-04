@@ -602,7 +602,6 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
       numAddressPerCall = 100,
       sweep = false,
     ) {
-      console.log('WARNING getInputsForAmount');
       let addressIndex = 0;
       let changeAddresses: Address[] = [];
       let externalAddresses: Address[] = [];
@@ -776,7 +775,6 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
       numAddressPerCall = 100,
       requiredOutpoints: OutPoint[] = [],
     ) {
-      console.log('getInputsfordualfunding', requiredOutpoints);
       let addressIndex = 0;
       let changeAddresses: Address[] = [];
       let externalAddresses: Address[] = [];
@@ -827,11 +825,9 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
               .times(1e8)
               .toNumber();
             const address = tx.vout[input.vout].scriptPubKey.addresses[0];
-            console.log('requiredOutpoints', requiredOutpoints);
             const isRequiredOutpoint = requiredOutpoints.some(
               (nwi) => nwi.toString() === `${input.txid}:${input.vout}`,
             );
-            console.log('isRequiredOutpoint', isRequiredOutpoint);
             const utxo = {
               ...input,
               value,
@@ -842,11 +838,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
               const walletAddress = await this.getWalletAddress(address);
               utxo.derivationPath = walletAddress.derivationPath;
             } catch (e) {
-              if (isRequiredOutpoint) {
-                console.log('error', e);
-              } else {
-                throw e; // Rethrow if it's not a required outpoint, as it's unexpected
-              }
+              if (!isRequiredOutpoint) throw e; // Rethrow if it's not a required outpoint, as it's unexpected
             }
 
             fixedUtxos.push(utxo);

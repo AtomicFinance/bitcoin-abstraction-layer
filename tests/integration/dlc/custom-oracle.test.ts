@@ -9,8 +9,7 @@ import {
   LinearPayout,
 } from '@node-dlc/core';
 import {
-  CetAdaptorSignaturesV0,
-  ContractDescriptorV0,
+  CloseTLV,
   ContractDescriptorV1,
   ContractInfoV0,
   DigitDecompositionEventDescriptorV0,
@@ -20,22 +19,20 @@ import {
   DlcOfferV0,
   DlcParty,
   DlcSign,
+  DlcSignV0,
   DlcTransactions,
-  EnumEventDescriptorV0,
+  DlcTransactionsV0,
   FundingInputV0,
-  NegotiationFields,
-  NegotiationFieldsV0,
   OracleAnnouncementV0,
   OracleAttestationV0,
   OracleEventV0,
-  OracleInfoV0,
   PayoutFunctionV0,
   RoundingIntervalsV0,
 } from '@node-dlc/messaging';
-import { HashByteOrder, Sequence, Tx, TxOut } from '@node-lightning/bitcoin';
-import { sha256 } from '@node-lightning/crypto';
+import { HashByteOrder, Tx, TxOut } from '@node-lightning/bitcoin';
+import { OutPoint } from '@node-lightning/bitcoin';
 import { math } from 'bip-schnorr';
-import { BitcoinNetworks, chainHashFromNetwork } from 'bitcoin-networks';
+import { BitcoinNetworks } from 'bitcoin-networks';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
@@ -1365,5 +1362,155 @@ describe('Custom Strategy Oracle POC numdigits=21 split trades', () => {
       const cetTx = await alice.getMethod('getTransactionByHash')(cetTxId);
       expect(cetTx._raw.vin.length).to.equal(1);
     }
+  });
+
+  it.skip('should succeed in creating batch dlc transaction and replace', async () => {
+    const aliceInput = await getInput(alice);
+    const bobInput = await getInput(bob);
+
+    oracle = new Oracle('olivia', numDigits);
+
+    const { contractInfo } = generateContractInfoCustomStrategyOracle(
+      oracle,
+      numDigits,
+      oracleBase,
+      payoutFunction,
+      intervals,
+      totalCollateralIn,
+      unit,
+    );
+
+    const feeRatePerVb = BigInt(10);
+    const cetLocktime = 1617170572;
+    const refundLocktime = 1617170573;
+
+    console.time('total');
+    console.time('offer');
+
+    dlcOffers = await alice.dlc.batchCreateDlcOffer(
+      [contractInfo, contractInfo, contractInfo, contractInfo, contractInfo],
+      [
+        Value.fromBitcoin(0.2).sats,
+        Value.fromBitcoin(0.2).sats,
+        Value.fromBitcoin(0.2).sats,
+        Value.fromBitcoin(0.2).sats,
+        Value.fromBitcoin(0.2).sats,
+      ],
+      feeRatePerVb,
+      cetLocktime,
+      [
+        refundLocktime,
+        refundLocktime,
+        refundLocktime,
+        refundLocktime,
+        refundLocktime,
+      ],
+      [aliceInput],
+    );
+
+    dlcAcceptsResponse = await bob.dlc.batchAcceptDlcOffer(dlcOffers, [
+      bobInput,
+    ]);
+
+    const dlcAccepts = dlcAcceptsResponse.dlcAccepts;
+
+    dlcSignsResponse = await alice.dlc.batchSignDlcAccept(
+      dlcOffers,
+      dlcAccepts,
+    );
+
+    const dlcSigns = dlcSignsResponse.dlcSigns;
+    const dlcTxsList = dlcSignsResponse.dlcTransactionsList;
+
+    const fundTx = await bob.dlc.batchFinalizeDlcSign(
+      dlcOffers,
+      dlcAccepts,
+      dlcSigns,
+      dlcTxsList,
+    );
+
+    const txBuilder = new BatchDlcTxBuilder(
+      dlcOffers as DlcOfferV0[],
+      dlcAccepts.map((dlcAccept) => (dlcAccept as DlcAcceptV0).withoutSigs()),
+    );
+
+    // Ensure node-dlc tx builder builds identical transaction to cfd-dlc C++ implementation
+    const fundTxIdNodeDlc = txBuilder
+      .buildFundingTransaction()
+      .txId.toString(HashByteOrder.RPC);
+
+    const fundTxId = await bob.chain.sendRawTransaction(
+      fundTx.serialize().toString('hex'),
+    );
+
+    expect(fundTxId).to.be.a('string');
+    expect(fundTxId).to.equal(fundTxIdNodeDlc); // validates that node-dlc tx builder built identical tx
+
+    oracleAttestation = generateOracleAttestation(
+      outcome,
+      oracle,
+      oracleBase,
+      numDigits,
+      eventId,
+    );
+
+    const cet = await bob.dlc.execute(
+      dlcOffers[0],
+      dlcAccepts[0],
+      dlcSigns[0],
+      dlcTxsList[0],
+      oracleAttestation,
+      false,
+    );
+
+    const cetTxId = await bob.chain.sendRawTransaction(
+      cet.serialize().toString('hex'),
+    );
+    // expect(cetTxId).to.be.a('string');
+    // const cetTx = await alice.getMethod('getTransactionByHash')(cetTxId);
+    // expect(cetTx._raw.vin.length).to.equal(1);
+
+    const aliceInput2 = await getInput(alice);
+    const bobInput2 = await getInput(bob);
+
+    const closeTLVs = [];
+
+    for (let i = 1; i < dlcOffers.length; i++) {
+      const closeTLV = new CloseTLV();
+      closeTLV.contractId = (dlcSigns[i] as DlcSignV0).contractId;
+      closeTLV.offerPayoutSatoshis =
+        (dlcOffers[i] as DlcOfferV0).offerCollateralSatoshis - BigInt(20000);
+      closeTLV.offerFundingPubKey = (dlcOffers[i] as DlcOfferV0).fundingPubKey;
+      closeTLV.acceptFundingPubkey = (dlcAccepts[
+        i
+      ] as DlcAcceptV0).fundingPubKey;
+      closeTLV.outpoint = OutPoint.fromString(
+        `${(dlcTxsList[1] as DlcTransactionsV0).fundTx.txId.toString(
+          HashByteOrder.RPC,
+        )}:${(dlcTxsList[1] as DlcTransactionsV0).fundTxVout}`,
+      );
+      closeTLVs.push(closeTLV);
+    }
+
+    const replacementDlcOffer = await alice.dlc.batchCreateDlcOffer(
+      [contractInfo, contractInfo, contractInfo, contractInfo, contractInfo],
+      [
+        Value.fromBitcoin(0.2).sats,
+        Value.fromBitcoin(0.2).sats,
+        Value.fromBitcoin(0.2).sats,
+        Value.fromBitcoin(0.2).sats,
+        Value.fromBitcoin(0.2).sats,
+      ],
+      feeRatePerVb,
+      cetLocktime,
+      [
+        refundLocktime,
+        refundLocktime,
+        refundLocktime,
+        refundLocktime,
+        refundLocktime,
+      ],
+      closeTLVs,
+    );
   });
 });

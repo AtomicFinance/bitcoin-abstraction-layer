@@ -1,4 +1,3 @@
-import { Messages, PayoutRequest } from '@atomicfinance/types';
 import {
   DlcAccept,
   DlcAcceptV0,
@@ -61,41 +60,6 @@ export function checkTypes(types: ICheckTypesRequest): ICheckTypesResponse {
   return { dlcOffer, dlcAccept, dlcSign, dlcClose, dlcTxs };
 }
 
-export function outputsToPayouts(
-  outputs: PayoutGroup[],
-  rValuesMessagesList: Messages[],
-  localCollateral: bigint,
-  remoteCollateral: bigint,
-  payoutLocal: boolean,
-): OutputsToPayoutsResponse {
-  const payouts: PayoutRequest[] = [];
-  const messagesList: Messages[] = [];
-
-  outputs.forEach((output: PayoutGroup) => {
-    const { payout, groups } = output;
-    const payoutAmount: bigint = payout;
-
-    groups.forEach((group: number[]) => {
-      const messages = [];
-      for (let i = 0; i < group.length; i++) {
-        const digit: number = group[i];
-        messages.push(rValuesMessagesList[i].messages[digit]);
-      }
-
-      const local = payoutLocal
-        ? payoutAmount
-        : localCollateral + remoteCollateral - payoutAmount;
-      const remote = payoutLocal
-        ? localCollateral + remoteCollateral - payoutAmount
-        : payoutAmount;
-      payouts.push({ local, remote });
-      messagesList.push({ messages });
-    });
-  });
-
-  return { payouts, messagesList };
-}
-
 export interface ICheckTypesRequest {
   _dlcOffer?: DlcOffer;
   _dlcAccept?: DlcAccept;
@@ -110,14 +74,4 @@ export interface ICheckTypesResponse {
   dlcSign?: DlcSignV0;
   dlcClose?: DlcCloseV0;
   dlcTxs?: DlcTransactionsV0;
-}
-
-interface PayoutGroup {
-  payout: bigint;
-  groups: number[][];
-}
-
-interface OutputsToPayoutsResponse {
-  payouts: PayoutRequest[];
-  messagesList: Messages[];
 }
