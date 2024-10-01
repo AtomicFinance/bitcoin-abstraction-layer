@@ -235,6 +235,7 @@ async function getInput(
     maxWitnessLength: 108,
     redeemScript: '',
     toUtxo: Input.prototype.toUtxo,
+    toOutPoint: Input.prototype.toOutPoint,
   };
 
   return input;
