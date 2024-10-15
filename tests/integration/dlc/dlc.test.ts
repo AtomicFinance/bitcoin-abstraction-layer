@@ -165,6 +165,9 @@ describe('dlc provider', () => {
 
       console.timeEnd('offer-get-time');
 
+      console.log('not loaded');
+      await bob.getMethod('CfdLoaded')();
+      console.log('loaded');
       console.time('accept-time');
       const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
         dlcOffer,

@@ -124,7 +124,7 @@ export default class BitcoinDlcProvider
     this._cfdDlcJs = cfdDlcJs;
   }
 
-  private async CfdLoaded() {
+  public async CfdLoaded() {
     while (!this._cfdDlcJs) {
       await sleep(10);
     }

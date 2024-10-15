@@ -6,6 +6,16 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 'lts/*'
+
+      - name: Setup Yarn
+        run: yarn set version 3.2.0
+
       - name: Cache Bitcoin node
         id: bitcoin-cache
         uses: actions/cache@v2
@@ -27,12 +37,7 @@ jobs:
           sleep 5
           bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 generatetoaddress 101 $(bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 getnewaddress '' 'bech32')
 
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
-        with:
-          node-version: 14.x
-
-      - name: restore node_modules from cache
+      - name: Cache node_modules
         id: node-modules-cache
         uses: actions/cache@v2
         with:
@@ -41,14 +46,9 @@ jobs:
             node_modules
             */*/node_modules
 
-      - name: yarn install
+      - name: Install dependencies
         if: steps.node-modules-cache.outputs.cache-hit != 'true'
         run: yarn install --immutable
 
       - run: yarn build
       - run: yarn test
-
-      - name: Get test coverage
-        uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
