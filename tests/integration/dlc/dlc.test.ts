@@ -42,6 +42,10 @@ import {
 import { Input } from '../../../packages/types';
 import { chains, getInput } from '../common';
 import f from '../fixtures/blockchain.json';
+import {
+  attestation_for_payout_amount_failure as AttestationWithPayoutAmountFailure,
+  offer_with_payout_index_by_payout_amount_failure as OfferWithPayoutIndex,
+} from '../fixtures/messages.json';
 import Oracle from '../models/Oracle';
 import {
   calculateNetworkFees,
@@ -1485,6 +1489,22 @@ describe('external test vectors', () => {
     );
     const cetTx = await alice.getMethod('getTransactionByHash')(cetTxId);
     expect(cetTx._raw.vin.length).to.equal(1);
+  });
+
+  it('should fallback to brute force finding payout index if find by payout fails', async () => {
+    const dlcOffer = DlcOfferV0.deserialize(
+      Buffer.from(OfferWithPayoutIndex, 'hex'),
+    );
+    const oracleAttestation = OracleAttestationV0.deserialize(
+      Buffer.from(AttestationWithPayoutAmountFailure, 'hex'),
+    );
+
+    const { index: outcomeIndex, groupLength } = await carol.getMethod(
+      'FindOutcomeIndex',
+    )(dlcOffer, oracleAttestation);
+
+    expect(outcomeIndex).to.be.equal(19);
+    expect(groupLength).to.be.equal(9);
   });
 });
 

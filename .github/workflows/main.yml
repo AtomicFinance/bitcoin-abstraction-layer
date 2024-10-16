@@ -32,6 +32,12 @@ jobs:
         with:
           node-version: 14.x
 
+      - name: Install Yarn
+        run: npm install -g yarn@1.22.22
+
+      - name: Log Yarn Version
+        run: yarn --version
+
       - name: restore node_modules from cache
         id: node-modules-cache
         uses: actions/cache@v2
@@ -44,6 +50,9 @@ jobs:
       - name: yarn install
         if: steps.node-modules-cache.outputs.cache-hit != 'true'
         run: yarn install --immutable
+
+      - name: Debug - List Processes
+        run: ps aux
 
       - run: yarn build
       - run: yarn test
