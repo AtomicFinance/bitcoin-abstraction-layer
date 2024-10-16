@@ -32,6 +32,9 @@ jobs:
         with:
           node-version: 14.x
 
+      - name: Install Yarn
+        run: npm install -g yarn@1.22.22
+
       - name: restore node_modules from cache
         id: node-modules-cache
         uses: actions/cache@v2
