@@ -45,6 +45,9 @@ jobs:
         if: steps.node-modules-cache.outputs.cache-hit != 'true'
         run: yarn install --immutable
 
+      - name: Debug - List Processes
+        run: ps aux
+
       - run: yarn build
       - run: yarn test
 
