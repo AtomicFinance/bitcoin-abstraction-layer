@@ -134,6 +134,7 @@ describe('dlc provider', () => {
 
   describe('single oracle event', () => {
     beforeEach(async () => {
+      console.log('test');
       console.time('offer-get-time');
       const aliceInput = await getInput(alice);
       const bobInput = await getInput(bob);
