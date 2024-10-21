@@ -1,5 +1,11 @@
 # @atomicfinance/errors
 
+## 3.5.0
+
+### Minor Changes
+
+- fb279b7: Update dependencies for Node LTS and fix payout index edge cases
+
 ## 3.4.7
 
 ### Patch Changes
