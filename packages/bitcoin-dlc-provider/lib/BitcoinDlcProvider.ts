@@ -124,7 +124,7 @@ export default class BitcoinDlcProvider
     this._cfdDlcJs = cfdDlcJs;
   }
 
-  private async CfdLoaded() {
+  public async CfdLoaded() {
     while (!this._cfdDlcJs) {
       await sleep(10);
     }
@@ -1352,7 +1352,6 @@ Payout Group not found',
     let index = 0;
     let groupIndex = -1;
     let groupLength = 0;
-    const payoutGroupFound = false;
 
     for (const [i, payoutGroup] of payoutGroups.entries()) {
       if (payoutGroup.payout === roundedPayout) {
@@ -1365,7 +1364,8 @@ Payout Group not found',
           break;
         }
       } else if (
-        payoutGroup.payout === BigInt(Math.round(Number(payout.toString())))
+        payoutGroup.payout === BigInt(Math.round(Number(payout.toString()))) &&
+        i !== 0
       ) {
         // Edge case to account for case where payout is maximum payout for DLC
         // But rounded payout does not round down
@@ -1388,17 +1388,10 @@ Payout Group not found',
     }
 
     if (groupIndex === -1) {
-      if (payoutGroupFound) {
-        throw Error(
-          'Failed to Find OutcomeIndex From HyperbolaPayoutCurvePiece. \
-Payout Group found but incorrect group index',
-        );
-      } else {
-        throw Error(
-          'Failed to Find OutcomeIndex From HyperbolaPayoutCurvePiece. \
-  Payout Group not found',
-        );
-      }
+      throw Error(
+        'Failed to Find OutcomeIndex From HyperbolaPayoutCurvePiece. \
+Payout Group not found',
+      );
     }
 
     return { index: payoutIndexOffset + index, groupLength };

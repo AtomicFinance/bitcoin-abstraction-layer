@@ -1,4 +1,49 @@
-import BaseError from 'standard-error';
+export class BaseError extends Error {
+  [key: string]: unknown;
+
+  constructor(
+    msg?: string | Record<string, unknown>,
+    props?: Record<string, unknown>,
+  ) {
+    super();
+
+    // Let all properties be enumerable for easier serialization.
+    if (msg && typeof msg === 'object') {
+      props = msg;
+      msg = undefined;
+    } else {
+      this.message = typeof msg === 'string' ? msg : '';
+    }
+
+    // Name has to be an own property (or on the prototype a single step up) for
+    // the stack to be printed with the correct name.
+    if (props) {
+      Object.assign(this, props);
+    }
+
+    if (!Object.prototype.hasOwnProperty.call(this, 'name')) {
+      this.name = Object.prototype.hasOwnProperty.call(
+        Object.getPrototypeOf(this),
+        'name',
+      )
+        ? this.name
+        : this.constructor.name;
+    }
+
+    // Capture stack trace
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+
+    // Ensure 'name' property is not enumerable
+    Object.defineProperty(this, 'name', {
+      value: 'StandardError',
+      enumerable: false,
+      configurable: true,
+      writable: true,
+    });
+  }
+}
 
 function createError(name: string) {
   const Error = class extends BaseError {};
