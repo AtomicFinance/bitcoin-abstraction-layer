@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/provider",
   "umdName": "Provider",
-  "version": "3.5.0",
+  "version": "3.5.1",
   "description": "Bitcoin Abstraction Layer Provider",
   "author": "Atomic Finance <info@atomic.finance>",
   "homepage": "",
@@ -15,7 +15,7 @@
     "lint:fix": "../../node_modules/.bin/eslint --fix --ignore-path ../../.eslintignore  -c ../../.eslintrc.js ."
   },
   "dependencies": {
-    "@atomicfinance/types": "^3.5.0",
+    "@atomicfinance/types": "^3.5.1",
     "lodash": "^4.17.20"
   },
   "devDependencies": {

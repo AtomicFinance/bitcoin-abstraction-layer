@@ -1,5 +1,11 @@
 # @atomicfinance/crypto
 
+## 3.5.1
+
+### Patch Changes
+
+- 9aa93d3: Fix types for bitcoin-rpc-provider
+
 ## 3.5.0
 
 ### Minor Changes

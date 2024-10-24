@@ -1,5 +1,14 @@
 # @atomicfinance/node-provider
 
+## 3.5.1
+
+### Patch Changes
+
+- 9aa93d3: Fix types for bitcoin-rpc-provider
+- Updated dependencies [9aa93d3]
+  - @atomicfinance/errors@3.5.1
+  - @atomicfinance/provider@3.5.1
+
 ## 3.5.0
 
 ### Minor Changes
