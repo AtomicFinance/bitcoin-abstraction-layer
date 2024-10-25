@@ -1,5 +1,11 @@
 # @atomicfinance/errors
 
+## 3.5.2
+
+### Patch Changes
+
+- 3e8815c: Add support for Enum DLCs
+
 ## 3.5.1
 
 ### Patch Changes

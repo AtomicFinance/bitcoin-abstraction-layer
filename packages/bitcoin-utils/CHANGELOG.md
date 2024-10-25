@@ -1,5 +1,16 @@
 # @atomicfinance/bitcoin-utils
 
+## 3.5.2
+
+### Patch Changes
+
+- 3e8815c: Add support for Enum DLCs
+- Updated dependencies [3e8815c]
+  - @atomicfinance/crypto@3.5.2
+  - @atomicfinance/errors@3.5.2
+  - @atomicfinance/types@3.5.2
+  - @atomicfinance/utils@3.5.2
+
 ## 3.5.1
 
 ### Patch Changes
