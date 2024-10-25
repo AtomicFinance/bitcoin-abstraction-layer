@@ -8,8 +8,8 @@ export default {
   bitcoin: {
     rpc: {
       host: 'http://localhost:18443',
-      username: process.env.RPC_USER || 'bitcoin',
-      password: process.env.RPC_PASS || 'local321',
+      username: process.env.RPC_USER || 'admin1',
+      password: process.env.RPC_PASS || '123',
     },
     network: BitcoinNetworks.bitcoin_regtest,
     value: 1000000,

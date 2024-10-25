@@ -8,6 +8,7 @@ import {
   HyperbolaPayoutCurve,
 } from '@node-dlc/core';
 import {
+  ContractDescriptorV0,
   ContractDescriptorV1,
   ContractInfoV0,
   ContractInfoV1,
@@ -23,6 +24,7 @@ import {
   DlcSignV0,
   DlcTransactions,
   DlcTransactionsV0,
+  EnumEventDescriptorV0,
   OracleAnnouncementV0,
   OracleAttestationV0,
   OracleEventV0,
@@ -31,6 +33,7 @@ import {
 } from '@node-dlc/messaging';
 import { xor } from '@node-lightning/crypto';
 import BN from 'bignumber.js';
+import { math } from 'bip-schnorr';
 import { BitcoinNetworks, chainHashFromNetwork } from 'bitcoin-networks';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
@@ -50,6 +53,7 @@ import Oracle from '../models/Oracle';
 import {
   calculateNetworkFees,
   generateContractInfo,
+  generateEnumOracleAttestation,
   generateLongCallOffer,
   generateOracleAttestation,
 } from '../utils/contract';
@@ -136,6 +140,129 @@ describe('dlc provider', () => {
     }
   });
 
+  describe('enum event', () => {
+    it('should fund and execute enum DLC', async () => {
+      const oracle = new Oracle('olivia');
+
+      const aliceInput = await getInput(alice);
+      const bobInput = await getInput(bob);
+
+      const eventId = 'trump-vs-kamala';
+
+      const oliviaInfo = oracle.GetOracleInfo();
+
+      const eventDescriptor = new EnumEventDescriptorV0();
+
+      const outcomes = ['trump', 'kamala', 'neither'];
+
+      eventDescriptor.outcomes = outcomes;
+
+      const event = new OracleEventV0();
+      event.oracleNonces = oliviaInfo.rValues.map((rValue) =>
+        Buffer.from(rValue, 'hex'),
+      );
+      event.eventMaturityEpoch = 1617170572;
+      event.eventDescriptor = eventDescriptor;
+      event.eventId = eventId;
+
+      const announcement = new OracleAnnouncementV0();
+      announcement.announcementSig = Buffer.from(
+        oracle.GetSignature(
+          math
+            .taggedHash('DLC/oracle/announcement/v0', event.serialize())
+            .toString('hex'),
+        ),
+        'hex',
+      );
+
+      announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
+      announcement.oracleEvent = event;
+
+      const oracleInfo = new OracleInfoV0();
+      oracleInfo.announcement = announcement;
+
+      const contractDescriptor = new ContractDescriptorV0();
+
+      contractDescriptor.outcomes = [
+        {
+          outcome: Buffer.from('trump', 'utf8'),
+          localPayout: BigInt(1e6),
+        },
+        {
+          outcome: Buffer.from('kamala', 'utf8'),
+          localPayout: BigInt(0),
+        },
+        {
+          outcome: Buffer.from('neither', 'utf8'),
+          localPayout: BigInt(500000),
+        },
+      ];
+
+      const totalCollateral = BigInt(1e6);
+
+      const contractInfo = new ContractInfoV0();
+      contractInfo.totalCollateral = totalCollateral;
+      contractInfo.contractDescriptor = contractDescriptor;
+      contractInfo.oracleInfo = oracleInfo;
+
+      const feeRatePerVb = BigInt(10);
+      const cetLocktime = 1617170572;
+      const refundLocktime = 1617170573;
+
+      dlcOffer = await alice.dlc.createDlcOffer(
+        contractInfo,
+        totalCollateral - BigInt(2000),
+        feeRatePerVb,
+        cetLocktime,
+        refundLocktime,
+        [aliceInput],
+      );
+
+      const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
+        dlcOffer,
+        [bobInput],
+      );
+
+      dlcAccept = acceptDlcOfferResponse.dlcAccept;
+      dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
+
+      const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.dlc.signDlcAccept(
+        dlcOffer,
+        dlcAccept,
+      );
+
+      dlcSign = signDlcAcceptResponse.dlcSign;
+
+      const fundTx = await bob.dlc.finalizeDlcSign(
+        dlcOffer,
+        dlcAccept,
+        dlcSign,
+        dlcTransactions,
+      );
+      const fundTxId = await bob.chain.sendRawTransaction(
+        fundTx.serialize().toString('hex'),
+      );
+      expect(fundTxId).to.not.be.undefined;
+
+      oracleAttestation = generateEnumOracleAttestation('trump', oracle);
+
+      const cet = await bob.dlc.execute(
+        dlcOffer,
+        dlcAccept,
+        dlcSign,
+        dlcTransactions,
+        oracleAttestation,
+        false,
+      );
+      const cetTxId = await bob.chain.sendRawTransaction(
+        cet.serialize().toString('hex'),
+      );
+      expect(cetTxId).to.not.be.undefined;
+      const cetTx = await alice.getMethod('getTransactionByHash')(cetTxId);
+      expect(cetTx._raw.vin.length).to.equal(1);
+    });
+  });
+
   describe('single oracle event', () => {
     beforeEach(async () => {
       console.time('offer-get-time');
@@ -165,9 +292,6 @@ describe('dlc provider', () => {
 
       console.timeEnd('offer-get-time');
 
-      console.log('not loaded');
-      await bob.getMethod('CfdLoaded')();
-      console.log('loaded');
       console.time('accept-time');
       const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
         dlcOffer,
