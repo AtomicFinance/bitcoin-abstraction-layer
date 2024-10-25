@@ -464,6 +464,8 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
         fees,
       );
 
+      console.time('offer');
+
       dlcOffer = await alice.dlc.createDlcOffer(
         offerFinalized.contractInfo,
         offerFinalized.offerCollateralSatoshis,

@@ -1,6 +1,7 @@
 import * as cfdjs from 'cfd-js';
-import * as CfdUtils from '../utils/Utils';
+
 import OracleInfo from '../../../packages/types/lib/models/OracleInfo';
+import * as CfdUtils from '../utils/Utils';
 
 export default class Oracle {
   readonly name: string;

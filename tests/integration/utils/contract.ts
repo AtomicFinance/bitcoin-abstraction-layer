@@ -6,9 +6,11 @@ import {
   PolynomialPayoutCurve,
 } from '@node-dlc/core';
 import {
+  ContractDescriptorV0,
   ContractDescriptorV1,
   ContractInfoV0,
   DigitDecompositionEventDescriptorV0,
+  EnumEventDescriptorV0,
   FundingInputV0,
   OracleAnnouncementV0,
   OracleAttestationV0,
@@ -22,6 +24,68 @@ import BN from 'bignumber.js';
 import { math } from 'bip-schnorr';
 
 import Oracle from '../models/Oracle';
+
+export function generateEnumContractInfo(
+  oracle: Oracle,
+  eventId = 'trump-vs-kamala',
+  totalCollateral = BigInt(1e6),
+): { contractInfo: ContractInfoV0; totalCollateral: bigint } {
+  const oliviaInfo = oracle.GetOracleInfo();
+
+  const eventDescriptor = new EnumEventDescriptorV0();
+
+  const outcomes = ['trump', 'kamala', 'neither'];
+
+  eventDescriptor.outcomes = outcomes;
+
+  const event = new OracleEventV0();
+  event.oracleNonces = oliviaInfo.rValues.map((rValue) =>
+    Buffer.from(rValue, 'hex'),
+  );
+  event.eventMaturityEpoch = 1617170572;
+  event.eventDescriptor = eventDescriptor;
+  event.eventId = eventId;
+
+  const announcement = new OracleAnnouncementV0();
+  announcement.announcementSig = Buffer.from(
+    oracle.GetSignature(
+      math
+        .taggedHash('DLC/oracle/announcement/v0', event.serialize())
+        .toString('hex'),
+    ),
+    'hex',
+  );
+
+  announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
+  announcement.oracleEvent = event;
+
+  const oracleInfo = new OracleInfoV0();
+  oracleInfo.announcement = announcement;
+
+  const contractDescriptor = new ContractDescriptorV0();
+
+  contractDescriptor.outcomes = [
+    {
+      outcome: Buffer.from('BIDEN_WIN', 'utf8'),
+      localPayout: BigInt(1e6),
+    },
+    {
+      outcome: Buffer.from('BIDEN_LOSE', 'utf8'),
+      localPayout: BigInt(0),
+    },
+    {
+      outcome: Buffer.from('NEITHER', 'utf8'),
+      localPayout: BigInt(0),
+    },
+  ];
+
+  const contractInfo = new ContractInfoV0();
+  contractInfo.totalCollateral = totalCollateral;
+  contractInfo.contractDescriptor = contractDescriptor;
+  contractInfo.oracleInfo = oracleInfo;
+
+  return { contractInfo, totalCollateral };
+}
 
 export function generateContractInfo(
   oracle: Oracle,
@@ -229,6 +293,29 @@ export function generateOracleAttestation(
   oracleAttestation.oraclePubkey = Buffer.from(oracleInfo.publicKey, 'hex');
   oracleAttestation.signatures = sigs;
   oracleAttestation.outcomes = outcomes;
+
+  return oracleAttestation;
+}
+
+export function generateEnumOracleAttestation(
+  outcome: string,
+  oracle: Oracle,
+  eventId = 'trump-vs-kamala',
+): OracleAttestationV0 {
+  const oracleInfo = oracle.GetOracleInfo();
+
+  const sigs: Buffer[] = [];
+
+  const m = math
+    .taggedHash('DLC/oracle/attestation/v0', outcome)
+    .toString('hex');
+  sigs.push(Buffer.from(oracle.GetSignature(m), 'hex'));
+
+  const oracleAttestation = new OracleAttestationV0();
+  oracleAttestation.eventId = eventId;
+  oracleAttestation.oraclePubkey = Buffer.from(oracleInfo.publicKey, 'hex');
+  oracleAttestation.signatures = sigs;
+  oracleAttestation.outcomes = [outcome];
 
   return oracleAttestation;
 }
