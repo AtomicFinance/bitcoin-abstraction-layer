@@ -31,7 +31,7 @@ import {
   OracleInfoV0,
   RoundingIntervalsV0,
 } from '@node-dlc/messaging';
-import { xor } from '@node-lightning/crypto';
+import { sha256, xor } from '@node-lightning/crypto';
 import BN from 'bignumber.js';
 import { math } from 'bip-schnorr';
 import { BitcoinNetworks, chainHashFromNetwork } from 'bitcoin-networks';
@@ -185,15 +185,15 @@ describe('dlc provider', () => {
 
       contractDescriptor.outcomes = [
         {
-          outcome: Buffer.from('trump', 'utf8'),
+          outcome: sha256(Buffer.from('trump')),
           localPayout: BigInt(1e6),
         },
         {
-          outcome: Buffer.from('kamala', 'utf8'),
+          outcome: sha256(Buffer.from('kamala')),
           localPayout: BigInt(0),
         },
         {
-          outcome: Buffer.from('neither', 'utf8'),
+          outcome: sha256(Buffer.from('neither')),
           localPayout: BigInt(500000),
         },
       ];
@@ -217,6 +217,9 @@ describe('dlc provider', () => {
         refundLocktime,
         [aliceInput],
       );
+
+      const dlcOfferV0 = DlcOfferV0.deserialize(dlcOffer.serialize());
+      dlcOfferV0.validate();
 
       const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
         dlcOffer,

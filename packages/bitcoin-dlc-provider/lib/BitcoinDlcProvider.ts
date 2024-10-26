@@ -599,7 +599,7 @@ export default class BitcoinDlcProvider
             dlcAccept.acceptCollateralSatoshis -
             outcome.localPayout,
         });
-        messagesList.push({ messages: [outcome.outcome.toString()] });
+        messagesList.push({ messages: [outcome.outcome.toString('hex')] });
       }
     } else {
       const payoutResponses = this.GetPayouts(dlcOffer);
@@ -1731,8 +1731,8 @@ Payout Group not found',
       const outcomeIndex = ((dlcOffer.contractInfo as ContractInfoV0)
         .contractDescriptor as ContractDescriptorV0).outcomes.findIndex(
         (outcome) =>
-          outcome.outcome.toString() ===
-          oracleAttestation.outcomes[0].toString(),
+          outcome.outcome.toString('hex') ===
+          sha256(Buffer.from(oracleAttestation.outcomes[0])).toString('hex'),
       );
 
       signCetRequest = {
@@ -2877,7 +2877,7 @@ Payout Group not found',
     ) {
       for (const outcome of ((dlcOffer.contractInfo as ContractInfoV0)
         .contractDescriptor as ContractDescriptorV0).outcomes) {
-        messagesList.push({ messages: [outcome.outcome.toString()] });
+        messagesList.push({ messages: [outcome.outcome.toString('hex')] });
       }
     } else {
       const payoutResponses = this.GetPayouts(dlcOffer);
