@@ -1,5 +1,14 @@
 # @atomicfinance/node-provider
 
+## 3.5.3
+
+### Patch Changes
+
+- 87ff085: Fix enum hashed outcomes
+- Updated dependencies [87ff085]
+  - @atomicfinance/errors@3.5.3
+  - @atomicfinance/provider@3.5.3
+
 ## 3.5.2
 
 ### Patch Changes

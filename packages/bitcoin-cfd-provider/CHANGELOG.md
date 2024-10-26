@@ -1,5 +1,15 @@
 # @atomicfinance/bitcoin-cfd-provider
 
+## 3.5.3
+
+### Patch Changes
+
+- 87ff085: Fix enum hashed outcomes
+- Updated dependencies [87ff085]
+  - @atomicfinance/provider@3.5.3
+  - @atomicfinance/types@3.5.3
+  - @atomicfinance/utils@3.5.3
+
 ## 3.5.2
 
 ### Patch Changes
