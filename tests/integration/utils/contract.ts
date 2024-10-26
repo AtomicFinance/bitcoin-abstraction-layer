@@ -20,6 +20,7 @@ import {
   PayoutFunctionV0,
   RoundingIntervalsV0,
 } from '@node-dlc/messaging';
+import { sha256 } from '@node-lightning/crypto';
 import BN from 'bignumber.js';
 import { math } from 'bip-schnorr';
 
@@ -307,7 +308,10 @@ export function generateEnumOracleAttestation(
   const sigs: Buffer[] = [];
 
   const m = math
-    .taggedHash('DLC/oracle/attestation/v0', outcome)
+    .taggedHash(
+      'DLC/oracle/attestation/v0',
+      sha256(Buffer.from(outcome)).toString('hex'),
+    )
     .toString('hex');
   sigs.push(Buffer.from(oracle.GetSignature(m), 'hex'));
 
