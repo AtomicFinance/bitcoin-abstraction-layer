@@ -37,6 +37,7 @@ import {
   VerifyRefundTxSignatureRequest,
   VerifyRefundTxSignatureResponse,
 } from '@atomicfinance/types';
+import { Tx } from '@node-dlc/bitcoin';
 import {
   ContractInfo,
   DlcAccept,
@@ -48,7 +49,6 @@ import {
   FundingInput,
   OracleAttestationV0,
 } from '@node-dlc/messaging';
-import { Tx } from '@node-lightning/bitcoin';
 
 export default class Dlc implements DlcProvider {
   client: any;

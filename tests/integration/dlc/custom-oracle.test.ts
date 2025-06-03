@@ -1,6 +1,6 @@
 import 'mocha';
 
-import { Value } from '@node-dlc/bitcoin';
+import { HashByteOrder, Tx, TxOut, Value } from '@node-dlc/bitcoin';
 import {
   BatchDlcTxBuilder,
   buildCustomStrategyOrderOffer,
@@ -26,7 +26,6 @@ import {
   PayoutFunctionV0,
   RoundingIntervalsV0,
 } from '@node-dlc/messaging';
-import { HashByteOrder, Tx, TxOut } from '@node-lightning/bitcoin';
 import { math } from 'bip-schnorr';
 import { BitcoinNetworks } from 'bitcoin-networks';
 import chai from 'chai';

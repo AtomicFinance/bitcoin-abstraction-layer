@@ -5,6 +5,7 @@ import {
   DualFundingTxFinalizer,
   PolynomialPayoutCurve,
 } from '@node-dlc/core';
+import { sha256 } from '@node-dlc/crypto';
 import {
   ContractDescriptorV0,
   ContractDescriptorV1,
@@ -20,7 +21,6 @@ import {
   PayoutFunctionV0,
   RoundingIntervalsV0,
 } from '@node-dlc/messaging';
-import { sha256 } from '@node-lightning/crypto';
 import BN from 'bignumber.js';
 import { math } from 'bip-schnorr';
 
