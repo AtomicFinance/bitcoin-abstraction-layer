@@ -1,5 +1,24 @@
 # @atomicfinance/bitcoin-utils
 
+## 3.6.0
+
+### Minor Changes
+
+- cbf35c5: - **BREAKING CHANGE**: Migrated from `@node-lightning` packages to `@node-dlc` packages
+  - Updated all imports from `@node-lightning/*` to `@node-dlc/*`
+  - Update @node-dlc 0.24.0 and Node 18+
+  - Upgraded Node.js requirement to v18+
+  - Updated cfd-dlc-js to v0.0.51 and cfd-js to v0.3.13
+  - Removed unused dependencies: lerna, mocha-webpack
+
+### Patch Changes
+
+- Updated dependencies [cbf35c5]
+  - @atomicfinance/types@3.6.0
+  - @atomicfinance/crypto@3.6.0
+  - @atomicfinance/errors@3.6.0
+  - @atomicfinance/utils@3.6.0
+
 ## 3.5.3
 
 ### Patch Changes
