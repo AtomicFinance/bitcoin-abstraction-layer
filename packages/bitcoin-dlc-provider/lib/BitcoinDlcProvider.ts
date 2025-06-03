@@ -49,6 +49,8 @@ import {
   VerifySignatureRequest,
 } from '@atomicfinance/types';
 import { sleep } from '@atomicfinance/utils';
+import { Script, Sequence, Tx } from '@node-dlc/bitcoin';
+import { StreamReader } from '@node-dlc/bufio';
 import {
   DualClosingTxFinalizer,
   DualFundingTxFinalizer,
@@ -57,6 +59,7 @@ import {
   PolynomialPayoutCurve,
   roundPayout,
 } from '@node-dlc/core';
+import { hash160, sha256, xor } from '@node-dlc/crypto';
 import {
   CetAdaptorSignaturesV0,
   ContractDescriptor,
@@ -90,9 +93,6 @@ import {
   PolynomialPayoutCurvePiece,
   ScriptWitnessV0,
 } from '@node-dlc/messaging';
-import { Script, Sequence, Tx } from '@node-lightning/bitcoin';
-import { StreamReader } from '@node-lightning/bufio';
-import { hash160, sha256, xor } from '@node-lightning/crypto';
 import assert from 'assert';
 import BigNumber from 'bignumber.js';
 import { BitcoinNetwork, chainHashFromNetwork } from 'bitcoin-networks';

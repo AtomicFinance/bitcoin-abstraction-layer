@@ -1,6 +1,7 @@
 /* eslint-disable max-len */
 /* eslint-disable indent */
 
+import { Tx } from '@node-dlc/bitcoin';
 import {
   CetAdaptorSignaturesV0,
   ContractInfo,
@@ -13,7 +14,6 @@ import {
   FundingInput,
   OracleAttestationV0,
 } from '@node-dlc/messaging';
-import { Tx } from '@node-lightning/bitcoin';
 
 import { TxOutRequest } from './common';
 import Input from './models/Input';
