@@ -19,8 +19,9 @@
     "@atomicfinance/provider": "^3.6.0",
     "@atomicfinance/types": "^3.6.0",
     "@node-dlc/core": "0.24.0",
+    "bip32": "^2.0.6",
     "bitcoin-networks": "^1.0.0",
-    "bitcoinjs-lib": "5.2.0",
+    "bitcoinjs-lib": "6.1.7",
     "lodash": "^4.17.20",
     "memoizee": "^0.4.15"
   },

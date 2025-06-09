@@ -17,9 +17,9 @@ import {
 } from '@atomicfinance/types';
 import { addressToString } from '@atomicfinance/utils';
 import { dualFundingCoinSelect } from '@node-dlc/core';
+import { BIP32Interface } from 'bip32';
 import { BitcoinNetwork } from 'bitcoin-networks';
 import * as bitcoin from 'bitcoinjs-lib';
-import { BIP32Interface } from 'bitcoinjs-lib';
 import memoize from 'memoizee';
 
 const ADDRESS_GAP = 30;

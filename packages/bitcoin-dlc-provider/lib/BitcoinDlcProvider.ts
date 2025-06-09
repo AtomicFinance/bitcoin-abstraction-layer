@@ -96,13 +96,9 @@ import {
 import assert from 'assert';
 import BigNumber from 'bignumber.js';
 import { BitcoinNetwork, chainHashFromNetwork } from 'bitcoin-networks';
-import {
-  address,
-  ECPairInterface,
-  payments,
-  Psbt,
-  script,
-} from 'bitcoinjs-lib';
+import { address, payments, Psbt, script } from 'bitcoinjs-lib';
+import { ECPairInterface } from 'ecpair';
+import * as ecc from 'tiny-secp256k1';
 
 import {
   asyncForEach,
@@ -3277,7 +3273,11 @@ Payout Group not found',
     );
 
     // Validate signatures
-    psbt.validateSignaturesOfAllInputs();
+    psbt.validateSignaturesOfAllInputs(
+      (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
+        return ecc.verify(msghash, pubkey, signature);
+      },
+    );
 
     // Extract close signature from psbt and decode it to only extract r and s values
     const closeSignature = await script.signature.decode(
@@ -3674,7 +3674,11 @@ Payout Group not found',
       psbt.updateInput(i, { partialSig });
     }
 
-    psbt.validateSignaturesOfAllInputs();
+    psbt.validateSignaturesOfAllInputs(
+      (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
+        return ecc.verify(msghash, pubkey, signature);
+      },
+    );
     psbt.finalizeAllInputs();
 
     return psbt.extractTransaction().toHex();

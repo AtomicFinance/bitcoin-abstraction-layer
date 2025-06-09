@@ -46,9 +46,11 @@ __metadata:
     bignumber.js: ^9.0.1
     bip-schnorr: 0.6.2
     bitcoin-networks: ^1.0.0
-    bitcoinjs-lib: 5.2.0
+    bitcoinjs-lib: 6.1.7
+    ecpair: ^2.1.0
     lodash: ^4.17.20
     randombytes: 2.1.0
+    tiny-secp256k1: ^2.2.0
     uuid: ^8.3.0
   languageName: unknown
   linkType: soft
@@ -101,9 +103,11 @@ __metadata:
     bip32: ^2.0.6
     bip39: ^3.0.2
     bitcoin-networks: ^1.0.0
-    bitcoinjs-lib: 5.2.0
+    bitcoinjs-lib: 6.1.7
     bitcoinjs-message: ^2.1.0
+    ecpair: ^2.1.0
     secp256k1: ^4.0.3
+    tiny-secp256k1: ^2.2.0
   languageName: unknown
   linkType: soft
 
@@ -120,8 +124,10 @@ __metadata:
     "@types/lodash": ^4.14.168
     bignumber.js: ^9.0.0
     bitcoin-networks: ^1.0.0
-    bitcoinjs-lib: 5.2.0
+    bitcoinjs-lib: 6.1.7
+    ecpair: ^2.1.0
     lodash: ^4.17.20
+    tiny-secp256k1: ^2.2.0
   languageName: unknown
   linkType: soft
 
@@ -151,13 +157,12 @@ __metadata:
     "@atomicfinance/types": ^3.6.0
     "@atomicfinance/utils": ^3.6.0
     "@babel/runtime": ^7.12.1
-    "@types/bitcoinjs-lib": ^5.0.0
     "@types/lodash": ^4.14.168
     "@types/node": 16.10.3
     bignumber.js: ^9.0.0
     bip174: ^2.0.1
     bitcoin-networks: ^1.0.0
-    bitcoinjs-lib: 5.2.0
+    bitcoinjs-lib: 6.1.7
     coinselect: ^3.1.11
     lodash: ^4.17.20
   languageName: unknown
@@ -173,8 +178,9 @@ __metadata:
     "@node-dlc/core": 0.24.0
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
+    bip32: ^2.0.6
     bitcoin-networks: ^1.0.0
-    bitcoinjs-lib: 5.2.0
+    bitcoinjs-lib: 6.1.7
     lodash: ^4.17.20
     memoizee: ^0.4.15
   languageName: unknown
@@ -277,7 +283,7 @@ __metadata:
     bignumber.js: ^9.0.0
     bip174: ^2.0.1
     bitcoin-networks: ^1.0.0
-    bitcoinjs-lib: 5.2.0
+    bitcoinjs-lib: 6.1.7
     coinselect: ^3.1.11
     lodash: ^4.17.20
     setimmediate: ^1.0.5
@@ -1305,15 +1311,6 @@ __metadata:
   dependencies:
     "@types/node": "*"
   checksum: d7374a6fa08f3d6b26e1f5b6eaa6c37d3ec941e45904c75beda65e1ecd94ad03240627ecbf53f3515fb2bea8b858d5257155a7223609f895429cbfcaccba77fd
-  languageName: node
-  linkType: hard
-
-"@types/bitcoinjs-lib@npm:^5.0.0":
-  version: 5.0.0
-  resolution: "@types/bitcoinjs-lib@npm:5.0.0"
-  dependencies:
-    bitcoinjs-lib: "*"
-  checksum: 84cade22952762f9eed677a4598ee4829caa2d39bbbdaee041f5ad7bb9ff55ec989bf4a50a645a99268b8911b108f5b9bb03a58f8bb1dbe2f1b4d7ae7f5403af
   languageName: node
   linkType: hard
 
@@ -2553,20 +2550,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bitcoinjs-lib@npm:*":
-  version: 6.1.6
-  resolution: "bitcoinjs-lib@npm:6.1.6"
-  dependencies:
-    "@noble/hashes": ^1.2.0
-    bech32: ^2.0.0
-    bip174: ^2.1.1
-    bs58check: ^3.0.1
-    typeforce: ^1.11.3
-    varuint-bitcoin: ^1.1.2
-  checksum: 04370cf6991c8343eb749fbeeff357e45b7c92e28272c4c731b6c3a45d3e67bfca90db96175cdca0479f84f17bf91aa02b3d113b7c80d73dd5494f431e140574
-  languageName: node
-  linkType: hard
-
 "bitcoinjs-lib@npm:5.2.0":
   version: 5.2.0
   resolution: "bitcoinjs-lib@npm:5.2.0"
@@ -2587,6 +2570,20 @@ __metadata:
     varuint-bitcoin: ^1.0.4
     wif: ^2.0.1
   checksum: 947a9a65694b8d469cb643c0ef2793d807a2b948c6e54c96bbd586b48b2de81afeda40e6ae389e031be03c390804d54ed4805b2d90af713842ebe7f85a08a502
+  languageName: node
+  linkType: hard
+
+"bitcoinjs-lib@npm:6.1.7":
+  version: 6.1.7
+  resolution: "bitcoinjs-lib@npm:6.1.7"
+  dependencies:
+    "@noble/hashes": ^1.2.0
+    bech32: ^2.0.0
+    bip174: ^2.1.1
+    bs58check: ^3.0.1
+    typeforce: ^1.11.3
+    varuint-bitcoin: ^1.1.2
+  checksum: 2fbac2bffc2fe0e1d5441fc09f092fa8a83a4572b10fd2601c960e19a60cdcab81b6bff8cefcefda80b952fe8795387c97219fc4676995bf554f26f3d9aadc58
   languageName: node
   linkType: hard
 
@@ -4124,6 +4121,17 @@ __metadata:
     jsbn: ~0.1.0
     safer-buffer: ^2.1.0
   checksum: 22fef4b6203e5f31d425f5b711eb389e4c6c2723402e389af394f8411b76a488fa414d309d866e2b577ce3e8462d344205545c88a8143cc21752a5172818888a
+  languageName: node
+  linkType: hard
+
+"ecpair@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "ecpair@npm:2.1.0"
+  dependencies:
+    randombytes: ^2.1.0
+    typeforce: ^1.18.0
+    wif: ^2.0.6
+  checksum: 924a776808f91d2fdd33a7033f84e3bbfe668ae98c0b9764c7b923e018accd8de57012bf20e419e0a5ef73ec3ec3738a654e71abe12f537b2fd7bcf02b93659f
   languageName: node
   linkType: hard
 
@@ -10657,6 +10665,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"tiny-secp256k1@npm:^2.2.0":
+  version: 2.2.3
+  resolution: "tiny-secp256k1@npm:2.2.3"
+  dependencies:
+    uint8array-tools: 0.0.7
+  checksum: f7a74a1fceacab39d268907cd84798d3a07f3de2e00ba2557a043316ef45298d9acc96fb1614d72c728c3e512ecfef985b0fbd43b7fdb789fd9901df983e3e44
+  languageName: node
+  linkType: hard
+
 "tmp@npm:^0.0.33":
   version: 0.0.33
   resolution: "tmp@npm:0.0.33"
@@ -11095,7 +11112,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typeforce@npm:^1.11.3, typeforce@npm:^1.11.5":
+"typeforce@npm:^1.11.3, typeforce@npm:^1.11.5, typeforce@npm:^1.18.0":
   version: 1.18.0
   resolution: "typeforce@npm:1.18.0"
   checksum: e3b21e27e76cb05f32285bef7c30a29760e79c622cfe4aa3c179ce49d1c7895b7154c8deedb9fe4599b1fd0428d35860d43e0776da1c04861168f3ad7ed99c70
@@ -11119,6 +11136,13 @@ __metadata:
     tsc: bin/tsc
     tsserver: bin/tsserver
   checksum: 2eee5c37cad4390385db5db5a8e81470e42e8f1401b0358d7390095d6f681b410f2c4a0c496c6ff9ebd775423c7785cdace7bcdad76c7bee283df3d9718c0f20
+  languageName: node
+  linkType: hard
+
+"uint8array-tools@npm:0.0.7":
+  version: 0.0.7
+  resolution: "uint8array-tools@npm:0.0.7"
+  checksum: 6ffc45c7d2136757d63c6e556eb8345f908948618a9de37c805fec1249d989c265187b3fbef6cffc4ce5129083204829025b3c58800a0f24c8548e243d42ba13
   languageName: node
   linkType: hard
 

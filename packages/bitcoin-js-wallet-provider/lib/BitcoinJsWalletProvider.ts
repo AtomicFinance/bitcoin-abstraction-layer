@@ -20,18 +20,22 @@ import { mnemonicToSeed } from 'bip39';
 import { BitcoinNetwork } from 'bitcoin-networks';
 import * as bitcoin from 'bitcoinjs-lib';
 import {
-  ECPair,
-  ECPairInterface,
   Psbt,
   script,
   Transaction as BitcoinJsTransaction,
 } from 'bitcoinjs-lib';
+import { ECPairFactory, ECPairInterface } from 'ecpair';
+import * as ecc from 'tiny-secp256k1';
+
+const ECPair = ECPairFactory(ecc);
 import { signAsync as signBitcoinMessage } from 'bitcoinjs-message';
 import secp256k1 from 'secp256k1';
 
 const FEE_PER_BYTE_FALLBACK = 5;
 
 type WalletProviderConstructor<T = Provider> = new (...args: any[]) => T;
+
+type BaseWalletProvider = ReturnType<typeof BitcoinWalletProvider>;
 
 interface BitcoinJsWalletProviderOptions {
   network: BitcoinNetwork;
@@ -42,9 +46,13 @@ interface BitcoinJsWalletProviderOptions {
   changeAddressIndex?: number;
 }
 
-export default class BitcoinJsWalletProvider extends BitcoinWalletProvider(
+// TypeScript has difficulty inferring the complex return type of the mixin pattern
+// Using 'any' here is safe as we know the mixin returns the correct enhanced class
+const BaseProvider: any = BitcoinWalletProvider(
   Provider as WalletProviderConstructor,
-) {
+);
+
+export default class BitcoinJsWalletProvider extends BaseProvider {
   _mnemonic: string;
   _seedNode: BIP32Interface;
   _baseDerivationNode: BIP32Interface;
@@ -248,7 +256,10 @@ export default class BitcoinJsWalletProvider extends BitcoinWalletProvider(
       }),
     );
 
-    psbt.validateSignaturesOfAllInputs(); // ensure all signatures are valid!
+    psbt.validateSignaturesOfAllInputs(
+      (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
+        ecc.verify(msghash, pubkey, signature),
+    ); // ensure all signatures are valid!
     return psbt.toBase64();
   }
 
@@ -264,7 +275,10 @@ export default class BitcoinJsWalletProvider extends BitcoinWalletProvider(
     const psbt = bitcoin.Psbt.fromBase64(psbtString);
 
     try {
-      psbt.validateSignaturesOfAllInputs(); // ensure all signatures are valid!
+      psbt.validateSignaturesOfAllInputs(
+        (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
+          ecc.verify(msghash, pubkey, signature),
+      ); // ensure all signatures are valid!
       psbt.finalizeAllInputs();
     } catch (error) {
       return {
@@ -423,14 +437,12 @@ export default class BitcoinJsWalletProvider extends BitcoinWalletProvider(
     );
     const inputs = fixedInputs;
 
-    const txb = new bitcoin.TransactionBuilder(network);
+    const psbt = new Psbt({ network });
 
-    for (const output of outputs) {
-      const to = output.to; // Allow for OP_RETURN
-      txb.addOutput(to, output.value);
-    }
-
-    const prevOutScriptType = 'p2wpkh';
+    const needsWitness = [
+      bT.AddressType.BECH32,
+      bT.AddressType.P2SH_SEGWIT,
+    ].includes(this._addressType);
 
     for (let i = 0; i < inputs.length; i++) {
       const wallet = await this.getWalletAddress(inputs[i].address);
@@ -439,32 +451,52 @@ export default class BitcoinJsWalletProvider extends BitcoinWalletProvider(
         keyPair.publicKey,
       );
 
-      txb.addInput(inputs[i].txid, inputs[i].vout, 0, paymentVariant.output);
-    }
-
-    for (let i = 0; i < inputs.length; i++) {
-      const wallet = await this.getWalletAddress(inputs[i].address);
-      const keyPair = await this.keyPair(wallet.derivationPath);
-      const paymentVariant = this.getPaymentVariantFromPublicKey(
-        keyPair.publicKey,
-      );
-      const needsWitness = true;
-
-      const signParams = {
-        prevOutScriptType,
-        vin: i,
-        keyPair,
-        witnessValue: 0,
+      const psbtInput: any = {
+        hash: inputs[i].txid,
+        index: inputs[i].vout,
+        sequence: 0,
       };
 
       if (needsWitness) {
-        signParams.witnessValue = inputs[i].value;
+        psbtInput.witnessUtxo = {
+          script: paymentVariant.output,
+          value: inputs[i].value,
+        };
+      } else {
+        const inputTxRaw = await this.getMethod('getRawTransactionByHash')(
+          inputs[i].txid,
+        );
+        psbtInput.nonWitnessUtxo = Buffer.from(inputTxRaw, 'hex');
       }
 
-      txb.sign(signParams);
+      if (this._addressType === bT.AddressType.P2SH_SEGWIT) {
+        psbtInput.redeemScript = paymentVariant.redeem.output;
+      }
+
+      psbt.addInput(psbtInput);
     }
 
-    return { hex: txb.build().toHex(), fee };
+    for (const output of outputs) {
+      psbt.addOutput({
+        value: output.value,
+        address: output.to,
+      });
+    }
+
+    for (let i = 0; i < inputs.length; i++) {
+      const wallet = await this.getWalletAddress(inputs[i].address);
+      const keyPair = await this.keyPair(wallet.derivationPath);
+      psbt.signInput(i, keyPair);
+      psbt.validateSignaturesOfInput(
+        i,
+        (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
+          ecc.verify(msghash, pubkey, signature),
+      );
+    }
+
+    psbt.finalizeAllInputs();
+
+    return { hex: psbt.extractTransaction().toHex(), fee };
   }
 
   async _buildTransaction(
@@ -545,7 +577,11 @@ export default class BitcoinJsWalletProvider extends BitcoinWalletProvider(
       const wallet = await this.getWalletAddress(inputs[i].address);
       const keyPair = await this.keyPair(wallet.derivationPath);
       psbt.signInput(i, keyPair);
-      psbt.validateSignaturesOfInput(i);
+      psbt.validateSignaturesOfInput(
+        i,
+        (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
+          ecc.verify(msghash, pubkey, signature),
+      );
     }
 
     psbt.finalizeAllInputs();
