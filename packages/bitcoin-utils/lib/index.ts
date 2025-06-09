@@ -11,10 +11,104 @@ import BigNumber from 'bignumber.js';
 import * as varuint from 'bip174/src/lib/converter/varint';
 import { BitcoinNetwork, BitcoinNetworks } from 'bitcoin-networks';
 import * as bitcoin from 'bitcoinjs-lib';
-import * as classify from 'bitcoinjs-lib/src/classify';
 import coinselect from 'coinselect';
 import coinselectAccumulative from 'coinselect/accumulative';
 import { findKey } from 'lodash';
+
+// Script type constants (replacing the classify module)
+const SCRIPT_TYPES = {
+  P2PKH: 'pubkeyhash',
+  P2SH: 'scripthash',
+  P2WPKH: 'witness_v0_keyhash',
+  P2WSH: 'witness_v0_scripthash',
+  P2TR: 'witness_v1_taproot',
+  NULLDATA: 'nulldata',
+  NONSTANDARD: 'nonstandard',
+  MULTISIG: 'multisig',
+  P2PK: 'pubkey',
+} as const;
+
+// Custom script classification function
+const classifyScript = (script: Buffer): string => {
+  if (script.length === 0) return SCRIPT_TYPES.NONSTANDARD;
+
+  // P2PKH: OP_DUP OP_HASH160 <20 bytes> OP_EQUALVERIFY OP_CHECKSIG
+  if (
+    script.length === 25 &&
+    script[0] === 0x76 && // OP_DUP
+    script[1] === 0xa9 && // OP_HASH160
+    script[2] === 0x14 && // 20 bytes
+    script[23] === 0x88 && // OP_EQUALVERIFY
+    script[24] === 0xac
+  ) {
+    // OP_CHECKSIG
+    return SCRIPT_TYPES.P2PKH;
+  }
+
+  // P2SH: OP_HASH160 <20 bytes> OP_EQUAL
+  if (
+    script.length === 23 &&
+    script[0] === 0xa9 && // OP_HASH160
+    script[1] === 0x14 && // 20 bytes
+    script[22] === 0x87
+  ) {
+    // OP_EQUAL
+    return SCRIPT_TYPES.P2SH;
+  }
+
+  // P2WPKH: OP_0 <20 bytes>
+  if (
+    script.length === 22 &&
+    script[0] === 0x00 && // OP_0
+    script[1] === 0x14
+  ) {
+    // 20 bytes
+    return SCRIPT_TYPES.P2WPKH;
+  }
+
+  // P2WSH: OP_0 <32 bytes>
+  if (
+    script.length === 34 &&
+    script[0] === 0x00 && // OP_0
+    script[1] === 0x20
+  ) {
+    // 32 bytes
+    return SCRIPT_TYPES.P2WSH;
+  }
+
+  // P2TR: OP_1 <32 bytes>
+  if (
+    script.length === 34 &&
+    script[0] === 0x51 && // OP_1
+    script[1] === 0x20
+  ) {
+    // 32 bytes
+    return SCRIPT_TYPES.P2TR;
+  }
+
+  // OP_RETURN (nulldata)
+  if (script.length >= 1 && script[0] === 0x6a) {
+    // OP_RETURN
+    return SCRIPT_TYPES.NULLDATA;
+  }
+
+  // P2PK: <33 or 65 bytes pubkey> OP_CHECKSIG
+  if (
+    (script.length === 35 || script.length === 67) &&
+    script[script.length - 1] === 0xac
+  ) {
+    // OP_CHECKSIG
+    return SCRIPT_TYPES.P2PK;
+  }
+
+  // Basic multisig detection: OP_M <pubkeys> OP_N OP_CHECKMULTISIG
+  if (script.length >= 4 && script[script.length - 1] === 0xae) {
+    // OP_CHECKMULTISIG
+    return SCRIPT_TYPES.MULTISIG;
+  }
+
+  return SCRIPT_TYPES.NONSTANDARD;
+};
 
 const AddressTypes = ['legacy', 'p2sh-segwit', 'bech32'];
 
@@ -124,8 +218,8 @@ const selectCoins = (
 };
 
 const OUTPUT_TYPES_MAP = {
-  [classify.types.P2WPKH]: 'witness_v0_keyhash',
-  [classify.types.P2WSH]: 'witness_v0_scripthash',
+  [SCRIPT_TYPES.P2WPKH]: 'witness_v0_keyhash',
+  [SCRIPT_TYPES.P2WSH]: 'witness_v0_scripthash',
 };
 
 const decodeRawTransaction = (
@@ -148,7 +242,7 @@ const decodeRawTransaction = (
   });
 
   const vout = bjsTx.outs.map((output, n) => {
-    const type = classify.output(output.script);
+    const type = classifyScript(output.script);
 
     const vout: bT.Output = {
       value: output.value / 1e8,
@@ -256,8 +350,8 @@ const witnessStackToScriptWitness = (witness: Buffer[]): Buffer => {
 
 const getPubKeyHash = (address: string, network: BitcoinNetwork): Buffer => {
   const outputScript = bitcoin.address.toOutputScript(address, network);
-  const type = classify.output(outputScript);
-  if (![classify.types.P2PKH, classify.types.P2WPKH].includes(type)) {
+  const type = classifyScript(outputScript);
+  if (type !== SCRIPT_TYPES.P2PKH && type !== SCRIPT_TYPES.P2WPKH) {
     throw new Error(
       `Bitcoin swap doesn't support the address ${address} type of ${type}. Not possible to derive public key hash.`,
     );
