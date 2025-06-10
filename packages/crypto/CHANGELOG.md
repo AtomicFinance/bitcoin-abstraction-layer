@@ -1,5 +1,11 @@
 # @atomicfinance/crypto
 
+## 3.6.1
+
+### Patch Changes
+
+- 3c85279: Upgrade bitcoinjs-lib v6 with ECPair migration
+
 ## 3.6.0
 
 ### Minor Changes
