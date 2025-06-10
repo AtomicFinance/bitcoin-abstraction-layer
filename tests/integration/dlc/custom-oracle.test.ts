@@ -400,10 +400,10 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
       const roundingIntervals = buildRoundingIntervalsFromIntervals(
         contractSize,
         [
-          { beginInterval: 0n, rounding: lowPrecisionRounding },
-          { beginInterval: 750000n, rounding: mediumPrecisionRounding },
-          { beginInterval: 850000n, rounding: highPrecisionRounding },
-          { beginInterval: 950000n, rounding: highestPrecisionRounding },
+          { beginInterval: 0n, rounding: lowPrecisionRounding.sats },
+          { beginInterval: 750000n, rounding: mediumPrecisionRounding.sats },
+          { beginInterval: 850000n, rounding: highPrecisionRounding.sats },
+          { beginInterval: 950000n, rounding: highestPrecisionRounding.sats },
         ],
       );
 
@@ -667,7 +667,9 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
         { length: 19 },
         (_, i) => starterOutcome - i * 10,
       );
-      const threshold = Number(precision.sats) * contractSize.bitcoin;
+      const threshold = Number(
+        (precision.sats * contractSize.sats) / BigInt(1e8),
+      );
 
       for (let i = 0; i < outcomes.length; i++) {
         const outcome = outcomes[i];

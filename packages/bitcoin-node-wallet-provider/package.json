@@ -33,8 +33,10 @@
     "@babel/runtime": "^7.12.1",
     "bignumber.js": "^9.0.0",
     "bitcoin-networks": "^1.0.0",
-    "bitcoinjs-lib": "5.2.0",
-    "lodash": "^4.17.20"
+    "bitcoinjs-lib": "6.1.7",
+    "ecpair": "^2.1.0",
+    "lodash": "^4.17.20",
+    "tiny-secp256k1": "^2.2.0"
   },
   "homepage": "https://github.com/atomicfinance/chainabstractionlayer#readme",
   "repository": {

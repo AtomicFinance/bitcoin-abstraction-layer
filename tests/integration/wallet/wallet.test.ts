@@ -10,7 +10,13 @@ import BitcoinDlcProvider from '../../../packages/bitcoin-dlc-provider/lib';
 import { BitcoinJsWalletProvider } from '../../../packages/bitcoin-js-wallet-provider';
 import { Client } from '../../../packages/client/lib';
 import Provider from '../../../packages/provider';
-import { Address, bitcoin, Input, Output } from '../../../packages/types';
+import {
+  Address,
+  BigNumber,
+  bitcoin,
+  Input,
+  Output,
+} from '../../../packages/types';
 import { chains, getInput, mockedBitcoinRpcProvider, network } from '../common';
 import * as fixtures from '../fixtures/wallet.json';
 
@@ -46,6 +52,81 @@ describe('wallet provider', () => {
     it('should get change address at custom derivation path', async () => {
       const unusedAddress = await frank.wallet.getUnusedAddress(true);
       expect(unusedAddress.derivationPath).to.equal("m/84'/1'/0'/1/100");
+    });
+  });
+
+  describe('sendTransaction', () => {
+    it('should send a transaction successfully', async () => {
+      // Get a destination address
+      const toAddress = await bob.wallet.getUnusedAddress();
+
+      // Define transaction options
+      const sendOptions = {
+        to: toAddress.address,
+        value: new BigNumber(50000000), // 0.5 BTC in satoshis
+        fee: 10, // fee per byte
+      };
+
+      // Send the transaction
+      const transaction = await alice.chain.sendTransaction(sendOptions);
+
+      // Verify transaction properties
+      expect(transaction).to.have.property('hash');
+      expect(transaction).to.have.property('_raw');
+      expect(transaction.hash).to.be.a('string');
+      expect(transaction.hash).to.have.lengthOf(64); // Bitcoin transaction hash length
+
+      // Verify the transaction has outputs
+      expect(transaction._raw.vout).to.be.an('array');
+      expect(transaction._raw.vout.length).to.be.greaterThan(0);
+
+      // Verify at least one output goes to the destination address
+      const destinationOutput = transaction._raw.vout.find(
+        (output) =>
+          output.scriptPubKey.addresses &&
+          output.scriptPubKey.addresses.includes(toAddress.address),
+      );
+      expect(destinationOutput).to.exist;
+      expect(destinationOutput.value).to.equal(0.5); // 0.5 BTC
+    });
+
+    it('should fail when insufficient balance', async () => {
+      // Get a destination address
+      const toAddress = await bob.wallet.getUnusedAddress();
+
+      // Try to send more than available balance
+      const sendOptions = {
+        to: toAddress.address,
+        value: new BigNumber(100000000000), // 1000 BTC - way more than available
+        fee: 10,
+      };
+
+      // Should throw an error
+      await expect(alice.chain.sendTransaction(sendOptions)).to.be.rejected;
+    });
+
+    it('should create OP_RETURN transaction with data', async () => {
+      // Define transaction options with data
+      const sendOptions = {
+        to: null,
+        value: new BigNumber(0),
+        data: '48656c6c6f20576f726c64', // "Hello World" in hex
+        fee: 10,
+      };
+
+      // Send the transaction
+      const transaction = await alice.chain.sendTransaction(sendOptions);
+
+      // Verify transaction properties
+      expect(transaction).to.have.property('hash');
+      expect(transaction._raw.vout).to.be.an('array');
+
+      // Verify there's an OP_RETURN output
+      const opReturnOutput = transaction._raw.vout.find(
+        (output) => output.scriptPubKey.type === 'nulldata',
+      );
+      expect(opReturnOutput).to.exist;
+      expect(opReturnOutput.value).to.equal(0);
     });
   });
 
