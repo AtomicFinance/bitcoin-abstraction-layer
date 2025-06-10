@@ -1,5 +1,17 @@
 # @atomicfinance/bitcoin-rpc-provider
 
+## 3.6.1
+
+### Patch Changes
+
+- 3c85279: Upgrade bitcoinjs-lib v6 with ECPair migration
+- Updated dependencies [3c85279]
+  - @atomicfinance/bitcoin-utils@3.6.1
+  - @atomicfinance/utils@3.6.1
+  - @atomicfinance/errors@3.6.1
+  - @atomicfinance/jsonrpc-provider@3.6.1
+  - @atomicfinance/types@3.6.1
+
 ## 3.6.0
 
 ### Minor Changes
