@@ -19,9 +19,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-cfd-provider@workspace:packages/bitcoin-cfd-provider"
   dependencies:
-    "@atomicfinance/provider": ^3.6.0
-    "@atomicfinance/types": ^3.6.0
-    "@atomicfinance/utils": ^3.6.0
+    "@atomicfinance/provider": ^3.6.1
+    "@atomicfinance/types": ^3.6.1
+    "@atomicfinance/utils": ^3.6.1
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
     lodash: ^4.17.20
@@ -32,15 +32,15 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-dlc-provider@workspace:packages/bitcoin-dlc-provider"
   dependencies:
-    "@atomicfinance/bitcoin-utils": 3.6.0
-    "@atomicfinance/provider": ^3.6.0
-    "@atomicfinance/types": ^3.6.0
-    "@atomicfinance/utils": ^3.6.0
-    "@node-dlc/bitcoin": 0.24.0
-    "@node-dlc/bufio": 0.24.0
-    "@node-dlc/core": 0.24.0
-    "@node-dlc/crypto": 0.24.0
-    "@node-dlc/messaging": 0.24.0
+    "@atomicfinance/bitcoin-utils": 3.6.1
+    "@atomicfinance/provider": ^3.6.1
+    "@atomicfinance/types": ^3.6.1
+    "@atomicfinance/utils": ^3.6.1
+    "@node-dlc/bitcoin": "file:.yalc/@node-dlc/bitcoin"
+    "@node-dlc/bufio": "file:.yalc/@node-dlc/bufio"
+    "@node-dlc/core": "file:.yalc/@node-dlc/core"
+    "@node-dlc/crypto": "file:.yalc/@node-dlc/crypto"
+    "@node-dlc/messaging": "file:.yalc/@node-dlc/messaging"
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
     bignumber.js: ^9.0.1
@@ -55,16 +55,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/bitcoin-esplora-api-provider@^3.6.0, @atomicfinance/bitcoin-esplora-api-provider@workspace:packages/bitcoin-esplora-api-provider":
+"@atomicfinance/bitcoin-esplora-api-provider@^3.6.1, @atomicfinance/bitcoin-esplora-api-provider@workspace:packages/bitcoin-esplora-api-provider":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-esplora-api-provider@workspace:packages/bitcoin-esplora-api-provider"
   dependencies:
-    "@atomicfinance/bitcoin-utils": ^3.6.0
-    "@atomicfinance/crypto": ^3.6.0
-    "@atomicfinance/errors": ^3.6.0
-    "@atomicfinance/node-provider": ^3.6.0
-    "@atomicfinance/types": ^3.6.0
-    "@atomicfinance/utils": ^3.6.0
+    "@atomicfinance/bitcoin-utils": ^3.6.1
+    "@atomicfinance/crypto": ^3.6.1
+    "@atomicfinance/errors": ^3.6.1
+    "@atomicfinance/node-provider": ^3.6.1
+    "@atomicfinance/types": ^3.6.1
+    "@atomicfinance/utils": ^3.6.1
     "@babel/runtime": ^7.12.1
     "@types/lodash": ^4.14.168
     bignumber.js: ^9.0.0
@@ -78,10 +78,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-esplora-batch-api-provider@workspace:packages/bitcoin-esplora-batch-api-provider"
   dependencies:
-    "@atomicfinance/bitcoin-esplora-api-provider": ^3.6.0
-    "@atomicfinance/node-provider": ^3.6.0
-    "@atomicfinance/types": ^3.6.0
-    "@atomicfinance/utils": ^3.6.0
+    "@atomicfinance/bitcoin-esplora-api-provider": ^3.6.1
+    "@atomicfinance/node-provider": ^3.6.1
+    "@atomicfinance/types": ^3.6.1
+    "@atomicfinance/utils": ^3.6.1
     "@babel/runtime": ^7.12.1
     "@types/lodash": ^4.14.168
     bignumber.js: ^9.0.0
@@ -94,12 +94,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-js-wallet-provider@workspace:packages/bitcoin-js-wallet-provider"
   dependencies:
-    "@atomicfinance/bitcoin-utils": ^3.6.0
-    "@atomicfinance/bitcoin-wallet-provider": ^3.6.0
-    "@atomicfinance/types": ^3.6.0
-    "@atomicfinance/utils": ^3.6.0
+    "@atomicfinance/bitcoin-utils": ^3.6.1
+    "@atomicfinance/bitcoin-wallet-provider": ^3.6.1
+    "@atomicfinance/types": ^3.6.1
+    "@atomicfinance/utils": ^3.6.1
     "@babel/runtime": ^7.12.1
-    "@node-dlc/core": 0.24.0
+    "@node-dlc/core": "file:.yalc/@node-dlc/core"
     bip32: ^2.0.6
     bip39: ^3.0.2
     bitcoin-networks: ^1.0.0
@@ -115,11 +115,11 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-node-wallet-provider@workspace:packages/bitcoin-node-wallet-provider"
   dependencies:
-    "@atomicfinance/bitcoin-utils": ^3.6.0
-    "@atomicfinance/crypto": ^3.6.0
-    "@atomicfinance/jsonrpc-provider": ^3.6.0
-    "@atomicfinance/types": ^3.6.0
-    "@atomicfinance/utils": ^3.6.0
+    "@atomicfinance/bitcoin-utils": ^3.6.1
+    "@atomicfinance/crypto": ^3.6.1
+    "@atomicfinance/jsonrpc-provider": ^3.6.1
+    "@atomicfinance/types": ^3.6.1
+    "@atomicfinance/utils": ^3.6.1
     "@babel/runtime": ^7.12.1
     "@types/lodash": ^4.14.168
     bignumber.js: ^9.0.0
@@ -135,11 +135,11 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-rpc-provider@workspace:packages/bitcoin-rpc-provider"
   dependencies:
-    "@atomicfinance/bitcoin-utils": ^3.6.0
-    "@atomicfinance/errors": ^3.6.0
-    "@atomicfinance/jsonrpc-provider": ^3.6.0
-    "@atomicfinance/types": ^3.6.0
-    "@atomicfinance/utils": ^3.6.0
+    "@atomicfinance/bitcoin-utils": ^3.6.1
+    "@atomicfinance/errors": ^3.6.1
+    "@atomicfinance/jsonrpc-provider": ^3.6.1
+    "@atomicfinance/types": ^3.6.1
+    "@atomicfinance/utils": ^3.6.1
     "@babel/runtime": ^7.12.1
     "@types/lodash": ^4.14.168
     bignumber.js: ^9.0.0
@@ -148,14 +148,14 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/bitcoin-utils@3.6.0, @atomicfinance/bitcoin-utils@^3.6.0, @atomicfinance/bitcoin-utils@workspace:packages/bitcoin-utils":
+"@atomicfinance/bitcoin-utils@3.6.1, @atomicfinance/bitcoin-utils@^3.6.1, @atomicfinance/bitcoin-utils@workspace:packages/bitcoin-utils":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-utils@workspace:packages/bitcoin-utils"
   dependencies:
-    "@atomicfinance/crypto": ^3.6.0
-    "@atomicfinance/errors": ^3.6.0
-    "@atomicfinance/types": ^3.6.0
-    "@atomicfinance/utils": ^3.6.0
+    "@atomicfinance/crypto": ^3.6.1
+    "@atomicfinance/errors": ^3.6.1
+    "@atomicfinance/types": ^3.6.1
+    "@atomicfinance/utils": ^3.6.1
     "@babel/runtime": ^7.12.1
     "@types/lodash": ^4.14.168
     "@types/node": 16.10.3
@@ -168,14 +168,14 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/bitcoin-wallet-provider@^3.6.0, @atomicfinance/bitcoin-wallet-provider@workspace:packages/bitcoin-wallet-provider":
+"@atomicfinance/bitcoin-wallet-provider@^3.6.1, @atomicfinance/bitcoin-wallet-provider@workspace:packages/bitcoin-wallet-provider":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/bitcoin-wallet-provider@workspace:packages/bitcoin-wallet-provider"
   dependencies:
-    "@atomicfinance/bitcoin-utils": ^3.6.0
-    "@atomicfinance/provider": ^3.6.0
-    "@atomicfinance/types": ^3.6.0
-    "@node-dlc/core": 0.24.0
+    "@atomicfinance/bitcoin-utils": ^3.6.1
+    "@atomicfinance/provider": ^3.6.1
+    "@atomicfinance/types": ^3.6.1
+    "@node-dlc/core": "file:.yalc/@node-dlc/core"
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
     bip32: ^2.0.6
@@ -190,12 +190,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/client@workspace:packages/client"
   dependencies:
-    "@atomicfinance/bitcoin-utils": ^3.6.0
-    "@atomicfinance/errors": ^3.6.0
-    "@atomicfinance/provider": ^3.6.0
-    "@atomicfinance/types": ^3.6.0
-    "@node-dlc/bitcoin": 0.24.0
-    "@node-dlc/messaging": 0.24.0
+    "@atomicfinance/bitcoin-utils": ^3.6.1
+    "@atomicfinance/errors": ^3.6.1
+    "@atomicfinance/provider": ^3.6.1
+    "@atomicfinance/types": ^3.6.1
+    "@node-dlc/bitcoin": "file:.yalc/@node-dlc/bitcoin"
+    "@node-dlc/messaging": "file:.yalc/@node-dlc/messaging"
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
     ajv: ^6.10.0
@@ -203,7 +203,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/crypto@^3.6.0, @atomicfinance/crypto@workspace:packages/crypto":
+"@atomicfinance/crypto@^3.6.1, @atomicfinance/crypto@workspace:packages/crypto":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/crypto@workspace:packages/crypto"
   dependencies:
@@ -215,18 +215,18 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/errors@^3.6.0, @atomicfinance/errors@workspace:packages/errors":
+"@atomicfinance/errors@^3.6.1, @atomicfinance/errors@workspace:packages/errors":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/errors@workspace:packages/errors"
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/jsonrpc-provider@^3.6.0, @atomicfinance/jsonrpc-provider@workspace:packages/jsonrpc-provider":
+"@atomicfinance/jsonrpc-provider@^3.6.1, @atomicfinance/jsonrpc-provider@workspace:packages/jsonrpc-provider":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/jsonrpc-provider@workspace:packages/jsonrpc-provider"
   dependencies:
-    "@atomicfinance/errors": ^3.6.0
-    "@atomicfinance/node-provider": ^3.6.0
+    "@atomicfinance/errors": ^3.6.1
+    "@atomicfinance/node-provider": ^3.6.1
     "@babel/runtime": ^7.12.1
     "@types/json-bigint": ^1.0.0
     "@types/lodash": ^4.14.168
@@ -235,12 +235,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/node-provider@^3.6.0, @atomicfinance/node-provider@workspace:packages/node-provider":
+"@atomicfinance/node-provider@^3.6.1, @atomicfinance/node-provider@workspace:packages/node-provider":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/node-provider@workspace:packages/node-provider"
   dependencies:
-    "@atomicfinance/errors": ^3.6.0
-    "@atomicfinance/provider": ^3.6.0
+    "@atomicfinance/errors": ^3.6.1
+    "@atomicfinance/provider": ^3.6.1
     "@babel/runtime": ^7.12.1
     "@types/lodash": ^4.14.168
     axios: ^0.21.0
@@ -248,37 +248,37 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/provider@^3.6.0, @atomicfinance/provider@workspace:packages/provider":
+"@atomicfinance/provider@^3.6.1, @atomicfinance/provider@workspace:packages/provider":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/provider@workspace:packages/provider"
   dependencies:
-    "@atomicfinance/types": ^3.6.0
+    "@atomicfinance/types": ^3.6.1
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
     lodash: ^4.17.20
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/types@^3.6.0, @atomicfinance/types@workspace:packages/types":
+"@atomicfinance/types@^3.6.1, @atomicfinance/types@workspace:packages/types":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/types@workspace:packages/types"
   dependencies:
-    "@node-dlc/bitcoin": 0.24.0
-    "@node-dlc/messaging": 0.24.0
-    "@node-dlc/noise": 0.24.0
+    "@node-dlc/bitcoin": "file:.yalc/@node-dlc/bitcoin"
+    "@node-dlc/messaging": "file:.yalc/@node-dlc/messaging"
+    "@node-dlc/noise": "file:.yalc/@node-dlc/noise"
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
     lodash: ^4.17.20
   languageName: unknown
   linkType: soft
 
-"@atomicfinance/utils@^3.6.0, @atomicfinance/utils@workspace:packages/utils":
+"@atomicfinance/utils@^3.6.1, @atomicfinance/utils@workspace:packages/utils":
   version: 0.0.0-use.local
   resolution: "@atomicfinance/utils@workspace:packages/utils"
   dependencies:
-    "@atomicfinance/crypto": ^3.6.0
-    "@atomicfinance/errors": ^3.6.0
-    "@atomicfinance/types": ^3.6.0
+    "@atomicfinance/crypto": ^3.6.1
+    "@atomicfinance/errors": ^3.6.1
+    "@atomicfinance/types": ^3.6.1
     "@babel/runtime": ^7.12.1
     bignumber.js: ^9.0.0
     bip174: ^2.0.1
@@ -911,111 +911,372 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@node-dlc/bitcoin@npm:0.24.0, @node-dlc/bitcoin@npm:^0.24.0":
-  version: 0.24.0
-  resolution: "@node-dlc/bitcoin@npm:0.24.0"
+"@node-dlc/bitcoin@file:.yalc/@node-dlc/bitcoin::locator=%40atomicfinance%2Fbitcoin-dlc-provider%40workspace%3Apackages%2Fbitcoin-dlc-provider":
+  version: 0.24.1
+  resolution: "@node-dlc/bitcoin@file:.yalc/@node-dlc/bitcoin#.yalc/@node-dlc/bitcoin::hash=834044&locator=%40atomicfinance%2Fbitcoin-dlc-provider%40workspace%3Apackages%2Fbitcoin-dlc-provider"
   dependencies:
-    "@node-dlc/bufio": ^0.24.0
-    "@node-dlc/crypto": ^0.24.0
-  checksum: 0783f3ed13c0902cb5598949c3001a8aabcee4a50db18d984046a401f4afd0a96f9042e0d2bdcd51ed5893f545ab50b282a9f44e7bc8d32d2b62e48f66d789ca
+    "@node-dlc/bufio": ^0.24.1
+    "@node-dlc/crypto": ^0.24.1
+  checksum: d88899d9cc3fbbe840fa2c5b7c0fba8d5a2e298504572555d608609aa0994ea2080b14ad78ec5e6dc0d0a79f6b5411aa4a91d29cc7198433e07d92f43eb8f723
   languageName: node
   linkType: hard
 
-"@node-dlc/bufio@npm:0.24.0, @node-dlc/bufio@npm:^0.24.0":
-  version: 0.24.0
-  resolution: "@node-dlc/bufio@npm:0.24.0"
-  checksum: 823140765714af8bf0e874060b8e67cb16de0cccaa21dfba5f0434558a8429c23f6c9b54702a2e6c25aafd8bd3af251493dea9b2a574d52457d64b5ac92567ac
-  languageName: node
-  linkType: hard
-
-"@node-dlc/checksum@npm:^0.24.0":
-  version: 0.24.0
-  resolution: "@node-dlc/checksum@npm:0.24.0"
-  checksum: 3e88e6f9e51be4870160e959aa506f4813320bfa082d2663b5d7c80f6c638671d969caef522eed7b65df0e8a1f974605200d22e7feba1b07e2f5f89669f38e00
-  languageName: node
-  linkType: hard
-
-"@node-dlc/common@npm:^0.24.0":
-  version: 0.24.0
-  resolution: "@node-dlc/common@npm:0.24.0"
+"@node-dlc/bitcoin@file:.yalc/@node-dlc/bitcoin::locator=%40atomicfinance%2Fclient%40workspace%3Apackages%2Fclient":
+  version: 0.24.1
+  resolution: "@node-dlc/bitcoin@file:.yalc/@node-dlc/bitcoin#.yalc/@node-dlc/bitcoin::hash=834044&locator=%40atomicfinance%2Fclient%40workspace%3Apackages%2Fclient"
   dependencies:
-    "@node-dlc/bitcoin": ^0.24.0
-    "@node-dlc/bufio": ^0.24.0
-  checksum: 13ed3824d2f751cb1bf2a4b7c18832fd0ef7bfaf3f39a08f64d5e79cddbf8825885cf9041fd514596832bdfeeb58779ad3a75bdfeae1b606211c93f5787236a4
+    "@node-dlc/bufio": ^0.24.1
+    "@node-dlc/crypto": ^0.24.1
+  checksum: d88899d9cc3fbbe840fa2c5b7c0fba8d5a2e298504572555d608609aa0994ea2080b14ad78ec5e6dc0d0a79f6b5411aa4a91d29cc7198433e07d92f43eb8f723
   languageName: node
   linkType: hard
 
-"@node-dlc/core@npm:0.24.0":
-  version: 0.24.0
-  resolution: "@node-dlc/core@npm:0.24.0"
+"@node-dlc/bitcoin@file:.yalc/@node-dlc/bitcoin::locator=%40atomicfinance%2Ftypes%40workspace%3Apackages%2Ftypes":
+  version: 0.24.1
+  resolution: "@node-dlc/bitcoin@file:.yalc/@node-dlc/bitcoin#.yalc/@node-dlc/bitcoin::hash=834044&locator=%40atomicfinance%2Ftypes%40workspace%3Apackages%2Ftypes"
   dependencies:
-    "@node-dlc/bitcoin": ^0.24.0
-    "@node-dlc/bufio": ^0.24.0
-    "@node-dlc/common": ^0.24.0
-    "@node-dlc/crypto": ^0.24.0
+    "@node-dlc/bufio": ^0.24.1
+    "@node-dlc/crypto": ^0.24.1
+  checksum: d88899d9cc3fbbe840fa2c5b7c0fba8d5a2e298504572555d608609aa0994ea2080b14ad78ec5e6dc0d0a79f6b5411aa4a91d29cc7198433e07d92f43eb8f723
+  languageName: node
+  linkType: hard
+
+"@node-dlc/bitcoin@file:.yalc/@node-dlc/bitcoin::locator=root%40workspace%3A.":
+  version: 0.24.1
+  resolution: "@node-dlc/bitcoin@file:.yalc/@node-dlc/bitcoin#.yalc/@node-dlc/bitcoin::hash=834044&locator=root%40workspace%3A."
+  dependencies:
+    "@node-dlc/bufio": ^0.24.1
+    "@node-dlc/crypto": ^0.24.1
+  checksum: d88899d9cc3fbbe840fa2c5b7c0fba8d5a2e298504572555d608609aa0994ea2080b14ad78ec5e6dc0d0a79f6b5411aa4a91d29cc7198433e07d92f43eb8f723
+  languageName: node
+  linkType: hard
+
+"@node-dlc/bitcoin@npm:^0.24.1":
+  version: 0.24.1
+  resolution: "@node-dlc/bitcoin@npm:0.24.1"
+  dependencies:
+    "@node-dlc/bufio": ^0.24.1
+    "@node-dlc/crypto": ^0.24.1
+  checksum: 3ac3453169c9aa112e70250c8954bc8db4ad7b58b27f571c717c374afb0cd1d3332aecf02d9b8259446e2c7430f218af6bb46f86eed91278f7d1f880ea946dd2
+  languageName: node
+  linkType: hard
+
+"@node-dlc/bufio@file:.yalc/@node-dlc/bufio::locator=%40atomicfinance%2Fbitcoin-dlc-provider%40workspace%3Apackages%2Fbitcoin-dlc-provider":
+  version: 0.24.1
+  resolution: "@node-dlc/bufio@file:.yalc/@node-dlc/bufio#.yalc/@node-dlc/bufio::hash=f8c66f&locator=%40atomicfinance%2Fbitcoin-dlc-provider%40workspace%3Apackages%2Fbitcoin-dlc-provider"
+  dependencies:
+    decimal.js: 10.4.3
+  checksum: a98c58b40da5897c85bb6a7257ec773c7712ed2e8fc1f7f944673cd4d022b85a1331304354b97f344b560db87518993503b826d5b4391b10c74a43aa2d409eeb
+  languageName: node
+  linkType: hard
+
+"@node-dlc/bufio@file:.yalc/@node-dlc/bufio::locator=root%40workspace%3A.":
+  version: 0.24.1
+  resolution: "@node-dlc/bufio@file:.yalc/@node-dlc/bufio#.yalc/@node-dlc/bufio::hash=f8c66f&locator=root%40workspace%3A."
+  dependencies:
+    decimal.js: 10.4.3
+  checksum: a98c58b40da5897c85bb6a7257ec773c7712ed2e8fc1f7f944673cd4d022b85a1331304354b97f344b560db87518993503b826d5b4391b10c74a43aa2d409eeb
+  languageName: node
+  linkType: hard
+
+"@node-dlc/bufio@npm:^0.24.1":
+  version: 0.24.1
+  resolution: "@node-dlc/bufio@npm:0.24.1"
+  checksum: c219a73ac0da50d524c6a024340870dbe60874d67ec398a50fefb40a9176830bc25aa82d8c381994619b603944a1741ede5e3b242b93d50041d1b1e351792494
+  languageName: node
+  linkType: hard
+
+"@node-dlc/checksum@file:.yalc/@node-dlc/checksum::locator=root%40workspace%3A.":
+  version: 0.24.1
+  resolution: "@node-dlc/checksum@file:.yalc/@node-dlc/checksum#.yalc/@node-dlc/checksum::hash=3a0768&locator=root%40workspace%3A."
+  checksum: 225d2add61b63b413da469facbff329ee4e85c8c807788272256767331f8609d4c01da628fc25af389cae0b2aaa120d81d7a0a5eab6e4c19ac1cddfc3756a061
+  languageName: node
+  linkType: hard
+
+"@node-dlc/checksum@npm:^0.24.1":
+  version: 0.24.1
+  resolution: "@node-dlc/checksum@npm:0.24.1"
+  checksum: 7a5c3e3cc21cd1ab622edfd7ddd368c10a4678506c1e740d84041dde5d65bf81021ea21472ef79a3420404e9ec29346ef420a0ce76f6dcc1dd43ce6e7ba26077
+  languageName: node
+  linkType: hard
+
+"@node-dlc/common@file:.yalc/@node-dlc/common::locator=root%40workspace%3A.":
+  version: 0.24.1
+  resolution: "@node-dlc/common@file:.yalc/@node-dlc/common#.yalc/@node-dlc/common::hash=2ecbe2&locator=root%40workspace%3A."
+  dependencies:
+    "@node-dlc/bitcoin": ^0.24.1
+    "@node-dlc/bufio": ^0.24.1
+  checksum: 121b0fbcca38a5207bc3ead59b85c9e6b849f67d562ff7d4b3beb44380d8a0c6fee11e2e2a0d6a7e04c040389120dd80d468eb421bb2a110cb362ead3eecbf22
+  languageName: node
+  linkType: hard
+
+"@node-dlc/common@npm:^0.24.1":
+  version: 0.24.1
+  resolution: "@node-dlc/common@npm:0.24.1"
+  dependencies:
+    "@node-dlc/bitcoin": ^0.24.1
+    "@node-dlc/bufio": ^0.24.1
+  checksum: debb5ff8fe3a1f5bb3a24774c3763f555a628359dd9c79e8baf927a17afde6eb005512fdff7c611e1af9a6df349764daa6e8dfb6d256025e4773f5b3e94863bf
+  languageName: node
+  linkType: hard
+
+"@node-dlc/core@file:.yalc/@node-dlc/core::locator=%40atomicfinance%2Fbitcoin-dlc-provider%40workspace%3Apackages%2Fbitcoin-dlc-provider":
+  version: 0.24.1
+  resolution: "@node-dlc/core@file:.yalc/@node-dlc/core#.yalc/@node-dlc/core::hash=4b8fae&locator=%40atomicfinance%2Fbitcoin-dlc-provider%40workspace%3Apackages%2Fbitcoin-dlc-provider"
+  dependencies:
+    "@node-dlc/bitcoin": ^0.24.1
+    "@node-dlc/bufio": ^0.24.1
+    "@node-dlc/common": ^0.24.1
+    "@node-dlc/crypto": ^0.24.1
+    "@node-dlc/messaging": ^0.24.1
     bignumber.js: ^9.0.1
     bitcoin-networks: ^1.0.0
     decimal.js: 10.4.3
-  checksum: 5d2f6c2b4908d014c76a6d2aca87427593c5d1166c560b323acee024fb87a20b79f7ebd0f1fcd8d2c7d66676df9a51856b54b54eb0ae62bd954ba640eb773460
+  checksum: cd2e27b480229213225b60fb6179bd9fcd2d3ba52ceddf683f9823ccc99ca087a4ac6213d9e546fb056995d125d3c0efd844347f214f096da552d3ca8a4244c5
   languageName: node
   linkType: hard
 
-"@node-dlc/crypto@npm:0.24.0, @node-dlc/crypto@npm:^0.24.0":
-  version: 0.24.0
-  resolution: "@node-dlc/crypto@npm:0.24.0"
+"@node-dlc/core@file:.yalc/@node-dlc/core::locator=%40atomicfinance%2Fbitcoin-js-wallet-provider%40workspace%3Apackages%2Fbitcoin-js-wallet-provider":
+  version: 0.24.1
+  resolution: "@node-dlc/core@file:.yalc/@node-dlc/core#.yalc/@node-dlc/core::hash=4b8fae&locator=%40atomicfinance%2Fbitcoin-js-wallet-provider%40workspace%3Apackages%2Fbitcoin-js-wallet-provider"
+  dependencies:
+    "@node-dlc/bitcoin": ^0.24.1
+    "@node-dlc/bufio": ^0.24.1
+    "@node-dlc/common": ^0.24.1
+    "@node-dlc/crypto": ^0.24.1
+    "@node-dlc/messaging": ^0.24.1
+    bignumber.js: ^9.0.1
+    bitcoin-networks: ^1.0.0
+    decimal.js: 10.4.3
+  checksum: cd2e27b480229213225b60fb6179bd9fcd2d3ba52ceddf683f9823ccc99ca087a4ac6213d9e546fb056995d125d3c0efd844347f214f096da552d3ca8a4244c5
+  languageName: node
+  linkType: hard
+
+"@node-dlc/core@file:.yalc/@node-dlc/core::locator=%40atomicfinance%2Fbitcoin-wallet-provider%40workspace%3Apackages%2Fbitcoin-wallet-provider":
+  version: 0.24.1
+  resolution: "@node-dlc/core@file:.yalc/@node-dlc/core#.yalc/@node-dlc/core::hash=4b8fae&locator=%40atomicfinance%2Fbitcoin-wallet-provider%40workspace%3Apackages%2Fbitcoin-wallet-provider"
+  dependencies:
+    "@node-dlc/bitcoin": ^0.24.1
+    "@node-dlc/bufio": ^0.24.1
+    "@node-dlc/common": ^0.24.1
+    "@node-dlc/crypto": ^0.24.1
+    "@node-dlc/messaging": ^0.24.1
+    bignumber.js: ^9.0.1
+    bitcoin-networks: ^1.0.0
+    decimal.js: 10.4.3
+  checksum: cd2e27b480229213225b60fb6179bd9fcd2d3ba52ceddf683f9823ccc99ca087a4ac6213d9e546fb056995d125d3c0efd844347f214f096da552d3ca8a4244c5
+  languageName: node
+  linkType: hard
+
+"@node-dlc/core@file:.yalc/@node-dlc/core::locator=root%40workspace%3A.":
+  version: 0.24.1
+  resolution: "@node-dlc/core@file:.yalc/@node-dlc/core#.yalc/@node-dlc/core::hash=4b8fae&locator=root%40workspace%3A."
+  dependencies:
+    "@node-dlc/bitcoin": ^0.24.1
+    "@node-dlc/bufio": ^0.24.1
+    "@node-dlc/common": ^0.24.1
+    "@node-dlc/crypto": ^0.24.1
+    "@node-dlc/messaging": ^0.24.1
+    bignumber.js: ^9.0.1
+    bitcoin-networks: ^1.0.0
+    decimal.js: 10.4.3
+  checksum: cd2e27b480229213225b60fb6179bd9fcd2d3ba52ceddf683f9823ccc99ca087a4ac6213d9e546fb056995d125d3c0efd844347f214f096da552d3ca8a4244c5
+  languageName: node
+  linkType: hard
+
+"@node-dlc/crypto@file:.yalc/@node-dlc/crypto::locator=%40atomicfinance%2Fbitcoin-dlc-provider%40workspace%3Apackages%2Fbitcoin-dlc-provider":
+  version: 0.24.1
+  resolution: "@node-dlc/crypto@file:.yalc/@node-dlc/crypto#.yalc/@node-dlc/crypto::hash=88b302&locator=%40atomicfinance%2Fbitcoin-dlc-provider%40workspace%3Apackages%2Fbitcoin-dlc-provider"
   dependencies:
     secp256k1: ^4.0.2
-  checksum: 92479a99fb38843353e98dddddb3ad4a1daf39e3b54f0899cb46daba68a3986dc137d21c3a7a210970c9a2f0caabf1b979f752c9d8cc16c5c603f751d160086a
+  checksum: aa102397033231a969f3affe9c48abed123539f7fdba1e8798105676a2ff6c325a590903a84c36bf985a307e709545e6b532c5682c033063d029e01178b15475
   languageName: node
   linkType: hard
 
-"@node-dlc/logger@npm:^0.24.0":
-  version: 0.24.0
-  resolution: "@node-dlc/logger@npm:0.24.0"
-  checksum: e9421ecfe5a99f438d9f8b40b86ca1abc734cda98b1e37830c35f470aca05242f0b363d079969fb7118a6ba00d61a585043e7d3b44b36dd8f38b99cb7a3f83b2
-  languageName: node
-  linkType: hard
-
-"@node-dlc/messaging@npm:0.24.0":
-  version: 0.24.0
-  resolution: "@node-dlc/messaging@npm:0.24.0"
+"@node-dlc/crypto@file:.yalc/@node-dlc/crypto::locator=root%40workspace%3A.":
+  version: 0.24.1
+  resolution: "@node-dlc/crypto@file:.yalc/@node-dlc/crypto#.yalc/@node-dlc/crypto::hash=88b302&locator=root%40workspace%3A."
   dependencies:
-    "@node-dlc/bitcoin": ^0.24.0
-    "@node-dlc/bufio": ^0.24.0
-    "@node-dlc/checksum": ^0.24.0
-    "@node-dlc/common": ^0.24.0
-    "@node-dlc/crypto": ^0.24.0
-    "@node-dlc/wire": ^0.24.0
+    secp256k1: ^4.0.2
+  checksum: aa102397033231a969f3affe9c48abed123539f7fdba1e8798105676a2ff6c325a590903a84c36bf985a307e709545e6b532c5682c033063d029e01178b15475
+  languageName: node
+  linkType: hard
+
+"@node-dlc/crypto@npm:^0.24.1":
+  version: 0.24.1
+  resolution: "@node-dlc/crypto@npm:0.24.1"
+  dependencies:
+    secp256k1: ^4.0.2
+  checksum: 3d58eecf1245d59c474efc74f0ae29e698eb8e44c528632b633fd80201c6e11692e9ecc26717109bf064008b6516074308153de5c5ded20c662c6b2368598ad2
+  languageName: node
+  linkType: hard
+
+"@node-dlc/logger@npm:^0.24.1":
+  version: 0.24.1
+  resolution: "@node-dlc/logger@npm:0.24.1"
+  checksum: eb254d7dc1c8e7dcad102da3ddfa3c36f4897790f9862b0fef76f290d0127a1f66cdecae69d66fa17c7ee5a328d8ae058a082c9aaad3c3334db5df87a682b395
+  languageName: node
+  linkType: hard
+
+"@node-dlc/messaging@file:.yalc/@node-dlc/messaging::locator=%40atomicfinance%2Fbitcoin-dlc-provider%40workspace%3Apackages%2Fbitcoin-dlc-provider":
+  version: 0.24.1
+  resolution: "@node-dlc/messaging@file:.yalc/@node-dlc/messaging#.yalc/@node-dlc/messaging::hash=c28cbc&locator=%40atomicfinance%2Fbitcoin-dlc-provider%40workspace%3Apackages%2Fbitcoin-dlc-provider"
+  dependencies:
+    "@node-dlc/bitcoin": ^0.24.1
+    "@node-dlc/bufio": ^0.24.1
+    "@node-dlc/checksum": ^0.24.1
+    "@node-dlc/common": ^0.24.1
+    "@node-dlc/crypto": ^0.24.1
+    "@node-dlc/wire": ^0.24.1
+    "@types/json-bigint": ^1.0.4
     bip-schnorr: 0.6.3
     bitcoin-networks: ^1.0.0
-    bitcoinjs-lib: 5.2.0
+    bitcoinjs-lib: 6.1.7
+    decimal.js: 10.4.3
+    json-bigint: ^1.0.0
     secp256k1: ^4.0.3
-  checksum: f7d2b90caac46845d530a230a678e9b0f72270d10f3437893ba56bc432290286d7a9b881c1e5ab176520b2d630a38a540ea6310623d450a6d37a293091d0f42d
+  checksum: 78099dcbb6ae429867d4a397e067d5106de6a3fe32d126af2f7adb0a9c967cf8d024fa3d08e107e37f58b4f8402f51d1b340311520d2d2151e50a995e087ad73
   languageName: node
   linkType: hard
 
-"@node-dlc/noise@npm:0.24.0, @node-dlc/noise@npm:^0.24.0":
-  version: 0.24.0
-  resolution: "@node-dlc/noise@npm:0.24.0"
+"@node-dlc/messaging@file:.yalc/@node-dlc/messaging::locator=%40atomicfinance%2Fclient%40workspace%3Apackages%2Fclient":
+  version: 0.24.1
+  resolution: "@node-dlc/messaging@file:.yalc/@node-dlc/messaging#.yalc/@node-dlc/messaging::hash=c28cbc&locator=%40atomicfinance%2Fclient%40workspace%3Apackages%2Fclient"
   dependencies:
-    "@node-dlc/crypto": ^0.24.0
-    "@node-dlc/logger": ^0.24.0
-  checksum: 625f060f6654d85274fba8aa9907040f0aa4ffec8037acc2b7a94650fda38cec7fa74d47ad25a2e6d026ca8de766217c4c9be73606a1f0bcdbbe7eda5e8770a6
+    "@node-dlc/bitcoin": ^0.24.1
+    "@node-dlc/bufio": ^0.24.1
+    "@node-dlc/checksum": ^0.24.1
+    "@node-dlc/common": ^0.24.1
+    "@node-dlc/crypto": ^0.24.1
+    "@node-dlc/wire": ^0.24.1
+    "@types/json-bigint": ^1.0.4
+    bip-schnorr: 0.6.3
+    bitcoin-networks: ^1.0.0
+    bitcoinjs-lib: 6.1.7
+    decimal.js: 10.4.3
+    json-bigint: ^1.0.0
+    secp256k1: ^4.0.3
+  checksum: 78099dcbb6ae429867d4a397e067d5106de6a3fe32d126af2f7adb0a9c967cf8d024fa3d08e107e37f58b4f8402f51d1b340311520d2d2151e50a995e087ad73
   languageName: node
   linkType: hard
 
-"@node-dlc/wire@npm:^0.24.0":
-  version: 0.24.0
-  resolution: "@node-dlc/wire@npm:0.24.0"
+"@node-dlc/messaging@file:.yalc/@node-dlc/messaging::locator=%40atomicfinance%2Ftypes%40workspace%3Apackages%2Ftypes":
+  version: 0.24.1
+  resolution: "@node-dlc/messaging@file:.yalc/@node-dlc/messaging#.yalc/@node-dlc/messaging::hash=c28cbc&locator=%40atomicfinance%2Ftypes%40workspace%3Apackages%2Ftypes"
   dependencies:
-    "@node-dlc/bitcoin": ^0.24.0
-    "@node-dlc/bufio": ^0.24.0
-    "@node-dlc/checksum": ^0.24.0
-    "@node-dlc/common": ^0.24.0
-    "@node-dlc/crypto": ^0.24.0
-    "@node-dlc/logger": ^0.24.0
-    "@node-dlc/noise": ^0.24.0
-  checksum: 1f4e85f77a3c41cf340ffdffd3c75689035c143a01af9f4a38c2889a7efe46079e87ece6ec93daaa827e67be3b8242bddd224a34726fd26f96b4b97671cb831b
+    "@node-dlc/bitcoin": ^0.24.1
+    "@node-dlc/bufio": ^0.24.1
+    "@node-dlc/checksum": ^0.24.1
+    "@node-dlc/common": ^0.24.1
+    "@node-dlc/crypto": ^0.24.1
+    "@node-dlc/wire": ^0.24.1
+    "@types/json-bigint": ^1.0.4
+    bip-schnorr: 0.6.3
+    bitcoin-networks: ^1.0.0
+    bitcoinjs-lib: 6.1.7
+    decimal.js: 10.4.3
+    json-bigint: ^1.0.0
+    secp256k1: ^4.0.3
+  checksum: 78099dcbb6ae429867d4a397e067d5106de6a3fe32d126af2f7adb0a9c967cf8d024fa3d08e107e37f58b4f8402f51d1b340311520d2d2151e50a995e087ad73
+  languageName: node
+  linkType: hard
+
+"@node-dlc/messaging@file:.yalc/@node-dlc/messaging::locator=root%40workspace%3A.":
+  version: 0.24.1
+  resolution: "@node-dlc/messaging@file:.yalc/@node-dlc/messaging#.yalc/@node-dlc/messaging::hash=c28cbc&locator=root%40workspace%3A."
+  dependencies:
+    "@node-dlc/bitcoin": ^0.24.1
+    "@node-dlc/bufio": ^0.24.1
+    "@node-dlc/checksum": ^0.24.1
+    "@node-dlc/common": ^0.24.1
+    "@node-dlc/crypto": ^0.24.1
+    "@node-dlc/wire": ^0.24.1
+    "@types/json-bigint": ^1.0.4
+    bip-schnorr: 0.6.3
+    bitcoin-networks: ^1.0.0
+    bitcoinjs-lib: 6.1.7
+    decimal.js: 10.4.3
+    json-bigint: ^1.0.0
+    secp256k1: ^4.0.3
+  checksum: 78099dcbb6ae429867d4a397e067d5106de6a3fe32d126af2f7adb0a9c967cf8d024fa3d08e107e37f58b4f8402f51d1b340311520d2d2151e50a995e087ad73
+  languageName: node
+  linkType: hard
+
+"@node-dlc/messaging@npm:^0.24.1":
+  version: 0.24.1
+  resolution: "@node-dlc/messaging@npm:0.24.1"
+  dependencies:
+    "@node-dlc/bitcoin": ^0.24.1
+    "@node-dlc/bufio": ^0.24.1
+    "@node-dlc/checksum": ^0.24.1
+    "@node-dlc/common": ^0.24.1
+    "@node-dlc/crypto": ^0.24.1
+    "@node-dlc/wire": ^0.24.1
+    bip-schnorr: 0.6.3
+    bitcoin-networks: ^1.0.0
+    bitcoinjs-lib: 6.1.7
+    secp256k1: ^4.0.3
+  checksum: 7cd4e633c94250acc42713ec0cef088d0f7270af864690fd31889e82566fd1fb50220f9b74ba06f5b24377b1a2249eeba09e68a9b5d9de8e2d8d2b3b94b092d5
+  languageName: node
+  linkType: hard
+
+"@node-dlc/noise@file:.yalc/@node-dlc/noise::locator=%40atomicfinance%2Ftypes%40workspace%3Apackages%2Ftypes":
+  version: 0.24.1
+  resolution: "@node-dlc/noise@file:.yalc/@node-dlc/noise#.yalc/@node-dlc/noise::hash=293306&locator=%40atomicfinance%2Ftypes%40workspace%3Apackages%2Ftypes"
+  dependencies:
+    "@node-dlc/crypto": ^0.24.1
+    "@node-dlc/logger": ^0.24.1
+  checksum: 5969ed93bb10a578e31fd1ec8a806e8ce8b8a9048e64393898fc45b60f72e67125882b8a91f1f673b8c8f2f85583679d8557497f8615f108196cc7bf6632c4bc
+  languageName: node
+  linkType: hard
+
+"@node-dlc/noise@file:.yalc/@node-dlc/noise::locator=root%40workspace%3A.":
+  version: 0.24.1
+  resolution: "@node-dlc/noise@file:.yalc/@node-dlc/noise#.yalc/@node-dlc/noise::hash=293306&locator=root%40workspace%3A."
+  dependencies:
+    "@node-dlc/crypto": ^0.24.1
+    "@node-dlc/logger": ^0.24.1
+  checksum: 5969ed93bb10a578e31fd1ec8a806e8ce8b8a9048e64393898fc45b60f72e67125882b8a91f1f673b8c8f2f85583679d8557497f8615f108196cc7bf6632c4bc
+  languageName: node
+  linkType: hard
+
+"@node-dlc/noise@npm:^0.24.1":
+  version: 0.24.1
+  resolution: "@node-dlc/noise@npm:0.24.1"
+  dependencies:
+    "@node-dlc/crypto": ^0.24.1
+    "@node-dlc/logger": ^0.24.1
+  checksum: 62a07090150737a05c807442437b41971a8758775c769f14011bc9473598e433a6eafdc458e895e7e923b456db8710646a84a70fefcc88417be2a5038e608f2d
+  languageName: node
+  linkType: hard
+
+"@node-dlc/wire@file:.yalc/@node-dlc/wire::locator=root%40workspace%3A.":
+  version: 0.24.1
+  resolution: "@node-dlc/wire@file:.yalc/@node-dlc/wire#.yalc/@node-dlc/wire::hash=785e69&locator=root%40workspace%3A."
+  dependencies:
+    "@node-dlc/bitcoin": ^0.24.1
+    "@node-dlc/bufio": ^0.24.1
+    "@node-dlc/checksum": ^0.24.1
+    "@node-dlc/common": ^0.24.1
+    "@node-dlc/crypto": ^0.24.1
+    "@node-dlc/logger": ^0.24.1
+    "@node-dlc/noise": ^0.24.1
+  checksum: 306ffc39611e80eeef88fec94197f0469016a1fbe60e49e156629cd4b20b2edabb4a0f2743a41b8a3b1b042592e6ade24127c84d0ff06a25676c49968e938c65
+  languageName: node
+  linkType: hard
+
+"@node-dlc/wire@npm:^0.24.1":
+  version: 0.24.1
+  resolution: "@node-dlc/wire@npm:0.24.1"
+  dependencies:
+    "@node-dlc/bitcoin": ^0.24.1
+    "@node-dlc/bufio": ^0.24.1
+    "@node-dlc/checksum": ^0.24.1
+    "@node-dlc/common": ^0.24.1
+    "@node-dlc/crypto": ^0.24.1
+    "@node-dlc/logger": ^0.24.1
+    "@node-dlc/noise": ^0.24.1
+  checksum: 3b7e3e788081bc623f073f02bc85c7f47e767c6bb91f7cd70542f3c406bab02f0772e681dc47bd968118c8ac48224211c818111dabd5019d45985d79800fc56a
   languageName: node
   linkType: hard
 
@@ -1375,7 +1636,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/json-bigint@npm:^1.0.0":
+"@types/json-bigint@npm:^1.0.0, @types/json-bigint@npm:^1.0.4":
   version: 1.0.4
   resolution: "@types/json-bigint@npm:1.0.4"
   checksum: 7aee137b3796121cec755247ea56577611c8e5df89224c567fa71999764d01e12199c4089c6be8a9e4e6a6a8f5c6f309eee2965cc3dd8d576f4c4ba432566041
@@ -9477,9 +9738,15 @@ __metadata:
   resolution: "root@workspace:."
   dependencies:
     "@changesets/cli": ^2.22.0
-    "@node-dlc/bitcoin": 0.24.0
-    "@node-dlc/core": 0.24.0
-    "@node-dlc/messaging": 0.24.0
+    "@node-dlc/bitcoin": "file:.yalc/@node-dlc/bitcoin"
+    "@node-dlc/bufio": "file:.yalc/@node-dlc/bufio"
+    "@node-dlc/checksum": "file:.yalc/@node-dlc/checksum"
+    "@node-dlc/common": "file:.yalc/@node-dlc/common"
+    "@node-dlc/core": "file:.yalc/@node-dlc/core"
+    "@node-dlc/crypto": "file:.yalc/@node-dlc/crypto"
+    "@node-dlc/messaging": "file:.yalc/@node-dlc/messaging"
+    "@node-dlc/noise": "file:.yalc/@node-dlc/noise"
+    "@node-dlc/wire": "file:.yalc/@node-dlc/wire"
     "@swc/cli": ^0.1.57
     "@swc/core": ^1.2.172
     "@swc/register": ^0.1.10
@@ -9501,6 +9768,7 @@ __metadata:
     chai-as-promised: ^7.1.1
     coveralls: ^3.1.1
     cross-env: ^7.0.2
+    decimal.js: 10.4.3
     dotenv: 16.3.1
     eslint: ^7.22.0
     eslint-config-prettier: ^8.1.0

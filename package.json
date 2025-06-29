@@ -6,9 +6,10 @@
   ],
   "devDependencies": {
     "@changesets/cli": "^2.22.0",
-    "@node-dlc/bitcoin": "0.24.0",
-    "@node-dlc/core": "0.24.0",
-    "@node-dlc/messaging": "0.24.0",
+    "@node-dlc/bitcoin": "file:.yalc/@node-dlc/bitcoin",
+    "@node-dlc/bufio": "file:.yalc/@node-dlc/bufio",
+    "@node-dlc/core": "file:.yalc/@node-dlc/core",
+    "@node-dlc/messaging": "file:.yalc/@node-dlc/messaging",
     "@swc/cli": "^0.1.57",
     "@swc/core": "^1.2.172",
     "@swc/register": "^0.1.10",
@@ -30,6 +31,7 @@
     "chai-as-promised": "^7.1.1",
     "coveralls": "^3.1.1",
     "cross-env": "^7.0.2",
+    "decimal.js": "10.4.3",
     "dotenv": "16.3.1",
     "eslint": "^7.22.0",
     "eslint-config-prettier": "^8.1.0",
@@ -73,5 +75,12 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "@node-dlc/checksum": "file:.yalc/@node-dlc/checksum",
+    "@node-dlc/common": "file:.yalc/@node-dlc/common",
+    "@node-dlc/crypto": "file:.yalc/@node-dlc/crypto",
+    "@node-dlc/noise": "file:.yalc/@node-dlc/noise",
+    "@node-dlc/wire": "file:.yalc/@node-dlc/wire"
   }
 }

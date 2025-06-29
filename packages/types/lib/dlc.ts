@@ -3,7 +3,7 @@
 
 import { Tx } from '@node-dlc/bitcoin';
 import {
-  CetAdaptorSignaturesV0,
+  CetAdaptorSignatures,
   ContractInfo,
   DlcAccept,
   DlcClose,
@@ -12,7 +12,7 @@ import {
   DlcSign,
   DlcTransactions,
   FundingInput,
-  OracleAttestationV0,
+  OracleAttestation,
 } from '@node-dlc/messaging';
 
 import { TxOutRequest } from './common';
@@ -114,7 +114,7 @@ export interface DlcProvider {
     _dlcAccept: DlcAccept,
     _dlcSign: DlcSign,
     _dlcTxs: DlcTransactions,
-    oracleAttestation: OracleAttestationV0,
+    oracleAttestation: OracleAttestation,
     isOfferer?: boolean,
   ): Promise<Tx>;
 
@@ -295,24 +295,14 @@ export interface CreateDlcTxsResponse {
   messagesList: Messages[];
 }
 
-interface ISig {
-  encryptedSig: Buffer;
-  dleqProof: Buffer;
-}
-
 export interface CreateCetAdaptorAndRefundSigsResponse {
-  cetSignatures: CetAdaptorSignaturesV0;
+  cetSignatures: CetAdaptorSignatures;
   refundSignature: Buffer;
 }
 
 interface PayoutGroup {
   payout: bigint;
   groups: number[][];
-}
-
-interface FindOutcomeResponse {
-  index: number;
-  groupLength: number;
 }
 
 /* eslint-disable max-len */
