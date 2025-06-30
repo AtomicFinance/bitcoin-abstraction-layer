@@ -1,6 +1,7 @@
 import 'mocha';
 
-import { Value } from '@node-dlc/bitcoin';
+import { Sequence, Tx, Value } from '@node-dlc/bitcoin';
+import { StreamReader } from '@node-dlc/bufio';
 import {
   CoveredCall,
   DlcTxBuilder,
@@ -8,28 +9,24 @@ import {
   HyperbolaPayoutCurve,
 } from '@node-dlc/core';
 import {
-  ContractDescriptorV0,
-  ContractDescriptorV1,
-  ContractInfoV0,
-  ContractInfoV1,
-  DigitDecompositionEventDescriptorV0,
+  DigitDecompositionEventDescriptor,
+  DisjointContractInfo,
   DlcAccept,
-  DlcAcceptV0,
   DlcClose,
   DlcCloseMetadata,
-  DlcCloseV0,
   DlcOffer,
-  DlcOfferV0,
   DlcSign,
-  DlcSignV0,
   DlcTransactions,
-  DlcTransactionsV0,
-  EnumEventDescriptorV0,
-  OracleAnnouncementV0,
-  OracleAttestationV0,
-  OracleEventV0,
-  OracleInfoV0,
-  RoundingIntervalsV0,
+  EnumeratedDescriptor,
+  EnumEventDescriptor,
+  FundingInput,
+  NumericalDescriptor,
+  OracleAnnouncement,
+  OracleAttestation,
+  OracleEvent,
+  RoundingIntervals,
+  SingleContractInfo,
+  SingleOracleInfo,
 } from '@node-dlc/messaging';
 import { sha256, xor } from '@node-lightning/crypto';
 import BN from 'bignumber.js';
@@ -37,6 +34,7 @@ import { math } from 'bip-schnorr';
 import { BitcoinNetworks, chainHashFromNetwork } from 'bitcoin-networks';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+import * as crypto from 'crypto';
 
 import {
   AcceptDlcOfferResponse,
@@ -116,7 +114,7 @@ describe('dlc provider', () => {
   let dlcAccept: DlcAccept;
   let dlcSign: DlcSign;
   let dlcTransactions: DlcTransactions;
-  let oracleAttestation: OracleAttestationV0;
+  let oracleAttestation: OracleAttestation;
   let aliceAddresses: string[] = [];
   let oracle: Oracle;
 
@@ -151,13 +149,13 @@ describe('dlc provider', () => {
 
       const oliviaInfo = oracle.GetOracleInfo();
 
-      const eventDescriptor = new EnumEventDescriptorV0();
+      const eventDescriptor = new EnumEventDescriptor();
 
       const outcomes = ['trump', 'kamala', 'neither'];
 
       eventDescriptor.outcomes = outcomes;
 
-      const event = new OracleEventV0();
+      const event = new OracleEvent();
       event.oracleNonces = oliviaInfo.rValues.map((rValue) =>
         Buffer.from(rValue, 'hex'),
       );
@@ -165,7 +163,7 @@ describe('dlc provider', () => {
       event.eventDescriptor = eventDescriptor;
       event.eventId = eventId;
 
-      const announcement = new OracleAnnouncementV0();
+      const announcement = new OracleAnnouncement();
       announcement.announcementSig = Buffer.from(
         oracle.GetSignature(
           math
@@ -178,29 +176,29 @@ describe('dlc provider', () => {
       announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
       announcement.oracleEvent = event;
 
-      const oracleInfo = new OracleInfoV0();
+      const oracleInfo = new SingleOracleInfo();
       oracleInfo.announcement = announcement;
 
-      const contractDescriptor = new ContractDescriptorV0();
+      const contractDescriptor = new EnumeratedDescriptor();
 
       contractDescriptor.outcomes = [
         {
-          outcome: sha256(Buffer.from('trump')),
+          outcome: sha256(Buffer.from('trump')).toString('hex'),
           localPayout: BigInt(1e6),
         },
         {
-          outcome: sha256(Buffer.from('kamala')),
+          outcome: sha256(Buffer.from('kamala')).toString('hex'),
           localPayout: BigInt(0),
         },
         {
-          outcome: sha256(Buffer.from('neither')),
+          outcome: sha256(Buffer.from('neither')).toString('hex'),
           localPayout: BigInt(500000),
         },
       ];
 
       const totalCollateral = BigInt(1e6);
 
-      const contractInfo = new ContractInfoV0();
+      const contractInfo = new SingleContractInfo();
       contractInfo.totalCollateral = totalCollateral;
       contractInfo.contractDescriptor = contractDescriptor;
       contractInfo.oracleInfo = oracleInfo;
@@ -218,7 +216,7 @@ describe('dlc provider', () => {
         [aliceInput],
       );
 
-      const dlcOfferV0 = DlcOfferV0.deserialize(dlcOffer.serialize());
+      const dlcOfferV0 = DlcOffer.deserialize(dlcOffer.serialize());
       dlcOfferV0.validate();
 
       const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
@@ -242,6 +240,7 @@ describe('dlc provider', () => {
         dlcSign,
         dlcTransactions,
       );
+
       const fundTxId = await bob.chain.sendRawTransaction(
         fundTx.serialize().toString('hex'),
       );
@@ -257,6 +256,7 @@ describe('dlc provider', () => {
         oracleAttestation,
         false,
       );
+
       const cetTxId = await bob.chain.sendRawTransaction(
         cet.serialize().toString('hex'),
       );
@@ -308,23 +308,11 @@ describe('dlc provider', () => {
         dlcAccept,
       );
 
-      expect(
-        (dlcTransactions as DlcTransactionsV0).fundTx
-          .serialize()
-          .toString('hex'),
-      ).to.equal(
-        (dlcTxsFromMsgs as DlcTransactionsV0).fundTx
-          .serialize()
-          .toString('hex'),
+      expect(dlcTransactions.fundTx.serialize().toString('hex')).to.equal(
+        dlcTxsFromMsgs.fundTx.serialize().toString('hex'),
       );
-      expect(
-        (dlcTransactions as DlcTransactionsV0).cets[5]
-          .serialize()
-          .toString('hex'),
-      ).to.equal(
-        (dlcTxsFromMsgs as DlcTransactionsV0).cets[5]
-          .serialize()
-          .toString('hex'),
+      expect(dlcTransactions.cets[5].serialize().toString('hex')).to.equal(
+        dlcTxsFromMsgs.cets[5].serialize().toString('hex'),
       );
 
       console.timeEnd('accept-time');
@@ -457,9 +445,9 @@ describe('dlc provider', () => {
         console.timeEnd('batch-close-verify');
 
         const dlcCloseMetadata = DlcCloseMetadata.fromDlcMessages(
-          dlcOffer as DlcOfferV0,
-          dlcAccept as DlcAcceptV0,
-          dlcTransactions as DlcTransactionsV0,
+          dlcOffer,
+          dlcAccept,
+          dlcTransactions,
         );
         await bob.dlc.verifyBatchDlcCloseUsingMetadata(
           dlcCloseMetadata,
@@ -501,20 +489,18 @@ describe('dlc provider', () => {
         const closeTx = await alice.getMethod('getTransactionByHash')(
           closeTxId,
         );
-        const offerFirst =
-          (dlcOffer as DlcOfferV0).payoutSerialId <
-          (dlcAccept as DlcAcceptV0).payoutSerialId;
+        const offerFirst = dlcOffer.payoutSerialId < dlcAccept.payoutSerialId;
 
         expect(closeTx._raw.vin.length).to.equal(2);
         expect(closeTx._raw.vout[0].scriptPubKey.hex).to.equal(
           offerFirst
-            ? (dlcOffer as DlcOfferV0).payoutSPK.toString('hex')
-            : (dlcAccept as DlcAcceptV0).payoutSPK.toString('hex'),
+            ? dlcOffer.payoutSpk.toString('hex')
+            : dlcAccept.payoutSpk.toString('hex'),
         );
         expect(closeTx._raw.vout[1].scriptPubKey.hex).to.equal(
           !offerFirst
-            ? (dlcOffer as DlcOfferV0).payoutSPK.toString('hex')
-            : (dlcAccept as DlcAcceptV0).payoutSPK.toString('hex'),
+            ? dlcOffer.payoutSpk.toString('hex')
+            : dlcAccept.payoutSpk.toString('hex'),
         );
       });
 
@@ -573,9 +559,9 @@ describe('dlc provider', () => {
         );
 
         const dlcCloseMetadata = DlcCloseMetadata.fromDlcMessages(
-          dlcOffer as DlcOfferV0,
-          dlcAccept as DlcAcceptV0,
-          dlcTransactions as DlcTransactionsV0,
+          dlcOffer,
+          dlcAccept,
+          dlcTransactions,
         );
 
         expect(
@@ -607,7 +593,7 @@ describe('dlc provider', () => {
           [],
         );
 
-        const invalidDlcClose = aliceDlcClose as DlcCloseV0;
+        const invalidDlcClose = aliceDlcClose;
         invalidDlcClose.offerPayoutSatoshis =
           invalidDlcClose.offerPayoutSatoshis + 1n;
 
@@ -630,7 +616,7 @@ describe('dlc provider', () => {
           10000n,
         );
 
-        const invalidDlcClose = aliceDlcClose as DlcCloseV0;
+        const invalidDlcClose = aliceDlcClose;
         invalidDlcClose.acceptPayoutSatoshis =
           invalidDlcClose.acceptPayoutSatoshis + 1n;
 
@@ -678,7 +664,7 @@ describe('dlc provider', () => {
           { beginInterval: 0n, roundingMod: 1n },
           { beginInterval: 4000n, roundingMod: 500n },
         ];
-        const roundingIntervals = new RoundingIntervalsV0();
+        const roundingIntervals = new RoundingIntervals();
         roundingIntervals.intervals = intervals;
 
         const payouts = HyperbolaPayoutCurve.computePayouts(
@@ -714,19 +700,13 @@ describe('dlc provider', () => {
         const newDlcAccept = DlcAccept.deserialize(dlcAccept.serialize());
         const newDlcSign = DlcSign.deserialize(dlcSign.serialize());
 
-        const dlcOfferV0 = dlcOffer as DlcOfferV0;
-        const dlcAcceptV0 = dlcAccept as DlcAcceptV0;
-        const dlcSignV0 = dlcSign as DlcSignV0;
-
-        expect(newDlcOffer.chainHash).to.deep.equal(dlcOfferV0.chainHash);
-        expect(newDlcOffer.fundingPubKey).to.deep.equal(
-          dlcOfferV0.fundingPubKey,
-        );
-        expect(newDlcAccept.fundingPubKey).to.deep.equal(
-          dlcAcceptV0.fundingPubKey,
+        expect(newDlcOffer.chainHash).to.deep.equal(dlcOffer.chainHash);
+        expect(newDlcOffer.fundingPubkey).to.deep.equal(dlcOffer.fundingPubkey);
+        expect(newDlcAccept.fundingPubkey).to.deep.equal(
+          dlcAccept.fundingPubkey,
         );
         expect(newDlcSign.refundSignature).to.deep.equal(
-          dlcSignV0.refundSignature,
+          dlcSign.refundSignature,
         );
       });
     });
@@ -803,23 +783,11 @@ describe('dlc provider', () => {
           dlcAccept,
         );
 
-        expect(
-          (dlcTransactions as DlcTransactionsV0).fundTx
-            .serialize()
-            .toString('hex'),
-        ).to.equal(
-          (dlcTxsFromMsgs as DlcTransactionsV0).fundTx
-            .serialize()
-            .toString('hex'),
+        expect(dlcTransactions.fundTx.serialize().toString('hex')).to.equal(
+          dlcTxsFromMsgs.fundTx.serialize().toString('hex'),
         );
-        expect(
-          (dlcTransactions as DlcTransactionsV0).cets[5]
-            .serialize()
-            .toString('hex'),
-        ).to.equal(
-          (dlcTxsFromMsgs as DlcTransactionsV0).cets[5]
-            .serialize()
-            .toString('hex'),
+        expect(dlcTransactions.cets[5].serialize().toString('hex')).to.equal(
+          dlcTxsFromMsgs.cets[5].serialize().toString('hex'),
         );
 
         console.timeEnd('accept-time');
@@ -886,8 +854,6 @@ describe('dlc provider', () => {
         const contractSize = 0.1;
         const contractSizeSats = BigInt(Math.round(contractSize * 1e8));
 
-        console.log('networkFees.bitcoin', networkFees.bitcoin);
-
         const maxGain = Value.fromSats(
           (LONG_OPTION_MAX_GAIN.sats * contractSizeSats) / BigInt(1e8) +
             BigInt(Math.round(contractPrice * contractSize * 1e8)),
@@ -937,23 +903,11 @@ describe('dlc provider', () => {
           dlcAccept,
         );
 
-        expect(
-          (dlcTransactions as DlcTransactionsV0).fundTx
-            .serialize()
-            .toString('hex'),
-        ).to.equal(
-          (dlcTxsFromMsgs as DlcTransactionsV0).fundTx
-            .serialize()
-            .toString('hex'),
+        expect(dlcTransactions.fundTx.serialize().toString('hex')).to.equal(
+          dlcTxsFromMsgs.fundTx.serialize().toString('hex'),
         );
-        expect(
-          (dlcTransactions as DlcTransactionsV0).cets[5]
-            .serialize()
-            .toString('hex'),
-        ).to.equal(
-          (dlcTxsFromMsgs as DlcTransactionsV0).cets[5]
-            .serialize()
-            .toString('hex'),
+        expect(dlcTransactions.cets[5].serialize().toString('hex')).to.equal(
+          dlcTxsFromMsgs.cets[5].serialize().toString('hex'),
         );
 
         console.timeEnd('accept-time');
@@ -1011,10 +965,10 @@ describe('dlc provider', () => {
 
     describe('validation', () => {
       it('throws if dlcoffer fundingpubkey equal to dlcaccept fundingpubkey', async () => {
-        const _dlcAccept = dlcAccept as DlcAcceptV0;
-        const _dlcOffer = dlcOffer as DlcOfferV0;
+        const _dlcAccept = dlcAccept;
+        const _dlcOffer = dlcOffer;
 
-        _dlcAccept.fundingPubKey = _dlcOffer.fundingPubKey;
+        _dlcAccept.fundingPubkey = _dlcOffer.fundingPubkey;
 
         expect(
           alice.dlc.signDlcAccept(_dlcOffer, _dlcAccept),
@@ -1069,7 +1023,7 @@ describe('dlc provider', () => {
         },
       } = generateContractInfo(oliverOracle, numDigits, oracleBase, 'event_3');
 
-      const contractInfo = new ContractInfoV1();
+      const contractInfo = new DisjointContractInfo();
       contractInfo.contractOraclePairs = [
         { contractDescriptor: contractDescriptor1, oracleInfo: oracleInfo1 },
         {
@@ -1139,19 +1093,13 @@ describe('dlc provider', () => {
           'event_1',
         );
 
-        const txBuilder = new DlcTxBuilder(
-          dlcOffer as DlcOfferV0,
-          (dlcAccept as DlcAcceptV0).withoutSigs(),
-        );
+        const txBuilder = new DlcTxBuilder(dlcOffer, dlcAccept.withoutSigs());
         const tx = txBuilder.buildFundingTransaction();
         const fundingTxid = tx.txId.serialize();
-        const contractId = xor(
-          fundingTxid,
-          (dlcAccept as DlcAcceptV0).tempContractId,
-        );
+        const contractId = xor(fundingTxid, dlcAccept.temporaryContractId);
 
         expect(contractId.toString('hex')).to.equal(
-          (dlcSign as DlcSignV0).contractId.toString('hex'),
+          dlcSign.contractId.toString('hex'),
         );
 
         const cet = await bob.dlc.execute(
@@ -1516,14 +1464,14 @@ describe('external test vectors', () => {
     const oracle = new Oracle('olivia', numDigits);
     const oliviaInfo = oracle.GetOracleInfo();
 
-    const eventDescriptor = new DigitDecompositionEventDescriptorV0();
+    const eventDescriptor = new DigitDecompositionEventDescriptor();
     eventDescriptor.base = oracleBase;
     eventDescriptor.isSigned = false;
     eventDescriptor.unit = 'BTC-USD';
     eventDescriptor.precision = 0;
     eventDescriptor.nbDigits = numDigits;
 
-    const event = new OracleEventV0();
+    const event = new OracleEvent();
     event.oracleNonces = oliviaInfo.rValues.map((rValue) =>
       Buffer.from(rValue, 'hex'),
     );
@@ -1531,14 +1479,15 @@ describe('external test vectors', () => {
     event.eventDescriptor = eventDescriptor;
     event.eventId = 'btc/usd';
 
-    const announcement = OracleAnnouncementV0.deserialize(
+    // Using valid Lava oracle announcement instead of problematic Deribit data
+    const announcement = OracleAnnouncement.deserialize(
       Buffer.from(
-        'fdd824fd02d59a121c157514df82ea0c57d0d82c78105f6272fc4ebd26d0c8f2903f406759e38e77578edee940590b11b875bacdac30ce1f4b913089a7e4e95884edf6f3eb195d1bcfab252c6dd9edd7aea4c5eeeef138f7ff7346061ea40143a9f5ae80baa9fdd822fd026f0012d39fca86c2492977c0a2909583b2c154bb121834658d75502d41a0e3b719fb0cd80ea2438d18d049be2d3aa4f1a3096628614d7bdda32757fd9a206c8e8c25c514b68799e03bb713d542f6c35ffaa0917fe18646969c77d56f4d8aa0f0fb30b26d746cb0713e27a56f8aa56dc828120b523fee21b2f0bc9d3a4a6d9855c251fd6405bb7f6c1dfee97d24cfd7ad533c06162a22f4fc9fdd0e5c02e94201c239bb13753ab5c56881f55367321ebd44e302241b42c99aa67dffb2d229178701d71a756244c433d15f9b20d33628540da5c07face604980e5f709aa0bbfdb157b7a8abc8d946f9e5d67c1e91bf22d77f5c097e6b3a51a420a8d882a3cad98cb4f84ace075a8acee1ef4f229e1b2b403ffb9f43a825ca8410b7d803b91ae54959ecd630e824310749ed1ee54e0e40e0af49d9a11bfbdbf36146234063c00520ed4416a2dafe74f9c0542b2d58c58fa75e9bb5a95c291d934f4dd513c405e9ddc58543ab4a586bf0b9abf7a12aa272ff29429df38164e3e5d418b913c818c1858a3a8b19355a1ceaee7318a245bab2b09d94bf39f7b600665c3b8b8a655cf54f85c1b38ed41798968a0da05884d9f0e201b3e3be3a3740cf31439fd325248eed65fa9344390f5748bbbbbcab4b2f200b9fdd860a1fc813431e0aff174476f4d4d254c6ecbb4f8f31ba16858a95a4d138e206c8d96126a69b2b7ebb6b2ec9c3a37a9a128162aed19361e41b0fe4ff1504df2a0bd150d7c96860d08990f12eb65bf5e5da02e4b8223853d407ba8ad25cca32992f1d794fff08dc93941e7a25c2a4fe1e4ab79e0fe16db4e7a26d9817d7e50a2c37a8c44a330de349d2ce9e33b802aa0f97605d2400fdd80a11000200074254432d55534400000000001213446572696269742d4254432d32364d41523231',
+        'fdd824fd02db8816a387d809fa769f872546088728e3d838dcbdf9c564a823d045707b294949c5d3ed7ba1e6286cc179d6b0390e1628814181d5d9a3e2796de25b4f4ffc40ab30bbf19aa3a986ed4e5640240b507901d6e03d6bbd71a281ed356a145516c655fdd822fd0275001205df86bd325d15f56dea823bc687e29b4891ef88eea325babf0f2536991fbd347a3a52025984aaa1ccf14194bb2a5189e266c7e1ec3be6773b9f334fdaf70cb893eb19029774ce66928efdbb77c12ebd9259be97d702ee98a5a89907ce22b922dbaa730559236f86255c85107e44ba569fba6ed1971c222c00f48db7104a5ac4bf030cc09c93e7a819f8c4e1158fe995a6fdb7ee4728b61fc7fd1835ea5c76329166f88f7c7043b225e290ce8e00e708e4f681513d1ccdcb4a12ccc59db43c9f3ab0a4611a6e261c8ba2af1cc2b1ff6c7eb658ef1661176c1d6360765c7c425c0e427060fdff248b8b295c66bf778d58fa449ce38d982c1305c3312ce47390d19ae8125354fd907f422174b457804843322c2b5ef58c6067056f5553d96551b61a25de66b5f80d613f8e1b2d73f4ddc841d711f8203a8b6c1172ac3ff93caf2bfc06b9b937330cd6ccd74eeba10168df17e237ef657e8fa8053525b84a358ff8ce569ae03b105a7af91de46d1b2d926561d14bee563e35dc11c893cf911e10c91aca9f4861ce3862ff6bb3605b4914b92b27f4557eae248b3777d60bd333829509eccfb53013a62dab537fa18c521fe0814dad0343b7278891a4abd0cd6ac5f50e94f4f1a7584ce2347567f437b9d4d9b4c7d64e9c8ae0c84bf4278c2f05eb4126ebb6e54c7f68773e2412e787674b00dba152eb9301ef6cac61c57b4a1e6818c34f770aee4cc673015b6591c0e790a58c3e5e40e264e1295a9e93faf7b6c90bdc61881f17c6272cef403405ff52cc1ff892ebd2dbf427ba180a9b249a2181f668551500fdd80a10000200064254435553440000000000121a61746f6d69632d646572696269742d4254432d32304a554e3235',
         'hex',
       ),
     );
 
-    const oracleInfo = new OracleInfoV0();
+    const oracleInfo = new SingleOracleInfo();
     oracleInfo.announcement = announcement;
 
     const { payoutFunction, totalCollateral } = CoveredCall.buildPayoutFunction(
@@ -1552,15 +1501,15 @@ describe('external test vectors', () => {
       { beginInterval: 0n, roundingMod: 1n },
       { beginInterval: 60000n, roundingMod: 50000n },
     ];
-    const roundingIntervals = new RoundingIntervalsV0();
+    const roundingIntervals = new RoundingIntervals();
     roundingIntervals.intervals = intervals;
 
-    const contractDescriptor = new ContractDescriptorV1();
+    const contractDescriptor = new NumericalDescriptor();
     contractDescriptor.numDigits = numDigits;
     contractDescriptor.payoutFunction = payoutFunction;
     contractDescriptor.roundingIntervals = roundingIntervals;
 
-    const contractInfo = new ContractInfoV0();
+    const contractInfo = new SingleContractInfo();
     contractInfo.totalCollateral = totalCollateral;
     contractInfo.contractDescriptor = contractDescriptor;
     contractInfo.oracleInfo = oracleInfo;
@@ -1603,9 +1552,9 @@ describe('external test vectors', () => {
       fundTx.serialize().toString('hex'),
     );
 
-    const oracleAttestation = OracleAttestationV0.deserialize(
+    const oracleAttestation = OracleAttestation.deserialize(
       Buffer.from(
-        'fdd868fd04da13446572696269742d4254432d32364d415232315d1bcfab252c6dd9edd7aea4c5eeeef138f7ff7346061ea40143a9f5ae80baa90012d39fca86c2492977c0a2909583b2c154bb121834658d75502d41a0e3b719fb0c958d8f9b10b0160e90eec5d4cd6779829105066a458e90c532b33e44e8bd8907d80ea2438d18d049be2d3aa4f1a3096628614d7bdda32757fd9a206c8e8c25c56c80e049f294876f040cb29f695c9eaec210a5dc69adacb65884f0fd281a303414b68799e03bb713d542f6c35ffaa0917fe18646969c77d56f4d8aa0f0fb30b21d34366e2fff8c931474b4d579ebfedd4c182f46da2ecde4e585014487da74156d746cb0713e27a56f8aa56dc828120b523fee21b2f0bc9d3a4a6d9855c251fdc5464ea7de26d48961c8fe1f8c30d5115d223ef1daf0b01ecfe3e5fb621531f26405bb7f6c1dfee97d24cfd7ad533c06162a22f4fc9fdd0e5c02e94201c239bba28e6472b78ace34b61540009a05ddf4d41ed69139d9ebc479794687fd0854cb13753ab5c56881f55367321ebd44e302241b42c99aa67dffb2d229178701d71a73bb12583356d4127760b9f77061442a02e87add0e9644a674118740890e9385756244c433d15f9b20d33628540da5c07face604980e5f709aa0bbfdb157b7a8846c3d6ef8c9c04dd1a0cffc31e0a2dce8993ba6747537266dcfc7bed771c9c4abc8d946f9e5d67c1e91bf22d77f5c097e6b3a51a420a8d882a3cad98cb4f84a88a6404efb146697e49a95f552ed9c3cc82bed630dcbff3624c7e4045e4e9086ce075a8acee1ef4f229e1b2b403ffb9f43a825ca8410b7d803b91ae54959ecd63b88f5c0e434874bca2bbf450a73f04a8cfe67e656c88f388328ceba913e418330e824310749ed1ee54e0e40e0af49d9a11bfbdbf36146234063c00520ed44165a0e71db7715455a21c090f1eca1bdd23c54714b564d5061c8bd31ca7aeb40fba2dafe74f9c0542b2d58c58fa75e9bb5a95c291d934f4dd513c405e9ddc58543cf74dbb37cfb25177458bed70ae641b6dba87f9f05fff8c15f74ef60703a5d31ab4a586bf0b9abf7a12aa272ff29429df38164e3e5d418b913c818c1858a3a8bf3c38e43059dfc8e96d4e21c7685b6b6084609795957d5bdec3bb871e89ab72719355a1ceaee7318a245bab2b09d94bf39f7b600665c3b8b8a655cf54f85c1b355d0fe2e29ec5336525dbbd673f5f4b9ceb9f9f906f29cb42f12da3af17f5b218ed41798968a0da05884d9f0e201b3e3be3a3740cf31439fd325248eed65fa93ce6c66cbf91c4e07fbb82328f60ce024d7884b29839264f6c50aba8d9f89253a44390f5748bbbbbcab4b2f200b9fdd860a1fc813431e0aff174476f4d4d254c6013e77461c006bfb1cf1a63149e91e1b37ff16ae6a8a4e02f4bc98b84d7f5de4ecbb4f8f31ba16858a95a4d138e206c8d96126a69b2b7ebb6b2ec9c3a37a9a12dbc396935195cc553e4f33b2434a5e052f5ee59f99454e2f0b8e1ccb8ddbee0b8162aed19361e41b0fe4ff1504df2a0bd150d7c96860d08990f12eb65bf5e5da02e4b8223853d407ba8ad25cca32992f1d794fff08dc93941e7a25c2a4fe1e4ab79e0fe16db4e7a26d9817d7e50a2c37a8c44a330de349d2ce9e33b802aa0f97a3d8f41cf26c9b4a5de9b98146f38fa8ddcc27a4ab76b8c6e7dcc786af130664013001300131013101300130013101310131013101310131013001310130013101300130',
+        'fdd868fd04e11a61746f6d69632d646572696269742d4254432d32304a554e323530bbf19aa3a986ed4e5640240b507901d6e03d6bbd71a281ed356a145516c655001205df86bd325d15f56dea823bc687e29b4891ef88eea325babf0f2536991fbd34c0fb4677df7e85133e16a159e7d8e2e6b98a5a5f6409ca6b1d71ba8858fe5dd77a3a52025984aaa1ccf14194bb2a5189e266c7e1ec3be6773b9f334fdaf70cb8fc7548e7bb793ab6492a298dc996713c7fb7952c04adfb382bc356ad83f90b1793eb19029774ce66928efdbb77c12ebd9259be97d702ee98a5a89907ce22b922aa6aec27681683aada8344972723c59ea07e317be13b2b2a596e4ac8b194b0b0dbaa730559236f86255c85107e44ba569fba6ed1971c222c00f48db7104a5ac4d2fa3c829d6c94e889f41112472ad3e3b8621abbb0dbe4fc9afb9b5fee3622abbf030cc09c93e7a819f8c4e1158fe995a6fdb7ee4728b61fc7fd1835ea5c763223c7efde42400cf8e6c2db5c5b850ee7f15156545cd045d92d110e20809e3a979166f88f7c7043b225e290ce8e00e708e4f681513d1ccdcb4a12ccc59db43c9ff8dcaf1d606464f9bd5d5ed0f8431deb7d5291b19e3a3ff29a389a8ddf54a0123ab0a4611a6e261c8ba2af1cc2b1ff6c7eb658ef1661176c1d6360765c7c425c8d2a4c8afe473fe006cd048f11cf83632a34593ba0b45efeee67aebb4203ff7f0e427060fdff248b8b295c66bf778d58fa449ce38d982c1305c3312ce47390d1d6b245997c936730905989cd3ef7d29bbb72e14cd81700efef3469819ceaf2bb9ae8125354fd907f422174b457804843322c2b5ef58c6067056f5553d96551b6f4bd5ce1c9c25eb7b4f888bf2711ba4cc0934de4c3839ac7591448814b78958d1a25de66b5f80d613f8e1b2d73f4ddc841d711f8203a8b6c1172ac3ff93caf2ba27515bad6dfbaccc304f98c1c661ab038bf786a1227b9edeb8dc8be7110d647fc06b9b937330cd6ccd74eeba10168df17e237ef657e8fa8053525b84a358ff8df2d558c7052df024e9ab890eae93eef1368b5af2d39780c062e735f3a8f8dd0ce569ae03b105a7af91de46d1b2d926561d14bee563e35dc11c893cf911e10c95377912b33e20896e7adc4f09eb318079242300ab2de1e99a354476291739ab71aca9f4861ce3862ff6bb3605b4914b92b27f4557eae248b3777d60bd33382951a5c2d7985034f8447298a8635dc432520acd8dc5f8873ed00a82e909f33bfab09eccfb53013a62dab537fa18c521fe0814dad0343b7278891a4abd0cd6ac5f5c300bab1188daf9b7536b7a6518437e5308e08367f3964c320c268bbb1e7b6ca0e94f4f1a7584ce2347567f437b9d4d9b4c7d64e9c8ae0c84bf4278c2f05eb411e19c0883e2d76d749ac4c368442d7772cc9b6ca8ec826b74acc3ac10b0f0ed926ebb6e54c7f68773e2412e787674b00dba152eb9301ef6cac61c57b4a1e6818135ed1a8b99291b043f9273334843b84a9b1068e4dbc3533fc8762653c0584a7c34f770aee4cc673015b6591c0e790a58c3e5e40e264e1295a9e93faf7b6c90baa8e31e0077638520fbf0f4e2c5545bdc01671a03df57d681ecc60c0818d9918dc61881f17c6272cef403405ff52cc1ff892ebd2dbf427ba180a9b249a2181f6c3bdfb0e6d067a221dead5d6c1a34517333e74c2af42784796cf2a00a1e76d3b013001310131013001300131013101310130013001300130013101300130013001310130',
         'hex',
       ),
     );
@@ -1626,10 +1575,100 @@ describe('external test vectors', () => {
   });
 
   it('should fallback to brute force finding payout index if find by payout fails', async () => {
-    const dlcOffer = DlcOfferV0.deserialize(
-      Buffer.from(OfferWithPayoutIndex, 'hex'),
+    const announcement = OracleAnnouncement.deserialize(
+      Buffer.from(
+        'fdd824fd02da06315e57c0d437cc1634ec4b0aee2d613dd64b5ca3f91eecb0e140808fbd3a19e3ee2cebbd41285025ca1f6667cc99beb001e5e38016ed97f04c15d7b749c94930bbf19aa3a986ed4e5640240b507901d6e03d6bbd71a281ed356a145516c655fdd822fd0274001295ec10ffcdfcb6caa70e92c7778d099baa41b875b0506fee5a6c426ac35d992f250fb7d4e4f3d3e79989073c294040cad7736350dc1102d9bf6cd1f524fb6f8bfd86fded7df39438788d92f850a990d27ac58c5157b134dc53880e28ec1187356f77b5819cd88728300b30fab9ca27f18cceaea7c8dfac3f86db8e833a84342e29c7aee52ce7d0efedca2b56458bfbea558993036e6ef57a3691305b1d88b251fe7daa82a4aae6092163af24a70ece6f1b62cfa5ba30f1b31a4a4829bf769b1db46a160a997811168efd478edfabf43e62c86dc20f7fb9667d9f3c174294b27410130c13d0576e3e36b270840ec3e1b070afc897c56b97330865c3a5e3d57425fe581a861a8b56ddac9f6ba2d01113f31bb34afd734b2ae540d360c8ccadaeb90b85516c808b757de2a1c087d269f84488a7fab0810982277dce598218a8fc0951aa11365e49283918a8c5fe676b964dcd67ad48899dd1fbb727335f308d529934625029e029085218b7541ae9d80e264f82c28b483b279c860122b0bc653c74575fb6eaba2f05553f4c553016808a82527fc809c6f3850a10cbfa6d8595e396e7f66258763633108c8df08b641de9dc3790b13b5c1e93978d444ee408fd44704529b56c60482bb217049f0a0c50a556d71b237983a0818f52341574b96ae64da5a39a127421e9dc62dee328ddce4883bab35e66c4a7f94047f9d7564bb6e525971ff915eea8c93cc2589fa14210d8c3850701a5c3f45ecc4faf025d6ca763e9d2febbdee807d0c5160e8c0ec7fb0b73e4df1966c5d553a1338faea48014ec8b66dab680fdd80a10000200064254435553440000000000121961746f6d69632d646572696269742d4254432d365345503234',
+        'hex',
+      ),
     );
-    const oracleAttestation = OracleAttestationV0.deserialize(
+
+    const oracleInfo = new SingleOracleInfo();
+    oracleInfo.announcement = announcement;
+
+    const { payoutFunction } = CoveredCall.buildPayoutFunction(
+      BigInt(59000),
+      BigInt(100000000),
+      2,
+      18,
+    );
+
+    const roundingIntervals = new RoundingIntervals();
+    roundingIntervals.intervals = [
+      { beginInterval: BigInt(0), roundingMod: BigInt(5000) },
+      { beginInterval: BigInt(59000), roundingMod: BigInt(1) },
+    ];
+
+    const numericalDescriptor = new NumericalDescriptor();
+    numericalDescriptor.numDigits = 18;
+    numericalDescriptor.payoutFunction = payoutFunction;
+    numericalDescriptor.roundingIntervals = roundingIntervals;
+
+    const contractInfo = new SingleContractInfo();
+    contractInfo.contractDescriptor = numericalDescriptor;
+    contractInfo.oracleInfo = oracleInfo;
+    contractInfo.totalCollateral = BigInt(5612082);
+
+    const dlcOffer = new DlcOffer();
+    // NEW REQUIRED FIELDS
+    dlcOffer.protocolVersion = 1;
+    dlcOffer.temporaryContractId = crypto.randomBytes(32);
+    dlcOffer.contractInfo = contractInfo;
+
+    dlcOffer.contractFlags = Buffer.from('00', 'hex');
+    dlcOffer.chainHash = Buffer.from(
+      '6fe28c0ab6f1b372c1a6a246ae63f74f931e8365e15a089c68d6190000000000',
+      'hex',
+    );
+
+    // NEW FORMAT FIELDS (lowercase, correct names)
+    dlcOffer.fundingPubkey = Buffer.from(
+      '03fcffcd79695d8818434bf3694a70010971668667e258389ddd4aaa2a405a2a07',
+      'hex',
+    );
+    dlcOffer.payoutSpk = Buffer.from(
+      '001415d252d2488c1bc0039fca0d84fb7fb724d5cb23',
+      'hex',
+    );
+    dlcOffer.payoutSerialId = BigInt(2347722);
+    dlcOffer.offerCollateral = BigInt(5112082);
+
+    dlcOffer.changeSpk = Buffer.from(
+      '001445a489167e3f1e08b5aa996ef80c7830f4234d7d',
+      'hex',
+    );
+    dlcOffer.changeSerialId = BigInt(131392);
+    dlcOffer.fundOutputSerialId = BigInt(4427080);
+    dlcOffer.feeRatePerVb = BigInt(6);
+    dlcOffer.cetLocktime = 1724168634;
+    dlcOffer.refundLocktime = 1728028800;
+
+    const fundingInput1 = new FundingInput();
+    fundingInput1.inputSerialId = BigInt(889645);
+    fundingInput1.prevTx = Tx.decode(
+      StreamReader.fromHex(
+        '020000000001010168545b168d246ba314b1bd5d98f09c6a19f7ba6ee1102b3e0c480b9ee71f370100000000fdffffff0260ae0a00000000001600147e7d7ee522eeda3166ba5471dfe262bae6604205a05a010000000000160014face8940cb898bb9d9eac13e29b62b5a4207b6380248304502210088037e9d5392fca2185def6275a0142cdff098921529ad597c0ad63b89ca983d02207a060ed2fd2424950ab82d61d36b74dc8522606be01d5d77d53e0a119429f82601210227cf9bb682f4d5db3ebf9b2eea9a330be8d9faf304412f3bda841b8dbb47fd9c00000000',
+      ),
+    );
+    fundingInput1.prevTxVout = 0;
+    fundingInput1.sequence = Sequence.default();
+    fundingInput1.maxWitnessLen = 108;
+    fundingInput1.redeemScript = Buffer.from('', 'hex');
+
+    const fundingInput2 = new FundingInput();
+    fundingInput2.inputSerialId = BigInt(1354484);
+    fundingInput2.prevTx = Tx.decode(
+      StreamReader.fromHex(
+        '02000000000101d5be4a5e8e4a5c0de61e9dad5195e3df7c3f1e8b29032b90f8397abd244631d80300000000fdffffff02907f4f00000000001600140eab755e3c79c2757315e7589079382a0d4d8879be0b0c0000000000160014face8940cb898bb9d9eac13e29b62b5a4207b6380247304402206738e4f14747748fc63e5274ffc78c5578813669d279f1e79676f6f05264938d02200a508ab89d28f0fa3910be2dbfedf5d604dc180b78195feb897d9e70e6e9c5b701210227cf9bb682f4d5db3ebf9b2eea9a330be8d9faf304412f3bda841b8dbb47fd9c00000000',
+      ),
+    );
+    fundingInput2.prevTxVout = 0;
+    fundingInput2.sequence = Sequence.default();
+    fundingInput2.maxWitnessLen = 108;
+    fundingInput2.redeemScript = Buffer.from('', 'hex');
+
+    dlcOffer.fundingInputs = [fundingInput1, fundingInput2];
+
+    const oracleAttestation = OracleAttestation.deserialize(
       Buffer.from(AttestationWithPayoutAmountFailure, 'hex'),
     );
 
@@ -1637,8 +1676,8 @@ describe('external test vectors', () => {
       'FindOutcomeIndex',
     )(dlcOffer, oracleAttestation);
 
-    expect(outcomeIndex).to.be.equal(19);
-    expect(groupLength).to.be.equal(9);
+    expect(outcomeIndex).to.be.equal(17);
+    expect(groupLength).to.be.equal(5);
   });
 });
 
