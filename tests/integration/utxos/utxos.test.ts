@@ -1,7 +1,7 @@
 import 'mocha';
 
 import { bitcoin } from '@atomicfinance/types';
-import { FundingInputV0 } from '@node-dlc/messaging';
+import { FundingInput } from '@node-dlc/messaging';
 import { expect } from 'chai';
 
 import Client from '../../../packages/client';
@@ -23,16 +23,16 @@ describe('utxos', () => {
   describe('inputToFundingInput', () => {
     it('should convert between types', async () => {
       const actualInput: Input = await getInput(alice);
-      const actualFundingInput: FundingInputV0 = (await alice.dlc.inputToFundingInput(
+      const actualFundingInput: FundingInput = (await alice.dlc.inputToFundingInput(
         actualInput,
-      )) as FundingInputV0;
+      )) as FundingInput;
 
       const input: Input = await alice.dlc.fundingInputToInput(
         actualFundingInput,
       );
-      const fundingInput: FundingInputV0 = (await alice.dlc.inputToFundingInput(
+      const fundingInput: FundingInput = (await alice.dlc.inputToFundingInput(
         input,
-      )) as FundingInputV0;
+      )) as FundingInput;
 
       expect(actualInput.txid).to.equal(input.txid);
       expect(actualInput.vout).to.equal(input.vout);
