@@ -35,7 +35,8 @@ interface ProviderOptions {
 
 export default class BitcoinRpcProvider
   extends JsonRpcProvider
-  implements Partial<ChainProvider> {
+  implements Partial<ChainProvider>
+{
   _feeBlockConfirmations: number;
   _defaultFeePerByte: number;
   _network: BitcoinNetwork;
@@ -111,12 +112,8 @@ export default class BitcoinRpcProvider
 
   async getAddressTransactionCounts(_addresses: (Address | string)[]) {
     const addresses = _addresses.map(addressToString);
-    const receivedAddresses: BitcoinJsonRpcTypes.ReceivedByAddress[] = await this.jsonrpc(
-      'listreceivedbyaddress',
-      0,
-      false,
-      true,
-    );
+    const receivedAddresses: BitcoinJsonRpcTypes.ReceivedByAddress[] =
+      await this.jsonrpc('listreceivedbyaddress', 0, false, true);
     return addresses.reduce((acc: bitcoin.AddressTxCounts, addr) => {
       const receivedAddress = receivedAddresses.find(
         (receivedAddress) => receivedAddress.address === addr,

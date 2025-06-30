@@ -8,14 +8,12 @@ function mockEsploraApi() {
     .reply(
       200,
       {
-        txid:
-          'd4b1add055db58343500157a6525a73ceb9c8850f0fb435f1f60071e8cad6540',
+        txid: 'd4b1add055db58343500157a6525a73ceb9c8850f0fb435f1f60071e8cad6540',
         version: 1,
         locktime: 0,
         vin: [
           {
-            txid:
-              'cc03b91ab4c7b9fd97d8e49cef7a9386f45c9da51e77faf8b1d77be070577a44',
+            txid: 'cc03b91ab4c7b9fd97d8e49cef7a9386f45c9da51e77faf8b1d77be070577a44',
             vout: 1,
             prevout: {
               scriptpubkey: 'a914b1ca47496d9e10b431358ab9cb013b6fe006991087',

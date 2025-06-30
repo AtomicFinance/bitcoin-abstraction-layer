@@ -143,7 +143,8 @@ import { sleep } from '@atomicfinance/utils';
 
 export default class BitcoinCfdProvider
   extends Provider
-  implements Partial<CfdProvider> {
+  implements Partial<CfdProvider>
+{
   _cfdJs: any;
 
   constructor(cfdJs?: any) {

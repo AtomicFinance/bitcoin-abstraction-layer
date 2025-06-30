@@ -35,8 +35,6 @@ const FEE_PER_BYTE_FALLBACK = 5;
 
 type WalletProviderConstructor<T = Provider> = new (...args: any[]) => T;
 
-type BaseWalletProvider = ReturnType<typeof BitcoinWalletProvider>;
-
 interface BitcoinJsWalletProviderOptions {
   network: BitcoinNetwork;
   mnemonic: string;
@@ -348,7 +346,7 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
       const inputsForAmount = await this.getInputsForAmount(
         _outputs,
         _feePerByte,
-        (fixedInputs as unknown) as bT.Input[],
+        fixedInputs as unknown as bT.Input[],
         100,
         true,
       );
@@ -620,7 +618,7 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
     return this._buildTransaction(
       _outputs,
       feePerByte,
-      (inputs as unknown) as bT.Input[],
+      inputs as unknown as bT.Input[],
     );
   }
 
@@ -638,12 +636,14 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
       {
         inputTxHex: string;
         index: number;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         vout: any;
         outputScript: Buffer;
         txInputIndex?: number;
       },
     ],
     addresses: string,
+    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     tx: any,
     _lockTime?: number,
     segwit?: boolean,

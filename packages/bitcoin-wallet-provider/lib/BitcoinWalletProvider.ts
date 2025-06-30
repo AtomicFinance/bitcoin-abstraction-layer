@@ -52,7 +52,8 @@ interface BitcoinWalletProviderOptions {
 export default <T extends Constructor<Provider>>(superclass: T) => {
   abstract class BitcoinWalletProvider
     extends superclass
-    implements Partial<ChainProvider>, Partial<WalletProvider> {
+    implements Partial<ChainProvider>, Partial<WalletProvider>
+  {
     _network: BitcoinNetwork;
     _unusedAddressesBlacklist: UnusedAddressesBlacklist;
     _maxAddressesToDerive: number;

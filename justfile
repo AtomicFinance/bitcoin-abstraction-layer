@@ -16,3 +16,7 @@ lint:
 
 clean:
   find . -name "node_modules" -type d -exec rm -rf '{}' +
+
+# Run a single test by name
+test-one TEST_NAME:
+  yarn test:integration:sequential --grep "{{TEST_NAME}}"

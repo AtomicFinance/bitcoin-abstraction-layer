@@ -47,8 +47,7 @@ describe('Bitcoin RPC provider', () => {
       );
 
       expect(tx).to.deep.equal({
-        txid:
-          'cb14f7e8a9b7838a2f9057a19f1eebcccaf3a3aaf1b2b4802924ae41b1fc5dc4',
+        txid: 'cb14f7e8a9b7838a2f9057a19f1eebcccaf3a3aaf1b2b4802924ae41b1fc5dc4',
         size: 99,
         version: 1,
         locktime: 0,
@@ -63,10 +62,8 @@ describe('Bitcoin RPC provider', () => {
             value: 50.0000384,
             n: 0,
             scriptPubKey: {
-              asm:
-                '03106e56019acc637afca6202e526ada2d2c8653157c19839d0ea1c32c5925deff OP_CHECKSIG',
-              hex:
-                '2103106e56019acc637afca6202e526ada2d2c8653157c19839d0ea1c32c5925deffac',
+              asm: '03106e56019acc637afca6202e526ada2d2c8653157c19839d0ea1c32c5925deff OP_CHECKSIG',
+              hex: '2103106e56019acc637afca6202e526ada2d2c8653157c19839d0ea1c32c5925deffac',
               reqSigs: 1,
               type: 'pubkey',
               addresses: ['mpJJQJzJhjceFabMVXAMB8i4VJcwwWQmcc'],
@@ -83,8 +80,7 @@ describe('Bitcoin RPC provider', () => {
         '494a5c635fd483c82a4a684f3982f52af27a29ee5217a0409cdad45afc2709d7',
       );
       expect(block).to.deep.equal({
-        hash:
-          '494a5c635fd483c82a4a684f3982f52af27a29ee5217a0409cdad45afc2709d7',
+        hash: '494a5c635fd483c82a4a684f3982f52af27a29ee5217a0409cdad45afc2709d7',
         number: 630,
         timestamp: 1590562814,
         difficulty: 4.656542373906925e-10,
@@ -126,14 +122,11 @@ describe('Bitcoin RPC provider', () => {
         '504fc23592b61c262902e8574d5a053e8eb3f7d9d80d3c49f20ef4cd9167d2fd',
       );
       expect(tx).to.deep.equal({
-        hash:
-          '504fc23592b61c262902e8574d5a053e8eb3f7d9d80d3c49f20ef4cd9167d2fd',
+        hash: '504fc23592b61c262902e8574d5a053e8eb3f7d9d80d3c49f20ef4cd9167d2fd',
         value: 624996260,
         _raw: {
-          txid:
-            '504fc23592b61c262902e8574d5a053e8eb3f7d9d80d3c49f20ef4cd9167d2fd',
-          hash:
-            '504fc23592b61c262902e8574d5a053e8eb3f7d9d80d3c49f20ef4cd9167d2fd',
+          txid: '504fc23592b61c262902e8574d5a053e8eb3f7d9d80d3c49f20ef4cd9167d2fd',
+          hash: '504fc23592b61c262902e8574d5a053e8eb3f7d9d80d3c49f20ef4cd9167d2fd',
           version: 2,
           size: 187,
           vsize: 187,
@@ -141,14 +134,11 @@ describe('Bitcoin RPC provider', () => {
           locktime: 629,
           vin: [
             {
-              txid:
-                'a420e1221cb6148023974244fdff81a539a05e563163c96343fed00f415711ff',
+              txid: 'a420e1221cb6148023974244fdff81a539a05e563163c96343fed00f415711ff',
               vout: 0,
               scriptSig: {
-                asm:
-                  '304402206797722ab2d452a41d3dbccbe046712218a3263596db92c432cdfade9d06355f02200b3c68caad6906d01eb589686d725551de1c3b3adb7874cb11271a91a323f123[ALL]',
-                hex:
-                  '47304402206797722ab2d452a41d3dbccbe046712218a3263596db92c432cdfade9d06355f02200b3c68caad6906d01eb589686d725551de1c3b3adb7874cb11271a91a323f12301',
+                asm: '304402206797722ab2d452a41d3dbccbe046712218a3263596db92c432cdfade9d06355f02200b3c68caad6906d01eb589686d725551de1c3b3adb7874cb11271a91a323f123[ALL]',
+                hex: '47304402206797722ab2d452a41d3dbccbe046712218a3263596db92c432cdfade9d06355f02200b3c68caad6906d01eb589686d725551de1c3b3adb7874cb11271a91a323f12301',
               },
               sequence: 4294967294,
             },
@@ -158,8 +148,7 @@ describe('Bitcoin RPC provider', () => {
               value: 1.0,
               n: 0,
               scriptPubKey: {
-                asm:
-                  'OP_HASH160 48f1346b4453d0a208cef9d6b1722d87c6b3f11e OP_EQUAL',
+                asm: 'OP_HASH160 48f1346b4453d0a208cef9d6b1722d87c6b3f11e OP_EQUAL',
                 hex: 'a91448f1346b4453d0a208cef9d6b1722d87c6b3f11e87',
                 reqSigs: 1,
                 type: 'scripthash',
@@ -170,8 +159,7 @@ describe('Bitcoin RPC provider', () => {
               value: 5.2499626,
               n: 1,
               scriptPubKey: {
-                asm:
-                  'OP_HASH160 3acc14bffd075dcaeff623d4c4ac11472a1fcff7 OP_EQUAL',
+                asm: 'OP_HASH160 3acc14bffd075dcaeff623d4c4ac11472a1fcff7 OP_EQUAL',
                 hex: 'a9143acc14bffd075dcaeff623d4c4ac11472a1fcff787',
                 reqSigs: 1,
                 type: 'scripthash',
@@ -179,8 +167,7 @@ describe('Bitcoin RPC provider', () => {
               },
             },
           ],
-          hex:
-            '0200000001ff1157410fd0fe4363c96331565ea039a581fffd444297238014b61c22e120a4000000004847304402206797722ab2d452a41d3dbccbe046712218a3263596db92c432cdfade9d06355f02200b3c68caad6906d01eb589686d725551de1c3b3adb7874cb11271a91a323f12301feffffff0200e1f5050000000017a91448f1346b4453d0a208cef9d6b1722d87c6b3f11e87a4ce4a1f0000000017a9143acc14bffd075dcaeff623d4c4ac11472a1fcff78775020000',
+          hex: '0200000001ff1157410fd0fe4363c96331565ea039a581fffd444297238014b61c22e120a4000000004847304402206797722ab2d452a41d3dbccbe046712218a3263596db92c432cdfade9d06355f02200b3c68caad6906d01eb589686d725551de1c3b3adb7874cb11271a91a323f12301feffffff0200e1f5050000000017a91448f1346b4453d0a208cef9d6b1722d87c6b3f11e87a4ce4a1f0000000017a9143acc14bffd075dcaeff623d4c4ac11472a1fcff78775020000',
           blockhash:
             '494a5c635fd483c82a4a684f3982f52af27a29ee5217a0409cdad45afc2709d7',
           confirmations: 20,

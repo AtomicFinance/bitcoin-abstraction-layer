@@ -153,9 +153,8 @@ export default class Chain implements ChainProvider, FeeProvider {
 
   /** @inheritdoc */
   async sendRawTransaction(rawTransaction: string): Promise<string> {
-    const txHash = await this.client.getMethod('sendRawTransaction')(
-      rawTransaction,
-    );
+    const txHash =
+      await this.client.getMethod('sendRawTransaction')(rawTransaction);
 
     if (!isString(txHash)) {
       throw new InvalidProviderResponseError(
