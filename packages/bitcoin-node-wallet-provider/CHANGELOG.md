@@ -1,5 +1,78 @@
 # @atomicfinance/bitcoin-node-wallet-provider
 
+## 4.0.0
+
+### Major Changes
+
+- 8989c75: Upgrade to @node-dlc v1.0.0
+
+  ## Breaking Changes
+
+  This release upgrades to @node-dlc v1.0.0 with significant breaking changes:
+
+  ### Dependencies
+
+  - Upgraded @node-dlc packages from 0.24.0 to ^1.0.0
+  - Minimum Node.js version now 18.18.2
+  - Added decimal.js dependency for F64 type support
+
+  ### API Changes
+
+  - **Message Types**: Removed versioned suffixes (DlcOfferV0 → DlcOffer)
+  - **Property Names**:
+    - `fundingPubKey` → `fundingPubkey`
+    - `payoutSPK` → `payoutSpk`
+    - `changeSPK` → `changeSpk`
+    - `cetSignatures` → `cetAdaptorSignatures`
+    - `tempContractId` → `temporaryContractId`
+
+  ### Type System
+
+  - **Contract Descriptors**: V0/V1 types replaced with Enumerated/Numerical descriptors
+  - **Oracle Types**: OracleInfoV0 → SingleOracleInfo/MultiOracleInfo
+  - **Message Validation**: Switched from type-based to property-based checking
+  - **Enum Outcomes**: Migrated from Buffer to string format
+
+  ### New Features
+
+  - Enhanced oracle event descriptor handling
+  - Improved decimal precision with F64 types
+  - Fallback outcome index search algorithm
+  - Auto-generation of temporary contract IDs
+
+  ## Migration Guide
+
+  ### Code Updates Required
+
+  ```javascript
+  // Before
+  const dlcOffer = new DlcOfferV0();
+  dlcOffer.fundingPubKey = pubkey;
+  dlcOffer.payoutSPK = spk;
+
+  // After
+  const dlcOffer = new DlcOffer();
+  dlcOffer.fundingPubkey = pubkey;
+  dlcOffer.payoutSpk = spk;
+  ```
+
+  ### Environment
+
+  - Update Node.js to 18.18.2+
+  - Run `yarn install` to update dependencies
+  - Review custom DLC implementations for compatibility
+
+  This is a **major breaking change** requiring code updates in consuming applications.
+
+### Patch Changes
+
+- Updated dependencies [8989c75]
+  - @atomicfinance/types@4.0.0
+  - @atomicfinance/bitcoin-utils@4.0.0
+  - @atomicfinance/crypto@4.0.0
+  - @atomicfinance/jsonrpc-provider@4.0.0
+  - @atomicfinance/utils@4.0.0
+
 ## 3.6.1
 
 ### Patch Changes
