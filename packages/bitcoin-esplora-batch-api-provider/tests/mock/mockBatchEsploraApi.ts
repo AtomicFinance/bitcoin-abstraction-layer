@@ -13,8 +13,7 @@ function mockBatchEsploraApi() {
           address: '2N4N393YJx9KuZV5D4HMkzHZ7QoFp6tJG1b',
           utxo: [
             {
-              txid:
-                '374d22560325e43a314f15120ba8d3ab1840e87695119d3208308dd2868cf9a3',
+              txid: '374d22560325e43a314f15120ba8d3ab1840e87695119d3208308dd2868cf9a3',
               vout: 0,
               status: {
                 confirmed: true,

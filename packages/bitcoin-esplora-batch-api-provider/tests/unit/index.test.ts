@@ -45,8 +45,7 @@ describe('Bitcoin Esplora Api Provider', () => {
             block_time: 1619775030,
             confirmed: true,
           },
-          txid:
-            '374d22560325e43a314f15120ba8d3ab1840e87695119d3208308dd2868cf9a3',
+          txid: '374d22560325e43a314f15120ba8d3ab1840e87695119d3208308dd2868cf9a3',
           value: 10384287,
           vout: 0,
         },

@@ -27,7 +27,8 @@ export interface EsploraApiProviderOptions {
 
 export default class BitcoinEsploraApiProvider
   extends NodeProvider
-  implements Partial<ChainProvider> {
+  implements Partial<ChainProvider>
+{
   _network: BitcoinNetwork;
   _numberOfBlockConfirmation: number;
   _defaultFeePerByte: number;
@@ -54,9 +55,8 @@ export default class BitcoinEsploraApiProvider
 
   async getFeePerByte(numberOfBlocks = this._numberOfBlockConfirmation) {
     try {
-      const feeEstimates: esplora.FeeEstimates = await this.nodeGet(
-        '/fee-estimates',
-      );
+      const feeEstimates: esplora.FeeEstimates =
+        await this.nodeGet('/fee-estimates');
       const blockOptions = Object.keys(feeEstimates).map((block) =>
         parseInt(block),
       );

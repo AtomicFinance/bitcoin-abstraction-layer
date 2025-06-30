@@ -218,10 +218,8 @@ export default class BitcoinNodeWalletProvider extends Provider {
       return this._addressInfoCache[address];
     }
 
-    const addressInfo: BitcoinJsonRpcTypes.AddressInfo = await this._rpc.jsonrpc(
-      'getaddressinfo',
-      address,
-    );
+    const addressInfo: BitcoinJsonRpcTypes.AddressInfo =
+      await this._rpc.jsonrpc('getaddressinfo', address);
 
     let publicKey, derivationPath;
 
@@ -243,15 +241,10 @@ export default class BitcoinNodeWalletProvider extends Provider {
   }
 
   async getUsedAddresses() {
-    const usedAddresses: BitcoinJsonRpcTypes.AddressGrouping[] = await this._rpc.jsonrpc(
-      'listaddressgroupings',
-    );
-    const emptyAddresses: BitcoinJsonRpcTypes.ReceivedByAddress[] = await this._rpc.jsonrpc(
-      'listreceivedbyaddress',
-      0,
-      true,
-      false,
-    );
+    const usedAddresses: BitcoinJsonRpcTypes.AddressGrouping[] =
+      await this._rpc.jsonrpc('listaddressgroupings');
+    const emptyAddresses: BitcoinJsonRpcTypes.ReceivedByAddress[] =
+      await this._rpc.jsonrpc('listreceivedbyaddress', 0, true, false);
 
     const addrs = uniq([
       ...flatten(usedAddresses).map((addr) => addr[0]),
