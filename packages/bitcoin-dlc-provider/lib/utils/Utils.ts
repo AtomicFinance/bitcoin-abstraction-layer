@@ -1,15 +1,10 @@
 import { Messages, PayoutRequest } from '@atomicfinance/types';
 import {
   DlcAccept,
-  DlcAcceptV0,
   DlcClose,
-  DlcCloseV0,
   DlcOffer,
-  DlcOfferV0,
   DlcSign,
-  DlcSignV0,
   DlcTransactions,
-  DlcTransactionsV0,
   MessageType,
 } from '@node-dlc/messaging';
 import randomBytes from 'randombytes';
@@ -33,28 +28,28 @@ export function generateSerialIds(count: number): bigint[] {
 
 export function checkTypes(types: ICheckTypesRequest): ICheckTypesResponse {
   const { _dlcOffer, _dlcAccept, _dlcSign, _dlcClose, _dlcTxs } = types;
-  if (_dlcOffer && _dlcOffer.type !== MessageType.DlcOfferV0)
+  if (_dlcOffer && _dlcOffer.type !== MessageType.DlcOffer)
     throw Error('DlcOffer must be V0');
-  if (_dlcAccept && _dlcAccept.type !== MessageType.DlcAcceptV0)
+  if (_dlcAccept && _dlcAccept.type !== MessageType.DlcAccept)
     throw Error('DlcAccept must be V0');
-  if (_dlcSign && _dlcSign.type !== MessageType.DlcSignV0)
+  if (_dlcSign && _dlcSign.type !== MessageType.DlcSign)
     throw Error('DlcSign must be V0');
-  if (_dlcClose && _dlcClose.type !== MessageType.DlcCloseV0)
+  if (_dlcClose && _dlcClose.type !== MessageType.DlcClose)
     throw Error('DlcClose must be V0');
   if (_dlcTxs && _dlcTxs.type !== MessageType.DlcTransactionsV0)
     throw Error('DlcTransactions must be V0');
 
-  let dlcOffer: DlcOfferV0;
-  let dlcAccept: DlcAcceptV0;
-  let dlcSign: DlcSignV0;
-  let dlcClose: DlcCloseV0;
-  let dlcTxs: DlcTransactionsV0;
+  let dlcOffer: DlcOffer;
+  let dlcAccept: DlcAccept;
+  let dlcSign: DlcSign;
+  let dlcClose: DlcClose;
+  let dlcTxs: DlcTransactions;
 
-  if (_dlcOffer) dlcOffer = _dlcOffer as DlcOfferV0;
-  if (_dlcAccept) dlcAccept = _dlcAccept as DlcAcceptV0;
-  if (_dlcSign) dlcSign = _dlcSign as DlcSignV0;
-  if (_dlcClose) dlcClose = _dlcClose as DlcCloseV0;
-  if (_dlcTxs) dlcTxs = _dlcTxs as DlcTransactionsV0;
+  if (_dlcOffer) dlcOffer = _dlcOffer as DlcOffer;
+  if (_dlcAccept) dlcAccept = _dlcAccept as DlcAccept;
+  if (_dlcSign) dlcSign = _dlcSign as DlcSign;
+  if (_dlcClose) dlcClose = _dlcClose as DlcClose;
+  if (_dlcTxs) dlcTxs = _dlcTxs as DlcTransactions;
 
   return { dlcOffer, dlcAccept, dlcSign, dlcClose, dlcTxs };
 }
@@ -103,11 +98,11 @@ export interface ICheckTypesRequest {
 }
 
 export interface ICheckTypesResponse {
-  dlcOffer?: DlcOfferV0;
-  dlcAccept?: DlcAcceptV0;
-  dlcSign?: DlcSignV0;
-  dlcClose?: DlcCloseV0;
-  dlcTxs?: DlcTransactionsV0;
+  dlcOffer?: DlcOffer;
+  dlcAccept?: DlcAccept;
+  dlcSign?: DlcSign;
+  dlcClose?: DlcClose;
+  dlcTxs?: DlcTransactions;
 }
 
 interface PayoutGroup {

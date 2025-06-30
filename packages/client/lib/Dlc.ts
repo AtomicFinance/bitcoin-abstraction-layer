@@ -47,7 +47,7 @@ import {
   DlcSign,
   DlcTransactions,
   FundingInput,
-  OracleAttestationV0,
+  OracleAttestation,
 } from '@node-dlc/messaging';
 
 export default class Dlc implements DlcProvider {
@@ -228,7 +228,7 @@ export default class Dlc implements DlcProvider {
     dlcAccept: DlcAccept,
     dlcSign: DlcSign,
     dlcTxs: DlcTransactions,
-    oracleAttestation: OracleAttestationV0,
+    oracleAttestation: OracleAttestation,
     isOfferer?: boolean,
   ): Promise<Tx> {
     return this.client.getMethod('execute')(
