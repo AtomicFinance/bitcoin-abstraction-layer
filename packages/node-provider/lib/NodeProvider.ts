@@ -10,8 +10,8 @@ export default class NodeProvider extends Provider {
     this._node = axios.create(config);
   }
 
-  _handleNodeError(e: Error, context: any) {
-    const { name, message, ...attrs } = e;
+  _handleNodeError(e: Error, context: Record<string, unknown>) {
+    const { message, ...attrs } = e;
 
     const data = get(e, 'response.data');
     const errorMessage = data || message;
@@ -22,14 +22,14 @@ export default class NodeProvider extends Provider {
     });
   }
 
-  nodeGet(url: string, params: any = {}): Promise<any> {
+  nodeGet(url: string, params: Record<string, unknown> = {}): Promise<unknown> {
     return this._node
       .get(url, { params })
       .then((response) => response.data)
       .catch((e) => this._handleNodeError(e, { url, params }));
   }
 
-  nodePost(url: string, data: any): Promise<any> {
+  nodePost(url: string, data: unknown): Promise<unknown> {
     return this._node
       .post(url, data)
       .then((response) => response.data)

@@ -29,12 +29,12 @@ export default class BitcoinEsploraBatchApiProvider extends BitcoinEsploraApiPro
 
   async getUnspentTransactions(_addresses: (Address | string)[]) {
     const addresses = _addresses.map(addressToString);
-    const data: BatchUTXOs = await this._batchAxios.nodePost(
+    const data: BatchUTXOs = (await this._batchAxios.nodePost(
       '/addresses/utxo',
       {
         addresses: uniq(addresses),
       },
-    );
+    )) as BatchUTXOs;
 
     const utxos = data.map(({ address, utxo }) => {
       return utxo.map((obj) => ({
@@ -51,12 +51,12 @@ export default class BitcoinEsploraBatchApiProvider extends BitcoinEsploraApiPro
 
   async getAddressTransactionCounts(_addresses: (Address | string)[]) {
     const addresses = _addresses.map(addressToString);
-    const data: esplora.Address[] = await this._batchAxios.nodePost(
+    const data: esplora.Address[] = (await this._batchAxios.nodePost(
       '/addresses',
       {
         addresses: uniq(addresses),
       },
-    );
+    )) as esplora.Address[];
 
     return data.reduce((acc: { [index: string]: number }, obj) => {
       acc[obj.address] = obj.chain_stats.tx_count + obj.mempool_stats.tx_count;

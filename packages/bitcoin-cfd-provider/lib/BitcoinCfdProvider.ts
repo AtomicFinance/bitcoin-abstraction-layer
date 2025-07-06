@@ -145,8 +145,10 @@ export default class BitcoinCfdProvider
   extends Provider
   implements Partial<CfdProvider>
 {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   _cfdJs: any;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(cfdJs?: any) {
     super();
 

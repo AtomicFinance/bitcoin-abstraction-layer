@@ -115,8 +115,10 @@ export default class BitcoinDlcProvider
   implements Partial<DlcProvider>
 {
   _network: BitcoinNetwork;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   _cfdDlcJs: any;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(network: BitcoinNetwork, cfdDlcJs?: any) {
     super();
 
@@ -922,7 +924,7 @@ export default class BitcoinDlcProvider
       (dlcOffer.contractInfo as SingleContractInfo).contractDescriptor.type ===
         MessageType.ContractDescriptorV0
     ) {
-      for (const [_, { oracleInfo }] of contractOraclePairs.entries()) {
+      for (const { oracleInfo } of contractOraclePairs) {
         if (oracleInfo.type !== MessageType.SingleOracleInfo) {
           throw new Error('Only SingleOracleInfo supported in this context');
         }
@@ -1083,7 +1085,7 @@ export default class BitcoinDlcProvider
       (dlcOffer.contractInfo as SingleContractInfo).contractDescriptor.type ===
         MessageType.ContractDescriptorV0
     ) {
-      for (const [_, { oracleInfo }] of contractOraclePairs.entries()) {
+      for (const { oracleInfo } of contractOraclePairs) {
         if (oracleInfo.type !== MessageType.SingleOracleInfo) {
           throw new Error('Only SingleOracleInfo supported in this context');
         }
@@ -1570,7 +1572,7 @@ Payout Group not found',
       index = 0;
       groupLength = 0;
 
-      for (const [i, payoutGroup] of payoutGroups.entries()) {
+      for (const [, payoutGroup] of payoutGroups.entries()) {
         groupIndex = payoutGroup.groups.findIndex((group) => {
           return group.every((msg, j) => msg === outcomesFormatted[j]);
         });
@@ -3217,7 +3219,7 @@ Payout Group not found even with brute force search',
     );
 
     // add to psbt
-    sortedPsbtInputs.forEach((input, i) => psbt.addInput(input));
+    sortedPsbtInputs.forEach((input) => psbt.addInput(input));
 
     const fundingInputs: FundingInput[] = await Promise.all(
       inputs.map(async (input) => {
@@ -3588,7 +3590,7 @@ Payout Group not found even with brute force search',
     });
 
     // add all dlc close inputs
-    dlcClose.fundingInputs.forEach((input, i) => {
+    dlcClose.fundingInputs.forEach((input) => {
       psbtInputs.push({
         hash: input.prevTx.txId.serialize(),
         index: input.prevTxVout,
@@ -3643,7 +3645,7 @@ Payout Group not found even with brute force search',
     });
 
     // add to psbt
-    sortedPsbtInputs.forEach((input, i) => psbt.addInput(input));
+    sortedPsbtInputs.forEach((input) => psbt.addInput(input));
 
     const offerer = await this.isOfferer(dlcOffer, dlcAccept);
 
@@ -4019,5 +4021,3 @@ export interface InputsForDualAmountResponse {
   inputs: Input[];
   fee: number;
 }
-
-const BurnAddress = 'bcrt1qxcjufgh2jarkp2qkx68azh08w9v5gah8u6es8s';

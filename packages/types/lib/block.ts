@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface Block<TransactionType = any> {
   // Block number
   number: number;

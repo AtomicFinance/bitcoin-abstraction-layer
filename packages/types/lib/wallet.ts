@@ -71,6 +71,7 @@ export interface WalletProvider {
    * Retrieve the network connected to by the wallet
    * @return {Promise<any>} Resolves with the network object
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getConnectedNetwork(): Promise<any>;
 
   /**

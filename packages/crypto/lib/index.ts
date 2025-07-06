@@ -15,6 +15,7 @@ function isHex(hex: string) {
  * @param {string} message - any string.
  * @return {string} Returns Buffer.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function ensureBuffer(message: string | Buffer | any) {
   if (Buffer.isBuffer(message)) return message;
 

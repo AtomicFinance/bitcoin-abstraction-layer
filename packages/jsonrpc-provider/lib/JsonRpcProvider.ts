@@ -29,6 +29,7 @@ export default class JsonRpcProvider extends NodeProvider {
     super(config);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   _prepareRequest(method: string, params: any[]) {
     const id = Date.now();
     const jsonrpc = '2.0';
@@ -37,6 +38,7 @@ export default class JsonRpcProvider extends NodeProvider {
     return req;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   _parseResponse(_data: AxiosResponse): any {
     const dataString: string =
       typeof _data !== 'string' ? stringify(_data) : _data;
@@ -56,8 +58,12 @@ export default class JsonRpcProvider extends NodeProvider {
     return data.result;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async jsonrpc(method: string, ...params: any[]) {
-    const data = await super.nodePost('', this._prepareRequest(method, params));
+    const data = (await super.nodePost(
+      '',
+      this._prepareRequest(method, params),
+    )) as AxiosResponse;
 
     return this._parseResponse(data);
   }

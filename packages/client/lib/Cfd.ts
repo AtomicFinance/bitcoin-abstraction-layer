@@ -140,8 +140,10 @@ import {
 } from '@atomicfinance/types';
 
 export default class Cfd implements CfdProvider {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   client: any;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(client: any) {
     this.client = client;
   }

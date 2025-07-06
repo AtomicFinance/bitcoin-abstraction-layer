@@ -24,6 +24,7 @@ export default class Outcome {
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static reviver(key: string, value: any): any {
     return key === '' ? Outcome.fromJSON(value) : value;
   }

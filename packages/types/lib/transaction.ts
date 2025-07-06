@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface Transaction<T = any> {
   // Transaction hash
   hash: string;
