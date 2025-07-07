@@ -1,5 +1,17 @@
 # @atomicfinance/bitcoin-cfd-provider
 
+## 4.0.1
+
+### Patch Changes
+
+- d94fbbf: Fix TypeScript ESLint compatibility and improve type safety
+  - Upgrade @typescript-eslint dependencies to v6.21.0 for TypeScript 4.9.5 support
+
+- Updated dependencies [d94fbbf]
+  - @atomicfinance/types@4.0.1
+  - @atomicfinance/provider@4.0.1
+  - @atomicfinance/utils@4.0.1
+
 ## 4.0.0
 
 ### Major Changes
@@ -11,13 +23,11 @@
   This release upgrades to @node-dlc v1.0.0 with significant breaking changes:
 
   ### Dependencies
-
   - Upgraded @node-dlc packages from 0.24.0 to ^1.0.0
   - Minimum Node.js version now 18.18.2
   - Added decimal.js dependency for F64 type support
 
   ### API Changes
-
   - **Message Types**: Removed versioned suffixes (DlcOfferV0 → DlcOffer)
   - **Property Names**:
     - `fundingPubKey` → `fundingPubkey`
@@ -27,14 +37,12 @@
     - `tempContractId` → `temporaryContractId`
 
   ### Type System
-
   - **Contract Descriptors**: V0/V1 types replaced with Enumerated/Numerical descriptors
   - **Oracle Types**: OracleInfoV0 → SingleOracleInfo/MultiOracleInfo
   - **Message Validation**: Switched from type-based to property-based checking
   - **Enum Outcomes**: Migrated from Buffer to string format
 
   ### New Features
-
   - Enhanced oracle event descriptor handling
   - Improved decimal precision with F64 types
   - Fallback outcome index search algorithm
@@ -57,7 +65,6 @@
   ```
 
   ### Environment
-
   - Update Node.js to 18.18.2+
   - Run `yarn install` to update dependencies
   - Review custom DLC implementations for compatibility
