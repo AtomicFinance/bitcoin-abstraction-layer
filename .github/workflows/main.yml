@@ -9,7 +9,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,45 +26,52 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/bitcoin
-          key: ${{ runner.os }}-bitcoin-0.20.0
+          key: ${{ runner.os }}-bitcoin-22.0-optimized-v2
 
-      - name: Download Bitcoin node
+      - name: Download and setup Bitcoin node
         if: steps.bitcoin-cache.outputs.cache-hit != 'true'
         run: |
           mkdir -p ~/bitcoin
-          wget -P ~/bitcoin https://bitcoin.org/bin/bitcoin-core-0.20.0/bitcoin-0.20.0-x86_64-linux-gnu.tar.gz
+          wget -q -O ~/bitcoin/bitcoin-22.0-x86_64-linux-gnu.tar.gz https://bitcoincore.org/bin/bitcoin-core-22.0/bitcoin-22.0-x86_64-linux-gnu.tar.gz
+          cd ~/bitcoin
+          tar -xzf bitcoin-22.0-x86_64-linux-gnu.tar.gz
+          # Copy binaries to PATH immediately after extraction
+          sudo cp bitcoin-22.0/bin/* /usr/local/bin/
+          # Pre-generate regtest blocks for faster startup
+          bitcoind -regtest -txindex -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 &
+          sleep 5
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 createwallet "testwallet" false false "" false false || true
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 loadwallet "testwallet" || true
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 generatetoaddress 101 $(bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 getnewaddress '' 'bech32')
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 stop
+          sleep 3
+
+      - name: Install Bitcoin binaries
+        run: |
+          cd ~/bitcoin
+          # Extract if not already extracted (cache hit case)
+          if [ ! -d "bitcoin-22.0" ]; then
+            tar -xzf bitcoin-22.0-x86_64-linux-gnu.tar.gz
+          fi
+          # Copy binaries to PATH (needed for cache hit case)
+          sudo cp bitcoin-22.0/bin/* /usr/local/bin/
 
       - name: Start Bitcoin node
         run: |
-          cd ~/bitcoin
-          tar -xvf bitcoin-0.20.0-x86_64-linux-gnu.tar.gz
-          sudo cp bitcoin-0.20.0/bin/* /usr/local/bin/
-          bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction -fallbackfee=0.00001 -addresstype=p2sh-segwit -zmqpubrawblock=tcp://127.0.0.1:29000 -zmqpubrawtx=tcp://127.0.0.1:29000
-
-          # Wait for Bitcoin node to be ready
-          echo "Waiting for Bitcoin node to start..."
-          for i in {1..30}; do
-            if bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 getblockchaininfo >/dev/null 2>&1; then
-              echo "Bitcoin node is ready!"
-              break
-            fi
-            echo "Attempt $i: Bitcoin node not ready yet, waiting 2 seconds..."
-            sleep 2
-            if [ $i -eq 30 ]; then
-              echo "Bitcoin node failed to start after 60 seconds"
-              echo "Bitcoin process status:"
-              pgrep -f bitcoind || echo "No bitcoind process found"
-              echo "Bitcoin debug log:"
-              tail -20 ~/.bitcoin/regtest/debug.log || echo "No debug log found"
-              exit 1
-            fi
-          done
-
-          # Generate initial blocks
-          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 generatetoaddress 101 $(bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 getnewaddress '' 'bech32')
+          bitcoind -regtest -txindex -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction -fallbackfee=0.00001 -addresstype=p2sh-segwit -zmqpubrawblock=tcp://127.0.0.1:28332 -zmqpubrawtx=tcp://127.0.0.1:28333
+          sleep 5
+          # Create and load wallet for tests
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 createwallet "testwallet" false false "" false false || true
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 loadwallet "testwallet" || true
+          sleep 2
+          # Generate initial blocks for tests
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 generatetoaddress 101 $(bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 getnewaddress '' 'bech32') || true
+          # Verify setup
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 getwalletinfo
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 getblockchaininfo
 
       - name: Install dependencies
-        run: yarn install --immutable
+        run: yarn install --frozen-lockfile
 
       - name: Lint
         run: yarn lint
@@ -72,45 +79,41 @@ jobs:
       - name: Build
         run: yarn build
 
-      - name: Test
+      - name: Ensure Bitcoin wallet is ready
+        run: |
+          # Wait for Bitcoin to be fully ready
+          sleep 2
+          # Ensure wallet is loaded (tests expect this)
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 loadwallet "testwallet" || true
+          # Verify wallet is ready for tests
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 getwalletinfo
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 getbalance
+
+      - name: Run tests
         env:
+          NODE_ENV: test
+          CI: true
+          BITCOIN_NETWORK: regtest
           BITCOIN_RPC_HOST: 127.0.0.1
           BITCOIN_RPC_PORT: 18443
           BITCOIN_RPC_USER: bitcoin
           BITCOIN_RPC_PASSWORD: local321
-          BITCOIN_NETWORK: regtest
+          DISABLE_WATCHTOWER_HEARTBEAT: true
+          FAST_TEST_MODE: true
         run: |
-          # Check if Bitcoin node is still running
-          if ! pgrep -f bitcoind > /dev/null; then
-            echo "Bitcoin node is not running!"
-            exit 1
-          fi
-
-          # Verify Bitcoin node is responsive
-          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 getblockcount
-
-          # Run tests with verbose output and longer timeout
-          echo "Starting tests at $(date)"
-
-          # Try with timeout first, if it fails, run without timeout for debugging
-          if timeout 1200 yarn test --verbose --maxWorkers=2; then
-            echo "Tests completed successfully at $(date)"
+          # Run tests with CI optimizations
+          if command -v yarn test:ci &> /dev/null; then
+            yarn test:ci
           else
-            echo "Tests timed out or failed, running without timeout for debugging..."
-            echo "Running yarn test --listTests to see available tests:"
-            yarn test --listTests || echo "Could not list tests"
-            echo "Running a simple test to check if the test runner works:"
-            timeout 60 yarn test --testNamePattern="should" --maxWorkers=1 --verbose || echo "Simple test failed"
+            yarn test --maxWorkers=2 --forceExit --detectOpenHandles
           fi
-        timeout-minutes: 25
+        timeout-minutes: 8
 
-      - name: Post Cache Bitcoin node
+      - name: Cleanup Bitcoin node
         if: always()
         run: |
-          # Stop Bitcoin node
           bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 stop || true
           sleep 2
-          # Force kill if still running
           pkill -f bitcoind || true
 
   changeset:
@@ -131,7 +134,7 @@ jobs:
           cache: 'yarn'
 
       - name: Install dependencies
-        run: yarn install --immutable
+        run: yarn install --frozen-lockfile
 
       - name: Build packages
         run: yarn build
