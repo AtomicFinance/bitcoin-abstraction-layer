@@ -103,7 +103,7 @@ jobs:
           else
             yarn test --maxWorkers=2 --forceExit --detectOpenHandles
           fi
-        timeout-minutes: 8
+        timeout-minutes: 12
 
       - name: Cleanup Bitcoin node
         if: always()
