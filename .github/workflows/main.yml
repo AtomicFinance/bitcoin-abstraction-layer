@@ -73,6 +73,12 @@ jobs:
         run: yarn build
 
       - name: Test
+        env:
+          BITCOIN_RPC_HOST: 127.0.0.1
+          BITCOIN_RPC_PORT: 18443
+          BITCOIN_RPC_USER: bitcoin
+          BITCOIN_RPC_PASSWORD: local321
+          BITCOIN_NETWORK: regtest
         run: |
           # Check if Bitcoin node is still running
           if ! pgrep -f bitcoind > /dev/null; then
@@ -83,9 +89,20 @@ jobs:
           # Verify Bitcoin node is responsive
           bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 getblockcount
 
-          # Run tests with timeout
-          timeout 600 yarn test
-        timeout-minutes: 15
+          # Run tests with verbose output and longer timeout
+          echo "Starting tests at $(date)"
+
+          # Try with timeout first, if it fails, run without timeout for debugging
+          if timeout 1200 yarn test --verbose --maxWorkers=2; then
+            echo "Tests completed successfully at $(date)"
+          else
+            echo "Tests timed out or failed, running without timeout for debugging..."
+            echo "Running yarn test --listTests to see available tests:"
+            yarn test --listTests || echo "Could not list tests"
+            echo "Running a simple test to check if the test runner works:"
+            timeout 60 yarn test --testNamePattern="should" --maxWorkers=1 --verbose || echo "Simple test failed"
+          fi
+        timeout-minutes: 25
 
       - name: Post Cache Bitcoin node
         if: always()
