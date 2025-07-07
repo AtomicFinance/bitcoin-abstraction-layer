@@ -38,12 +38,12 @@ jobs:
           # Copy binaries to PATH immediately after extraction
           sudo cp bitcoin-22.0/bin/* /usr/local/bin/
           # Pre-generate regtest blocks for faster startup
-          bitcoind -regtest -txindex -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 &
+          bitcoind -regtest -txindex -daemon -rpcport=18443 -rpcuser=admin1 -rpcpassword=123 &
           sleep 5
-          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 createwallet "testwallet" false false "" false false || true
-          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 loadwallet "testwallet" || true
-          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 generatetoaddress 101 $(bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 getnewaddress '' 'bech32')
-          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 stop
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=admin1 -rpcpassword=123 createwallet "testwallet" false false "" false false || true
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=admin1 -rpcpassword=123 loadwallet "testwallet" || true
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=admin1 -rpcpassword=123 generatetoaddress 101 $(bitcoin-cli -regtest -rpcport=18443 -rpcuser=admin1 -rpcpassword=123 getnewaddress '' 'bech32')
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=admin1 -rpcpassword=123 stop
           sleep 3
 
       - name: Install Bitcoin binaries
@@ -58,17 +58,17 @@ jobs:
 
       - name: Start Bitcoin node
         run: |
-          bitcoind -regtest -txindex -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction -fallbackfee=0.00001 -addresstype=p2sh-segwit -zmqpubrawblock=tcp://127.0.0.1:28332 -zmqpubrawtx=tcp://127.0.0.1:28333
+          bitcoind -regtest -txindex -daemon -rpcport=18443 -rpcuser=admin1 -rpcpassword=123 -deprecatedrpc=signrawtransaction -fallbackfee=0.00001 -addresstype=p2sh-segwit -zmqpubrawblock=tcp://127.0.0.1:28332 -zmqpubrawtx=tcp://127.0.0.1:28333
           sleep 5
           # Create and load wallet for tests
-          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 createwallet "testwallet" false false "" false false || true
-          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 loadwallet "testwallet" || true
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=admin1 -rpcpassword=123 createwallet "testwallet" false false "" false false || true
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=admin1 -rpcpassword=123 loadwallet "testwallet" || true
           sleep 2
           # Generate initial blocks for tests
-          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 generatetoaddress 101 $(bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 getnewaddress '' 'bech32') || true
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=admin1 -rpcpassword=123 generatetoaddress 101 $(bitcoin-cli -regtest -rpcport=18443 -rpcuser=admin1 -rpcpassword=123 getnewaddress '' 'bech32') || true
           # Verify setup
-          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 getwalletinfo
-          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 getblockchaininfo
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=admin1 -rpcpassword=123 getwalletinfo
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=admin1 -rpcpassword=123 getblockchaininfo
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
@@ -84,20 +84,16 @@ jobs:
           # Wait for Bitcoin to be fully ready
           sleep 2
           # Ensure wallet is loaded (tests expect this)
-          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 loadwallet "testwallet" || true
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=admin1 -rpcpassword=123 loadwallet "testwallet" || true
           # Verify wallet is ready for tests
-          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 getwalletinfo
-          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 getbalance
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=admin1 -rpcpassword=123 getwalletinfo
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=admin1 -rpcpassword=123 getbalance
 
       - name: Run tests
         env:
           NODE_ENV: test
           CI: true
           BITCOIN_NETWORK: regtest
-          BITCOIN_RPC_HOST: 127.0.0.1
-          BITCOIN_RPC_PORT: 18443
-          BITCOIN_RPC_USER: bitcoin
-          BITCOIN_RPC_PASSWORD: local321
           DISABLE_WATCHTOWER_HEARTBEAT: true
           FAST_TEST_MODE: true
         run: |
@@ -112,7 +108,7 @@ jobs:
       - name: Cleanup Bitcoin node
         if: always()
         run: |
-          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 stop || true
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=admin1 -rpcpassword=123 stop || true
           sleep 2
           pkill -f bitcoind || true
 
