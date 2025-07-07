@@ -12,8 +12,10 @@ import {
 import { isBoolean, isNumber, isObject, isString } from 'lodash';
 
 export default class Chain implements ChainProvider, FeeProvider {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   client: any;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(client: any) {
     this.client = client;
   }

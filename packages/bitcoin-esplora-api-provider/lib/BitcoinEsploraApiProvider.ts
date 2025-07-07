@@ -55,8 +55,9 @@ export default class BitcoinEsploraApiProvider
 
   async getFeePerByte(numberOfBlocks = this._numberOfBlockConfirmation) {
     try {
-      const feeEstimates: esplora.FeeEstimates =
-        await this.nodeGet('/fee-estimates');
+      const feeEstimates: esplora.FeeEstimates = (await this.nodeGet(
+        '/fee-estimates',
+      )) as esplora.FeeEstimates;
       const blockOptions = Object.keys(feeEstimates).map((block) =>
         parseInt(block),
       );
@@ -85,7 +86,9 @@ export default class BitcoinEsploraApiProvider
   }
 
   async _getUnspentTransactions(address: string): Promise<bitcoin.UTXO[]> {
-    const data: esplora.UTXO[] = await this.nodeGet(`/address/${address}/utxo`);
+    const data: esplora.UTXO[] = (await this.nodeGet(
+      `/address/${address}/utxo`,
+    )) as esplora.UTXO[];
     return data.map((utxo) => ({
       ...utxo,
       address,
@@ -106,7 +109,9 @@ export default class BitcoinEsploraApiProvider
   }
 
   async _getAddressTransactionCount(address: string) {
-    const data: esplora.Address = await this.nodeGet(`/address/${address}`);
+    const data: esplora.Address = (await this.nodeGet(
+      `/address/${address}`,
+    )) as esplora.Address;
     return data.chain_stats.tx_count + data.mempool_stats.tx_count;
   }
 
@@ -123,20 +128,22 @@ export default class BitcoinEsploraApiProvider
   }
 
   async getTransactionHex(transactionHash: string): Promise<string> {
-    return this.nodeGet(`/tx/${transactionHash}/hex`);
+    return this.nodeGet(`/tx/${transactionHash}/hex`) as Promise<string>;
   }
 
   async getTransaction(transactionHash: string) {
     let data: esplora.Transaction;
 
     try {
-      data = await this.nodeGet(`/tx/${transactionHash}`);
+      data = (await this.nodeGet(
+        `/tx/${transactionHash}`,
+      )) as esplora.Transaction;
     } catch (e) {
       if (
         e.name === 'NodeError' &&
         e.message.includes('Transaction not found')
       ) {
-        const { name, message, ...attrs } = e;
+        const { ...attrs } = e;
         throw new TxNotFoundError(
           `Transaction not found: ${transactionHash}`,
           attrs,
@@ -170,7 +177,7 @@ export default class BitcoinEsploraApiProvider
       data = await this.nodeGet(`/block/${blockHash}`);
     } catch (e) {
       if (e.name === 'NodeError' && e.message.includes('Block not found')) {
-        const { name, message, ...attrs } = e;
+        const { ...attrs } = e;
         throw new BlockNotFoundError(`Block not found: ${blockHash}`, attrs);
       }
 
@@ -200,7 +207,7 @@ export default class BitcoinEsploraApiProvider
   }
 
   async getBlockHash(blockNumber: number): Promise<string> {
-    return this.nodeGet(`/block-height/${blockNumber}`);
+    return this.nodeGet(`/block-height/${blockNumber}`) as Promise<string>;
   }
 
   async getBlockByNumber(blockNumber: number) {
@@ -208,7 +215,7 @@ export default class BitcoinEsploraApiProvider
   }
 
   async getBlockHeight(): Promise<number> {
-    const data = await this.nodeGet('/blocks/tip/height');
+    const data = (await this.nodeGet('/blocks/tip/height')) as string;
     return parseInt(data);
   }
 
@@ -221,6 +228,6 @@ export default class BitcoinEsploraApiProvider
   }
 
   async sendRawTransaction(rawTransaction: string): Promise<string> {
-    return this.nodePost('/tx', rawTransaction);
+    return this.nodePost('/tx', rawTransaction) as Promise<string>;
   }
 }

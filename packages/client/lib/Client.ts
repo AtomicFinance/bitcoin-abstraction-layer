@@ -120,6 +120,7 @@ export default class Client implements IClient {
 
     const provider = findLast(
       this._providers,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (provider) => isFunction((<any>provider)[method]),
       indexOfRequestor - 1,
     );
@@ -128,7 +129,9 @@ export default class Client implements IClient {
       throw new UnimplementedMethodError(`Unimplemented method "${method}"`);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (isFunction((<any>provider)._checkMethodVersionSupport)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (!(<any>provider)._checkMethodVersionSupport(method, this.version)) {
         throw new UnsupportedMethodError(
           `Method "${method}" is not supported by version "${this.version}"`,
@@ -146,8 +149,10 @@ export default class Client implements IClient {
    *  above the requestor in the stack.
    * @return {function} Returns method from provider instance associated with the requested method
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getMethod(method: string, requestor?: any): (...args: any[]) => any {
     const provider = this.getProviderForMethod(method, requestor);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (<any>provider)[method].bind(provider);
   }
 

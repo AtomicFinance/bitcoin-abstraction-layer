@@ -8,6 +8,7 @@ import {
   groupByIgnoringDigits,
   HyperbolaPayoutCurve,
 } from '@node-dlc/core';
+import { sha256, xor } from '@node-dlc/crypto';
 import {
   DigitDecompositionEventDescriptor,
   DisjointContractInfo,
@@ -28,7 +29,6 @@ import {
   SingleContractInfo,
   SingleOracleInfo,
 } from '@node-dlc/messaging';
-import { sha256, xor } from '@node-lightning/crypto';
 import BN from 'bignumber.js';
 import { math } from 'bip-schnorr';
 import { BitcoinNetworks, chainHashFromNetwork } from 'bitcoin-networks';
@@ -43,10 +43,7 @@ import {
 import { Input } from '../../../packages/types';
 import { chains, getInput } from '../common';
 import f from '../fixtures/blockchain.json';
-import {
-  attestation_for_payout_amount_failure as AttestationWithPayoutAmountFailure,
-  offer_with_payout_index_by_payout_amount_failure as OfferWithPayoutIndex,
-} from '../fixtures/messages.json';
+import { attestation_for_payout_amount_failure as AttestationWithPayoutAmountFailure } from '../fixtures/messages.json';
 import Oracle from '../models/Oracle';
 import {
   calculateNetworkFees,
@@ -219,18 +216,14 @@ describe('dlc provider', () => {
       const dlcOfferV0 = DlcOffer.deserialize(dlcOffer.serialize());
       dlcOfferV0.validate();
 
-      const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
-        dlcOffer,
-        [bobInput],
-      );
+      const acceptDlcOfferResponse: AcceptDlcOfferResponse =
+        await bob.dlc.acceptDlcOffer(dlcOffer, [bobInput]);
 
       dlcAccept = acceptDlcOfferResponse.dlcAccept;
       dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
 
-      const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.dlc.signDlcAccept(
-        dlcOffer,
-        dlcAccept,
-      );
+      const signDlcAcceptResponse: SignDlcAcceptResponse =
+        await alice.dlc.signDlcAccept(dlcOffer, dlcAccept);
 
       dlcSign = signDlcAcceptResponse.dlcSign;
 
@@ -296,10 +289,8 @@ describe('dlc provider', () => {
       console.timeEnd('offer-get-time');
 
       console.time('accept-time');
-      const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
-        dlcOffer,
-        [bobInput],
-      );
+      const acceptDlcOfferResponse: AcceptDlcOfferResponse =
+        await bob.dlc.acceptDlcOffer(dlcOffer, [bobInput]);
       dlcAccept = acceptDlcOfferResponse.dlcAccept;
       dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
 
@@ -321,10 +312,8 @@ describe('dlc provider', () => {
     describe('actions', () => {
       beforeEach(async () => {
         console.time('sign-time');
-        const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.dlc.signDlcAccept(
-          dlcOffer,
-          dlcAccept,
-        );
+        const signDlcAcceptResponse: SignDlcAcceptResponse =
+          await alice.dlc.signDlcAccept(dlcOffer, dlcAccept);
         dlcSign = signDlcAcceptResponse.dlcSign;
         console.timeEnd('sign-time');
 
@@ -334,9 +323,7 @@ describe('dlc provider', () => {
           dlcSign,
           dlcTransactions,
         );
-        const fundTxId = await bob.chain.sendRawTransaction(
-          fundTx.serialize().toString('hex'),
-        );
+        await bob.chain.sendRawTransaction(fundTx.serialize().toString('hex'));
 
         const outcome = 5000;
         oracleAttestation = generateOracleAttestation(
@@ -650,15 +637,13 @@ describe('dlc provider', () => {
         const numDigits = 17;
         const oracleBase = 2;
 
-        const {
-          payoutFunction,
-          totalCollateral,
-        } = CoveredCall.buildPayoutFunction(
-          4000n,
-          1000000n,
-          oracleBase,
-          numDigits,
-        );
+        const { payoutFunction, totalCollateral } =
+          CoveredCall.buildPayoutFunction(
+            4000n,
+            1000000n,
+            oracleBase,
+            numDigits,
+          );
 
         const intervals = [
           { beginInterval: 0n, roundingMod: 1n },
@@ -771,10 +756,8 @@ describe('dlc provider', () => {
         console.timeEnd('offer-get-time');
 
         console.time('accept-time');
-        const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
-          dlcOffer,
-          [bobInput],
-        );
+        const acceptDlcOfferResponse: AcceptDlcOfferResponse =
+          await bob.dlc.acceptDlcOffer(dlcOffer, [bobInput]);
         dlcAccept = acceptDlcOfferResponse.dlcAccept;
         dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
 
@@ -793,10 +776,8 @@ describe('dlc provider', () => {
         console.timeEnd('accept-time');
 
         console.time('sign-time');
-        const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.dlc.signDlcAccept(
-          dlcOffer,
-          dlcAccept,
-        );
+        const signDlcAcceptResponse: SignDlcAcceptResponse =
+          await alice.dlc.signDlcAccept(dlcOffer, dlcAccept);
         dlcSign = signDlcAcceptResponse.dlcSign;
         console.timeEnd('sign-time');
 
@@ -806,9 +787,7 @@ describe('dlc provider', () => {
           dlcSign,
           dlcTransactions,
         );
-        const fundTxId = await bob.chain.sendRawTransaction(
-          fundTx.serialize().toString('hex'),
-        );
+        await bob.chain.sendRawTransaction(fundTx.serialize().toString('hex'));
 
         const outcome = 37000;
         oracleAttestation = generateOracleAttestation(
@@ -891,10 +870,8 @@ describe('dlc provider', () => {
         console.timeEnd('offer-get-time');
 
         console.time('accept-time');
-        const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
-          dlcOffer,
-          [bobInput],
-        );
+        const acceptDlcOfferResponse: AcceptDlcOfferResponse =
+          await bob.dlc.acceptDlcOffer(dlcOffer, [bobInput]);
         dlcAccept = acceptDlcOfferResponse.dlcAccept;
         dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
 
@@ -913,10 +890,8 @@ describe('dlc provider', () => {
         console.timeEnd('accept-time');
 
         console.time('sign-time');
-        const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.dlc.signDlcAccept(
-          dlcOffer,
-          dlcAccept,
-        );
+        const signDlcAcceptResponse: SignDlcAcceptResponse =
+          await alice.dlc.signDlcAccept(dlcOffer, dlcAccept);
         dlcSign = signDlcAcceptResponse.dlcSign;
         console.timeEnd('sign-time');
 
@@ -926,9 +901,7 @@ describe('dlc provider', () => {
           dlcSign,
           dlcTransactions,
         );
-        const fundTxId = await bob.chain.sendRawTransaction(
-          fundTx.serialize().toString('hex'),
-        );
+        await bob.chain.sendRawTransaction(fundTx.serialize().toString('hex'));
 
         const outcome = 38000;
         oracleAttestation = generateOracleAttestation(
@@ -1053,10 +1026,8 @@ describe('dlc provider', () => {
       console.timeEnd('offer-get-time');
       console.time('accept-time');
 
-      const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
-        dlcOffer,
-        [bobInput],
-      );
+      const acceptDlcOfferResponse: AcceptDlcOfferResponse =
+        await bob.dlc.acceptDlcOffer(dlcOffer, [bobInput]);
 
       dlcAccept = acceptDlcOfferResponse.dlcAccept;
       dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
@@ -1066,10 +1037,8 @@ describe('dlc provider', () => {
     describe('actions', () => {
       beforeEach(async () => {
         console.time('sign-time');
-        const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.dlc.signDlcAccept(
-          dlcOffer,
-          dlcAccept,
-        );
+        const signDlcAcceptResponse: SignDlcAcceptResponse =
+          await alice.dlc.signDlcAccept(dlcOffer, dlcAccept);
         dlcSign = signDlcAcceptResponse.dlcSign;
         console.timeEnd('sign-time');
 
@@ -1331,18 +1300,14 @@ describe('dlc provider', () => {
         [aliceInput],
       );
 
-      const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
-        dlcOffer,
-        [bobInput],
-      );
+      const acceptDlcOfferResponse: AcceptDlcOfferResponse =
+        await bob.dlc.acceptDlcOffer(dlcOffer, [bobInput]);
 
       const dlcAccept = acceptDlcOfferResponse.dlcAccept;
       const dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
 
-      const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.dlc.signDlcAccept(
-        dlcOffer,
-        dlcAccept,
-      );
+      const signDlcAcceptResponse: SignDlcAcceptResponse =
+        await alice.dlc.signDlcAccept(dlcOffer, dlcAccept);
 
       const dlcSign = signDlcAcceptResponse.dlcSign;
 
@@ -1378,18 +1343,14 @@ describe('dlc provider', () => {
         [aliceInput],
       );
 
-      const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
-        dlcOffer,
-        [bobInput],
-      );
+      const acceptDlcOfferResponse: AcceptDlcOfferResponse =
+        await bob.dlc.acceptDlcOffer(dlcOffer, [bobInput]);
 
       const dlcAccept = acceptDlcOfferResponse.dlcAccept;
       const dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
 
-      const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.dlc.signDlcAccept(
-        dlcOffer,
-        dlcAccept,
-      );
+      const signDlcAcceptResponse: SignDlcAcceptResponse =
+        await alice.dlc.signDlcAccept(dlcOffer, dlcAccept);
 
       const dlcSign = signDlcAcceptResponse.dlcSign;
 
@@ -1425,18 +1386,14 @@ describe('dlc provider', () => {
         [aliceInput],
       );
 
-      const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
-        dlcOffer,
-        [bobInput],
-      );
+      const acceptDlcOfferResponse: AcceptDlcOfferResponse =
+        await bob.dlc.acceptDlcOffer(dlcOffer, [bobInput]);
 
       const dlcAccept = acceptDlcOfferResponse.dlcAccept;
       const dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
 
-      const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.dlc.signDlcAccept(
-        dlcOffer,
-        dlcAccept,
-      );
+      const signDlcAcceptResponse: SignDlcAcceptResponse =
+        await alice.dlc.signDlcAccept(dlcOffer, dlcAccept);
 
       const dlcSign = signDlcAcceptResponse.dlcSign;
 
@@ -1529,10 +1486,10 @@ describe('external test vectors', () => {
     console.timeEnd('offer-get-time');
 
     console.time('accept-time');
-    const {
-      dlcAccept,
-      dlcTransactions,
-    } = await bob.dlc.acceptDlcOffer(dlcOffer, [bobInput]);
+    const { dlcAccept, dlcTransactions } = await bob.dlc.acceptDlcOffer(
+      dlcOffer,
+      [bobInput],
+    );
     console.timeEnd('accept-time');
 
     console.time('sign-time');
@@ -1548,9 +1505,7 @@ describe('external test vectors', () => {
       dlcSign,
       dlcTransactions,
     );
-    const fundTxId = await bob.chain.sendRawTransaction(
-      fundTx.serialize().toString('hex'),
-    );
+    await bob.chain.sendRawTransaction(fundTx.serialize().toString('hex'));
 
     const oracleAttestation = OracleAttestation.deserialize(
       Buffer.from(

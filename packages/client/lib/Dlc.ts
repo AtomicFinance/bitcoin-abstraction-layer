@@ -51,8 +51,10 @@ import {
 } from '@node-dlc/messaging';
 
 export default class Dlc implements DlcProvider {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   client: any;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(client: any) {
     this.client = client;
   }
@@ -527,5 +529,6 @@ export interface IInput {
   spendable?: boolean;
   solvable?: boolean;
   safe?: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   toUtxo: any;
 }

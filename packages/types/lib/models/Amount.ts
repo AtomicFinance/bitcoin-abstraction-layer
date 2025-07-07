@@ -69,6 +69,7 @@ export default class Amount {
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static reviver(key: string, value: any): any {
     return key === '' ? Amount.fromJSON(value) : value;
   }

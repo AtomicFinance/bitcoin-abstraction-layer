@@ -20,7 +20,9 @@ interface IClient {
    *  above the requestor in the stack.
    * @return {function} Returns method from provider instance associated with the requested method
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getMethod(method: string, requestor?: any): () => any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getProviderForMethod(method: string, requestor?: boolean): any;
 
   chain: ChainProvider;

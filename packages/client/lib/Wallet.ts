@@ -16,8 +16,10 @@ import { Transaction } from 'bitcoinjs-lib';
 import { isArray } from 'lodash';
 
 export default class Wallet implements WalletProvider {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   client: any;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(client: any) {
     this.client = client;
   }
@@ -91,6 +93,7 @@ export default class Wallet implements WalletProvider {
    * Retrieve the network connected to by the wallet
    * @return {Promise<any>} Resolves with the network object
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getConnectedNetwork(): Promise<any> {
     return this.client.getMethod('getConnectedNetwork')();
   }
@@ -131,6 +134,7 @@ export default class Wallet implements WalletProvider {
     return this.client.getMethod('findAddress')(addresses, change);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setUnusedAddressesBlacklist(unusedAddressesBlacklist: any) {
     return this.client.getMethod('setUnusedAddressesBlacklist')(
       unusedAddressesBlacklist,

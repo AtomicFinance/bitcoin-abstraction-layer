@@ -158,10 +158,15 @@ export default class BitcoinNodeWalletProvider extends Provider {
 
   async signBatchP2SHTransaction(
     inputs: [
-      { inputTxHex: string; index: number; vout: any; outputScript: Buffer },
+      {
+        inputTxHex: string;
+        index: number;
+        vout: { vSat: number };
+        outputScript: Buffer;
+      },
     ],
     addresses: string,
-    tx: any,
+    tx: BitcoinJsTransaction,
     locktime: number,
     segwit = false,
   ) {

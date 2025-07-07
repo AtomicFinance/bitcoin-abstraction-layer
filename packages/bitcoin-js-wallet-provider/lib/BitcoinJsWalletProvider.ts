@@ -33,7 +33,7 @@ import secp256k1 from 'secp256k1';
 
 const FEE_PER_BYTE_FALLBACK = 5;
 
-type WalletProviderConstructor<T = Provider> = new (...args: any[]) => T;
+type WalletProviderConstructor<T = Provider> = new (...args: unknown[]) => T;
 
 interface BitcoinJsWalletProviderOptions {
   network: BitcoinNetwork;
@@ -46,6 +46,7 @@ interface BitcoinJsWalletProviderOptions {
 
 // TypeScript has difficulty inferring the complex return type of the mixin pattern
 // Using 'any' here is safe as we know the mixin returns the correct enhanced class
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const BaseProvider: any = BitcoinWalletProvider(
   Provider as WalletProviderConstructor,
 );
@@ -405,7 +406,7 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
       utxoBalance -
       _feePerByte * ((_outputs.length + 1) * 39 + fixedInputs.length * 153); // todo better calculation
 
-    const targets = _outputs.map((target, i) => ({
+    const targets = _outputs.map((target) => ({
       id: 'main',
       value: target.value,
     }));
@@ -449,6 +450,7 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
         keyPair.publicKey,
       );
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const psbtInput: any = {
         hash: inputs[i].txid,
         index: inputs[i].vout,
@@ -532,6 +534,7 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
         keyPair.publicKey,
       );
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const psbtInput: any = {
         hash: inputs[i].txid,
         index: inputs[i].vout,
@@ -643,7 +646,7 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
       },
     ],
     addresses: string,
-    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
     tx: any,
     _lockTime?: number,
     segwit?: boolean,

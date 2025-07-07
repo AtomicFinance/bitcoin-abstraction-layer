@@ -39,6 +39,7 @@ export enum AddressSearchType {
 
 type DerivationCache = { [index: string]: Address };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Constructor<T = unknown> = new (...args: any[]) => T;
 
 interface BitcoinWalletProviderOptions {
@@ -63,6 +64,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
     _changeAddressIndex: number;
     _derivationCache: DerivationCache;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(...args: any[]) {
       const options = args[0] as BitcoinWalletProviderOptions;
       const {
@@ -105,9 +107,15 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
     ): Promise<string>;
     abstract signBatchP2SHTransaction(
       inputs: [
-        { inputTxHex: string; index: number; vout: any; outputScript: Buffer },
+        {
+          inputTxHex: string;
+          index: number;
+          vout: { vSat: number };
+          outputScript: Buffer;
+        },
       ],
       addresses: string,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tx: any,
       lockTime?: number,
       segwit?: boolean,
@@ -532,7 +540,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
       ).then(({ usedAddresses }) => usedAddresses);
     }
 
-    async withCachedUtxos(func: () => any) {
+    async withCachedUtxos(func: () => unknown) {
       const originalGetMethod = this.getMethod;
       const memoizedGetFeePerByte = memoize(this.getMethod('getFeePerByte'), {
         primitive: true,
@@ -547,7 +555,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
           primitive: true,
         },
       );
-      this.getMethod = (method: string, requestor: any = this) => {
+      this.getMethod = (method: string, requestor: unknown = this) => {
         if (method === 'getFeePerByte') return memoizedGetFeePerByte;
         if (method === 'getUnspentTransactions')
           return memoizedGetUnspentTransactions;

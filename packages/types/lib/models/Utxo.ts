@@ -54,6 +54,7 @@ export default class Utxo {
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static reviver(key: string, value: any): any {
     return key === '' ? Utxo.fromJSON(value) : value;
   }

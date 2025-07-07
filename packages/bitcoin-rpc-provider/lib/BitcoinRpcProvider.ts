@@ -166,7 +166,7 @@ export default class BitcoinRpcProvider
       data = await this.jsonrpc('getblock', blockHash); // TODO: This doesn't fit the interface?: https://chainquery.com/bitcoin-cli/getblock
     } catch (e) {
       if (e.name === 'NodeError' && e.message.includes('Block not found')) {
-        const { name, message, ...attrs } = e;
+        const { ...attrs } = e;
         throw new BlockNotFoundError(`Block not found: ${blockHash}`, attrs);
       }
 
@@ -184,7 +184,7 @@ export default class BitcoinRpcProvider
       tx: transactionHashes,
     } = data;
 
-    let transactions: any[] = transactionHashes;
+    let transactions: unknown[] = transactionHashes;
     // TODO: Why transactions need to be retrieved individually? getblock has verbose 2 https://chainquery.com/bitcoin-cli/getblock
     if (includeTx) {
       const txs = transactionHashes.map((hash) =>
@@ -215,7 +215,7 @@ export default class BitcoinRpcProvider
         e.name === 'NodeError' &&
         e.message.includes('Block height out of range')
       ) {
-        const { name, message, ...attrs } = e;
+        const { ...attrs } = e;
         throw new BlockNotFoundError(`Block not found: ${blockNumber}`, attrs);
       }
 
@@ -238,7 +238,7 @@ export default class BitcoinRpcProvider
         e.name === 'NodeError' &&
         e.message.includes('No such mempool transaction')
       ) {
-        const { name, message, ...attrs } = e;
+        const { ...attrs } = e;
         throw new TxNotFoundError(
           `Transaction not found: ${transactionHash}`,
           attrs,
