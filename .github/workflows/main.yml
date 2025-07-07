@@ -9,6 +9,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,7 +40,27 @@ jobs:
           tar -xvf bitcoin-0.20.0-x86_64-linux-gnu.tar.gz
           sudo cp bitcoin-0.20.0/bin/* /usr/local/bin/
           bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction -fallbackfee=0.00001 -addresstype=p2sh-segwit -zmqpubrawblock=tcp://127.0.0.1:29000 -zmqpubrawtx=tcp://127.0.0.1:29000
-          sleep 5
+
+          # Wait for Bitcoin node to be ready
+          echo "Waiting for Bitcoin node to start..."
+          for i in {1..30}; do
+            if bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 getblockchaininfo >/dev/null 2>&1; then
+              echo "Bitcoin node is ready!"
+              break
+            fi
+            echo "Attempt $i: Bitcoin node not ready yet, waiting 2 seconds..."
+            sleep 2
+            if [ $i -eq 30 ]; then
+              echo "Bitcoin node failed to start after 60 seconds"
+              echo "Bitcoin process status:"
+              pgrep -f bitcoind || echo "No bitcoind process found"
+              echo "Bitcoin debug log:"
+              tail -20 ~/.bitcoin/regtest/debug.log || echo "No debug log found"
+              exit 1
+            fi
+          done
+
+          # Generate initial blocks
           bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 generatetoaddress 101 $(bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 getnewaddress '' 'bech32')
 
       - name: Install dependencies
@@ -52,10 +73,32 @@ jobs:
         run: yarn build
 
       - name: Test
-        run: yarn test
+        run: |
+          # Check if Bitcoin node is still running
+          if ! pgrep -f bitcoind > /dev/null; then
+            echo "Bitcoin node is not running!"
+            exit 1
+          fi
+
+          # Verify Bitcoin node is responsive
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 getblockcount
+
+          # Run tests with timeout
+          timeout 600 yarn test
+        timeout-minutes: 15
+
+      - name: Post Cache Bitcoin node
+        if: always()
+        run: |
+          # Stop Bitcoin node
+          bitcoin-cli -regtest -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 stop || true
+          sleep 2
+          # Force kill if still running
+          pkill -f bitcoind || true
 
   changeset:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     needs: test
     steps:
