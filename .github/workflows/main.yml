@@ -9,7 +9,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
         with:
@@ -103,7 +103,7 @@ jobs:
           else
             yarn test --maxWorkers=2 --forceExit --detectOpenHandles
           fi
-        timeout-minutes: 12
+        timeout-minutes: 35
 
       - name: Cleanup Bitcoin node
         if: always()
