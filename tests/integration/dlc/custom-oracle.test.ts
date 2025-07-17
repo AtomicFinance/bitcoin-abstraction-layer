@@ -17,15 +17,11 @@ import {
   DlcSign,
   DlcTransactions,
   FundingInput,
-  HyperbolaPayoutCurvePiece,
-  NumericalDescriptor,
   OracleAnnouncement,
   OracleAttestation,
   OracleEvent,
   PayoutFunction,
-  PolynomialPayoutCurvePiece,
   RoundingIntervals,
-  SingleContractInfo,
 } from '@node-dlc/messaging';
 import BN from 'bignumber.js';
 import { math } from 'bip-schnorr';
@@ -117,18 +113,16 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
 
     oracle = new Oracle('olivia', numDigits);
 
-    const {
-      contractInfo,
-      totalCollateral,
-    } = generateContractInfoCustomStrategyOracle(
-      oracle,
-      numDigits,
-      oracleBase,
-      payoutFunction,
-      intervals,
-      totalCollateralIn,
-      unit,
-    );
+    const { contractInfo, totalCollateral } =
+      generateContractInfoCustomStrategyOracle(
+        oracle,
+        numDigits,
+        oracleBase,
+        payoutFunction,
+        intervals,
+        totalCollateralIn,
+        unit,
+      );
 
     const feeRatePerVb = BigInt(10);
     const cetLocktime = 1617170572;
@@ -151,10 +145,8 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
 
     console.time('accept');
 
-    const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
-      dlcOffer,
-      [bobInput],
-    );
+    const acceptDlcOfferResponse: AcceptDlcOfferResponse =
+      await bob.dlc.acceptDlcOffer(dlcOffer, [bobInput]);
     dlcAccept = acceptDlcOfferResponse.dlcAccept;
     dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
 
@@ -170,10 +162,8 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
 
     console.time('sign');
 
-    const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.dlc.signDlcAccept(
-      dlcOffer,
-      dlcAccept,
-    );
+    const signDlcAcceptResponse: SignDlcAcceptResponse =
+      await alice.dlc.signDlcAccept(dlcOffer, dlcAccept);
     console.timeEnd('sign');
 
     dlcSign = signDlcAcceptResponse.dlcSign;
@@ -340,10 +330,8 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
 
     console.time('accept');
 
-    const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
-      dlcOffer,
-      [bobInput],
-    );
+    const acceptDlcOfferResponse: AcceptDlcOfferResponse =
+      await bob.dlc.acceptDlcOffer(dlcOffer, [bobInput]);
     dlcAccept = acceptDlcOfferResponse.dlcAccept;
     dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
 
@@ -359,10 +347,8 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
 
     console.time('sign');
 
-    const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.dlc.signDlcAccept(
-      dlcOffer,
-      dlcAccept,
-    );
+    const signDlcAcceptResponse: SignDlcAcceptResponse =
+      await alice.dlc.signDlcAccept(dlcOffer, dlcAccept);
     console.timeEnd('sign');
 
     dlcSign = signDlcAcceptResponse.dlcSign;
@@ -546,10 +532,8 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
 
       console.time('accept');
 
-      const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
-        dlcOffer,
-        [bobInput],
-      );
+      const acceptDlcOfferResponse: AcceptDlcOfferResponse =
+        await bob.dlc.acceptDlcOffer(dlcOffer, [bobInput]);
       dlcAccept = acceptDlcOfferResponse.dlcAccept;
       dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
 
@@ -565,10 +549,8 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
 
       console.time('sign');
 
-      const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.dlc.signDlcAccept(
-        dlcOffer,
-        dlcAccept,
-      );
+      const signDlcAcceptResponse: SignDlcAcceptResponse =
+        await alice.dlc.signDlcAccept(dlcOffer, dlcAccept);
       console.timeEnd('sign');
 
       dlcSign = signDlcAcceptResponse.dlcSign;
@@ -903,10 +885,8 @@ describe('Custom Strategy Oracle POC numdigits=21 split trades', () => {
 
     console.time('accept');
 
-    const acceptDlcOfferResponse: AcceptDlcOfferResponse = await bob.dlc.acceptDlcOffer(
-      dlcOffer,
-      [bobInput],
-    );
+    const acceptDlcOfferResponse: AcceptDlcOfferResponse =
+      await bob.dlc.acceptDlcOffer(dlcOffer, [bobInput]);
     dlcAccept = acceptDlcOfferResponse.dlcAccept;
     dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
 
@@ -925,10 +905,8 @@ describe('Custom Strategy Oracle POC numdigits=21 split trades', () => {
 
     console.time('sign');
 
-    const signDlcAcceptResponse: SignDlcAcceptResponse = await alice.dlc.signDlcAccept(
-      dlcOffer,
-      dlcAccept,
-    );
+    const signDlcAcceptResponse: SignDlcAcceptResponse =
+      await alice.dlc.signDlcAccept(dlcOffer, dlcAccept);
     console.timeEnd('sign');
 
     dlcSign = signDlcAcceptResponse.dlcSign;

@@ -639,13 +639,49 @@ export default class BitcoinDlcProvider
 
     const dlcTransactions = new DlcTransactions();
     dlcTransactions.fundTx = Tx.decode(StreamReader.fromHex(dlcTxs.fundTxHex));
-    dlcTransactions.fundTxVout = [
-      BigInt(dlcOffer.changeSerialId),
-      BigInt(dlcAccept.changeSerialId),
-      BigInt(dlcTxRequest.fundOutputSerialId),
-    ]
+
+    // For single-funded DLCs, only include serial IDs for parties that actually have collateral
+    const serialIds = [BigInt(dlcTxRequest.fundOutputSerialId)];
+
+    // Only include offer change serial ID if offerer has collateral
+    if (dlcOffer.offerCollateral > 0n) {
+      serialIds.push(BigInt(dlcOffer.changeSerialId));
+    }
+
+    // Only include accept change serial ID if accepter has collateral
+    if (dlcAccept.acceptCollateral > 0n) {
+      serialIds.push(BigInt(dlcAccept.changeSerialId));
+    }
+
+    dlcTransactions.fundTxVout = serialIds
       .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
       .findIndex((i) => BigInt(i) === BigInt(dlcTxRequest.fundOutputSerialId));
+
+    // Validate that the calculated fundTxVout is valid
+    if (
+      dlcTransactions.fundTxVout < 0 ||
+      dlcTransactions.fundTxVout >= dlcTransactions.fundTx.outputs.length
+    ) {
+      throw new Error(
+        `Invalid fundTxVout calculation: calculated=${dlcTransactions.fundTxVout}, ` +
+          `fundTx.outputs.length=${dlcTransactions.fundTx.outputs.length}, ` +
+          `fundOutputSerialId=${dlcTxRequest.fundOutputSerialId}, ` +
+          `serialIds=[${serialIds.join(', ')}], ` +
+          `offerCollateral=${dlcOffer.offerCollateral}, ` +
+          `acceptCollateral=${dlcAccept.acceptCollateral}`,
+      );
+    }
+
+    // Additional validation that the output exists and has a value
+    const fundOutput =
+      dlcTransactions.fundTx.outputs[dlcTransactions.fundTxVout];
+    if (!fundOutput || !fundOutput.value) {
+      throw new Error(
+        `Fund output at vout ${dlcTransactions.fundTxVout} is invalid or missing value property. ` +
+          `Output exists: ${!!fundOutput}, Has value: ${!!(fundOutput && fundOutput.value)}`,
+      );
+    }
+
     dlcTransactions.refundTx = Tx.decode(
       StreamReader.fromHex(dlcTxs.refundTxHex),
     );
@@ -879,6 +915,19 @@ export default class BitcoinDlcProvider
     }
   }
 
+  private getFundOutputValueSats(dlcTxs: DlcTransactions): bigint {
+    const fundOutput = dlcTxs.fundTx.outputs[dlcTxs.fundTxVout];
+    if (!fundOutput || !fundOutput.value) {
+      throw new Error(
+        `Invalid fund output at vout ${dlcTxs.fundTxVout}: ` +
+          `outputs.length=${dlcTxs.fundTx.outputs.length}, ` +
+          `output exists=${!!fundOutput}, ` +
+          `output.value exists=${!!(fundOutput && fundOutput.value)}`,
+      );
+    }
+    return fundOutput.value.sats;
+  }
+
   private async CreateCetAdaptorAndRefundSigs(
     _dlcOffer: DlcOffer,
     _dlcAccept: DlcAccept,
@@ -944,7 +993,7 @@ export default class BitcoinDlcProvider
           fundVout: dlcTxs.fundTxVout,
           localFundPubkey: dlcOffer.fundingPubkey.toString('hex'),
           remoteFundPubkey: dlcAccept.fundingPubkey.toString('hex'),
-          fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
+          fundInputAmount: this.getFundOutputValueSats(dlcTxs),
           oraclePubkey: oracleAnnouncement.oraclePubkey.toString('hex'),
           oracleRValues: oracleAnnouncement.oracleEvent.oracleNonces.map(
             (nonce) => nonce.toString('hex'),
@@ -1006,8 +1055,7 @@ export default class BitcoinDlcProvider
             fundVout: dlcTxs.fundTxVout,
             localFundPubkey: dlcOffer.fundingPubkey.toString('hex'),
             remoteFundPubkey: dlcAccept.fundingPubkey.toString('hex'),
-            fundInputAmount:
-              dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
+            fundInputAmount: this.getFundOutputValueSats(dlcTxs),
             oraclePubkey: oracleAnnouncement.oraclePubkey.toString('hex'),
             oracleRValues: oracleAnnouncement.oracleEvent.oracleNonces.map(
               (nonce) => nonce.toString('hex'),
@@ -1045,7 +1093,7 @@ export default class BitcoinDlcProvider
       fundVout: dlcTxs.fundTxVout,
       localFundPubkey: dlcOffer.fundingPubkey.toString('hex'),
       remoteFundPubkey: dlcAccept.fundingPubkey.toString('hex'),
-      fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
+      fundInputAmount: this.getFundOutputValueSats(dlcTxs),
     };
 
     const refundSignature = Buffer.from(
@@ -1122,8 +1170,7 @@ export default class BitcoinDlcProvider
             remoteFundPubkey: dlcAccept.fundingPubkey.toString('hex'),
             fundTxId: dlcTxs.fundTx.txId.toString(),
             fundVout: dlcTxs.fundTxVout,
-            fundInputAmount:
-              dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
+            fundInputAmount: this.getFundOutputValueSats(dlcTxs),
             verifyRemote: isOfferer,
           };
 
@@ -1147,7 +1194,7 @@ export default class BitcoinDlcProvider
           remoteFundPubkey: dlcAccept.fundingPubkey.toString('hex'),
           fundTxId: dlcTxs.fundTx.txId.toString(),
           fundVout: dlcTxs.fundTxVout,
-          fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
+          fundInputAmount: this.getFundOutputValueSats(dlcTxs),
           verifyRemote: isOfferer,
         };
 
@@ -1211,8 +1258,7 @@ export default class BitcoinDlcProvider
               remoteFundPubkey: dlcAccept.fundingPubkey.toString('hex'),
               fundTxId: dlcTxs.fundTx.txId.toString(),
               fundVout: dlcTxs.fundTxVout,
-              fundInputAmount:
-                dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
+              fundInputAmount: this.getFundOutputValueSats(dlcTxs),
               verifyRemote: isOfferer,
             };
 
@@ -1237,7 +1283,7 @@ export default class BitcoinDlcProvider
           remoteFundPubkey: dlcAccept.fundingPubkey.toString('hex'),
           fundTxId: dlcTxs.fundTx.txId.toString(),
           fundVout: dlcTxs.fundTxVout,
-          fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
+          fundInputAmount: this.getFundOutputValueSats(dlcTxs),
           verifyRemote: isOfferer,
         };
 
@@ -1796,7 +1842,7 @@ Payout Group not found even with brute force search',
         oracleSignatures: oracleAttestation.signatures.map((sig) =>
           sig.toString('hex'),
         ),
-        fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
+        fundInputAmount: this.getFundOutputValueSats(dlcTxs),
         adaptorSignature: isOfferer
           ? dlcAccept.cetAdaptorSignatures.sigs[
               outcomeIndex
@@ -1826,7 +1872,7 @@ Payout Group not found even with brute force search',
         localFundPubkey: dlcOffer.fundingPubkey.toString('hex'),
         remoteFundPubkey: dlcAccept.fundingPubkey.toString('hex'),
         oracleSignatures: oracleSignatures.map((sig) => sig.toString('hex')),
-        fundInputAmount: dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats,
+        fundInputAmount: this.getFundOutputValueSats(dlcTxs),
         adaptorSignature: isOfferer
           ? dlcAccept.cetAdaptorSignatures.sigs[
               outcomeIndex
@@ -2046,7 +2092,7 @@ Payout Group not found even with brute force search',
             hex: paymentVariant.redeem.output.toString('hex'),
             type: 'redeem_script',
           },
-          amount: Number(dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats),
+          amount: Number(this.getFundOutputValueSats(dlcTxs)),
           hashType: 'p2wsh',
           sighashType: 'all',
           sighashAnyoneCanPay: false,
@@ -2161,7 +2207,7 @@ Payout Group not found even with brute force search',
           hashType: 'p2wsh',
           sighashType: 'all',
           sighashAnyoneCanPay: false,
-          amount: Number(dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats),
+          amount: Number(this.getFundOutputValueSats(dlcTxs)),
         },
       };
 
@@ -2300,6 +2346,10 @@ Payout Group not found even with brute force search',
     dlcOffer.cetLocktime = cetLocktime;
     dlcOffer.refundLocktime = refundLocktime;
 
+    if (offerCollateralSatoshis === dlcOffer.contractInfo.totalCollateral) {
+      dlcOffer.markAsSingleFunded();
+    }
+
     assert(
       (() => {
         const finalizer = new DualFundingTxFinalizer(
@@ -2402,6 +2452,10 @@ Payout Group not found even with brute force search',
       dlcOffer.cetLocktime = cetLocktime;
       dlcOffer.refundLocktime = refundLocktime;
 
+      if (offerCollateralSatoshis === dlcOffer.contractInfo.totalCollateral) {
+        dlcOffer.markAsSingleFunded();
+      }
+
       assert(
         (() => {
           const finalizer = new DualFundingTxFinalizer(
@@ -2431,7 +2485,7 @@ Payout Group not found even with brute force search',
   }
 
   /**
-   * Accept DLC Offer
+   * Accept DLC Offer (supports single-funded DLCs when accept collateral is 0)
    * @param _dlcOffer Dlc Offer Message
    * @param fixedInputs Optional inputs to use for Funding Inputs
    * @returns {Promise<AcceptDlcOfferResponse}
@@ -2452,37 +2506,74 @@ Payout Group not found even with brute force search',
       'acceptCollaterialSatoshis should equal totalCollateral - offerCollateralSatoshis',
     );
 
-    const {
-      fundingPubKey,
-      payoutSPK,
-      payoutSerialId,
-      fundingInputs: _fundingInputs,
-      changeSPK,
-      changeSerialId,
-    } = await this.Initialize(
-      acceptCollateralSatoshis,
-      dlcOffer.feeRatePerVb,
-      fixedInputs,
-    );
+    let fundingPubKey: Buffer;
+    let payoutSPK: Buffer;
+    let payoutSerialId: bigint;
+    let fundingInputs: FundingInput[];
+    let changeSPK: Buffer;
+    let changeSerialId: bigint;
+
+    if (acceptCollateralSatoshis === BigInt(0)) {
+      // Single-funded DLC: accept side provides no funding
+      const network = await this.getConnectedNetwork();
+
+      // Still need payout address for receiving DLC outcomes
+      const payoutAddress: Address =
+        await this.client.wallet.getUnusedAddress(false);
+      payoutSPK = address.toOutputScript(payoutAddress.address, network);
+
+      // Generate funding pubkey for DLC contract construction
+      const fundingAddress: Address =
+        await this.client.wallet.getUnusedAddress(false);
+      fundingPubKey = Buffer.from(fundingAddress.publicKey, 'hex');
+
+      // Generate change address (even though not used)
+      const changeAddress: Address =
+        await this.client.wallet.getUnusedAddress(true);
+      changeSPK = address.toOutputScript(changeAddress.address, network);
+
+      if (fundingAddress.address === payoutAddress.address)
+        throw Error('Address reuse');
+
+      // Generate serial IDs
+      payoutSerialId = generateSerialId();
+      changeSerialId = generateSerialId();
+
+      // No funding inputs for single-funded DLC
+      fundingInputs = [];
+    } else {
+      // Standard DLC: accept side provides funding
+      const initResult = await this.Initialize(
+        acceptCollateralSatoshis,
+        dlcOffer.feeRatePerVb,
+        fixedInputs,
+      );
+
+      fundingPubKey = initResult.fundingPubKey;
+      payoutSPK = initResult.payoutSPK;
+      payoutSerialId = initResult.payoutSerialId;
+      changeSPK = initResult.changeSPK;
+      changeSerialId = initResult.changeSerialId;
+
+      const _fundingInputs = initResult.fundingInputs;
+
+      _fundingInputs.forEach((input) =>
+        assert(
+          input.type === MessageType.FundingInput,
+          'FundingInput must be V0',
+        ),
+      );
+
+      fundingInputs = _fundingInputs.map((input) => input as FundingInput);
+
+      fundingInputs.sort(
+        (a, b) => Number(a.inputSerialId) - Number(b.inputSerialId),
+      );
+    }
 
     assert(
       Buffer.compare(dlcOffer.fundingPubkey, fundingPubKey) !== 0,
       'DlcOffer and DlcAccept FundingPubKey cannot be the same',
-    );
-
-    _fundingInputs.forEach((input) =>
-      assert(
-        input.type === MessageType.FundingInput,
-        'FundingInput must be V0',
-      ),
-    );
-
-    const fundingInputs: FundingInput[] = _fundingInputs.map(
-      (input) => input as FundingInput,
-    );
-
-    fundingInputs.sort(
-      (a, b) => Number(a.inputSerialId) - Number(b.inputSerialId),
     );
 
     const dlcAccept = new DlcAccept();
@@ -2518,27 +2609,32 @@ Payout Group not found even with brute force search',
       'offer.changeSerialID, accept.changeSerialId and fundOutputSerialId must be unique',
     );
 
+    if (dlcOffer.singleFunded) dlcAccept.markAsSingleFunded();
+
     dlcAccept.validate();
 
-    assert(
-      (() => {
-        const finalizer = new DualFundingTxFinalizer(
-          dlcOffer.fundingInputs,
-          dlcOffer.payoutSpk,
-          dlcOffer.changeSpk,
-          dlcAccept.fundingInputs,
-          dlcAccept.payoutSpk,
-          dlcAccept.changeSpk,
-          dlcOffer.feeRatePerVb,
-        );
-        const funding = fundingInputs.reduce((total, input) => {
-          return total + input.prevTx.outputs[input.prevTxVout].value.sats;
-        }, BigInt(0));
+    // Only validate funding requirements if accept side is providing collateral
+    if (acceptCollateralSatoshis > BigInt(0)) {
+      assert(
+        (() => {
+          const finalizer = new DualFundingTxFinalizer(
+            dlcOffer.fundingInputs,
+            dlcOffer.payoutSpk,
+            dlcOffer.changeSpk,
+            dlcAccept.fundingInputs,
+            dlcAccept.payoutSpk,
+            dlcAccept.changeSpk,
+            dlcOffer.feeRatePerVb,
+          );
+          const funding = fundingInputs.reduce((total, input) => {
+            return total + input.prevTx.outputs[input.prevTxVout].value.sats;
+          }, BigInt(0));
 
-        return funding >= acceptCollateralSatoshis + finalizer.acceptFees;
-      })(),
-      'fundingInputs for dlcAccept must be greater than acceptCollateralSatoshis plus acceptFees',
-    );
+          return funding >= acceptCollateralSatoshis + finalizer.acceptFees;
+        })(),
+        'fundingInputs for dlcAccept must be greater than acceptCollateralSatoshis plus acceptFees',
+      );
+    }
 
     const { dlcTransactions, messagesList } = await this.createDlcTxs(
       dlcOffer,
@@ -3181,7 +3277,7 @@ Payout Group not found even with brute force search',
       sequence: 0,
       witnessUtxo: {
         script: paymentVariant.output,
-        value: Number(dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats),
+        value: Number(this.getFundOutputValueSats(dlcTxs)),
       },
       witnessScript: paymentVariant.redeem.output,
       inputSerialId: fundingInputSerialId,
@@ -3583,7 +3679,7 @@ Payout Group not found even with brute force search',
       sequence: 0,
       witnessUtxo: {
         script: paymentVariant.output,
-        value: Number(dlcTxs.fundTx.outputs[dlcTxs.fundTxVout].value.sats),
+        value: Number(this.getFundOutputValueSats(dlcTxs)),
       },
       witnessScript: paymentVariant.redeem.output,
       inputSerialId: dlcClose.fundInputSerialId,
