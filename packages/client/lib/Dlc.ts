@@ -18,7 +18,11 @@ import {
   CreateFundTransactionResponse,
   CreateRefundTransactionRequest,
   CreateRefundTransactionResponse,
+  CreateSplicedDlcTransactionsRequest,
+  CreateSplicedDlcTransactionsResponse,
   DlcProvider,
+  GetRawDlcFundingInputSignatureRequest,
+  GetRawDlcFundingInputSignatureResponse,
   GetRawFundTxSignatureRequest,
   GetRawFundTxSignatureResponse,
   GetRawRefundTxSignatureRequest,
@@ -26,12 +30,16 @@ import {
   Input,
   SignCetRequest,
   SignCetResponse,
+  SignDlcFundingInputRequest,
+  SignDlcFundingInputResponse,
   SignFundTransactionRequest,
   SignFundTransactionResponse,
   VerifyCetAdaptorSignatureRequest,
   VerifyCetAdaptorSignatureResponse,
   VerifyCetAdaptorSignaturesRequest,
   VerifyCetAdaptorSignaturesResponse,
+  VerifyDlcFundingInputSignatureRequest,
+  VerifyDlcFundingInputSignatureResponse,
   VerifyFundTxSignatureRequest,
   VerifyFundTxSignatureResponse,
   VerifyRefundTxSignatureRequest,
@@ -494,12 +502,82 @@ export default class Dlc implements DlcProvider {
     return this.client.getMethod('VerifyRefundTxSignature')(jsonObject);
   }
 
+  async CreateSplicedDlcTransactions(
+    jsonObject: CreateSplicedDlcTransactionsRequest,
+  ): Promise<CreateSplicedDlcTransactionsResponse> {
+    return this.client.getMethod('CreateSplicedDlcTransactions')(jsonObject);
+  }
+
+  async GetRawDlcFundingInputSignature(
+    jsonObject: GetRawDlcFundingInputSignatureRequest,
+  ): Promise<GetRawDlcFundingInputSignatureResponse> {
+    return this.client.getMethod('GetRawDlcFundingInputSignature')(jsonObject);
+  }
+
+  async SignDlcFundingInput(
+    jsonObject: SignDlcFundingInputRequest,
+  ): Promise<SignDlcFundingInputResponse> {
+    return this.client.getMethod('SignDlcFundingInput')(jsonObject);
+  }
+
+  async VerifyDlcFundingInputSignature(
+    jsonObject: VerifyDlcFundingInputSignatureRequest,
+  ): Promise<VerifyDlcFundingInputSignatureResponse> {
+    return this.client.getMethod('VerifyDlcFundingInputSignature')(jsonObject);
+  }
+
   async fundingInputToInput(_input: FundingInput): Promise<IInput> {
     return this.client.getMethod('fundingInputToInput')(_input);
   }
 
   async inputToFundingInput(input: IInput): Promise<FundingInput> {
     return this.client.getMethod('inputToFundingInput')(input);
+  }
+
+  createDlcInputInfo(
+    fundTxid: string,
+    fundVout: number,
+    fundAmount: bigint,
+    localFundPubkey: string,
+    remoteFundPubkey: string,
+    maxWitnessLength: number = 220,
+    inputSerialId?: bigint,
+  ): {
+    fundTxid: string;
+    fundVout: number;
+    fundAmount: number;
+    localFundPubkey: string;
+    remoteFundPubkey: string;
+    maxWitnessLength: number;
+    inputSerialId?: bigint;
+  } {
+    return this.client.getMethod('createDlcInputInfo')(
+      fundTxid,
+      fundVout,
+      fundAmount,
+      localFundPubkey,
+      remoteFundPubkey,
+      maxWitnessLength,
+      inputSerialId,
+    );
+  }
+
+  async createDlcFundingInput(
+    dlcInputInfo: {
+      fundTxid: string;
+      fundVout: number;
+      fundAmount: number;
+      localFundPubkey: string;
+      remoteFundPubkey: string;
+      maxWitnessLength: number;
+      inputSerialId?: bigint;
+    },
+    fundingTxHex: string,
+  ): Promise<FundingInput> {
+    return this.client.getMethod('createDlcFundingInput')(
+      dlcInputInfo,
+      fundingTxHex,
+    );
   }
 }
 

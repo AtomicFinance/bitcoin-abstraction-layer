@@ -25,16 +25,23 @@ import {
   CreateRefundTransactionRequest,
   CreateRefundTransactionResponse,
   CreateSignatureHashRequest,
+  CreateSplicedDlcTransactionsRequest,
+  CreateSplicedDlcTransactionsResponse,
   DlcProvider,
+  GetRawDlcFundingInputSignatureRequest,
+  GetRawDlcFundingInputSignatureResponse,
   GetRawFundTxSignatureRequest,
   GetRawFundTxSignatureResponse,
   GetRawRefundTxSignatureRequest,
   GetRawRefundTxSignatureResponse,
   Input,
+  Amount,
   Messages,
   PayoutRequest,
   SignCetRequest,
   SignCetResponse,
+  SignDlcFundingInputRequest,
+  SignDlcFundingInputResponse,
   SignFundTransactionRequest,
   SignFundTransactionResponse,
   Utxo,
@@ -42,6 +49,8 @@ import {
   VerifyCetAdaptorSignatureResponse,
   VerifyCetAdaptorSignaturesRequest,
   VerifyCetAdaptorSignaturesResponse,
+  VerifyDlcFundingInputSignatureRequest,
+  VerifyDlcFundingInputSignatureResponse,
   VerifyFundTxSignatureRequest,
   VerifyFundTxSignatureResponse,
   VerifyRefundTxSignatureRequest,
@@ -558,13 +567,42 @@ export default class BitcoinDlcProvider
     const localChangeScriptPubkey = dlcOffer.changeSpk.toString('hex');
     const remoteChangeScriptPubkey = dlcAccept.changeSpk.toString('hex');
 
-    const localInputs: Utxo[] = await Promise.all(
-      dlcOffer.fundingInputs.map(async (fundingInput) => {
-        const input = await this.fundingInputToInput(fundingInput, false);
-        return input.toUtxo();
-      }),
-    );
+    // Separate regular inputs from DLC inputs (only from offeror side)
+    const localRegularInputs: Utxo[] = [];
+    const localDlcInputs: {
+      fundTxid: string;
+      fundVout: number;
+      fundAmount: number;
+      localFundPubkey: string;
+      remoteFundPubkey: string;
+      maxWitnessLength: number;
+      inputSerialId?: bigint;
+    }[] = [];
 
+    for (const fundingInput of dlcOffer.fundingInputs) {
+      if (fundingInput.dlcInput) {
+        // This is a DLC input for splicing
+        localDlcInputs.push({
+          fundTxid: fundingInput.prevTx.txId.toString(),
+          fundVout: fundingInput.prevTxVout,
+          fundAmount: Number(
+            fundingInput.prevTx.outputs[fundingInput.prevTxVout].value.sats,
+          ),
+          localFundPubkey:
+            fundingInput.dlcInput.localFundPubkey.toString('hex'),
+          remoteFundPubkey:
+            fundingInput.dlcInput.remoteFundPubkey.toString('hex'),
+          maxWitnessLength: fundingInput.maxWitnessLen,
+          inputSerialId: fundingInput.inputSerialId,
+        });
+      } else {
+        // Regular input
+        const input = await this.fundingInputToInput(fundingInput, false);
+        localRegularInputs.push(input.toUtxo());
+      }
+    }
+
+    // Process remote inputs (no DLC inputs from acceptor side)
     const remoteInputs: Utxo[] = await Promise.all(
       dlcAccept.fundingInputs.map(async (fundingInput) => {
         const input = await this.fundingInputToInput(fundingInput, false);
@@ -572,7 +610,8 @@ export default class BitcoinDlcProvider
       }),
     );
 
-    const localInputAmount = localInputs.reduce<number>(
+    // Calculate input amounts
+    const localInputAmount = localRegularInputs.reduce<number>(
       (prev, cur) => prev + cur.amount.GetSatoshiAmount(),
       0,
     );
@@ -611,37 +650,76 @@ export default class BitcoinDlcProvider
       messagesList = tempMessagesList;
     }
 
-    const dlcTxRequest: CreateDlcTransactionsRequest = {
-      payouts,
-      localFundPubkey,
-      localFinalScriptPubkey,
-      remoteFundPubkey,
-      remoteFinalScriptPubkey,
-      localInputAmount,
-      localCollateralAmount: dlcOffer.offerCollateral,
-      localPayoutSerialId: dlcOffer.payoutSerialId,
-      localChangeSerialId: dlcOffer.changeSerialId,
-      remoteInputAmount,
-      remoteCollateralAmount: dlcAccept.acceptCollateral,
-      remotePayoutSerialId: dlcAccept.payoutSerialId,
-      remoteChangeSerialId: dlcAccept.changeSerialId,
-      refundLocktime: dlcOffer.refundLocktime,
-      localInputs,
-      remoteInputs,
-      localChangeScriptPubkey,
-      remoteChangeScriptPubkey,
-      feeRate: Number(dlcOffer.feeRatePerVb),
-      cetLockTime: dlcOffer.cetLocktime,
-      fundOutputSerialId: dlcOffer.fundOutputSerialId,
-    };
+    // Determine whether to use regular or spliced DLC transactions
+    const hasDlcInputs = localDlcInputs.length > 0;
 
-    const dlcTxs = await this.CreateDlcTransactions(dlcTxRequest);
+    let dlcTxs:
+      | CreateDlcTransactionsResponse
+      | CreateSplicedDlcTransactionsResponse;
+
+    if (hasDlcInputs) {
+      // Use spliced DLC transactions when DLC inputs are present
+      const splicedDlcTxRequest: CreateSplicedDlcTransactionsRequest = {
+        payouts,
+        localFundPubkey,
+        localFinalScriptPubkey,
+        remoteFundPubkey,
+        remoteFinalScriptPubkey,
+        localInputAmount,
+        localCollateralAmount: dlcOffer.offerCollateral,
+        localPayoutSerialId: dlcOffer.payoutSerialId,
+        localChangeSerialId: dlcOffer.changeSerialId,
+        remoteInputAmount,
+        remoteCollateralAmount: dlcAccept.acceptCollateral,
+        remotePayoutSerialId: dlcAccept.payoutSerialId,
+        remoteChangeSerialId: dlcAccept.changeSerialId,
+        refundLocktime: dlcOffer.refundLocktime,
+        localInputs: localRegularInputs,
+        localDlcInputs: localDlcInputs,
+        remoteInputs,
+        localChangeScriptPubkey,
+        remoteChangeScriptPubkey,
+        feeRate: Number(dlcOffer.feeRatePerVb),
+        cetLockTime: dlcOffer.cetLocktime,
+        fundOutputSerialId: dlcOffer.fundOutputSerialId,
+      };
+
+      dlcTxs = await this.CreateSplicedDlcTransactions(splicedDlcTxRequest);
+    } else {
+      // Use regular DLC transactions when no DLC inputs
+      const dlcTxRequest: CreateDlcTransactionsRequest = {
+        payouts,
+        localFundPubkey,
+        localFinalScriptPubkey,
+        remoteFundPubkey,
+        remoteFinalScriptPubkey,
+        localInputAmount,
+        localCollateralAmount: dlcOffer.offerCollateral,
+        localPayoutSerialId: dlcOffer.payoutSerialId,
+        localChangeSerialId: dlcOffer.changeSerialId,
+        remoteInputAmount,
+        remoteCollateralAmount: dlcAccept.acceptCollateral,
+        remotePayoutSerialId: dlcAccept.payoutSerialId,
+        remoteChangeSerialId: dlcAccept.changeSerialId,
+        refundLocktime: dlcOffer.refundLocktime,
+        localInputs: localRegularInputs,
+        remoteInputs,
+        localChangeScriptPubkey,
+        remoteChangeScriptPubkey,
+        feeRate: Number(dlcOffer.feeRatePerVb),
+        cetLockTime: dlcOffer.cetLocktime,
+        fundOutputSerialId: dlcOffer.fundOutputSerialId,
+      };
+
+      dlcTxs = await this.CreateDlcTransactions(dlcTxRequest);
+    }
 
     const dlcTransactions = new DlcTransactions();
     dlcTransactions.fundTx = Tx.decode(StreamReader.fromHex(dlcTxs.fundTxHex));
 
     // For single-funded DLCs, only include serial IDs for parties that actually have collateral
-    const serialIds = [BigInt(dlcTxRequest.fundOutputSerialId)];
+    const fundOutputSerialId = dlcOffer.fundOutputSerialId;
+    const serialIds = [BigInt(fundOutputSerialId)];
 
     // Only include offer change serial ID if offerer has collateral
     if (dlcOffer.offerCollateral > 0n) {
@@ -655,7 +733,7 @@ export default class BitcoinDlcProvider
 
     dlcTransactions.fundTxVout = serialIds
       .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
-      .findIndex((i) => BigInt(i) === BigInt(dlcTxRequest.fundOutputSerialId));
+      .findIndex((i) => BigInt(i) === BigInt(fundOutputSerialId));
 
     // Validate that the calculated fundTxVout is valid
     if (
@@ -665,7 +743,7 @@ export default class BitcoinDlcProvider
       throw new Error(
         `Invalid fundTxVout calculation: calculated=${dlcTransactions.fundTxVout}, ` +
           `fundTx.outputs.length=${dlcTransactions.fundTx.outputs.length}, ` +
-          `fundOutputSerialId=${dlcTxRequest.fundOutputSerialId}, ` +
+          `fundOutputSerialId=${fundOutputSerialId}, ` +
           `serialIds=[${serialIds.join(', ')}], ` +
           `offerCollateral=${dlcOffer.offerCollateral}, ` +
           `acceptCollateral=${dlcAccept.acceptCollateral}`,
@@ -941,6 +1019,7 @@ export default class BitcoinDlcProvider
       _dlcTxs,
     });
     const network = await this.getConnectedNetwork();
+    console.log('test13');
 
     const cetsHex = dlcTxs.cets.map((cet) => cet.serialize().toString('hex'));
 
@@ -954,6 +1033,7 @@ export default class BitcoinDlcProvider
       fundingSPK,
       network,
     );
+    console.log('test14');
 
     const { derivationPath } = await this.client.wallet.findAddress([
       fundingAddress,
@@ -961,6 +1041,7 @@ export default class BitcoinDlcProvider
 
     const fundPrivateKeyPair = await this.getMethod('keyPair')(derivationPath);
     const fundPrivateKey = Buffer.from(fundPrivateKeyPair.__D).toString('hex');
+    console.log('test15');
 
     const contractOraclePairs = this.GetContractOraclePairs(
       dlcOffer.contractInfo,
@@ -979,11 +1060,13 @@ export default class BitcoinDlcProvider
         }
         const oracleAnnouncement = (oracleInfo as SingleOracleInfo)
           .announcement;
+        console.log('test16');
 
         const adaptorSigRequestPromises: Promise<AdaptorPair[]>[] = [];
 
         const tempMessagesList = messagesList;
         const tempCetsHex = cetsHex;
+        console.log('test17');
 
         const cetSignRequest: CreateCetAdaptorSignaturesRequest = {
           messagesList: tempMessagesList,
@@ -2497,14 +2580,18 @@ Payout Group not found even with brute force search',
     const { dlcOffer } = checkTypes({ _dlcOffer });
     dlcOffer.validate();
 
+    console.log('test1');
+
     const acceptCollateralSatoshis =
       dlcOffer.contractInfo.totalCollateral - dlcOffer.offerCollateral;
+    console.log('test2');
 
     assert(
       acceptCollateralSatoshis ===
         dlcOffer.contractInfo.totalCollateral - dlcOffer.offerCollateral,
       'acceptCollaterialSatoshis should equal totalCollateral - offerCollateralSatoshis',
     );
+    console.log('test3');
 
     let fundingPubKey: Buffer;
     let payoutSPK: Buffer;
@@ -2512,6 +2599,7 @@ Payout Group not found even with brute force search',
     let fundingInputs: FundingInput[];
     let changeSPK: Buffer;
     let changeSerialId: bigint;
+    console.log('test4');
 
     if (acceptCollateralSatoshis === BigInt(0)) {
       // Single-funded DLC: accept side provides no funding
@@ -2521,6 +2609,7 @@ Payout Group not found even with brute force search',
       const payoutAddress: Address =
         await this.client.wallet.getUnusedAddress(false);
       payoutSPK = address.toOutputScript(payoutAddress.address, network);
+      console.log('test5');
 
       // Generate funding pubkey for DLC contract construction
       const fundingAddress: Address =
@@ -2538,6 +2627,7 @@ Payout Group not found even with brute force search',
       // Generate serial IDs
       payoutSerialId = generateSerialId();
       changeSerialId = generateSerialId();
+      console.log('test6');
 
       // No funding inputs for single-funded DLC
       fundingInputs = [];
@@ -2548,6 +2638,7 @@ Payout Group not found even with brute force search',
         dlcOffer.feeRatePerVb,
         fixedInputs,
       );
+      console.log('test7');
 
       fundingPubKey = initResult.fundingPubKey;
       payoutSPK = initResult.payoutSPK;
@@ -2563,6 +2654,7 @@ Payout Group not found even with brute force search',
           'FundingInput must be V0',
         ),
       );
+      console.log('test8');
 
       fundingInputs = _fundingInputs.map((input) => input as FundingInput);
 
@@ -2608,10 +2700,12 @@ Payout Group not found even with brute force search',
       })(),
       'offer.changeSerialID, accept.changeSerialId and fundOutputSerialId must be unique',
     );
+    console.log('test10');
 
     if (dlcOffer.singleFunded) dlcAccept.markAsSingleFunded();
 
     dlcAccept.validate();
+    console.log('test9');
 
     // Only validate funding requirements if accept side is providing collateral
     if (acceptCollateralSatoshis > BigInt(0)) {
@@ -2635,11 +2729,13 @@ Payout Group not found even with brute force search',
         'fundingInputs for dlcAccept must be greater than acceptCollateralSatoshis plus acceptFees',
       );
     }
+    console.log('test11');
 
     const { dlcTransactions, messagesList } = await this.createDlcTxs(
       dlcOffer,
       dlcAccept,
     );
+    console.log('test12');
 
     const { cetSignatures, refundSignature } =
       await this.CreateCetAdaptorAndRefundSigs(
@@ -3937,6 +4033,38 @@ Payout Group not found even with brute force search',
     return this._cfdDlcJs.VerifyRefundTxSignature(jsonObject);
   }
 
+  async CreateSplicedDlcTransactions(
+    jsonObject: CreateSplicedDlcTransactionsRequest,
+  ): Promise<CreateSplicedDlcTransactionsResponse> {
+    await this.CfdLoaded();
+
+    return this._cfdDlcJs.CreateSplicedDlcTransactions(jsonObject);
+  }
+
+  async GetRawDlcFundingInputSignature(
+    jsonObject: GetRawDlcFundingInputSignatureRequest,
+  ): Promise<GetRawDlcFundingInputSignatureResponse> {
+    await this.CfdLoaded();
+
+    return this._cfdDlcJs.GetRawDlcFundingInputSignature(jsonObject);
+  }
+
+  async SignDlcFundingInput(
+    jsonObject: SignDlcFundingInputRequest,
+  ): Promise<SignDlcFundingInputResponse> {
+    await this.CfdLoaded();
+
+    return this._cfdDlcJs.SignDlcFundingInput(jsonObject);
+  }
+
+  async VerifyDlcFundingInputSignature(
+    jsonObject: VerifyDlcFundingInputSignatureRequest,
+  ): Promise<VerifyDlcFundingInputSignatureResponse> {
+    await this.CfdLoaded();
+
+    return this._cfdDlcJs.VerifyDlcFundingInputSignature(jsonObject);
+  }
+
   async fundingInputToInput(
     _input: FundingInput,
     findDerivationPath = true,
@@ -4013,6 +4141,131 @@ Payout Group not found even with brute force search',
 
   async getConnectedNetwork(): Promise<BitcoinNetwork> {
     return this._network;
+  }
+
+  /**
+   * Create a DLC input info object from existing DLC transaction details
+   * This can be used to splice existing DLC outputs into new DLCs
+   * @param fundTxid Transaction ID of the existing DLC funding transaction
+   * @param fundVout Output index of the DLC funding output
+   * @param fundAmount Amount of the DLC funding output in satoshis
+   * @param localFundPubkey Local funding pubkey from the original DLC
+   * @param remoteFundPubkey Remote funding pubkey from the original DLC
+   * @param maxWitnessLength Maximum witness length for the input (default 220 for P2WSH multisig)
+   * @param inputSerialId Optional serial ID for input ordering
+   */
+  createDlcInputInfo(
+    fundTxid: string,
+    fundVout: number,
+    fundAmount: bigint,
+    localFundPubkey: string,
+    remoteFundPubkey: string,
+    maxWitnessLength: number = 220,
+    inputSerialId?: bigint,
+  ): {
+    fundTxid: string;
+    fundVout: number;
+    fundAmount: number;
+    localFundPubkey: string;
+    remoteFundPubkey: string;
+    maxWitnessLength: number;
+    inputSerialId?: bigint;
+  } {
+    return {
+      fundTxid,
+      fundVout,
+      fundAmount: Number(fundAmount),
+      localFundPubkey,
+      remoteFundPubkey,
+      maxWitnessLength,
+      inputSerialId,
+    };
+  }
+
+  /**
+   * Create a funding input with DLC input information for splicing
+   * @param dlcInputInfo DLC input information
+   * @param fundingTxHex Raw transaction hex of the funding transaction
+   */
+  async createDlcFundingInput(
+    dlcInputInfo: {
+      fundTxid: string;
+      fundVout: number;
+      fundAmount: number;
+      localFundPubkey: string;
+      remoteFundPubkey: string;
+      maxWitnessLength: number;
+      inputSerialId?: bigint;
+    },
+    fundingTxHex: string,
+  ): Promise<FundingInput> {
+    const fundingInput = new FundingInput();
+    const tx = Tx.decode(StreamReader.fromHex(fundingTxHex));
+
+    fundingInput.prevTx = tx;
+    fundingInput.prevTxVout = dlcInputInfo.fundVout;
+    fundingInput.sequence = Sequence.default();
+    fundingInput.maxWitnessLen = dlcInputInfo.maxWitnessLength || 220;
+    fundingInput.redeemScript = Buffer.from('', 'hex'); // Empty for P2WSH
+    fundingInput.inputSerialId =
+      dlcInputInfo.inputSerialId || generateSerialId();
+
+    // Create the DLC multisig script for address generation
+    const localPubkey = Buffer.from(dlcInputInfo.localFundPubkey, 'hex');
+    const remotePubkey = Buffer.from(dlcInputInfo.remoteFundPubkey, 'hex');
+
+    // Sort pubkeys for deterministic script generation (same as CreateFundTxLockingScript in C++)
+    const sortedPubkeys = [localPubkey, remotePubkey].sort(Buffer.compare);
+
+    // Create 2-of-2 multisig script
+    const multisigScript = Script.p2msLock(
+      2,
+      sortedPubkeys.map((pk) => pk.toString('hex')),
+    );
+
+    // Create P2WSH address from the multisig script
+    const network = await this.getConnectedNetwork();
+    const witnessScript = Script.p2wshLock(multisigScript.serialize());
+    const multisigAddress = address.fromOutputScript(
+      witnessScript.serialize(),
+      network,
+    );
+
+    // Add toUtxo method that's expected by GetInputsForAmount
+    (fundingInput as any).toUtxo = () => {
+      return {
+        txid: dlcInputInfo.fundTxid,
+        vout: dlcInputInfo.fundVout,
+        amount: Amount.FromSatoshis(dlcInputInfo.fundAmount),
+        address: multisigAddress,
+        derivationPath: undefined, // DLC inputs don't have derivation paths
+        maxWitnessLength: dlcInputInfo.maxWitnessLength || 220,
+        inputSerialId: fundingInput.inputSerialId,
+        scriptPubKey: witnessScript.serialize().toString('hex'),
+        toJSON: () => ({}), // Minimal implementation
+        toInput: () => ({
+          txid: dlcInputInfo.fundTxid,
+          vout: dlcInputInfo.fundVout,
+          address: multisigAddress,
+          amount: dlcInputInfo.fundAmount / 1e8, // Convert to BTC
+          value: dlcInputInfo.fundAmount,
+          maxWitnessLength: dlcInputInfo.maxWitnessLength || 220,
+          inputSerialId: fundingInput.inputSerialId,
+          toUtxo: (fundingInput as any).toUtxo,
+        }),
+      };
+    };
+
+    // TODO: Add DLC input information when DlcInput structure is properly implemented
+    // For now, the splicing detection works based on the presence of dlcInput field
+    // The actual DLC input signing will be handled by the CFD-DLC-JS library
+    // fundingInput.dlcInput = {
+    //   localFundPubkey: Buffer.from(dlcInputInfo.localFundPubkey, 'hex'),
+    //   remoteFundPubkey: Buffer.from(dlcInputInfo.remoteFundPubkey, 'hex'),
+    //   fundValue: BigInt(dlcInputInfo.fundAmount),
+    // };
+
+    return fundingInput;
   }
 }
 
