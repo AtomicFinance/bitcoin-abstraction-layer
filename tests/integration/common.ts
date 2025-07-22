@@ -50,23 +50,21 @@ function mockedBitcoinRpcProvider(): BitcoinRpcProvider {
 }
 
 const bitcoinWithNode = new Client();
+bitcoinWithNode.addProvider(mockedBitcoinRpcProvider() as unknown as Provider);
 bitcoinWithNode.addProvider(
-  (mockedBitcoinRpcProvider() as unknown) as Provider,
-);
-bitcoinWithNode.addProvider(
-  (new BitcoinNodeWalletProvider({
+  new BitcoinNodeWalletProvider({
     uri: rpc.host,
     username: rpc.username,
     password: rpc.password,
     network,
     addressType: bitcoin.AddressType.BECH32,
-  }) as unknown) as Provider,
+  }) as unknown as Provider,
 );
 bitcoinWithNode.addProvider(new BitcoinCfdProvider(cfdJs));
 bitcoinWithNode.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
 
 const bitcoinWithJs = new Client();
-bitcoinWithJs.addProvider((mockedBitcoinRpcProvider() as unknown) as Provider);
+bitcoinWithJs.addProvider(mockedBitcoinRpcProvider() as unknown as Provider);
 bitcoinWithJs.addProvider(
   new BitcoinJsWalletProvider({
     network,
@@ -79,7 +77,7 @@ bitcoinWithJs.addProvider(new BitcoinCfdProvider(cfdJs));
 bitcoinWithJs.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
 
 const bitcoinWithJs2 = new Client();
-bitcoinWithJs2.addProvider((mockedBitcoinRpcProvider() as unknown) as Provider);
+bitcoinWithJs2.addProvider(mockedBitcoinRpcProvider() as unknown as Provider);
 bitcoinWithJs2.addProvider(
   new BitcoinJsWalletProvider({
     network,
@@ -92,7 +90,7 @@ bitcoinWithJs2.addProvider(new BitcoinCfdProvider(cfdJs));
 bitcoinWithJs2.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
 
 const bitcoinWithJs3 = new Client();
-bitcoinWithJs3.addProvider((mockedBitcoinRpcProvider() as unknown) as Provider);
+bitcoinWithJs3.addProvider(mockedBitcoinRpcProvider() as unknown as Provider);
 bitcoinWithJs3.addProvider(
   new BitcoinJsWalletProvider({
     network,
@@ -111,7 +109,7 @@ bitcoinWithJs3.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
  * Relevant issue: https://github.com/AtomicFinance/bitcoin-abstraction-layer/issues/109
  */
 const bitcoinWithJs4 = new Client();
-bitcoinWithJs4.addProvider((mockedBitcoinRpcProvider() as unknown) as Provider);
+bitcoinWithJs4.addProvider(mockedBitcoinRpcProvider() as unknown as Provider);
 bitcoinWithJs4.addProvider(
   new BitcoinJsWalletProvider({
     network,
@@ -125,7 +123,7 @@ bitcoinWithJs4.addProvider(new BitcoinCfdProvider(cfdJs));
 bitcoinWithJs4.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
 
 const bitcoinWithJs5 = new Client();
-bitcoinWithJs5.addProvider((mockedBitcoinRpcProvider() as unknown) as Provider);
+bitcoinWithJs5.addProvider(mockedBitcoinRpcProvider() as unknown as Provider);
 bitcoinWithJs5.addProvider(
   new BitcoinJsWalletProvider({
     network,
@@ -209,10 +207,8 @@ async function getInput(
 ): Promise<Input> {
   let derivationPath;
   if (!unusedAddress) {
-    ({
-      address: unusedAddress,
-      derivationPath,
-    } = await client.wallet.getUnusedAddress());
+    ({ address: unusedAddress, derivationPath } =
+      await client.wallet.getUnusedAddress());
   }
 
   await client.getMethod('jsonrpc')('importaddress', unusedAddress, '', false);
@@ -224,18 +220,24 @@ async function getInput(
     (vout: any) => vout.scriptPubKey.addresses[0] === unusedAddress,
   );
 
-  const input: Input = {
-    txid: tx.txid,
-    vout: vout.n,
-    address: unusedAddress,
-    scriptPubKey: vout.scriptPubKey.hex,
-    amount: vout.value,
-    value: new BN(vout.value).times(1e8).toNumber(),
+  const input: Input = new Input(
+    tx.txid,
+    vout.n,
+    unusedAddress,
+    vout.value,
+    new BN(vout.value).times(1e8).toNumber(),
     derivationPath,
-    maxWitnessLength: 108,
-    redeemScript: '',
-    toUtxo: Input.prototype.toUtxo,
-  };
+    108, // maxWitnessLength
+    '', // redeemScript
+    undefined, // inputSerialId
+    vout.scriptPubKey.hex, // scriptPubKey
+    undefined, // label
+    undefined, // confirmations
+    undefined, // spendable
+    undefined, // solvable
+    undefined, // safe
+    undefined, // dlcInput
+  );
 
   return input;
 }
