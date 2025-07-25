@@ -1,5 +1,6 @@
 import 'mocha';
 
+import { InputSupplementationMode } from '@atomicfinance/types/lib';
 import { Sequence, Tx, Value } from '@node-dlc/bitcoin';
 import { StreamReader } from '@node-dlc/bufio';
 import {
@@ -48,6 +49,7 @@ import Oracle from '../models/Oracle';
 import {
   calculateNetworkFees,
   generateContractInfo,
+  generateEnumCollateralContractInfo,
   generateEnumOracleAttestation,
   generateLongCallOffer,
   generateOracleAttestation,
@@ -1756,6 +1758,197 @@ describe('external test vectors', () => {
 
     expect(outcomeIndex).to.be.equal(17);
     expect(groupLength).to.be.equal(5);
+  });
+});
+
+describe('DLC Splicing', () => {
+  describe('single funded DLC to spliced DLC', () => {
+    it('should create a DLC, then use its funding output as input to a new spliced DLC', async () => {
+      // Step 1: Create and fund the first DLC (single-funded)
+      console.time('first-dlc-creation');
+
+      const oracle1 = new Oracle('oracle1', 1);
+      const aliceInput1 = await getInput(alice);
+
+      const maxCollateral1 = await alice.dlc.calculateMaxCollateral(
+        [aliceInput1],
+        BigInt(10),
+        1,
+      );
+
+      const { contractInfo: contractInfo1, totalCollateral: totalCollateral1 } =
+        generateEnumCollateralContractInfo(oracle1, maxCollateral1);
+
+      const feeRatePerVb = BigInt(10);
+      const cetLocktime1 = 1617170572;
+      const refundLocktime1 = 1617170573;
+
+      // Create first DLC offer (single-funded: alice provides all collateral)
+      const dlcOffer1 = await alice.dlc.createDlcOffer(
+        contractInfo1,
+        totalCollateral1, // Alice funds entire DLC
+        feeRatePerVb,
+        cetLocktime1,
+        refundLocktime1,
+        [aliceInput1],
+        InputSupplementationMode.None,
+      );
+
+      // Bob accepts without providing inputs (single-funded)
+      const { dlcAccept: dlcAccept1, dlcTransactions: dlcTransactions1 } =
+        await bob.dlc.acceptDlcOffer(dlcOffer1);
+
+      // Alice signs
+      const { dlcSign: dlcSign1 } = await alice.dlc.signDlcAccept(
+        dlcOffer1,
+        dlcAccept1,
+      );
+
+      // Finalize and broadcast first DLC
+      const fundTx1 = await bob.dlc.finalizeDlcSign(
+        dlcOffer1,
+        dlcAccept1,
+        dlcSign1,
+        dlcTransactions1,
+      );
+
+      const fundTxId1 = await bob.chain.sendRawTransaction(
+        fundTx1.serialize().toString('hex'),
+      );
+
+      console.timeEnd('first-dlc-creation');
+
+      // Step 2: Extract DLC funding output details for splicing
+      const fundTx1Details = await alice.getMethod('getTransactionByHash')(
+        fundTxId1,
+      );
+      const fundingOutputValue = fundTx1Details._raw.vout[0].value;
+      const fundingOutputAmount = BigInt(Math.round(fundingOutputValue * 1e8)); // Convert to satoshis
+
+      // Get the funding pubkeys from the DLC messages
+      const localFundPubkey = dlcOffer1.fundingPubkey.toString('hex');
+      const remoteFundPubkey = dlcAccept1.fundingPubkey.toString('hex');
+
+      // Create DLC input info for splicing
+      const dlcInputInfo = alice.dlc.createDlcInputInfo(
+        fundTxId1,
+        0, // First output is the funding output
+        fundingOutputAmount,
+        localFundPubkey,
+        remoteFundPubkey,
+        220, // Standard P2WSH multisig max witness length
+        BigInt(1), // Input serial ID
+      );
+
+      // Step 3: Create second DLC that splices the first DLC's output
+      console.time('second-dlc-creation');
+
+      const oracle2 = new Oracle('oracle2', 1);
+      const aliceInput2 = await getInput(alice); // Additional collateral input
+      const bobInput2 = await getInput(bob);
+
+      const cetLocktime2 = 1617170574;
+      const refundLocktime2 = 1617170575;
+
+      // Create DLC funding input from the first DLC
+      const dlcFundingInput = await alice.dlc.createDlcFundingInput(
+        dlcInputInfo,
+        fundTx1.serialize().toString('hex'),
+      );
+
+      // Calculate the maximum collateral possible with our inputs
+      const maxCollateral = await alice.dlc.calculateMaxCollateral(
+        [dlcFundingInput, aliceInput2],
+        feeRatePerVb,
+        1, // Single contract
+      );
+
+      const { contractInfo: contractInfo2 } =
+        generateEnumCollateralContractInfo(oracle2, maxCollateral);
+
+      // Create second DLC offer that includes both DLC input and additional collateral
+      // Use the calculated max collateral for exact amounts (no change)
+      const dlcOffer2 = await alice.dlc.createDlcOffer(
+        contractInfo2,
+        maxCollateral, // Use exact calculated amount - no guessing!
+        feeRatePerVb,
+        cetLocktime2,
+        refundLocktime2,
+        [dlcFundingInput, aliceInput2], // Include both DLC input and regular input
+        InputSupplementationMode.None, // No supplementation - exact amounts
+      );
+
+      // Bob accepts with his input
+      const { dlcAccept: dlcAccept2, dlcTransactions: dlcTransactions2 } =
+        await bob.dlc.acceptDlcOffer(dlcOffer2, [bobInput2]);
+
+      // Verify that the second DLC was created using spliced transactions
+      expect(dlcTransactions2).to.not.be.undefined;
+      expect(dlcTransactions2.fundTx).to.not.be.undefined;
+
+      // The funding transaction should have multiple inputs:
+      // - The DLC input from the first DLC
+      // - Alice's additional collateral input
+      // - Bob's input
+      const fundTx2Inputs = dlcTransactions2.fundTx.inputs.length;
+      expect(fundTx2Inputs).to.be.greaterThan(1);
+
+      // Alice signs the second DLC (DLC input signing handled automatically via funding pubkey derivation)
+      const { dlcSign: dlcSign2 } = await alice.dlc.signDlcAccept(
+        dlcOffer2,
+        dlcAccept2,
+      );
+
+      // Finalize and broadcast second DLC
+      const fundTx2 = await bob.dlc.finalizeDlcSign(
+        dlcOffer2,
+        dlcAccept2,
+        dlcSign2,
+        dlcTransactions2,
+      );
+
+      const fundTxId2 = await bob.chain.sendRawTransaction(
+        fundTx2.serialize().toString('hex'),
+      );
+
+      console.timeEnd('second-dlc-creation');
+
+      // Step 4: Verify the splicing worked correctly
+      const fundTx2Details = await alice.getMethod('getTransactionByHash')(
+        fundTxId2,
+      );
+
+      // Verify that one of the inputs references the first DLC's funding output
+      const hasFirstDlcInput = fundTx2Details._raw.vin.some(
+        (input) => input.txid === fundTxId1 && input.vout === 0,
+      );
+      expect(hasFirstDlcInput).to.be.true;
+
+      // Verify the second DLC has proper funding
+      expect(fundTx2Details._raw.vout.length).to.be.greaterThan(0);
+
+      const oracleAttestation2 = generateEnumOracleAttestation(
+        'paid',
+        oracle2,
+        'collateral',
+      );
+
+      const cet2 = await bob.dlc.execute(
+        dlcOffer2,
+        dlcAccept2,
+        dlcSign2,
+        dlcTransactions2,
+        oracleAttestation2,
+        false,
+      );
+
+      const cetTxId2 = await bob.chain.sendRawTransaction(
+        cet2.serialize().toString('hex'),
+      );
+
+      const cetTx2 = await alice.getMethod('getTransactionByHash')(cetTxId2);
+      expect(cetTx2._raw.vin.length).to.equal(1);
+    });
   });
 });
 

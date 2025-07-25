@@ -17,17 +17,24 @@ export default class Utxo {
   ) {}
 
   public toInput(): Input {
-    return {
-      txid: this.txid,
-      vout: this.vout,
-      address: this.address,
-      amount: this.amount.GetBitcoinAmount(),
-      value: this.amount.GetSatoshiAmount(),
-      derivationPath: this.derivationPath,
-      maxWitnessLength: this.maxWitnessLength,
-      inputSerialId: BigInt(this.inputSerialId),
-      toUtxo: Input.prototype.toUtxo,
-    };
+    return new Input(
+      this.txid,
+      this.vout,
+      this.address,
+      this.amount.GetBitcoinAmount(),
+      this.amount.GetSatoshiAmount(),
+      this.derivationPath,
+      this.maxWitnessLength,
+      undefined, // redeemScript
+      this.inputSerialId ? BigInt(this.inputSerialId) : undefined,
+      undefined, // scriptPubKey
+      undefined, // label
+      undefined, // confirmations
+      undefined, // spendable
+      undefined, // solvable
+      undefined, // safe
+      undefined, // dlcInput - regular UTXOs don't have DLC info
+    );
   }
 
   public toJSON(): UtxoJSON {

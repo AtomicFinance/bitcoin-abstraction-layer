@@ -35,7 +35,11 @@ export * from './cfd';
 export * from './common';
 export * from './dlc';
 export { default as Amount } from './models/Amount';
-export { default as Input } from './models/Input';
+export {
+  default as Input,
+  InputSupplementationMode,
+  DlcInputInfo,
+} from './models/Input';
 export { default as OracleInfo } from './models/OracleInfo';
 export { default as Outcome } from './models/Outcome';
 export { default as Output } from './models/Output';

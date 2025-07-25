@@ -210,6 +210,59 @@ export function generateContractInfoCustomStrategyOracle(
   return { contractInfo, totalCollateral };
 }
 
+export function generateEnumCollateralContractInfo(
+  oracle: Oracle,
+  totalCollateral: bigint,
+) {
+  const contractDescriptor = new EnumeratedDescriptor();
+  contractDescriptor.outcomes = [
+    {
+      outcome: sha256(Buffer.from('paid')).toString('hex'),
+      localPayout: totalCollateral,
+    },
+    {
+      outcome: sha256(Buffer.from('unpaid')).toString('hex'),
+      localPayout: BigInt(0),
+    },
+  ];
+
+  const oliviaInfo = oracle.GetOracleInfo();
+
+  const eventDescriptor = new EnumEventDescriptor();
+  eventDescriptor.outcomes = ['paid', 'unpaid'];
+
+  const event = new OracleEvent();
+  event.oracleNonces = oliviaInfo.rValues.map((rValue) =>
+    Buffer.from(rValue, 'hex'),
+  );
+  event.eventMaturityEpoch = 1617170572;
+  event.eventDescriptor = eventDescriptor;
+  event.eventId = 'collateral';
+
+  const announcement = new OracleAnnouncement();
+  announcement.announcementSig = Buffer.from(
+    oracle.GetSignature(
+      math
+        .taggedHash('DLC/oracle/announcement/v0', event.serialize())
+        .toString('hex'),
+    ),
+    'hex',
+  );
+
+  announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
+  announcement.oracleEvent = event;
+
+  const oracleInfo = new SingleOracleInfo();
+  oracleInfo.announcement = announcement;
+
+  const contractInfo = new SingleContractInfo();
+  contractInfo.totalCollateral = totalCollateral;
+  contractInfo.contractDescriptor = contractDescriptor;
+  contractInfo.oracleInfo = oracleInfo;
+
+  return { contractInfo, totalCollateral };
+}
+
 export function generateLongCallOffer(
   oracle: Oracle,
   numDigits = 18,

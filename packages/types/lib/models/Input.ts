@@ -3,6 +3,24 @@ import Amount from './Amount';
 import Utxo from './Utxo';
 
 /**
+ * Input supplementation modes for DLC operations
+ */
+export enum InputSupplementationMode {
+  None = 'none', // Use exactly these inputs, no supplementation
+  Optional = 'optional', // Try to supplement, fallback if fails
+  Required = 'required', // Must supplement or throw error
+}
+
+/**
+ * DLC-specific input information for splice transactions
+ */
+export interface DlcInputInfo {
+  localFundPubkey: string;
+  remoteFundPubkey: string;
+  fundValue: bigint;
+}
+
+/**
  * Class for interfacing with inputs/utxos in Liquality Chainify
  * https://github.com/liquality/chainify
  *
@@ -15,6 +33,8 @@ import Utxo from './Utxo';
  * https://github.com/liquality/chainify/tree/typescript
  * satoshis and amount will not be necessary, only value
  * https://github.com/liquality/chainify/blob/typescript/packages/types/lib/bitcoin.ts#L46
+ *
+ * Extended to support DLC inputs for splice transactions.
  */
 export default class Input {
   constructor(
@@ -33,6 +53,7 @@ export default class Input {
     readonly spendable?: boolean,
     readonly solvable?: boolean,
     readonly safe?: boolean,
+    readonly dlcInput?: DlcInputInfo, // DLC-specific information for splice transactions
   ) {}
 
   toUtxo(): Utxo {
@@ -56,16 +77,60 @@ export default class Input {
     };
   }
 
+  /**
+   * Check if this input contains DLC information (for splice transactions)
+   */
+  isDlcInput(): boolean {
+    return !!this.dlcInput;
+  }
+
   static fromUTXO(utxo: bT.UTXO): Input {
     const amount: Amount = Amount.FromSatoshis(utxo.value);
 
-    return {
-      txid: utxo.txid,
-      vout: utxo.vout,
-      address: utxo.address,
-      value: utxo.value,
-      amount: amount.GetBitcoinAmount(),
-      toUtxo: Input.prototype.toUtxo,
-    };
+    return new Input(
+      utxo.txid,
+      utxo.vout,
+      utxo.address,
+      amount.GetBitcoinAmount(),
+      utxo.value,
+    );
+  }
+
+  /**
+   * Create a DLC input for splice transactions
+   */
+  static createDlcInput(
+    txid: string,
+    vout: number,
+    multisigAddress: string,
+    amount: number, // in BTC
+    value: number, // in sats
+    localFundPubkey: string,
+    remoteFundPubkey: string,
+    fundValue: bigint,
+    inputSerialId?: bigint,
+  ): Input {
+    return new Input(
+      txid,
+      vout,
+      multisigAddress,
+      amount,
+      value,
+      undefined, // DLC inputs don't have derivation paths
+      220, // DLC witness length for 2-of-2 multisig P2WSH
+      undefined, // redeemScript
+      inputSerialId,
+      undefined, // scriptPubKey
+      undefined, // label
+      undefined, // confirmations
+      undefined, // spendable
+      undefined, // solvable
+      undefined, // safe
+      {
+        localFundPubkey,
+        remoteFundPubkey,
+        fundValue,
+      },
+    );
   }
 }
