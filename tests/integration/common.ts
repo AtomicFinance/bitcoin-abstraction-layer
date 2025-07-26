@@ -204,11 +204,29 @@ async function mineBlock(numBlocks = 1): Promise<void> {
 async function getInput(
   client: Client,
   unusedAddress?: string,
+  addressWithDerivationPath?: { address: string; derivationPath?: string },
 ): Promise<Input> {
   let derivationPath;
   if (!unusedAddress) {
     ({ address: unusedAddress, derivationPath } =
       await client.wallet.getUnusedAddress());
+  } else {
+    // If addressWithDerivationPath is provided, use its derivation path
+    if (addressWithDerivationPath?.derivationPath) {
+      derivationPath = addressWithDerivationPath.derivationPath;
+    } else {
+      // Get derivation path for the provided address
+      try {
+        const walletAddress =
+          await client.getMethod('getWalletAddress')(unusedAddress);
+        derivationPath = walletAddress.derivationPath;
+      } catch (error) {
+        // If address is not found in wallet, derivationPath remains undefined
+        console.warn(
+          `Address ${unusedAddress} not found in wallet: ${error.message}`,
+        );
+      }
+    }
   }
 
   await client.getMethod('jsonrpc')('importaddress', unusedAddress, '', false);

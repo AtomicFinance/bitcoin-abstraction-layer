@@ -1402,7 +1402,7 @@ describe('dlc provider', () => {
       const address = (await bob.getMethod('getAddresses')(5001))[0];
 
       const aliceInput = await getInput(alice);
-      const bobInput = await getInput(bob, address.address);
+      const bobInput = await getInput(bob, address.address, address);
 
       oracle = new Oracle('olivia', numDigits);
 
@@ -1826,16 +1826,23 @@ describe('DLC Splicing', () => {
       const fundingOutputAmount = BigInt(Math.round(fundingOutputValue * 1e8)); // Convert to satoshis
 
       // Get the funding pubkeys from the DLC messages
-      const localFundPubkey = dlcOffer1.fundingPubkey.toString('hex');
-      const remoteFundPubkey = dlcAccept1.fundingPubkey.toString('hex');
+      const aliceFundPubkey = dlcOffer1.fundingPubkey.toString('hex');
+      const bobFundPubkey = dlcAccept1.fundingPubkey.toString('hex');
 
-      // Create DLC input info for splicing
+      // Use lexicographic ordering to match the original multisig construction
+      // This matches the deterministic ordering used in createDlcFundingInput
+      const orderedPubkeys =
+        aliceFundPubkey < bobFundPubkey
+          ? { local: aliceFundPubkey, remote: bobFundPubkey }
+          : { local: bobFundPubkey, remote: aliceFundPubkey };
+
+      // Create DLC input info for splicing with consistent ordering
       const dlcInputInfo = alice.dlc.createDlcInputInfo(
         fundTxId1,
         0, // First output is the funding output
         fundingOutputAmount,
-        localFundPubkey,
-        remoteFundPubkey,
+        orderedPubkeys.local,
+        orderedPubkeys.remote,
         220, // Standard P2WSH multisig max witness length
         BigInt(1), // Input serial ID
       );
