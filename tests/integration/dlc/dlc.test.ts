@@ -1402,7 +1402,7 @@ describe('dlc provider', () => {
       const address = (await bob.getMethod('getAddresses')(5001))[0];
 
       const aliceInput = await getInput(alice);
-      const bobInput = await getInput(bob, address.address);
+      const bobInput = await getInput(bob, address.address, address);
 
       oracle = new Oracle('olivia', numDigits);
 
@@ -1826,16 +1826,72 @@ describe('DLC Splicing', () => {
       const fundingOutputAmount = BigInt(Math.round(fundingOutputValue * 1e8)); // Convert to satoshis
 
       // Get the funding pubkeys from the DLC messages
-      const localFundPubkey = dlcOffer1.fundingPubkey.toString('hex');
-      const remoteFundPubkey = dlcAccept1.fundingPubkey.toString('hex');
+      const aliceFundPubkey = dlcOffer1.fundingPubkey.toString('hex');
+      const bobFundPubkey = dlcAccept1.fundingPubkey.toString('hex');
 
-      // Create DLC input info for splicing
+      // Try both possible orderings to find which one matches the actual funding address
+      // We need to determine which perspective was used in the original DLC
+      let correctLocalPubkey: string;
+      let correctRemotePubkey: string;
+
+      // Test Alice-local perspective first
+      try {
+        const testInputInfo1 = alice.dlc.createDlcInputInfo(
+          fundTxId1,
+          0,
+          fundingOutputAmount,
+          aliceFundPubkey, // Alice local
+          bobFundPubkey, // Bob remote
+          220,
+          BigInt(1),
+        );
+
+        // This will throw if address doesn't match
+        await alice.dlc.createDlcFundingInput(
+          testInputInfo1,
+          fundTx1.serialize().toString('hex'),
+        );
+
+        // If we get here, this ordering works
+        correctLocalPubkey = aliceFundPubkey;
+        correctRemotePubkey = bobFundPubkey;
+        console.log('Using Alice-local perspective for DLC input');
+      } catch (error) {
+        // Try Bob-local perspective
+        try {
+          const testInputInfo2 = alice.dlc.createDlcInputInfo(
+            fundTxId1,
+            0,
+            fundingOutputAmount,
+            bobFundPubkey, // Bob local (from Alice's POV, Bob becomes local)
+            aliceFundPubkey, // Alice remote (from Alice's POV, Alice becomes remote)
+            220,
+            BigInt(1),
+          );
+
+          await alice.dlc.createDlcFundingInput(
+            testInputInfo2,
+            fundTx1.serialize().toString('hex'),
+          );
+
+          // If we get here, this ordering works
+          correctLocalPubkey = bobFundPubkey;
+          correctRemotePubkey = aliceFundPubkey;
+          console.log('Using Bob-local perspective for DLC input');
+        } catch (error2) {
+          throw new Error(
+            `Neither pubkey ordering matches the original funding address. Alice-local error: ${error.message}, Bob-local error: ${error2.message}`,
+          );
+        }
+      }
+
+      // Create DLC input info with the correct ordering
       const dlcInputInfo = alice.dlc.createDlcInputInfo(
         fundTxId1,
         0, // First output is the funding output
         fundingOutputAmount,
-        localFundPubkey,
-        remoteFundPubkey,
+        correctLocalPubkey,
+        correctRemotePubkey,
         220, // Standard P2WSH multisig max witness length
         BigInt(1), // Input serial ID
       );

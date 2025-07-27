@@ -154,6 +154,8 @@ export default class BitcoinDlcProvider
     localFundPubkey: string,
     remoteFundPubkey: string,
   ): Promise<string> {
+    const targetPubkeys = [localFundPubkey, remoteFundPubkey];
+
     // First check existing wallet addresses
     const addresses = await this.getMethod('getAddresses')();
 
@@ -166,7 +168,7 @@ export default class BitcoinDlcProvider
           const pubkey = Buffer.from(keyPair.publicKey);
           const pubkeyHex = pubkey.toString('hex');
 
-          if (pubkeyHex === localFundPubkey || pubkeyHex === remoteFundPubkey) {
+          if (targetPubkeys.includes(pubkeyHex)) {
             return Buffer.from(keyPair.privateKey).toString('hex');
           }
         } catch (error) {
@@ -175,11 +177,13 @@ export default class BitcoinDlcProvider
       }
     }
 
-    // If not found in existing addresses, derive more addresses to search
-    // Try deriving more addresses - both receiving (false) and change (true)
+    // If not found in existing addresses, do comprehensive search
+    // For DLC splicing, funding pubkeys can be at much higher derivation paths
+    console.log('Searching extensively for DLC funding private key...');
+
     for (const isChange of [false, true]) {
-      for (let i = 0; i < 20; i++) {
-        // Check next 20 addresses
+      for (let i = 0; i < 1000; i++) {
+        // Search up to 1000 addresses for DLC keys
         try {
           const address = await this.client.wallet.getAddresses(i, 1, isChange);
           if (address && address.length > 0) {
@@ -192,10 +196,10 @@ export default class BitcoinDlcProvider
               const pubkey = Buffer.from(keyPair.publicKey);
               const pubkeyHex = pubkey.toString('hex');
 
-              if (
-                pubkeyHex === localFundPubkey ||
-                pubkeyHex === remoteFundPubkey
-              ) {
+              if (targetPubkeys.includes(pubkeyHex)) {
+                console.log(
+                  `Found DLC funding key at derivation path: ${addressInfo.derivationPath}`,
+                );
                 return Buffer.from(keyPair.privateKey).toString('hex');
               }
             }
@@ -256,8 +260,8 @@ export default class BitcoinDlcProvider
           if (!foundPrivKey) {
             // Try deriving more addresses - both receiving (false) and change (true)
             for (const isChange of [false, true]) {
-              for (let i = 0; i < 20; i++) {
-                // Check next 20 addresses
+              for (let i = 0; i < 500; i++) {
+                // Check next 500 addresses (expanded range for DLC keys)
                 try {
                   const address = await this.client.wallet.getAddresses(
                     i,
@@ -317,9 +321,17 @@ export default class BitcoinDlcProvider
         let derivationPath = input.derivationPath;
 
         if (!derivationPath) {
-          derivationPath = (
-            await this.getMethod('getWalletAddress')(input.address)
-          ).derivationPath;
+          try {
+            derivationPath = (
+              await this.getMethod('getWalletAddress')(input.address)
+            ).derivationPath;
+          } catch (error) {
+            throw new Error(
+              `Unable to find address ${input.address} in wallet. ` +
+                `This may happen when using derivation paths outside the normal range. ` +
+                `Error: ${error.message}`,
+            );
+          }
         }
 
         const keyPair = await this.getMethod('keyPair')(derivationPath);
@@ -368,7 +380,8 @@ export default class BitcoinDlcProvider
         'getInputsForDualFunding',
       )(amounts, feeRatePerVb, fixedUtxos);
 
-      return inputsForAmount.inputs;
+      // Convert UTXO objects to Input class instances
+      return inputsForAmount.inputs.map((utxo) => Input.fromUTXO(utxo));
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
 
@@ -398,7 +411,8 @@ export default class BitcoinDlcProvider
         'getInputsForDualFunding',
       )(amounts, feeRatePerVb, fixedUtxos);
 
-      inputs = inputsForAmount.inputs;
+      // Convert UTXO objects to Input class instances
+      inputs = inputsForAmount.inputs.map((utxo) => Input.fromUTXO(utxo));
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
       if (fixedInputs.length === 0) {
@@ -793,6 +807,7 @@ export default class BitcoinDlcProvider
     for (const fundingInput of dlcOffer.fundingInputs) {
       if (fundingInput.dlcInput) {
         // This is a DLC input for splicing
+        // The pubkeys should be from the original DLC to correctly spend its funding output
         localDlcInputs.push({
           fundTxid: fundingInput.prevTx.txId.toString(),
           fundVout: fundingInput.prevTxVout,
@@ -1770,60 +1785,29 @@ export default class BitcoinDlcProvider
           // Mark as processed to avoid double processing
           processedDlcInputs.add(inputKey);
 
+          // For DLC inputs, use SignDlcFundingInput which properly combines signatures
+          // This is the correct CFD method for DLC funding inputs
           const dlcInput = fundingInput.dlcInput;
-          const localPubkey = dlcInput.localFundPubkey.toString('hex');
-          const remotePubkey = dlcInput.remoteFundPubkey.toString('hex');
 
-          // For self-DLC (Alice with Alice), we need to use the signature we have
-          // The current signature is from the offerer (received in DlcSign)
-          const remoteSignature = signature; // This is what we received
+          // Find the private key for this DLC input
+          const privateKey = await this.findDlcFundingPrivateKey(
+            dlcInput.localFundPubkey.toString('hex'),
+            dlcInput.remoteFundPubkey.toString('hex'),
+          );
 
-          // For self-DLC scenario, Alice has both private keys
-          // We need to find the private key that corresponds to the local part
-
-          let actualPrivateKey: string;
-
-          // Find private key for local funding pubkey using the same derivation approach as signing
-          try {
-            actualPrivateKey = await this.findDlcFundingPrivateKey(
-              localPubkey,
-              remotePubkey,
-            );
-          } catch (error) {
-            actualPrivateKey = '0'.repeat(64);
-          }
-
-          // For DLC inputs in splice transactions, use SignDlcFundingInput with the proper private key
-          // CRITICAL: Use the original clean transaction that Alice signed, not the partially signed one
-          const originalTxHex = dlcTxs.fundTx.serialize().toString('hex');
           const signDlcRequest: SignDlcFundingInputRequest = {
-            fundTxHex: originalTxHex, // Use clean transaction, not partially signed one
+            fundTxHex,
             fundTxid: fundingInput.prevTx.txId.toString(),
             fundVout: fundingInput.prevTxVout,
             fundAmount: Number(
               fundingInput.prevTx.outputs[fundingInput.prevTxVout].value.sats,
             ),
-            localFundPubkey: localPubkey,
-            remoteFundPubkey: remotePubkey,
-            localPrivkey: actualPrivateKey,
-            remoteSignature,
+            localFundPubkey: dlcInput.localFundPubkey.toString('hex'),
+            remoteFundPubkey: dlcInput.remoteFundPubkey.toString('hex'),
+            localPrivkey: privateKey,
+            remoteSignature: signature,
           };
-
-          try {
-            fundTxHex = (await this.SignDlcFundingInput(signDlcRequest)).hex;
-          } catch (error) {
-            // Fallback: try using the signature as-is with AddSignatureToFundTransaction
-            const addSignRequest: AddSignatureToFundTransactionRequest = {
-              fundTxHex,
-              signature,
-              prevTxId: fundingInput.prevTx.txId.toString(),
-              prevVout: fundingInput.prevTxVout,
-              pubkey,
-            };
-            fundTxHex = (
-              await this.AddSignatureToFundTransaction(addSignRequest)
-            ).hex;
-          }
+          fundTxHex = (await this.SignDlcFundingInput(signDlcRequest)).hex;
         } else if (!fundingInput.dlcInput) {
           // Regular input - use standard signing
           const addSignRequest: AddSignatureToFundTransactionRequest = {
@@ -3026,10 +3010,18 @@ Payout Group not found even with brute force search',
         };
       } else {
         // Handle Input[] through existing Initialize() flow
+        // Use InputSupplementationMode.None when fixed inputs are provided
+        // to avoid wallet lookup issues with unusual addresses
+        const supplementationMode =
+          fixedInputs && fixedInputs.length > 0
+            ? InputSupplementationMode.None
+            : InputSupplementationMode.Required;
+
         initResult = await this.Initialize(
           acceptCollateralSatoshis,
           dlcOffer.feeRatePerVb,
           fixedInputs as Input[],
+          supplementationMode,
         );
       }
 
@@ -3730,34 +3722,38 @@ Payout Group not found even with brute force search',
       );
       _inputs = tempInputs;
     }
-    inputs = _inputs.map((input) => {
-      return new Input(
-        input.txid,
-        input.vout,
-        input.address,
-        input.amount,
-        input.value,
-        input.derivationPath,
-        input.maxWitnessLength,
-        input.redeemScript,
-        input.inputSerialId || generateSerialId(),
-        input.scriptPubKey,
-        input.label,
-        input.confirmations,
-        input.spendable,
-        input.solvable,
-        input.safe,
-        input.dlcInput,
+    // Ensure all inputs have derivation paths by fetching from wallet
+    const inputsWithPaths: { input: Input; address: Address }[] =
+      await Promise.all(
+        _inputs.map(async (input) => {
+          const address: Address = await this.getMethod('getWalletAddress')(
+            input.address,
+          );
+          const inputWithPath = new Input(
+            input.txid,
+            input.vout,
+            input.address,
+            input.amount,
+            input.value,
+            input.derivationPath || address.derivationPath, // Use derivationPath from wallet if not set
+            input.maxWitnessLength,
+            input.redeemScript,
+            input.inputSerialId || generateSerialId(),
+            input.scriptPubKey,
+            input.label,
+            input.confirmations,
+            input.spendable,
+            input.solvable,
+            input.safe,
+            input.dlcInput,
+          );
+          return { input: inputWithPath, address };
+        }),
       );
-    });
 
-    const pubkeys: Buffer[] = await Promise.all(
-      inputs.map(async (input) => {
-        const address: Address = await this.getMethod('getWalletAddress')(
-          input.address,
-        );
-        return Buffer.from(address.publicKey, 'hex');
-      }),
+    inputs = inputsWithPaths.map((item) => item.input);
+    const pubkeys: Buffer[] = inputsWithPaths.map((item) =>
+      Buffer.from(item.address.publicKey, 'hex'),
     );
 
     const fundingInputSerialId = generateSerialId();
@@ -3874,6 +3870,9 @@ Payout Group not found even with brute force search',
         if (i === fundingInputIndex) return;
 
         // derive keypair
+        if (!input.derivationPath) {
+          throw new Error(`Missing derivation path for input ${i}`);
+        }
         const keyPair = await this.getMethod('keyPair')(input.derivationPath);
         psbt.signInput(i, keyPair);
       }),
