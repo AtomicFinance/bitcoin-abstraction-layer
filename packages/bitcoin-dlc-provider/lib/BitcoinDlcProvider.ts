@@ -28,6 +28,7 @@ import {
   CreateSignatureHashRequest,
   CreateSplicedDlcTransactionsRequest,
   CreateSplicedDlcTransactionsResponse,
+  DlcInputInfoRequest,
   DlcProvider,
   GetRawDlcFundingInputSignatureRequest,
   GetRawDlcFundingInputSignatureResponse,
@@ -4529,16 +4530,7 @@ Payout Group not found even with brute force search',
    * @param fundingTxHex Raw transaction hex of the funding transaction
    */
   async createDlcFundingInput(
-    dlcInputInfo: {
-      fundTxid: string;
-      fundVout: number;
-      fundAmount: number;
-      localFundPubkey: string;
-      remoteFundPubkey: string;
-      contractId: string;
-      maxWitnessLength: number;
-      inputSerialId?: bigint;
-    },
+    dlcInputInfo: DlcInputInfoRequest,
     fundingTxHex: string,
   ): Promise<FundingInput> {
     const fundingInput = new FundingInput();
@@ -4549,8 +4541,9 @@ Payout Group not found even with brute force search',
     fundingInput.sequence = Sequence.default();
     fundingInput.maxWitnessLen = dlcInputInfo.maxWitnessLength || 220;
     fundingInput.redeemScript = Buffer.from('', 'hex'); // Empty for P2WSH
-    fundingInput.inputSerialId =
-      dlcInputInfo.inputSerialId || generateSerialId();
+    fundingInput.inputSerialId = BigInt(
+      dlcInputInfo.inputSerialId || generateSerialId(),
+    );
 
     // Create the DLC multisig script for address generation
     const localPubkey = Buffer.from(dlcInputInfo.localFundPubkey, 'hex');
@@ -4599,7 +4592,7 @@ Payout Group not found even with brute force search',
       return new Utxo(
         dlcInputInfo.fundTxid,
         dlcInputInfo.fundVout,
-        Amount.FromSatoshis(dlcInputInfo.fundAmount),
+        Amount.FromSatoshis(Number(dlcInputInfo.fundAmount)),
         multisigAddress,
         '', // DLC inputs don't have derivation paths
         dlcInputInfo.maxWitnessLength || 220,
