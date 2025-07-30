@@ -555,6 +555,7 @@ export default class Dlc implements DlcProvider {
     fundAmount: bigint | number,
     localFundPubkey: string,
     remoteFundPubkey: string,
+    contractId: string,
     maxWitnessLength: number,
     inputSerialId?: bigint | number,
   ): DlcInputInfoRequest {
@@ -564,6 +565,7 @@ export default class Dlc implements DlcProvider {
       fundAmount,
       localFundPubkey,
       remoteFundPubkey,
+      contractId,
       maxWitnessLength,
       inputSerialId,
     };
@@ -635,7 +637,7 @@ export interface IInput {
   dlcInput?: {
     localFundPubkey: string;
     remoteFundPubkey: string;
-    fundValue: bigint;
+    contractId: string;
   }; // DLC-specific information for splice transactions
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   toUtxo: any;
