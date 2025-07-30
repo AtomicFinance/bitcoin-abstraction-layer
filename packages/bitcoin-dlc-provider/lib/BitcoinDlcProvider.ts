@@ -222,100 +222,13 @@ export default class BitcoinDlcProvider
       const input = inputs[i];
 
       if (input.isDlcInput()) {
-        // Handle DLC input - derive keys until we find the correct funding pubkey
+        // Handle DLC input - use the dedicated method to find the funding private key
         const dlcInput = input.dlcInput!;
-
-        let foundPrivKey: string | null = null;
-
-        // Derive more addresses to find the DLC funding pubkey
-        try {
-          // First check existing wallet addresses
-          const addresses = await this.getMethod('getAddresses')();
-
-          for (const addressInfo of addresses) {
-            if (addressInfo.derivationPath) {
-              try {
-                const keyPair = await this.getMethod('keyPair')(
-                  addressInfo.derivationPath,
-                );
-                const pubkey = Buffer.from(keyPair.publicKey);
-                const pubkeyHex = pubkey.toString('hex');
-
-                if (
-                  pubkeyHex === dlcInput.localFundPubkey ||
-                  pubkeyHex === dlcInput.remoteFundPubkey
-                ) {
-                  foundPrivKey = Buffer.from(keyPair.privateKey).toString(
-                    'hex',
-                  );
-                  break;
-                }
-              } catch (error) {
-                continue;
-              }
-            }
-          }
-
-          // If not found in existing addresses, derive more addresses to search
-          if (!foundPrivKey) {
-            // Try deriving more addresses - both receiving (false) and change (true)
-            for (const isChange of [false, true]) {
-              for (let i = 0; i < 500; i++) {
-                // Check next 500 addresses (expanded range for DLC keys)
-                try {
-                  const address = await this.client.wallet.getAddresses(
-                    i,
-                    1,
-                    isChange,
-                  );
-                  if (address && address.length > 0) {
-                    const addressInfo = address[0];
-
-                    if (addressInfo.derivationPath) {
-                      const keyPair = await this.getMethod('keyPair')(
-                        addressInfo.derivationPath,
-                      );
-                      const pubkey = Buffer.from(keyPair.publicKey);
-                      const pubkeyHex = pubkey.toString('hex');
-
-                      if (
-                        pubkeyHex === dlcInput.localFundPubkey ||
-                        pubkeyHex === dlcInput.remoteFundPubkey
-                      ) {
-                        foundPrivKey = Buffer.from(keyPair.privateKey).toString(
-                          'hex',
-                        );
-                        break;
-                      }
-                    }
-                  }
-                } catch (error) {
-                  continue;
-                }
-              }
-
-              if (foundPrivKey) break; // Found it, stop searching
-            }
-          }
-
-          if (!foundPrivKey) {
-            throw new Error(
-              `Could not find private key for DLC funding pubkeys: local=${dlcInput.localFundPubkey}, remote=${dlcInput.remoteFundPubkey}`,
-            );
-          }
-        } catch (error) {
-          throw new Error(
-            `Could not find private key for DLC funding pubkeys: local=${dlcInput.localFundPubkey}, remote=${dlcInput.remoteFundPubkey}`,
-          );
-        }
-
-        if (foundPrivKey) {
-          privKeys.push(foundPrivKey);
-        } else {
-          throw new Error(
-            `Could not find private key for DLC funding pubkeys: local=${dlcInput.localFundPubkey}, remote=${dlcInput.remoteFundPubkey}`,
-          );
-        }
+        const foundPrivKey = await this.findDlcFundingPrivateKey(
+          dlcInput.localFundPubkey,
+          dlcInput.remoteFundPubkey,
+        );
+        privKeys.push(foundPrivKey);
       } else {
         // Handle regular input
         let derivationPath = input.derivationPath;
@@ -4492,7 +4405,7 @@ Payout Group not found even with brute force search',
       dlcInputInfo = {
         localFundPubkey: dlcInputMessage.localFundPubkey.toString('hex'),
         remoteFundPubkey: dlcInputMessage.remoteFundPubkey.toString('hex'),
-        fundValue: BigInt(prevTxOut.value.sats), // Use actual funding amount
+        contractId: dlcInputMessage.contractId.toString('hex'),
       };
     }
 

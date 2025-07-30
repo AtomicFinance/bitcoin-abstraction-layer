@@ -17,7 +17,7 @@ export enum InputSupplementationMode {
 export interface DlcInputInfo {
   localFundPubkey: string;
   remoteFundPubkey: string;
-  fundValue: bigint;
+  contractId: string;
 }
 
 /**
@@ -107,7 +107,7 @@ export default class Input {
     value: number, // in sats
     localFundPubkey: string,
     remoteFundPubkey: string,
-    fundValue: bigint,
+    contractId: string,
     inputSerialId?: bigint,
   ): Input {
     return new Input(
@@ -129,7 +129,7 @@ export default class Input {
       {
         localFundPubkey,
         remoteFundPubkey,
-        fundValue,
+        contractId,
       },
     );
   }

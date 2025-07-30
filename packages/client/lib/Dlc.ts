@@ -635,7 +635,7 @@ export interface IInput {
   dlcInput?: {
     localFundPubkey: string;
     remoteFundPubkey: string;
-    fundValue: bigint;
+    contractId: string;
   }; // DLC-specific information for splice transactions
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   toUtxo: any;
