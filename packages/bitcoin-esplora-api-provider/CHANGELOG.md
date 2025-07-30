@@ -1,5 +1,54 @@
 # @atomicfinance/bitcoin-esplora-api-provider
 
+## 4.0.1
+
+### Patch Changes
+
+- 03c6974: Add DLC input splicing support
+
+  This release introduces DLC (Discreet Log Contract) input splicing functionality, enabling more flexible contract funding and management.
+
+  ## Key Features
+  - **Core Types**: Added new types and interfaces for DLC input splicing operations
+  - **Provider Integration**: Implemented splicing support in BitcoinDlcProvider with proper input handling
+  - **Comprehensive Testing**: Added integration tests to validate splicing functionality
+  - **Dependency Updates**: Upgraded @node-dlc to v1.1.0 for enhanced splicing capabilities
+
+  ## What's New
+  - DLC contracts can now be funded using spliced inputs
+  - Enhanced input selection and handling for splicing operations
+  - Improved test coverage for edge cases in DLC splicing scenarios
+
+  This feature enables more efficient Bitcoin transaction management when working with DLC contracts by allowing existing UTXOs to be split and used as contract inputs.
+
+- d94fbbf: Fix TypeScript ESLint compatibility and improve type safety
+  - Upgrade @typescript-eslint dependencies to v6.21.0 for TypeScript 4.9.5 support
+
+- b83e3a8: Add single-funded DLC support and update to node-dlc v1.0.1
+  - Add comprehensive single-funded DLC support to BitcoinDlcProvider
+  - Update @node-dlc dependencies to v1.0.1 with single-funded support
+  - Update cfd-dlc-js to v0.0.52
+  - Implement single-funded DLC detection and validation logic
+  - Handle acceptDlcOffer with 0 collateral scenarios (no funding)
+  - Fix fundTxVout calculation for parties with collateral only
+  - Add getFundOutputValueSats helper with proper error handling
+  - Add markAsSingleFunded() calls for proper DLC type identification
+  - Skip funding validation when accept collateral is 0
+  - Generate addresses/keys without requiring funding inputs
+
+  Enables single-funded DLCs where one party provides all collateral
+  while the other party participates without funding inputs.
+
+- Updated dependencies [03c6974]
+- Updated dependencies [d94fbbf]
+- Updated dependencies [b83e3a8]
+  - @atomicfinance/types@4.0.1
+  - @atomicfinance/bitcoin-utils@4.0.1
+  - @atomicfinance/crypto@4.0.1
+  - @atomicfinance/errors@4.0.1
+  - @atomicfinance/node-provider@4.0.1
+  - @atomicfinance/utils@4.0.1
+
 ## 4.0.0
 
 ### Major Changes
@@ -11,13 +60,11 @@
   This release upgrades to @node-dlc v1.0.0 with significant breaking changes:
 
   ### Dependencies
-
   - Upgraded @node-dlc packages from 0.24.0 to ^1.0.0
   - Minimum Node.js version now 18.18.2
   - Added decimal.js dependency for F64 type support
 
   ### API Changes
-
   - **Message Types**: Removed versioned suffixes (DlcOfferV0 → DlcOffer)
   - **Property Names**:
     - `fundingPubKey` → `fundingPubkey`
@@ -27,14 +74,12 @@
     - `tempContractId` → `temporaryContractId`
 
   ### Type System
-
   - **Contract Descriptors**: V0/V1 types replaced with Enumerated/Numerical descriptors
   - **Oracle Types**: OracleInfoV0 → SingleOracleInfo/MultiOracleInfo
   - **Message Validation**: Switched from type-based to property-based checking
   - **Enum Outcomes**: Migrated from Buffer to string format
 
   ### New Features
-
   - Enhanced oracle event descriptor handling
   - Improved decimal precision with F64 types
   - Fallback outcome index search algorithm
@@ -57,7 +102,6 @@
   ```
 
   ### Environment
-
   - Update Node.js to 18.18.2+
   - Run `yarn install` to update dependencies
   - Review custom DLC implementations for compatibility
