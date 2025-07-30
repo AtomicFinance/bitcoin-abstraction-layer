@@ -713,6 +713,7 @@ export default class BitcoinDlcProvider
       fundAmount: number;
       localFundPubkey: string;
       remoteFundPubkey: string;
+      contractId: string;
       maxWitnessLength: number;
       inputSerialId?: bigint;
     }[] = [];
@@ -731,6 +732,7 @@ export default class BitcoinDlcProvider
             fundingInput.dlcInput.localFundPubkey.toString('hex'),
           remoteFundPubkey:
             fundingInput.dlcInput.remoteFundPubkey.toString('hex'),
+          contractId: fundingInput.dlcInput.contractId.toString('hex'),
           maxWitnessLength: fundingInput.maxWitnessLen,
           inputSerialId: fundingInput.inputSerialId,
         });
@@ -4533,6 +4535,7 @@ Payout Group not found even with brute force search',
       fundAmount: number;
       localFundPubkey: string;
       remoteFundPubkey: string;
+      contractId: string;
       maxWitnessLength: number;
       inputSerialId?: bigint;
     },
@@ -4611,7 +4614,7 @@ Payout Group not found even with brute force search',
       dlcInputInfo.remoteFundPubkey,
       'hex',
     );
-    dlcInput.contractId = Buffer.alloc(32); // Placeholder - will be filled during actual splicing
+    dlcInput.contractId = Buffer.from(dlcInputInfo.contractId, 'hex');
 
     fundingInput.dlcInput = dlcInput;
 

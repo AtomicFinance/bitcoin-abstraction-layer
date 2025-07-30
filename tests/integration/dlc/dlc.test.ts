@@ -1841,7 +1841,8 @@ describe('DLC Splicing', () => {
           0,
           fundingOutputAmount,
           aliceFundPubkey, // Alice local
-          bobFundPubkey, // Bob remote
+          bobFundPubkey, // Bob remote,
+          dlcTransactions1.contractId.toString('hex'),
           220,
           BigInt(1),
         );
@@ -1865,6 +1866,7 @@ describe('DLC Splicing', () => {
             fundingOutputAmount,
             bobFundPubkey, // Bob local (from Alice's POV, Bob becomes local)
             aliceFundPubkey, // Alice remote (from Alice's POV, Alice becomes remote)
+            dlcTransactions1.contractId.toString('hex'),
             220,
             BigInt(1),
           );
@@ -1892,6 +1894,7 @@ describe('DLC Splicing', () => {
         fundingOutputAmount,
         correctLocalPubkey,
         correctRemotePubkey,
+        dlcTransactions1.contractId.toString('hex'),
         220, // Standard P2WSH multisig max witness length
         BigInt(1), // Input serial ID
       );

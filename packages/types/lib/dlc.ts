@@ -701,6 +701,7 @@ export interface DlcInputInfoRequest {
   fundAmount: bigint | number;
   localFundPubkey: string;
   remoteFundPubkey: string;
+  contractId: string;
   maxWitnessLength: number;
   inputSerialId?: bigint | number;
 }
