@@ -16,7 +16,7 @@ import {
 } from '@node-dlc/messaging';
 
 import { TxOutRequest } from './common';
-import Input from './models/Input';
+import Input, { InputSupplementationMode } from './models/Input';
 
 export interface DlcProvider {
   GetInputsForAmount(
@@ -45,6 +45,19 @@ export interface DlcProvider {
   ): Promise<CreateDlcTxsResponse>;
 
   /**
+   * Calculate the maximum collateral possible with given inputs
+   * @param inputs Array of inputs to use for funding
+   * @param feeRatePerVb Fee rate in satoshis per virtual byte
+   * @param contractCount Number of DLC contracts (default: 1)
+   * @returns {Promise<bigint>} Maximum collateral amount in satoshis
+   */
+  calculateMaxCollateral(
+    inputs: Input[],
+    feeRatePerVb: bigint,
+    contractCount?: number,
+  ): Promise<bigint>;
+
+  /**
    * Create DLC Offer Message
    * @param contractInfo ContractInfo TLV (V0 or V1)
    * @param offerCollateralSatoshis Amount DLC Initiator is putting into the contract
@@ -60,6 +73,7 @@ export interface DlcProvider {
     cetLocktime: number,
     refundLocktime: number,
     fixedInputs?: Input[],
+    inputSupplementationMode?: InputSupplementationMode,
   ): Promise<DlcOffer>;
 
   /**
@@ -249,6 +263,22 @@ export interface DlcProvider {
   VerifyRefundTxSignature(
     jsonObject: VerifyRefundTxSignatureRequest,
   ): Promise<VerifyRefundTxSignatureResponse>;
+
+  CreateSplicedDlcTransactions(
+    jsonObject: CreateSplicedDlcTransactionsRequest,
+  ): Promise<CreateSplicedDlcTransactionsResponse>;
+
+  GetRawDlcFundingInputSignature(
+    jsonObject: GetRawDlcFundingInputSignatureRequest,
+  ): Promise<GetRawDlcFundingInputSignatureResponse>;
+
+  SignDlcFundingInput(
+    jsonObject: SignDlcFundingInputRequest,
+  ): Promise<SignDlcFundingInputResponse>;
+
+  VerifyDlcFundingInputSignature(
+    jsonObject: VerifyDlcFundingInputSignatureRequest,
+  ): Promise<VerifyDlcFundingInputSignatureResponse>;
 
   fundingInputToInput(_input: FundingInput): Promise<Input>;
 
@@ -662,5 +692,99 @@ export interface VerifyRefundTxSignatureRequest {
 }
 
 export interface VerifyRefundTxSignatureResponse {
+  valid: boolean;
+}
+
+export interface DlcInputInfoRequest {
+  fundTxid: string;
+  fundVout: number;
+  fundAmount: bigint | number;
+  localFundPubkey: string;
+  remoteFundPubkey: string;
+  contractId: string;
+  maxWitnessLength: number;
+  inputSerialId?: bigint | number;
+}
+
+/** Create Spliced Dlc transactions */
+export interface CreateSplicedDlcTransactionsRequest {
+  payouts: PayoutRequest[];
+  localFundPubkey: string;
+  localFinalScriptPubkey: string;
+  remoteFundPubkey: string;
+  remoteFinalScriptPubkey: string;
+  localInputAmount: bigint | number;
+  localCollateralAmount: bigint | number;
+  localPayoutSerialId: bigint | number;
+  localChangeSerialId: bigint | number;
+  remoteInputAmount: bigint | number;
+  remoteCollateralAmount: bigint | number;
+  remotePayoutSerialId: bigint | number;
+  remoteChangeSerialId: bigint | number;
+  refundLocktime: bigint | number;
+  localInputs: TxInInfoRequest[];
+  localDlcInputs?: DlcInputInfoRequest[];
+  localChangeScriptPubkey: string;
+  remoteInputs: TxInInfoRequest[];
+  remoteDlcInputs?: DlcInputInfoRequest[];
+  remoteChangeScriptPubkey: string;
+  feeRate: number;
+  cetLockTime?: bigint | number;
+  fundLockTime?: bigint | number;
+  fundOutputSerialId?: bigint | number;
+  optionDest?: string;
+  optionPremium?: bigint | number;
+}
+
+export interface CreateSplicedDlcTransactionsResponse {
+  fundTxHex: string;
+  cetsHex: string[];
+  refundTxHex: string;
+}
+
+/** Get raw DLC funding input signature */
+export interface GetRawDlcFundingInputSignatureRequest {
+  fundTxHex: string;
+  fundTxid: string;
+  fundVout: number;
+  fundAmount: bigint | number;
+  localFundPubkey: string;
+  remoteFundPubkey: string;
+  privkey: string;
+}
+
+export interface GetRawDlcFundingInputSignatureResponse {
+  hex: string;
+}
+
+/** Sign DLC funding input */
+export interface SignDlcFundingInputRequest {
+  fundTxHex: string;
+  fundTxid: string;
+  fundVout: number;
+  fundAmount: bigint | number;
+  localFundPubkey: string;
+  remoteFundPubkey: string;
+  localPrivkey: string;
+  remoteSignature: string;
+}
+
+export interface SignDlcFundingInputResponse {
+  hex: string;
+}
+
+/** Verify DLC funding input signature */
+export interface VerifyDlcFundingInputSignatureRequest {
+  fundTxHex: string;
+  fundTxid: string;
+  fundVout: number;
+  fundAmount: bigint | number;
+  localFundPubkey: string;
+  remoteFundPubkey: string;
+  signature: string;
+  pubkey: string;
+}
+
+export interface VerifyDlcFundingInputSignatureResponse {
   valid: boolean;
 }

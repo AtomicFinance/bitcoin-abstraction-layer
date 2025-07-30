@@ -36,11 +36,11 @@ __metadata:
     "@atomicfinance/provider": ^4.0.0
     "@atomicfinance/types": ^4.0.0
     "@atomicfinance/utils": ^4.0.0
-    "@node-dlc/bitcoin": 1.0.1
-    "@node-dlc/bufio": 1.0.1
-    "@node-dlc/core": 1.0.1
-    "@node-dlc/crypto": 1.0.1
-    "@node-dlc/messaging": 1.0.1
+    "@node-dlc/bitcoin": 1.1.0
+    "@node-dlc/bufio": 1.1.0
+    "@node-dlc/core": 1.1.0
+    "@node-dlc/crypto": 1.1.0
+    "@node-dlc/messaging": 1.1.0
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
     bignumber.js: ^9.0.1
@@ -99,7 +99,7 @@ __metadata:
     "@atomicfinance/types": ^4.0.0
     "@atomicfinance/utils": ^4.0.0
     "@babel/runtime": ^7.12.1
-    "@node-dlc/core": 1.0.1
+    "@node-dlc/core": 1.1.0
     bip32: ^2.0.6
     bip39: ^3.0.2
     bitcoin-networks: ^1.0.0
@@ -175,7 +175,7 @@ __metadata:
     "@atomicfinance/bitcoin-utils": ^4.0.0
     "@atomicfinance/provider": ^4.0.0
     "@atomicfinance/types": ^4.0.0
-    "@node-dlc/core": 1.0.1
+    "@node-dlc/core": 1.1.0
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
     bip32: ^2.0.6
@@ -194,8 +194,8 @@ __metadata:
     "@atomicfinance/errors": ^4.0.0
     "@atomicfinance/provider": ^4.0.0
     "@atomicfinance/types": ^4.0.0
-    "@node-dlc/bitcoin": 1.0.1
-    "@node-dlc/messaging": 1.0.1
+    "@node-dlc/bitcoin": 1.1.0
+    "@node-dlc/messaging": 1.1.0
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
     ajv: ^6.10.0
@@ -263,9 +263,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@atomicfinance/types@workspace:packages/types"
   dependencies:
-    "@node-dlc/bitcoin": 1.0.1
-    "@node-dlc/messaging": 1.0.1
-    "@node-dlc/noise": 1.0.1
+    "@node-dlc/bitcoin": 1.1.0
+    "@node-dlc/messaging": 1.1.0
+    "@node-dlc/noise": 1.1.0
     "@types/lodash": ^4.14.160
     "@types/node": 16.10.3
     lodash: ^4.17.20
@@ -934,84 +934,84 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@node-dlc/bitcoin@npm:1.0.1, @node-dlc/bitcoin@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "@node-dlc/bitcoin@npm:1.0.1"
+"@node-dlc/bitcoin@npm:1.1.0, @node-dlc/bitcoin@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "@node-dlc/bitcoin@npm:1.1.0"
   dependencies:
-    "@node-dlc/bufio": ^1.0.1
-    "@node-dlc/crypto": ^1.0.1
-  checksum: 1929cbb5d4651db32b2b578f8ab9aaf0444059384a65e2a87c46a3024da5e18eb62f005f4676eee01bc32011717f384f1d72cf13893dc1fb82a522733346afef
+    "@node-dlc/bufio": ^1.1.0
+    "@node-dlc/crypto": ^1.1.0
+  checksum: 1ddd4142d076eef7cf718dbf4a473d5399b52394aa8788b7a2763cd9cd673d732b36d50481faf34429fe88ae24cffc01efa3addf16024529dfc3bfee896b4755
   languageName: node
   linkType: hard
 
-"@node-dlc/bufio@npm:1.0.1, @node-dlc/bufio@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "@node-dlc/bufio@npm:1.0.1"
+"@node-dlc/bufio@npm:1.1.0, @node-dlc/bufio@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "@node-dlc/bufio@npm:1.1.0"
   dependencies:
     decimal.js: 10.4.3
-  checksum: db76131822f9cfe663d5f9347c9bb22de40c8996b73bd3fc6c4d6bc081a51389fe3571e9107396ec3dcf1d3af310d64829f00dfbaadf65d92bb25ee2b0dfbde7
+  checksum: 5028cf7b7f2f28312e049b2816d9079640a9858bdd6b8fbf361cf3a58bdf3f74c58b099f53f6749686a7761041c52ea1c38f55d102cff8a03eefe4fa959af775
   languageName: node
   linkType: hard
 
-"@node-dlc/checksum@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "@node-dlc/checksum@npm:1.0.1"
-  checksum: 2fe5af962fbe3837e2135e6108b04491e22d562f60e596b8e55e9a349a30b9891af01db49ee50b13ea27c0463d56672fa23ab3fcc116e0285e944167b352ae46
+"@node-dlc/checksum@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "@node-dlc/checksum@npm:1.1.0"
+  checksum: 26395072b8cc763171d569d6158143098543fe0edf6e9a15a985a8f53f6fe2b84f202062a17f3676b50d9102807882ec197069345c1f9824bd53a659ed18ca95
   languageName: node
   linkType: hard
 
-"@node-dlc/common@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "@node-dlc/common@npm:1.0.1"
+"@node-dlc/common@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "@node-dlc/common@npm:1.1.0"
   dependencies:
-    "@node-dlc/bitcoin": ^1.0.1
-    "@node-dlc/bufio": ^1.0.1
-  checksum: 97cff23fbb4e3ad0019a06d3346819bc415fa2ae9541b27bdeb522a1e520318a4c4a5a8afce3829bf694429aa1a2562445b2e1c7b6b404ddfdeccb26b4068526
+    "@node-dlc/bitcoin": ^1.1.0
+    "@node-dlc/bufio": ^1.1.0
+  checksum: 37fdd5500426bb0df24bca1ae2b8a1e5c501b26a35f41bd5299ddeac197703dd726d638f030f492e975bd4a108bbc98e1d34dbc24125ebc3dcee301655cf1f83
   languageName: node
   linkType: hard
 
-"@node-dlc/core@npm:1.0.1":
-  version: 1.0.1
-  resolution: "@node-dlc/core@npm:1.0.1"
+"@node-dlc/core@npm:1.1.0":
+  version: 1.1.0
+  resolution: "@node-dlc/core@npm:1.1.0"
   dependencies:
-    "@node-dlc/bitcoin": ^1.0.1
-    "@node-dlc/bufio": ^1.0.1
-    "@node-dlc/common": ^1.0.1
-    "@node-dlc/crypto": ^1.0.1
-    "@node-dlc/messaging": ^1.0.1
+    "@node-dlc/bitcoin": ^1.1.0
+    "@node-dlc/bufio": ^1.1.0
+    "@node-dlc/common": ^1.1.0
+    "@node-dlc/crypto": ^1.1.0
+    "@node-dlc/messaging": ^1.1.0
     bignumber.js: ^9.0.1
     bitcoin-networks: ^1.0.0
     decimal.js: 10.4.3
-  checksum: 89a7eae4470263ca8fa242088b4013b6c3bff71c546360ce30982b706c3ed6fce800c44305ed014d58845af146a4688ab0c6a38dea9292455891c15769de809a
+  checksum: 594c86df01f1c0ddcf33335c491a79037985274415e6a55291e9460438ce97994e497a30d35193e4f62ae93333ba9a8be66274749ddf431153cda56189e9a0ec
   languageName: node
   linkType: hard
 
-"@node-dlc/crypto@npm:1.0.1, @node-dlc/crypto@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "@node-dlc/crypto@npm:1.0.1"
+"@node-dlc/crypto@npm:1.1.0, @node-dlc/crypto@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "@node-dlc/crypto@npm:1.1.0"
   dependencies:
     secp256k1: ^4.0.2
-  checksum: d5b2f4c6b7be45e86582f7952e31c4207c7481fdb8df56c897fe5ec7240e5a1160d1ef540c54c2b367d89c1eb1db28130f166591c9d8da05a692333b80b29aa7
+  checksum: df79c276e6aa6b840fffebee92a1cbbb1fd50dcf70774b2468bfb55dd1cebff40f79666c39777bcf30118d610a1b2db259d0f697b3cf92559aafc3247b700beb
   languageName: node
   linkType: hard
 
-"@node-dlc/logger@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "@node-dlc/logger@npm:1.0.1"
-  checksum: 3627face98d37f207bf489c771540adfeb85d4e000dae6c0c39e85b539c7560bc8d53a391e44ec414e47703cb9d2f24e7b12482500b34a1c7c81dc607bcc1599
+"@node-dlc/logger@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "@node-dlc/logger@npm:1.1.0"
+  checksum: cb4ab97b015e2c04c150b7c13c84c78bf93a275e6d830c9d7c22d5059222ea5ca83e57a1fbe3f4d0b95810cf1f20aeabbd843c1256179c65e4bc33386f691ac0
   languageName: node
   linkType: hard
 
-"@node-dlc/messaging@npm:1.0.1, @node-dlc/messaging@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "@node-dlc/messaging@npm:1.0.1"
+"@node-dlc/messaging@npm:1.1.0, @node-dlc/messaging@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "@node-dlc/messaging@npm:1.1.0"
   dependencies:
-    "@node-dlc/bitcoin": ^1.0.1
-    "@node-dlc/bufio": ^1.0.1
-    "@node-dlc/checksum": ^1.0.1
-    "@node-dlc/common": ^1.0.1
-    "@node-dlc/crypto": ^1.0.1
-    "@node-dlc/wire": ^1.0.1
+    "@node-dlc/bitcoin": ^1.1.0
+    "@node-dlc/bufio": ^1.1.0
+    "@node-dlc/checksum": ^1.1.0
+    "@node-dlc/common": ^1.1.0
+    "@node-dlc/crypto": ^1.1.0
+    "@node-dlc/wire": ^1.1.0
     "@types/json-bigint": ^1.0.4
     bip-schnorr: 0.6.3
     bitcoin-networks: ^1.0.0
@@ -1019,32 +1019,32 @@ __metadata:
     decimal.js: 10.4.3
     json-bigint: ^1.0.0
     secp256k1: ^4.0.3
-  checksum: 4a703b37c0f2b716f0bedc15f25f653d09d387a00ff2bdfb3bc9f2cdd2bca24476427501b1a7526887e41b6f5925165e3d8c56fcf15b49fd21859cb11a00121b
+  checksum: c7eeb34caac7cbe404dccc8eda4048435b9b1b4466594e5dabbb5192afb72563fd6024c5e10a3b6ac14c36d2219dab691a90f7073b1257b880a21ebc4f38b901
   languageName: node
   linkType: hard
 
-"@node-dlc/noise@npm:1.0.1, @node-dlc/noise@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "@node-dlc/noise@npm:1.0.1"
+"@node-dlc/noise@npm:1.1.0, @node-dlc/noise@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "@node-dlc/noise@npm:1.1.0"
   dependencies:
-    "@node-dlc/crypto": ^1.0.1
-    "@node-dlc/logger": ^1.0.1
-  checksum: c771c2aca0cde63b2a5b17733854dbdf56d947a4fc9aa1ab90b600f47d3a641c9daf2ca79c6d11d4e201708a8549af401d50f7ae97bc7379dcb3b49088af9fda
+    "@node-dlc/crypto": ^1.1.0
+    "@node-dlc/logger": ^1.1.0
+  checksum: fd44c457f14b19d141ce435d625aa37be01941c984ef9d7e087684aeca2e12953dd2b3f272759b9c3dd7c2244cb5c2ae41517c1eed71322f60bbe824709ef25d
   languageName: node
   linkType: hard
 
-"@node-dlc/wire@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "@node-dlc/wire@npm:1.0.1"
+"@node-dlc/wire@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "@node-dlc/wire@npm:1.1.0"
   dependencies:
-    "@node-dlc/bitcoin": ^1.0.1
-    "@node-dlc/bufio": ^1.0.1
-    "@node-dlc/checksum": ^1.0.1
-    "@node-dlc/common": ^1.0.1
-    "@node-dlc/crypto": ^1.0.1
-    "@node-dlc/logger": ^1.0.1
-    "@node-dlc/noise": ^1.0.1
-  checksum: f2649c95342098d7c03ef7c344204a9f20c858e5e1df046b1a707bcd6e05dd7ff6787d143bf14c8508395b2af6a6c98bd3a117bbd22e133353ac0483c0b76e13
+    "@node-dlc/bitcoin": ^1.1.0
+    "@node-dlc/bufio": ^1.1.0
+    "@node-dlc/checksum": ^1.1.0
+    "@node-dlc/common": ^1.1.0
+    "@node-dlc/crypto": ^1.1.0
+    "@node-dlc/logger": ^1.1.0
+    "@node-dlc/noise": ^1.1.0
+  checksum: 80150fa026086bd0ab6c869b1bd0e0d0b8d5c991ce7e06e1ed0d19b1a962bdad4981d10fb612ed7d38bbe1b8d1e73a5d6da60020f4b6d4883fb89603016a7f32
   languageName: node
   linkType: hard
 
@@ -9499,10 +9499,10 @@ __metadata:
   resolution: "root@workspace:."
   dependencies:
     "@changesets/cli": ^2.22.0
-    "@node-dlc/bitcoin": 1.0.1
-    "@node-dlc/bufio": 1.0.1
-    "@node-dlc/core": 1.0.1
-    "@node-dlc/messaging": 1.0.1
+    "@node-dlc/bitcoin": 1.1.0
+    "@node-dlc/bufio": 1.1.0
+    "@node-dlc/core": 1.1.0
+    "@node-dlc/messaging": 1.1.0
     "@swc/cli": ^0.1.57
     "@swc/core": ^1.2.172
     "@swc/register": ^0.1.10

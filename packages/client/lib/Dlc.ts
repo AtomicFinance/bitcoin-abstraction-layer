@@ -18,20 +18,30 @@ import {
   CreateFundTransactionResponse,
   CreateRefundTransactionRequest,
   CreateRefundTransactionResponse,
+  CreateSplicedDlcTransactionsRequest,
+  CreateSplicedDlcTransactionsResponse,
+  DlcInputInfoRequest,
   DlcProvider,
+  GetRawDlcFundingInputSignatureRequest,
+  GetRawDlcFundingInputSignatureResponse,
   GetRawFundTxSignatureRequest,
   GetRawFundTxSignatureResponse,
   GetRawRefundTxSignatureRequest,
   GetRawRefundTxSignatureResponse,
   Input,
+  InputSupplementationMode,
   SignCetRequest,
   SignCetResponse,
+  SignDlcFundingInputRequest,
+  SignDlcFundingInputResponse,
   SignFundTransactionRequest,
   SignFundTransactionResponse,
   VerifyCetAdaptorSignatureRequest,
   VerifyCetAdaptorSignatureResponse,
   VerifyCetAdaptorSignaturesRequest,
   VerifyCetAdaptorSignaturesResponse,
+  VerifyDlcFundingInputSignatureRequest,
+  VerifyDlcFundingInputSignatureResponse,
   VerifyFundTxSignatureRequest,
   VerifyFundTxSignatureResponse,
   VerifyRefundTxSignatureRequest,
@@ -98,6 +108,7 @@ export default class Dlc implements DlcProvider {
     cetLocktime: number,
     refundLocktime: number,
     fixedInputs?: IInput[],
+    inputSupplementationMode?: InputSupplementationMode,
   ): Promise<DlcOffer> {
     return this.client.getMethod('createDlcOffer')(
       contractInfo,
@@ -106,6 +117,7 @@ export default class Dlc implements DlcProvider {
       cetLocktime,
       refundLocktime,
       fixedInputs,
+      inputSupplementationMode,
     );
   }
 
@@ -494,12 +506,105 @@ export default class Dlc implements DlcProvider {
     return this.client.getMethod('VerifyRefundTxSignature')(jsonObject);
   }
 
+  async CreateSplicedDlcTransactions(
+    jsonObject: CreateSplicedDlcTransactionsRequest,
+  ): Promise<CreateSplicedDlcTransactionsResponse> {
+    return this.client.getMethod('CreateSplicedDlcTransactions')(jsonObject);
+  }
+
+  async GetRawDlcFundingInputSignature(
+    jsonObject: GetRawDlcFundingInputSignatureRequest,
+  ): Promise<GetRawDlcFundingInputSignatureResponse> {
+    return this.client.getMethod('GetRawDlcFundingInputSignature')(jsonObject);
+  }
+
+  async SignDlcFundingInput(
+    jsonObject: SignDlcFundingInputRequest,
+  ): Promise<SignDlcFundingInputResponse> {
+    return this.client.getMethod('SignDlcFundingInput')(jsonObject);
+  }
+
+  async VerifyDlcFundingInputSignature(
+    jsonObject: VerifyDlcFundingInputSignatureRequest,
+  ): Promise<VerifyDlcFundingInputSignatureResponse> {
+    return this.client.getMethod('VerifyDlcFundingInputSignature')(jsonObject);
+  }
+
   async fundingInputToInput(_input: FundingInput): Promise<IInput> {
     return this.client.getMethod('fundingInputToInput')(_input);
   }
 
   async inputToFundingInput(input: IInput): Promise<FundingInput> {
     return this.client.getMethod('inputToFundingInput')(input);
+  }
+
+  /**
+   * Create DLC input info for splice transactions
+   * @param fundTxid The funding transaction ID
+   * @param fundVout The funding output index
+   * @param fundAmount The funding amount in satoshis
+   * @param localFundPubkey Local funding public key
+   * @param remoteFundPubkey Remote funding public key
+   * @param maxWitnessLength Maximum witness length
+   * @param inputSerialId Optional input serial ID
+   * @returns {DlcInputInfoRequest} DLC input info
+   */
+  createDlcInputInfo(
+    fundTxid: string,
+    fundVout: number,
+    fundAmount: bigint | number,
+    localFundPubkey: string,
+    remoteFundPubkey: string,
+    contractId: string,
+    maxWitnessLength: number,
+    inputSerialId?: bigint | number,
+  ): DlcInputInfoRequest {
+    return {
+      fundTxid,
+      fundVout,
+      fundAmount,
+      localFundPubkey,
+      remoteFundPubkey,
+      contractId,
+      maxWitnessLength,
+      inputSerialId,
+    };
+  }
+
+  /**
+   * Calculate the maximum collateral possible with given inputs
+   * @param inputs Array of inputs to use for funding
+   * @param feeRatePerVb Fee rate in satoshis per virtual byte
+   * @param contractCount Number of DLC contracts (default: 1)
+   * @returns {Promise<bigint>} Maximum collateral amount in satoshis
+   */
+  async calculateMaxCollateral(
+    inputs: IInput[],
+    feeRatePerVb: bigint,
+    contractCount: number = 1,
+  ): Promise<bigint> {
+    return this.client.getMethod('calculateMaxCollateral')(
+      inputs,
+      feeRatePerVb,
+      contractCount,
+    );
+  }
+
+  /**
+   * Create DLC funding input from DLC input info
+   * @param dlcInputInfo DLC input information
+   * @param fundTxHex Optional funding transaction hex
+   * @returns {Promise<IInput>} DLC funding input
+   */
+  async createDlcFundingInput(
+    dlcInputInfo: DlcInputInfoRequest,
+    fundTxHex?: string,
+  ): Promise<IInput> {
+    const fundingInput = await this.client.getMethod('createDlcFundingInput')(
+      dlcInputInfo,
+      fundTxHex,
+    );
+    return this.fundingInputToInput(fundingInput);
   }
 }
 
@@ -529,6 +634,12 @@ export interface IInput {
   spendable?: boolean;
   solvable?: boolean;
   safe?: boolean;
+  dlcInput?: {
+    localFundPubkey: string;
+    remoteFundPubkey: string;
+    contractId: string;
+  }; // DLC-specific information for splice transactions
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   toUtxo: any;
+  isDlcInput(): boolean;
 }
