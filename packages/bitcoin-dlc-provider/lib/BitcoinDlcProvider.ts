@@ -4594,8 +4594,8 @@ Payout Group not found even with brute force search',
         dlcInputInfo.fundVout,
         Amount.FromSatoshis(Number(dlcInputInfo.fundAmount)),
         multisigAddress,
-        '', // DLC inputs don't have derivation paths
         dlcInputInfo.maxWitnessLength || 220,
+        undefined, // DLC inputs don't have derivation paths
         fundingInput.inputSerialId,
       );
     };

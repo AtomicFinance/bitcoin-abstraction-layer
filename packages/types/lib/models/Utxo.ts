@@ -11,8 +11,8 @@ export default class Utxo {
     readonly vout: number,
     readonly amount: Amount,
     readonly address: string,
-    readonly derivationPath: string,
     readonly maxWitnessLength: number,
+    readonly derivationPath?: string,
     readonly inputSerialId?: bigint | number,
   ) {}
 
@@ -72,7 +72,7 @@ export interface UtxoJSON {
   vout: number;
   amount: AmountJSON;
   address: string;
-  derivationPath: string;
+  derivationPath?: string;
   maxWitnessLength: number;
   inputSerialId?: bigint | number;
 }
