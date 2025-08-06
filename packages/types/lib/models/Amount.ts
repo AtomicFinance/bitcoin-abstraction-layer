@@ -61,7 +61,9 @@ export default class Amount {
   }
 
   static fromJSON(json: AmountJSON): Amount {
-    if (!json) return;
+    if (!json) {
+      return Amount.FromSatoshis(0);
+    }
     const amount = Object.create(Amount.prototype);
     return Object.assign(amount, json, {
       _satoshis: json._satoshis,

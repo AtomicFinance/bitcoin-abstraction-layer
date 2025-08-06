@@ -62,6 +62,8 @@ export default class Input {
       amount = Amount.FromSatoshis(this.value);
     } else if (this.amount) {
       amount = Amount.FromBitcoin(this.amount);
+    } else {
+      amount = Amount.FromSatoshis(0);
     }
 
     return {
