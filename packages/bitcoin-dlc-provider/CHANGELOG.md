@@ -1,5 +1,16 @@
 # @atomicfinance/bitcoin-dlc-provider
 
+## 4.0.2
+
+### Patch Changes
+
+- 79a403b: Fix typescript strict mode compilation errors
+- Updated dependencies [79a403b]
+  - @atomicfinance/bitcoin-utils@4.0.2
+  - @atomicfinance/provider@4.0.2
+  - @atomicfinance/types@4.0.2
+  - @atomicfinance/utils@4.0.2
+
 ## 4.0.1
 
 ### Patch Changes
