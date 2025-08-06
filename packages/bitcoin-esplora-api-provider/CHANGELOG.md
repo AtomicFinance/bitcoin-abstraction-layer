@@ -1,5 +1,18 @@
 # @atomicfinance/bitcoin-esplora-api-provider
 
+## 4.0.3
+
+### Patch Changes
+
+- c7e9691: Update import modules organize imports
+- Updated dependencies [c7e9691]
+  - @atomicfinance/bitcoin-utils@4.0.3
+  - @atomicfinance/crypto@4.0.3
+  - @atomicfinance/errors@4.0.3
+  - @atomicfinance/node-provider@4.0.3
+  - @atomicfinance/types@4.0.3
+  - @atomicfinance/utils@4.0.3
+
 ## 4.0.2
 
 ### Patch Changes
