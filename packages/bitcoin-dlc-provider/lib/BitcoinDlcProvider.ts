@@ -28,6 +28,7 @@ import {
   CreateSignatureHashRequest,
   CreateSplicedDlcTransactionsRequest,
   CreateSplicedDlcTransactionsResponse,
+  DlcInputInfo,
   DlcInputInfoRequest,
   DlcProvider,
   GetRawDlcFundingInputSignatureRequest,
@@ -37,6 +38,7 @@ import {
   GetRawRefundTxSignatureRequest,
   GetRawRefundTxSignatureResponse,
   Input,
+  InputSupplementationMode,
   Messages,
   PayoutRequest,
   SignCetRequest,
@@ -58,10 +60,6 @@ import {
   VerifyRefundTxSignatureResponse,
   VerifySignatureRequest,
 } from '@atomicfinance/types';
-import {
-  DlcInputInfo,
-  InputSupplementationMode,
-} from '@atomicfinance/types/lib/models/Input';
 import { sleep } from '@atomicfinance/utils';
 import { Script, Sequence, Tx } from '@node-dlc/bitcoin';
 import { StreamReader } from '@node-dlc/bufio';
