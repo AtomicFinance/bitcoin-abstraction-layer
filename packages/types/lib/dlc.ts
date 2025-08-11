@@ -1,6 +1,3 @@
-/* eslint-disable max-len */
-/* eslint-disable indent */
-
 import { Tx } from '@node-dlc/bitcoin';
 import {
   CetAdaptorSignatures,
@@ -334,9 +331,6 @@ interface PayoutGroup {
   payout: bigint;
   groups: number[][];
 }
-
-/* eslint-disable max-len */
-/* eslint-disable indent */
 
 export interface AdaptorPair {
   signature: string;

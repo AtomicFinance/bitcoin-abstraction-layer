@@ -305,7 +305,6 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
       let changeAddresses: Address[] = [];
       let nonChangeAddresses: Address[] = [];
 
-      /* eslint-disable no-unmodified-loop-condition */
       while (
         (addressType === NONCHANGE_OR_CHANGE_ADDRESS &&
           (addressCountMap.change < ADDRESS_GAP ||
@@ -314,7 +313,6 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
           addressCountMap.nonChange < ADDRESS_GAP) ||
         (addressType === CHANGE_ADDRESS && addressCountMap.change < ADDRESS_GAP)
       ) {
-        /* eslint-enable no-unmodified-loop-condition */
         addrList = [];
 
         if (

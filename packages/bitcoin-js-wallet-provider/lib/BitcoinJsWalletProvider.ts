@@ -46,7 +46,6 @@ interface BitcoinJsWalletProviderOptions {
 
 // TypeScript has difficulty inferring the complex return type of the mixin pattern
 // Using 'any' here is safe as we know the mixin returns the correct enhanced class
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const BaseProvider: any = BitcoinWalletProvider(
   Provider as WalletProviderConstructor,
 );
@@ -279,7 +278,7 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
           ecc.verify(msghash, pubkey, signature),
       ); // ensure all signatures are valid!
       psbt.finalizeAllInputs();
-    } catch (error) {
+    } catch {
       return {
         psbt: psbt.toBase64(),
         complete: false,
@@ -356,7 +355,7 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
       }
       inputs.push(...((inputsForAmount.inputs as Input[]) || []));
       outputs.push(...(inputsForAmount.outputs || []));
-    } catch (e) {
+    } catch {
       if (fixedInputs.length === 0) {
         throw Error(
           `Inputs for amount doesn't exist and no fixedInputs provided`,
@@ -646,7 +645,7 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
       },
     ],
     addresses: string,
-    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tx: any,
     _lockTime?: number,
     segwit?: boolean,

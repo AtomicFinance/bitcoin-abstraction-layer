@@ -48,16 +48,6 @@ export interface AddressInfo {
 
 export type AddressGrouping = string[][];
 
-export interface ReceivedByAddress {
-  involvesWatchonly: boolean;
-  address: string;
-  account: string;
-  amount: number;
-  confirmations: number;
-  label: string;
-  txids: string[];
-}
-
 export interface Block {
   hash: string;
   confirmations: number;

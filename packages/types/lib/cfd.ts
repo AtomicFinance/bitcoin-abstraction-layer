@@ -1,6 +1,3 @@
-/* eslint-disable max-len */
-/* eslint-disable indent */
-
 import { TxInRequest, TxOutRequest } from './common';
 
 export interface CfdProvider {
@@ -1879,21 +1876,6 @@ export interface SelectUtxosRequest {
   isElements?: boolean;
   targets?: TargetAmountMapData[];
   feeInfo?: CoinSelectionFeeInfomationField;
-}
-
-/** */
-export interface UtxoJsonData {
-  txid: string;
-  vout: number;
-  amount: bigint;
-  asset?: string;
-  descriptor?: string;
-}
-
-/** */
-export interface TargetAmountMapData {
-  asset: string;
-  amount: bigint;
 }
 
 /** */
