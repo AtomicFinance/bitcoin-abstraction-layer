@@ -129,7 +129,7 @@
 
   ### Environment
   - Update Node.js to 18.18.2+
-  - Run `yarn install` to update dependencies
+  - Run `pnpm install` to update dependencies
   - Review custom DLC implementations for compatibility
 
   This is a **major breaking change** requiring code updates in consuming applications.
