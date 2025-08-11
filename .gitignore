@@ -4,7 +4,6 @@
 **/.nyc_output
 **/coverage
 
-# **/yarn.lock
 # **/package-lock.json
 
 **/doc
@@ -24,16 +23,15 @@
 
 lerna-debug.log
 .vscode
-yarn-error.log
 .turbo
 
-.yarn/*
-!.yarn/patches
-!.yarn/releases
-!.yarn/plugins
-!.yarn/sdks
-!.yarn/versions
-.pnp.*
+# pnpm
+.pnpm-debug.log*
+.pnpm-store/
+
+# yalc local package linking
+.yalc/
+**/yalc.lock
 
 # dotenv environment variables file
 .env

@@ -271,7 +271,7 @@ export default class BitcoinNodeWalletProvider extends Provider {
     try {
       await this._rpc.jsonrpc('getwalletinfo');
       return true;
-    } catch (e) {
+    } catch {
       return false;
     }
   }
@@ -291,7 +291,7 @@ export default class BitcoinNodeWalletProvider extends Provider {
         secretAddressLabel,
       );
       address = Object.keys(labelAddresses)[0];
-    } catch (e) {
+    } catch {
       // Label does not exist
       address = (
         await this.getNewAddress(bitcoin.AddressType.LEGACY, secretAddressLabel)

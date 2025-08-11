@@ -259,7 +259,7 @@ const decodeRawTransaction = (
     try {
       const address = bitcoin.address.fromOutputScript(output.script, network);
       vout.scriptPubKey.addresses.push(address);
-    } catch (e) {
+    } catch {
       /** If output script is not parasable, we just skip it */
     }
 
@@ -360,7 +360,7 @@ const getPubKeyHash = (address: string, network: BitcoinNetwork): Buffer => {
   try {
     const bech32 = bitcoin.address.fromBech32(address);
     return bech32.data;
-  } catch (e) {
+  } catch {
     const base58 = bitcoin.address.fromBase58Check(address);
     return base58.hash;
   }
@@ -379,7 +379,7 @@ const validateAddress = (
   let pubKeyHash;
   try {
     pubKeyHash = getPubKeyHash(address, network);
-  } catch (e) {
+  } catch {
     throw new InvalidAddressError(
       `Invalid Address. Failed to parse: ${address}`,
     );

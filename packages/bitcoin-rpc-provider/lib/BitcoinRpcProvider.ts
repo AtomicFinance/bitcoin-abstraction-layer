@@ -76,7 +76,7 @@ export default class BitcoinRpcProvider
       }
 
       throw new Error('Invalid estimated fee');
-    } catch (e) {
+    } catch {
       return this._defaultFeePerByte;
     }
   }
@@ -152,7 +152,7 @@ export default class BitcoinRpcProvider
         miningAddressLabel,
       );
       address = Object.keys(labelAddresses)[0];
-    } catch (e) {
+    } catch {
       // Label does not exist
       address = await this.jsonrpc('getnewaddress', miningAddressLabel);
     }

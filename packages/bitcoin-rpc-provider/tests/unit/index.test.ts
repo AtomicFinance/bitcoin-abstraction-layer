@@ -101,7 +101,7 @@ describe('Bitcoin RPC provider', () => {
       const balance = await provider.getBalance([
         'mpJJQJzJhjceFabMVXAMB8i4VJcwwWQmcc',
       ]);
-      expect(balance.eq(20000000)).to.be.true;
+      expect(balance.eq(20000000)).to.equal(true);
     });
   });
 
