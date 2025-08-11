@@ -15,11 +15,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
-          cache: 'yarn'
+          cache: 'pnpm'
 
       - name: Cache Bitcoin node
         id: bitcoin-cache
@@ -71,13 +76,13 @@ jobs:
           bitcoin-cli -regtest -rpcport=18443 -rpcuser=admin1 -rpcpassword=123 getblockchaininfo
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Lint
-        run: yarn lint
+        run: pnpm lint
 
       - name: Build
-        run: yarn build
+        run: pnpm build
 
       - name: Ensure Bitcoin wallet is ready
         run: |
@@ -98,10 +103,10 @@ jobs:
           FAST_TEST_MODE: true
         run: |
           # Run tests with CI optimizations
-          if command -v yarn test:ci &> /dev/null; then
-            yarn test:ci
+          if command -v pnpm test:ci &> /dev/null; then
+            pnpm test:ci
           else
-            yarn test --maxWorkers=2 --forceExit --detectOpenHandles
+            pnpm test --maxWorkers=2 --forceExit --detectOpenHandles
           fi
         timeout-minutes: 35
 
@@ -123,23 +128,28 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
-          cache: 'yarn'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build packages
-        run: yarn build
+        run: pnpm build
 
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: yarn publish
+          publish: pnpm publish
           title: 'chore: release packages'
           commit: 'chore: release packages'
         env:
