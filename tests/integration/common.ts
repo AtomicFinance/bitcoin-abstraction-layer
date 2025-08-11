@@ -1,10 +1,8 @@
 /* eslint-env mocha */
-import Provider from '@atomicfinance/provider';
-import { Transaction } from '@atomicfinance/types/lib';
 import BN from 'bignumber.js';
 import { generateMnemonic } from 'bip39';
 import * as cfdJs from 'cfd-js';
-import chai from 'chai';
+import * as chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
 import BitcoinCfdProvider from '../../packages/bitcoin-cfd-provider/lib';
@@ -15,8 +13,10 @@ import { BitcoinRpcProvider } from '../../packages/bitcoin-rpc-provider';
 import { decodeRawTransaction } from '../../packages/bitcoin-utils';
 import { Client } from '../../packages/client';
 import * as errors from '../../packages/errors';
+import Provider from '../../packages/provider/lib';
 import { bitcoin } from '../../packages/types';
 import { Input } from '../../packages/types/';
+import { Transaction } from '../../packages/types/lib';
 import * as utils from '../../packages/utils';
 import config from './config';
 import { getWrappedCfdDlcJs } from './utils/WrappedCfdDlcJs';
@@ -34,7 +34,6 @@ const CONSTANTS = {
 
 const { network, rpc } = config.bitcoin;
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
 console.warn = () => {}; // Silence warnings
 
 function mockedBitcoinRpcProvider(): BitcoinRpcProvider {
