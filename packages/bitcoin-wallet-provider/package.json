@@ -16,8 +16,10 @@
   },
   "dependencies": {
     "@atomicfinance/bitcoin-utils": "^4.0.3",
+    "@atomicfinance/errors": "^4.0.3",
     "@atomicfinance/provider": "^4.0.3",
     "@atomicfinance/types": "^4.0.3",
+    "@atomicfinance/utils": "^4.0.3",
     "@node-dlc/core": "1.1.0",
     "bip32": "^2.0.6",
     "bitcoin-networks": "^1.0.0",
