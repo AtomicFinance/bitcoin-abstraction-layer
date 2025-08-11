@@ -15,8 +15,8 @@
   "scripts": {
     "build": "../../node_modules/.bin/tsc --project tsconfig.json",
     "test": "../../node_modules/.bin/nyc --reporter=lcov --reporter=text --extension=.ts ../../node_modules/.bin/mocha --recursive \"tests/**/*.test.*\"",
-    "lint": "../../node_modules/.bin/eslint --ignore-path ../../.eslintignore  -c ../../.eslintrc.js .",
-    "lint:fix": "../../node_modules/.bin/eslint --fix --ignore-path ../../.eslintignore  -c ../../.eslintrc.js ."
+    "lint": "../../node_modules/.bin/eslint  .",
+    "lint:fix": "../../node_modules/.bin/eslint --fix  ."
   },
   "author": "Atomic Finance <info@atomic.finance>",
   "license": "MIT",
@@ -33,7 +33,8 @@
   },
   "devDependencies": {
     "@types/bech32": "^1.1.2",
-    "@types/bs58": "^4.0.1"
+    "@types/bs58": "^4.0.1",
+    "@types/node": "^20.0.0"
   },
   "sideEffects": false
 }
