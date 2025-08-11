@@ -28,6 +28,7 @@
     "@atomicfinance/bitcoin-utils": "^4.0.3",
     "@atomicfinance/crypto": "^4.0.3",
     "@atomicfinance/jsonrpc-provider": "^4.0.3",
+    "@atomicfinance/provider": "^4.0.3",
     "@atomicfinance/types": "^4.0.3",
     "@atomicfinance/utils": "^4.0.3",
     "@babel/runtime": "^7.12.1",
