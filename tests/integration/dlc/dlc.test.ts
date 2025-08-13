@@ -63,6 +63,8 @@ const alice = chain.client;
 
 const bob = chains.bitcoinWithJs2.client;
 const carol = chains.bitcoinWithJs3.client;
+const ddk = chains.bitcoinWithDdk.client;
+const ddk2 = chains.bitcoinWithDdk2.client;
 
 describe('bitcoin networks', () => {
   it('have correct genesis block hashes', async () => {
@@ -135,6 +137,142 @@ describe('dlc provider', () => {
         false,
       );
     }
+  });
+
+  describe('funding with DDK', () => {
+    it('should fund and execute enum DLC', async () => {
+      const oracle = new Oracle('olivia');
+
+      const ddkInput = await getInput(ddk);
+      const ddk2Input = await getInput(ddk2);
+
+      const eventId = 'trump-vs-kamala';
+
+      const oliviaInfo = oracle.GetOracleInfo();
+
+      const eventDescriptor = new EnumEventDescriptor();
+
+      const outcomes = ['trump', 'kamala', 'neither'];
+
+      eventDescriptor.outcomes = outcomes;
+
+      const event = new OracleEvent();
+      event.oracleNonces = oliviaInfo.rValues.map((rValue) =>
+        Buffer.from(rValue, 'hex'),
+      );
+      event.eventMaturityEpoch = 1617170572;
+      event.eventDescriptor = eventDescriptor;
+      event.eventId = eventId;
+
+      const announcement = new OracleAnnouncement();
+      announcement.announcementSig = Buffer.from(
+        oracle.GetSignature(
+          math
+            .taggedHash('DLC/oracle/announcement/v0', event.serialize())
+            .toString('hex'),
+        ),
+        'hex',
+      );
+
+      announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
+      announcement.oracleEvent = event;
+
+      const oracleInfo = new SingleOracleInfo();
+      oracleInfo.announcement = announcement;
+
+      const contractDescriptor = new EnumeratedDescriptor();
+
+      contractDescriptor.outcomes = [
+        {
+          outcome: sha256(Buffer.from('trump')).toString('hex'),
+          localPayout: BigInt(1e6),
+        },
+        {
+          outcome: sha256(Buffer.from('kamala')).toString('hex'),
+          localPayout: BigInt(0),
+        },
+        {
+          outcome: sha256(Buffer.from('neither')).toString('hex'),
+          localPayout: BigInt(500000),
+        },
+      ];
+
+      const totalCollateral = BigInt(1e6);
+
+      const contractInfo = new SingleContractInfo();
+      contractInfo.totalCollateral = totalCollateral;
+      contractInfo.contractDescriptor = contractDescriptor;
+      contractInfo.oracleInfo = oracleInfo;
+
+      const feeRatePerVb = BigInt(10);
+      const cetLocktime = 1617170572;
+      const refundLocktime = 1617170573;
+
+      dlcOffer = await ddk.dlc.createDlcOffer(
+        contractInfo,
+        totalCollateral - BigInt(2000),
+        feeRatePerVb,
+        cetLocktime,
+        refundLocktime,
+        [ddkInput],
+      );
+
+      console.log('ABOUT TO RUN DLC ACCEPT');
+
+      const acceptDlcOfferResponse: AcceptDlcOfferResponse =
+        await ddk2.dlc.acceptDlcOffer(dlcOffer, [ddk2Input]);
+
+      dlcAccept = acceptDlcOfferResponse.dlcAccept;
+      dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
+
+      console.log('ABOUT TO RUN DLC SIGN');
+
+      const signDlcAcceptResponse: SignDlcAcceptResponse =
+        await ddk.dlc.signDlcAccept(dlcOffer, dlcAccept);
+
+      dlcSign = signDlcAcceptResponse.dlcSign;
+
+      console.log('dlcSign', dlcSign.fundingSignatures);
+
+      const fundTx = await ddk2.dlc.finalizeDlcSign(
+        dlcOffer,
+        dlcAccept,
+        dlcSign,
+        dlcTransactions,
+      );
+      console.log(
+        ` fundTx.serialize().toString('hex')`,
+        fundTx.serialize().toString('hex'),
+      );
+
+      const fundTxId = await ddk2.chain.sendRawTransaction(
+        fundTx.serialize().toString('hex'),
+      );
+      expect(fundTxId).to.not.be.undefined;
+
+      oracleAttestation = generateEnumOracleAttestation('trump', oracle);
+
+      const cet = await ddk2.dlc.execute(
+        dlcOffer,
+        dlcAccept,
+        dlcSign,
+        dlcTransactions,
+        oracleAttestation,
+        false,
+      );
+
+      console.log(
+        `cet.serialize().toString('hex')`,
+        cet.serialize().toString('hex'),
+      );
+
+      const cetTxId = await bob.chain.sendRawTransaction(
+        cet.serialize().toString('hex'),
+      );
+      expect(cetTxId).to.not.be.undefined;
+      const cetTx = await alice.getMethod('getTransactionByHash')(cetTxId);
+      expect(cetTx._raw.vin.length).to.equal(1);
+    });
   });
 
   describe('enum event', () => {
@@ -250,6 +388,11 @@ describe('dlc provider', () => {
         dlcTransactions,
         oracleAttestation,
         false,
+      );
+
+      console.log(
+        `cet.serialize().toString('hex')`,
+        cet.serialize().toString('hex'),
       );
 
       const cetTxId = await bob.chain.sendRawTransaction(

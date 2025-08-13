@@ -1,3 +1,4 @@
+import { TxInputInfo } from '../ddk';
 import Amount, { AmountJSON } from './Amount';
 import Input from './Input';
 
@@ -35,6 +36,16 @@ export default class Utxo {
       undefined, // safe
       undefined, // dlcInput - regular UTXOs don't have DLC info
     );
+  }
+
+  public toTxInputInfo(): TxInputInfo {
+    return {
+      txid: this.txid,
+      vout: this.vout,
+      scriptSig: Buffer.alloc(0),
+      maxWitnessLength: this.maxWitnessLength,
+      serialId: this.inputSerialId ? BigInt(this.inputSerialId) : undefined,
+    };
   }
 
   public toJSON(): UtxoJSON {

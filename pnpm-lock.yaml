@@ -12,6 +12,9 @@ importers:
 
   .:
     devDependencies:
+      '@bennyblader/ddk-ts':
+        specifier: ^0.3.19
+        version: 0.3.19
       '@changesets/cli':
         specifier: ^2.22.0
         version: 2.29.5
@@ -189,6 +192,46 @@ importers:
       lodash:
         specifier: ^4.17.20
         version: 4.17.21
+    devDependencies:
+      '@types/lodash':
+        specifier: ^4.14.160
+        version: 4.17.5
+      '@types/node':
+        specifier: 20.19.10
+        version: 20.19.10
+
+  packages/bitcoin-ddk-provider:
+    dependencies:
+      '@atomicfinance/bitcoin-utils':
+        specifier: 4.0.3
+        version: link:../bitcoin-utils
+      '@atomicfinance/provider':
+        specifier: ^4.0.3
+        version: link:../provider
+      '@atomicfinance/types':
+        specifier: ^4.0.3
+        version: link:../types
+      '@atomicfinance/utils':
+        specifier: ^4.0.3
+        version: link:../utils
+      bignumber.js:
+        specifier: ^9.0.1
+        version: 9.3.1
+      bip66:
+        specifier: ^1.1.5
+        version: 1.1.5
+      bitcoin-networks:
+        specifier: ^1.0.0
+        version: 1.0.0
+      bitcoinjs-lib:
+        specifier: 6.1.7
+        version: 6.1.7
+      ecpair:
+        specifier: ^2.1.0
+        version: 2.1.0
+      tiny-secp256k1:
+        specifier: ^2.2.0
+        version: 2.2.4
     devDependencies:
       '@types/lodash':
         specifier: ^4.14.160
@@ -918,6 +961,11 @@ packages:
     dependencies:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.27.1
+    dev: true
+
+  /@bennyblader/ddk-ts@0.3.19:
+    resolution: {integrity: sha512-wnIlWukNl0Tr4fDtEi93u9OHu0LkJk1OlgGJQrIUUek00kRMPp7YolZ/fpdbgfSJKwjpzaPhmB4vnh7yJ92rcQ==}
+    engines: {node: '>= 6.14.2 < 7 || >= 8.11.2 < 9 || >= 9.11.0 < 10 || >= 10.0.0'}
     dev: true
 
   /@changesets/apply-release-plan@7.0.12:
