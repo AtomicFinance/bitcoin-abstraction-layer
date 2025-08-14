@@ -26,6 +26,14 @@ import { math } from 'bip-schnorr';
 
 import Oracle from '../models/Oracle';
 
+export function getTaggedHash(
+  tag: string | Buffer,
+  data: string | Buffer,
+): Buffer {
+  const tagHash = sha256(Buffer.from(tag));
+  return sha256(Buffer.concat([tagHash, tagHash, Buffer.from(data)]));
+}
+
 export function generateEnumContractInfo(
   oracle: Oracle,
   eventId = 'trump-vs-kamala',
@@ -361,10 +369,7 @@ export function generateEnumOracleAttestation(
   const sigs: Buffer[] = [];
 
   const m = math
-    .taggedHash(
-      'DLC/oracle/attestation/v0',
-      sha256(Buffer.from(outcome)).toString('hex'),
-    )
+    .taggedHash('DLC/oracle/attestation/v0', outcome)
     .toString('hex');
   sigs.push(Buffer.from(oracle.GetSignature(m), 'hex'));
 

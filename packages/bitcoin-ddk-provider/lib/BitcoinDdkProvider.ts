@@ -4,18 +4,8 @@ import {
   Address,
   Amount,
   CalculateEcSignatureRequest,
-  CreateCetRequest,
-  CreateCetResponse,
-  CreateDlcTransactionsRequest,
-  CreateDlcTransactionsResponse,
-  CreateFundTransactionRequest,
-  CreateFundTransactionResponse,
   CreateRawTransactionRequest,
-  CreateRefundTransactionRequest,
-  CreateRefundTransactionResponse,
   CreateSignatureHashRequest,
-  CreateSplicedDlcTransactionsRequest,
-  CreateSplicedDlcTransactionsResponse,
   DdkDlcInputInfo,
   DdkDlcTransactions,
   DdkInterface,
@@ -23,38 +13,13 @@ import {
   DdkTransaction,
   DlcInputInfo,
   DlcInputInfoRequest,
-  DlcOutcome,
-  DlcProvider,
-  GetRawDlcFundingInputSignatureRequest,
-  GetRawDlcFundingInputSignatureResponse,
-  GetRawFundTxSignatureRequest,
-  GetRawFundTxSignatureResponse,
-  GetRawRefundTxSignatureRequest,
-  GetRawRefundTxSignatureResponse,
   Input,
   InputSupplementationMode,
   Messages,
   PartyParams,
   Payout,
   PayoutRequest,
-  SignCetRequest,
-  SignCetResponse,
-  SignDlcFundingInputRequest,
-  SignFundTransactionRequest,
-  SignFundTransactionResponse,
-  Transaction,
-  TxInputInfo,
   Utxo,
-  VerifyCetAdaptorSignatureRequest,
-  VerifyCetAdaptorSignatureResponse,
-  VerifyCetAdaptorSignaturesRequest,
-  VerifyCetAdaptorSignaturesResponse,
-  VerifyDlcFundingInputSignatureRequest,
-  VerifyDlcFundingInputSignatureResponse,
-  VerifyFundTxSignatureRequest,
-  VerifyFundTxSignatureResponse,
-  VerifyRefundTxSignatureRequest,
-  VerifyRefundTxSignatureResponse,
   VerifySignatureRequest,
 } from '@atomicfinance/types';
 import { sleep } from '@atomicfinance/utils';
@@ -121,13 +86,7 @@ import crypto from 'crypto';
 import { ECPairFactory, ECPairInterface } from 'ecpair';
 import * as ecc from 'tiny-secp256k1';
 
-import {
-  asyncForEach,
-  checkTypes,
-  generateSerialId,
-  generateSerialIds,
-  outputsToPayouts,
-} from './utils/Utils';
+import { checkTypes, generateSerialId, outputsToPayouts } from './utils/Utils';
 
 const ECPair = ECPairFactory(ecc);
 
@@ -1019,14 +978,14 @@ export default class BitcoinDdkProvider extends Provider {
 
     console.log('test1');
 
-    const fundingSPK = Script.p2wpkhLock(
-      hash160(isOfferer ? dlcOffer.fundingPubkey : dlcAccept.fundingPubkey),
-    )
-      .serialize()
-      .slice(1);
+    const fundingSPK = this._ddk.createFundTxLockingScript(
+      dlcOffer.fundingPubkey,
+      dlcAccept.fundingPubkey,
+    );
 
+    // The fundingSPK is a 2-of-2 multisig redeemScript, we need to wrap it in P2WSH
     const fundingAddress: string = address.fromOutputScript(
-      fundingSPK,
+      Script.p2wshLock(sha256(fundingSPK)),
       network,
     );
 
@@ -1047,8 +1006,10 @@ export default class BitcoinDdkProvider extends Provider {
 
     if (
       dlcOffer.contractInfo.contractInfoType === ContractInfoType.Single &&
-      (dlcOffer.contractInfo as SingleContractInfo).contractDescriptor.type ===
-        MessageType.ContractDescriptorV0
+      ((dlcOffer.contractInfo as SingleContractInfo).contractDescriptor.type ===
+        MessageType.ContractDescriptorV0 ||
+        (dlcOffer.contractInfo as SingleContractInfo).contractDescriptor
+          .contractDescriptorType === ContractDescriptorType.Enumerated)
     ) {
       for (const { oracleInfo } of contractOraclePairs) {
         if (oracleInfo.type !== MessageType.SingleOracleInfo) {
@@ -1082,11 +1043,26 @@ export default class BitcoinDdkProvider extends Provider {
               fundPrivateKey: Buffer.from(fundPrivateKey, 'hex'),
               fundingSPK: fundingSPK,
               fundOutputValueSats: this.getFundOutputValueSats(dlcTxs),
-              messagesList: tempMessagesList
-                .map((message) =>
-                  message.messages.map((m) => Buffer.from(m, 'hex')),
-                )
-                .flat(),
+              messagesList: tempMessagesList.map((message) =>
+                message.messages.map((m) => {
+                  // For enumerated events, m is the raw outcome string (e.g., '1', '2', '3')
+                  // We need to create the message hash that the oracle would sign
+                  if (
+                    dlcOffer.contractInfo.type ===
+                      MessageType.SingleContractInfo &&
+                    (dlcOffer.contractInfo as SingleContractInfo)
+                      .contractDescriptor.type ===
+                      ContractDescriptorType.Enumerated
+                  ) {
+                    // For enum contracts, hash the outcome string like rust-dlc does
+                    return Buffer.from(
+                      sha256(Buffer.from(m)).toString('hex'),
+                      'hex',
+                    );
+                  }
+                  return Buffer.from(m, 'hex');
+                }),
+              ),
             };
             console.log('cetAdaptorSigsInfo', cetAdaptorSigsInfo);
 
@@ -1279,11 +1255,10 @@ export default class BitcoinDdkProvider extends Provider {
           };
         });
 
-        const fundingSPK = Script.p2wpkhLock(
-          hash160(isOfferer ? dlcAccept.fundingPubkey : dlcOffer.fundingPubkey),
-        )
-          .serialize()
-          .slice(1);
+        const fundingSPK = this._ddk.createFundTxLockingScript(
+          dlcOffer.fundingPubkey,
+          dlcAccept.fundingPubkey,
+        );
 
         const ddkOracleInfo: DdkOracleInfo = {
           publicKey: oracleAnnouncement.oraclePubkey,
@@ -1412,13 +1387,10 @@ export default class BitcoinDdkProvider extends Provider {
             };
           });
 
-          const fundingSPK = Script.p2wpkhLock(
-            hash160(
-              isOfferer ? dlcOffer.fundingPubkey : dlcAccept.fundingPubkey,
-            ),
-          )
-            .serialize()
-            .slice(1);
+          const fundingSPK = this._ddk.createFundTxLockingScript(
+            dlcOffer.fundingPubkey,
+            dlcAccept.fundingPubkey,
+          );
 
           const ddkOracleInfo: DdkOracleInfo = {
             publicKey: oracleAnnouncement.oraclePubkey,
@@ -2465,42 +2437,29 @@ Payout Group not found even with brute force search',
         (dlcOffer.contractInfo as SingleContractInfo)
           .contractDescriptor as EnumeratedDescriptor
       ).outcomes.findIndex(
-        (outcome) =>
-          outcome.outcome ===
-          sha256(Buffer.from(oracleAttestation.outcomes[0])).toString('hex'),
+        (outcome) => outcome.outcome === oracleAttestation.outcomes[0],
       );
-
-      const network = await this.getConnectedNetwork();
-
-      const fundingPubKeys =
-        Buffer.compare(dlcOffer.fundingPubkey, dlcAccept.fundingPubkey) === -1
-          ? [dlcOffer.fundingPubkey, dlcAccept.fundingPubkey]
-          : [dlcAccept.fundingPubkey, dlcOffer.fundingPubkey];
-
-      const p2ms = payments.p2ms({
-        m: 2,
-        pubkeys: fundingPubKeys,
-        network,
-      });
-
-      const paymentVariant = payments.p2wsh({
-        redeem: p2ms,
-        network,
-      });
-
-      const fundingSPK = Script.p2wpkhLock(
-        hash160(isOfferer ? dlcOffer.fundingPubkey : dlcAccept.fundingPubkey),
-      )
-        .serialize()
-        .slice(1);
 
       console.log('test2');
 
       console.log(`dlcTxs.fundtx`, dlcTxs.fundTx.serialize().toString('hex'));
 
+      console.log('dlcTxs', dlcTxs);
+
       console.log(
         `dlcTxs.cets[outcomeIndex]`,
         dlcTxs.cets[outcomeIndex].serialize().toString('hex'),
+      );
+
+      console.log(
+        'Oracle attestation signatures:',
+        oracleAttestation.signatures,
+      );
+      console.log(
+        'Adaptor signature being used:',
+        isOfferer
+          ? dlcAccept.cetAdaptorSignatures.sigs[outcomeIndex].encryptedSig
+          : dlcSign.cetAdaptorSignatures.sigs[outcomeIndex].encryptedSig,
       );
 
       finalCet = this._ddk
@@ -2574,14 +2533,14 @@ Payout Group not found even with brute force search',
   ): Promise<string> {
     const network = await this.getConnectedNetwork();
 
-    const fundingSPK = Script.p2wpkhLock(
-      hash160(isOfferer ? dlcOffer.fundingPubkey : dlcAccept.fundingPubkey),
-    )
-      .serialize()
-      .slice(1);
+    const fundingSPK = this._ddk.createFundTxLockingScript(
+      dlcOffer.fundingPubkey,
+      dlcAccept.fundingPubkey,
+    );
 
+    // The fundingSPK is a 2-of-2 multisig redeemScript, we need to wrap it in P2WSH
     const fundingAddress: string = address.fromOutputScript(
-      fundingSPK,
+      Script.p2wshLock(sha256(fundingSPK)),
       network,
     );
 
