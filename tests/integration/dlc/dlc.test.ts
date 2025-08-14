@@ -1,7 +1,7 @@
 import 'mocha';
 
 import { Sequence, Tx, Value } from '@node-dlc/bitcoin';
-import { StreamReader } from '@node-dlc/bufio';
+import { BufferWriter, StreamReader } from '@node-dlc/bufio';
 import {
   CoveredCall,
   DlcTxBuilder,
@@ -258,6 +258,142 @@ describe('dlc provider', () => {
         dlcSign,
         dlcTransactions,
         oracleAttestation,
+        false,
+      );
+
+      console.log(
+        `cet.serialize().toString('hex')`,
+        cet.serialize().toString('hex'),
+      );
+
+      const cetTxId = await bob.chain.sendRawTransaction(
+        cet.serialize().toString('hex'),
+      );
+      expect(cetTxId).to.not.be.undefined;
+      const cetTx = await alice.getMethod('getTransactionByHash')(cetTxId);
+      expect(cetTx._raw.vin.length).to.equal(1);
+    });
+  });
+
+  describe('funding with DDK2', () => {
+    it('should fund and execute enum DLC', async () => {
+      const ddkInput = await getInput(ddk);
+      const ddk2Input = await getInput(ddk2);
+
+      const baseAnnouncement = Buffer.from(
+        'd8ae588d12fd3cb925677f68968acfa5bb1674dd599dce75614d4935f9374ad612ba994819c05f035b4e98434d1a68b81034e144c3238faa8def1abe5e5bc92ac4b44e9571d88111e8d2bfbe271c50e9da043cc1ffcb6870197385da375d5339fdd822370001f0516ea22cc69dd6db1253d6a5c889a742b8951391fc82acf467a6e86f41d65a0000000afdd8060800030131013201330474657374',
+        'hex',
+      );
+
+      // need to prefix type and length to base announcement
+      const writer = new BufferWriter();
+      writer.writeBigSize(OracleAnnouncement.type); // type = 55332
+      writer.writeBigSize(BigInt(baseAnnouncement.length)); // length of the base announcement
+      writer.writeBytes(baseAnnouncement);
+
+      const prefixedAnnouncement = writer.toBuffer();
+      const announcement = OracleAnnouncement.deserialize(prefixedAnnouncement);
+
+      console.log('announcement json', announcement.toJSON());
+
+      const baseAttestation = Buffer.from(
+        '0474657374c4b44e9571d88111e8d2bfbe271c50e9da043cc1ffcb6870197385da375d53390001f0516ea22cc69dd6db1253d6a5c889a742b8951391fc82acf467a6e86f41d65a48301a3e800676e40443779171e5ead6b5465d0520e5213879b78fc7f50846ae00010131',
+        'hex',
+      );
+
+      const writer2 = new BufferWriter();
+      writer2.writeBigSize(OracleAttestation.type); // type = 55333
+      writer2.writeBigSize(BigInt(baseAttestation.length)); // length of the base attestation
+      writer2.writeBytes(baseAttestation);
+
+      const prefixedAttestation = writer2.toBuffer();
+      const attestation = OracleAttestation.deserialize(prefixedAttestation);
+
+      console.log('attestation json', attestation.toJSON());
+
+      const contractDescriptor = new EnumeratedDescriptor();
+
+      contractDescriptor.outcomes = [
+        {
+          outcome: '1',
+          localPayout: BigInt(1e6),
+        },
+        {
+          outcome: '2',
+          localPayout: BigInt(0),
+        },
+        {
+          outcome: '3',
+          localPayout: BigInt(500000),
+        },
+      ];
+
+      const oracleInfo = new SingleOracleInfo();
+      oracleInfo.announcement = announcement;
+
+      const totalCollateral = BigInt(1e6);
+
+      const contractInfo = new SingleContractInfo();
+      contractInfo.totalCollateral = totalCollateral;
+      contractInfo.contractDescriptor = contractDescriptor;
+      contractInfo.oracleInfo = oracleInfo;
+
+      const feeRatePerVb = BigInt(10);
+      const cetLocktime = 1617170572;
+      const refundLocktime = 1617170573;
+
+      dlcOffer = await ddk.dlc.createDlcOffer(
+        contractInfo,
+        totalCollateral - BigInt(2000),
+        feeRatePerVb,
+        cetLocktime,
+        refundLocktime,
+        [ddkInput],
+      );
+
+      console.log('ABOUT TO RUN DLC ACCEPT');
+
+      const acceptDlcOfferResponse: AcceptDlcOfferResponse =
+        await ddk2.dlc.acceptDlcOffer(dlcOffer, [ddk2Input]);
+
+      dlcAccept = acceptDlcOfferResponse.dlcAccept;
+      dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
+
+      console.log('ABOUT TO RUN DLC SIGN');
+
+      const signDlcAcceptResponse: SignDlcAcceptResponse =
+        await ddk.dlc.signDlcAccept(dlcOffer, dlcAccept);
+
+      dlcSign = signDlcAcceptResponse.dlcSign;
+
+      console.log('dlcSign', dlcSign.fundingSignatures);
+
+      const fundTx = await ddk2.dlc.finalizeDlcSign(
+        dlcOffer,
+        dlcAccept,
+        dlcSign,
+        dlcTransactions,
+      );
+      console.log(
+        ` fundTx.serialize().toString('hex')`,
+        fundTx.serialize().toString('hex'),
+      );
+
+      const fundTxId = await ddk2.chain.sendRawTransaction(
+        fundTx.serialize().toString('hex'),
+      );
+      expect(fundTxId).to.not.be.undefined;
+
+      // oracleAttestation = generateEnumOracleAttestation('trump', oracle);
+
+      console.log('attestation', attestation);
+
+      const cet = await ddk2.dlc.execute(
+        dlcOffer,
+        dlcAccept,
+        dlcSign,
+        dlcTransactions,
+        attestation,
         false,
       );
 
