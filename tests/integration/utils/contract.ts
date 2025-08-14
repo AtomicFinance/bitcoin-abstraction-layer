@@ -360,11 +360,10 @@ export function generateEnumOracleAttestation(
 
   const sigs: Buffer[] = [];
 
+  // Spec-compliant: sign the tagged hash of the outcome as UTF-8 bytes
+  // This matches what dlcdevkit expects: H(H(tag) || H(tag) || outcome_bytes)
   const m = math
-    .taggedHash(
-      'DLC/oracle/attestation/v0',
-      sha256(Buffer.from(outcome)).toString('hex'),
-    )
+    .taggedHash('DLC/oracle/attestation/v0', Buffer.from(outcome, 'utf8'))
     .toString('hex');
   sigs.push(Buffer.from(oracle.GetSignature(m), 'hex'));
 

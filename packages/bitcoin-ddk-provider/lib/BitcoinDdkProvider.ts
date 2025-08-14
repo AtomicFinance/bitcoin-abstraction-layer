@@ -4,18 +4,8 @@ import {
   Address,
   Amount,
   CalculateEcSignatureRequest,
-  CreateCetRequest,
-  CreateCetResponse,
-  CreateDlcTransactionsRequest,
-  CreateDlcTransactionsResponse,
-  CreateFundTransactionRequest,
-  CreateFundTransactionResponse,
   CreateRawTransactionRequest,
-  CreateRefundTransactionRequest,
-  CreateRefundTransactionResponse,
   CreateSignatureHashRequest,
-  CreateSplicedDlcTransactionsRequest,
-  CreateSplicedDlcTransactionsResponse,
   DdkDlcInputInfo,
   DdkDlcTransactions,
   DdkInterface,
@@ -23,38 +13,13 @@ import {
   DdkTransaction,
   DlcInputInfo,
   DlcInputInfoRequest,
-  DlcOutcome,
-  DlcProvider,
-  GetRawDlcFundingInputSignatureRequest,
-  GetRawDlcFundingInputSignatureResponse,
-  GetRawFundTxSignatureRequest,
-  GetRawFundTxSignatureResponse,
-  GetRawRefundTxSignatureRequest,
-  GetRawRefundTxSignatureResponse,
   Input,
   InputSupplementationMode,
   Messages,
   PartyParams,
   Payout,
   PayoutRequest,
-  SignCetRequest,
-  SignCetResponse,
-  SignDlcFundingInputRequest,
-  SignFundTransactionRequest,
-  SignFundTransactionResponse,
-  Transaction,
-  TxInputInfo,
   Utxo,
-  VerifyCetAdaptorSignatureRequest,
-  VerifyCetAdaptorSignatureResponse,
-  VerifyCetAdaptorSignaturesRequest,
-  VerifyCetAdaptorSignaturesResponse,
-  VerifyDlcFundingInputSignatureRequest,
-  VerifyDlcFundingInputSignatureResponse,
-  VerifyFundTxSignatureRequest,
-  VerifyFundTxSignatureResponse,
-  VerifyRefundTxSignatureRequest,
-  VerifyRefundTxSignatureResponse,
   VerifySignatureRequest,
 } from '@atomicfinance/types';
 import { sleep } from '@atomicfinance/utils';
@@ -121,13 +86,7 @@ import crypto from 'crypto';
 import { ECPairFactory, ECPairInterface } from 'ecpair';
 import * as ecc from 'tiny-secp256k1';
 
-import {
-  asyncForEach,
-  checkTypes,
-  generateSerialId,
-  generateSerialIds,
-  outputsToPayouts,
-} from './utils/Utils';
+import { checkTypes, generateSerialId, outputsToPayouts } from './utils/Utils';
 
 const ECPair = ECPairFactory(ecc);
 
@@ -878,16 +837,30 @@ export default class BitcoinDdkProvider extends Provider {
     return { dlcTransactions, messagesList };
   }
 
+  /**
+   * Computes DLC-spec compliant tagged attestation message digest
+   * This matches what the oracle should sign according to the DLC specification
+   */
+  private computeTaggedAttestationMessage(outcome: string): string {
+    // DLC spec: H(H("DLC/oracle/attestation/v0") || H("DLC/oracle/attestation/v0") || H(outcome))
+    const tag = Buffer.from('DLC/oracle/attestation/v0', 'utf8');
+    const tagHash = sha256(tag);
+    const outcomeHash = sha256(Buffer.from(outcome, 'utf8'));
+
+    // Compute H(tagHash || tagHash || outcomeHash)
+    const message = sha256(Buffer.concat([tagHash, tagHash, outcomeHash]));
+    return message.toString('hex');
+  }
+
   private GenerateEnumMessages(oracleEvent: OracleEvent): Messages[] {
     const eventDescriptor = oracleEvent.eventDescriptor as EnumEventDescriptor;
 
     // For enum events, each oracle has one nonce and can attest to one of the possible outcomes
     const messagesList: Messages[] = [];
 
-    // For enum events, hash the outcomes to match the contract descriptor format
-    const messages = eventDescriptor.outcomes.map((outcome) =>
-      sha256(Buffer.from(outcome)).toString('hex'),
-    );
+    // Pass raw outcome strings to dlcdevkit - it will handle the tagged hashing internally
+    // dlcdevkit expects raw strings and calls tagged_attestation_msg() internally
+    const messages = eventDescriptor.outcomes;
     messagesList.push({ messages });
 
     return messagesList;
@@ -2461,13 +2434,18 @@ Payout Group not found even with brute force search',
       (dlcOffer.contractInfo as SingleContractInfo).contractDescriptor
         .contractDescriptorType === ContractDescriptorType.Enumerated
     ) {
-      const outcomeIndex = (
-        (dlcOffer.contractInfo as SingleContractInfo)
-          .contractDescriptor as EnumeratedDescriptor
-      ).outcomes.findIndex(
-        (outcome) =>
-          outcome.outcome ===
-          sha256(Buffer.from(oracleAttestation.outcomes[0])).toString('hex'),
+      const contractDescriptor = (dlcOffer.contractInfo as SingleContractInfo)
+        .contractDescriptor as EnumeratedDescriptor;
+
+      // The contract descriptor outcomes are stored as sha256(outcome) hashes
+      // We need to match them against sha256(oracle_attestation_outcome)
+      const attestedOutcome = oracleAttestation.outcomes[0];
+      const attestedOutcomeHash = sha256(
+        Buffer.from(attestedOutcome, 'utf8'),
+      ).toString('hex');
+
+      const outcomeIndex = contractDescriptor.outcomes.findIndex(
+        (outcome) => outcome.outcome === attestedOutcomeHash,
       );
 
       const network = await this.getConnectedNetwork();
