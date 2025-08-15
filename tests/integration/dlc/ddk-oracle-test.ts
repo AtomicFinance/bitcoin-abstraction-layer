@@ -132,13 +132,6 @@ describe('DDK Oracle Compatibility', () => {
       eventId,
     );
 
-    console.log('Oracle attestation:', {
-      eventId: oracleAttestation.eventId,
-      oraclePubkey: oracleAttestation.oraclePubkey.toString('hex'),
-      signatures: oracleAttestation.signatures.map((s) => s.toString('hex')),
-      outcomes: oracleAttestation.outcomes,
-    });
-
     // Execute the DLC with the oracle attestation
     const cet = await ddk2.dlc.execute(
       dlcOffer,
@@ -158,7 +151,5 @@ describe('DDK Oracle Compatibility', () => {
     // Verify the CET was created correctly
     const cetTx = await ddk2.getMethod('getTransactionByHash')(cetTxId);
     expect(cetTx._raw.vin.length).to.equal(1);
-
-    console.log('✅ DLC executed successfully with DDK-compatible oracle!');
   });
 });

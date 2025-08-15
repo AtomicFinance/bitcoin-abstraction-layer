@@ -49,6 +49,7 @@ import Oracle from '../models/Oracle';
 import {
   calculateNetworkFees,
   generateContractInfo,
+  generateDdkCompatibleEnumOracleAttestation,
   generateEnumCollateralContractInfo,
   generateEnumOracleAttestation,
   generateLongCallOffer,
@@ -240,7 +241,11 @@ describe('dlc provider', () => {
       );
       expect(fundTxId).to.not.be.undefined;
 
-      oracleAttestation = generateEnumOracleAttestation('trump', oracle);
+      oracleAttestation = generateDdkCompatibleEnumOracleAttestation(
+        'trump',
+        oracle,
+        announcement.getEventId(),
+      );
 
       oracleAttestation.validate();
 
