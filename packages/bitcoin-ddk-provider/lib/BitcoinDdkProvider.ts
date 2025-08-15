@@ -1,8 +1,6 @@
 import Provider from '@atomicfinance/provider';
 import {
   AdaptorSignature,
-  AddSignaturesToRefundTxRequest,
-  AddSignaturesToRefundTxResponse,
   Address,
   Amount,
   CalculateEcSignatureRequest,
@@ -1183,7 +1181,6 @@ export default class BitcoinDdkProvider extends Provider {
         const oracleAnnouncement = (oracleInfo as SingleOracleInfo)
           .announcement;
 
-        const oracleEventCetsHex = cetsHex;
         const oracleEventSigs = isOfferer
           ? dlcAccept.cetAdaptorSignatures.sigs
           : dlcSign.cetAdaptorSignatures.sigs;
@@ -1191,7 +1188,6 @@ export default class BitcoinDdkProvider extends Provider {
         const sigsValidity: Promise<boolean>[] = [];
 
         const tempMessagesList = messagesList;
-        const tempCetsHex = oracleEventCetsHex;
         const tempSigs = oracleEventSigs;
         const tempAdaptorPairs = tempSigs.map((sig) => {
           return {
@@ -1210,11 +1206,6 @@ export default class BitcoinDdkProvider extends Provider {
         const verifyP2ms = payments.p2ms({
           m: 2,
           pubkeys: verifyFundingPubKeys,
-          network,
-        });
-
-        const verifyP2wsh = payments.p2wsh({
-          redeem: verifyP2ms,
           network,
         });
 
@@ -1311,11 +1302,6 @@ export default class BitcoinDdkProvider extends Provider {
           const nonEnumP2ms = payments.p2ms({
             m: 2,
             pubkeys: nonEnumFundingPubKeys,
-            network,
-          });
-
-          const nonEnumP2wsh = payments.p2wsh({
-            redeem: nonEnumP2ms,
             network,
           });
 
@@ -2276,24 +2262,6 @@ Payout Group not found even with brute force search',
         sliceIndex === 0
           ? oracleAttestation.signatures
           : oracleAttestation.signatures.slice(0, sliceIndex);
-
-      const network = await this.getConnectedNetwork();
-
-      const fundingPubKeys =
-        Buffer.compare(dlcOffer.fundingPubkey, dlcAccept.fundingPubkey) === -1
-          ? [dlcOffer.fundingPubkey, dlcAccept.fundingPubkey]
-          : [dlcAccept.fundingPubkey, dlcOffer.fundingPubkey];
-
-      const p2ms = payments.p2ms({
-        m: 2,
-        pubkeys: fundingPubKeys,
-        network,
-      });
-
-      const paymentVariant = payments.p2wsh({
-        redeem: p2ms,
-        network,
-      });
 
       finalCet = this._ddk
         .signCet(
