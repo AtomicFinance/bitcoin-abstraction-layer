@@ -1,5 +1,11 @@
 # @atomicfinance/errors
 
+## 4.1.1
+
+### Patch Changes
+
+- 0d882fc: Update changeset for ddk
+
 ## 4.1.0
 
 ### Minor Changes

@@ -1,5 +1,16 @@
 # @atomicfinance/bitcoin-esplora-batch-api-provider
 
+## 4.1.1
+
+### Patch Changes
+
+- 0d882fc: Update changeset for ddk
+- Updated dependencies [0d882fc]
+  - @atomicfinance/bitcoin-esplora-api-provider@4.1.1
+  - @atomicfinance/node-provider@4.1.1
+  - @atomicfinance/types@4.1.1
+  - @atomicfinance/utils@4.1.1
+
 ## 4.1.0
 
 ### Minor Changes
