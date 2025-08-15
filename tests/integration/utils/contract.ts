@@ -376,6 +376,32 @@ export function generateEnumOracleAttestation(
   return oracleAttestation;
 }
 
+export function generateDdkCompatibleEnumOracleAttestation(
+  outcome: string,
+  oracle: Oracle,
+  eventId = 'test',
+): OracleAttestation {
+  const oracleInfo = oracle.GetOracleInfo();
+
+  const sigs: Buffer[] = [];
+
+  // For DDK compatibility: The oracle must sign the tagged attestation message
+  // DDK expects the signature on: H(H("DLC/oracle/attestation/v0") || H("DLC/oracle/attestation/v0") || outcome_bytes)
+  const m = math
+    .taggedHash('DLC/oracle/attestation/v0', Buffer.from(outcome, 'utf8'))
+    .toString('hex');
+
+  sigs.push(Buffer.from(oracle.GetSignature(m), 'hex'));
+
+  const oracleAttestation = new OracleAttestation();
+  oracleAttestation.eventId = eventId;
+  oracleAttestation.oraclePubkey = Buffer.from(oracleInfo.publicKey, 'hex');
+  oracleAttestation.signatures = sigs;
+  oracleAttestation.outcomes = [outcome];
+
+  return oracleAttestation;
+}
+
 export const DEFAULT_NUM_OFFER_INPUTS = 2;
 export const DEFAULT_NUM_ACCEPT_INPUTS = 3;
 

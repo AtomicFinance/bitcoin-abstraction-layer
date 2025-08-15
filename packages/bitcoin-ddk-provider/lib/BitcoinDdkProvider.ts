@@ -653,8 +653,6 @@ export default class BitcoinDdkProvider extends Provider {
       }
     }
 
-    console.log('test2');
-
     // Process remote inputs (no DLC inputs from acceptor side)
     const remoteInputs: Utxo[] = await Promise.all(
       dlcAccept.fundingInputs.map(async (fundingInput) => {
@@ -677,8 +675,6 @@ export default class BitcoinDdkProvider extends Provider {
     let payouts: PayoutRequest[] = [];
     let messagesList: Messages[] = [];
 
-    console.log('test3');
-
     if (
       dlcOffer.contractInfo.type === MessageType.SingleContractInfo &&
       (dlcOffer.contractInfo as SingleContractInfo).contractDescriptor.type ===
@@ -695,7 +691,6 @@ export default class BitcoinDdkProvider extends Provider {
             dlcAccept.acceptCollateral -
             outcome.localPayout,
         });
-        console.log('outcome', outcome);
         messagesList.push({ messages: [outcome.outcome] });
       }
     } else {
@@ -704,10 +699,7 @@ export default class BitcoinDdkProvider extends Provider {
         this.FlattenPayouts(payoutResponses);
       payouts = tempPayouts;
       messagesList = tempMessagesList;
-      console.log('messagesList', messagesList);
     }
-
-    console.log('test4');
 
     const outcomes: Payout[] = payouts.map((payout) => ({
       offer: BigInt(payout.local),
@@ -738,18 +730,12 @@ export default class BitcoinDdkProvider extends Provider {
       dlcInputs: [],
     };
 
-    console.log('test5');
-
     // Determine whether to use regular or spliced DLC transactions
     const hasDlcInputs = localDlcInputs.length > 0;
 
-    // let dlcTxs:
-    //   | CreateDlcTransactionsResponse
-    //   | CreateSplicedDlcTransactionsResponse;
     let dlcTxs: DdkDlcTransactions;
 
     if (hasDlcInputs) {
-      console.log('test6');
       // Use spliced DLC transactions when DLC inputs are present
       dlcTxs = await this._ddk.createSplicedDlcTransactions(
         outcomes,
@@ -774,15 +760,6 @@ export default class BitcoinDdkProvider extends Provider {
         BigInt(dlcOffer.fundOutputSerialId),
       );
     }
-
-    console.log('----dlctxs fund', dlcTxs.fund.rawBytes.toString('hex'));
-    console.log(
-      '----dlctxs cets',
-      dlcTxs.cets.map((cet) => cet.rawBytes.toString('hex')),
-    );
-    console.log('----dlctxs refund', dlcTxs.refund.rawBytes.toString('hex'));
-
-    console.log('test8');
 
     const dlcTransactions = new DlcTransactions();
     dlcTransactions.fundTx = Tx.decode(
@@ -845,10 +822,10 @@ export default class BitcoinDdkProvider extends Provider {
     // DLC spec: H(H("DLC/oracle/attestation/v0") || H("DLC/oracle/attestation/v0") || H(outcome))
     const tag = Buffer.from('DLC/oracle/attestation/v0', 'utf8');
     const tagHash = sha256(tag);
-    const outcomeHash = sha256(Buffer.from(outcome, 'utf8'));
+    const outcomeBuffer = Buffer.from(outcome, 'utf8');
 
     // Compute H(tagHash || tagHash || outcomeHash)
-    const message = sha256(Buffer.concat([tagHash, tagHash, outcomeHash]));
+    const message = sha256(Buffer.concat([tagHash, tagHash, outcomeBuffer]));
     return message.toString('hex');
   }
 
@@ -867,19 +844,6 @@ export default class BitcoinDdkProvider extends Provider {
 
   private GenerateEnumMessages(oracleEvent: OracleEvent): Messages[] {
     const eventDescriptor = oracleEvent.eventDescriptor as EnumEventDescriptor;
-
-    console.log(
-      'DEBUG GenerateEnumMessages - oracleEvent:',
-      JSON.stringify(oracleEvent, null, 2),
-    );
-    console.log(
-      'DEBUG GenerateEnumMessages - eventDescriptor:',
-      eventDescriptor,
-    );
-    console.log(
-      'DEBUG GenerateEnumMessages - eventDescriptor.outcomes:',
-      eventDescriptor.outcomes,
-    );
 
     // For enum events, each oracle has one nonce and can attest to one of the possible outcomes
     const messagesList: Messages[] = [];
@@ -1012,12 +976,9 @@ export default class BitcoinDdkProvider extends Provider {
     messagesList: Messages[],
     isOfferer: boolean,
   ): Promise<CreateCetAdaptorAndRefundSigsResponse> {
-    console.log('test0');
     const network = await this.getConnectedNetwork();
 
     const cetsHex = dlcTxs.cets.map((cet) => cet.serialize().toString('hex'));
-
-    console.log('test1');
 
     // Create the correct P2WSH multisig funding script
     const fundingPubKeys =
@@ -1028,11 +989,6 @@ export default class BitcoinDdkProvider extends Provider {
     const p2ms = payments.p2ms({
       m: 2,
       pubkeys: fundingPubKeys,
-      network,
-    });
-
-    const p2wsh = payments.p2wsh({
-      redeem: p2ms,
       network,
     });
 
@@ -1054,7 +1010,6 @@ export default class BitcoinDdkProvider extends Provider {
     const { derivationPath } = await this.client.wallet.findAddress([
       fundingAddress,
     ]);
-    console.log('test2');
 
     const fundPrivateKeyPair = await this.getMethod('keyPair')(derivationPath);
     const fundPrivateKey = Buffer.from(fundPrivateKeyPair.__D).toString('hex');
@@ -1064,7 +1019,6 @@ export default class BitcoinDdkProvider extends Provider {
     );
 
     const sigs: ISig[][] = [];
-    console.log('test3');
 
     if (
       dlcOffer.contractInfo.contractInfoType === ContractInfoType.Single &&
@@ -1077,7 +1031,6 @@ export default class BitcoinDdkProvider extends Provider {
         }
         const oracleAnnouncement = (oracleInfo as SingleOracleInfo)
           .announcement;
-        console.log('test4');
 
         const adaptorSigRequestPromises: Promise<AdaptorSignature[]>[] = [];
 
@@ -1089,52 +1042,14 @@ export default class BitcoinDdkProvider extends Provider {
           nonces: oracleAnnouncement.oracleEvent.oracleNonces,
         };
 
-        console.log('test5');
-
         adaptorSigRequestPromises.push(
           (async () => {
-            const cetAdaptorSigsInfo = {
-              cets: tempCetsHex.map((cet) =>
-                this.convertTxToDdkTransaction(
-                  Tx.decode(StreamReader.fromHex(cet)),
-                ),
-              ),
-              oracleInfo: [ddkOracleInfo],
-              fundPrivateKey: Buffer.from(fundPrivateKey, 'hex'),
-              fundingSPK: fundingSPK,
-              fundOutputValueSats: this.getFundOutputValueSats(dlcTxs),
-              messagesList: tempMessagesList
-                .map((message) =>
-                  message.messages.map((m) => Buffer.from(m, 'hex')),
-                )
-                .flat(),
-            };
-            // console.log('cetAdaptorSigsInfo', cetAdaptorSigsInfo);
-
-            // Convert to JSON-serializable format
-            const jsonSerializableCetAdaptorSigsInfo =
-              this.convertToJsonSerializable(cetAdaptorSigsInfo);
-            console.log(
-              'JSON serializable cetAdaptorSigsInfo:',
-              JSON.stringify(jsonSerializableCetAdaptorSigsInfo, null, 2),
-            );
-
             const cetsForDdk = tempCetsHex.map((cetHex) =>
               this.convertTxToDdkTransaction(
                 Tx.decode(StreamReader.fromHex(cetHex)),
               ),
             );
             const messagesForDdk = this.convertMessagesForDdk(tempMessagesList);
-
-            console.log('CreateCetAdaptorSigs - CETs being signed:');
-            tempCetsHex.forEach((cetHex, i) => {
-              console.log(`  CET[${i}]: ${cetHex}`);
-            });
-            console.log('CreateCetAdaptorSigs - Messages for each CET:');
-            tempMessagesList.forEach((msg, i) => {
-              console.log(`  Message[${i}]:`, msg.messages);
-            });
-            console.log('messagesForDdk', messagesForDdk);
 
             const response = this._ddk.createCetAdaptorSigsFromOracleInfo(
               cetsForDdk,
@@ -1148,18 +1063,9 @@ export default class BitcoinDdkProvider extends Provider {
           })(),
         );
 
-        console.log('test6-aaa');
-
         const adaptorPairs: AdaptorSignature[] = (
           await Promise.all(adaptorSigRequestPromises)
         ).flat();
-
-        console.log('CreateCetAdaptorSigs - Generated adaptor signatures (enum):');
-        adaptorPairs.forEach((sig, i) => {
-          console.log(`  AdaptorSig[${i}]: ${Buffer.from(sig.signature).toString('hex').substring(0, 20)}...`);
-        });
-
-        console.log('test7');
 
         sigs.push(
           adaptorPairs.map((adaptorPair) => {
@@ -1200,21 +1106,6 @@ export default class BitcoinDdkProvider extends Provider {
             publicKey: oracleAnnouncement.oraclePubkey,
             nonces: oracleAnnouncement.oracleEvent.oracleNonces,
           };
-
-          // const cetSignRequest: CreateCetAdaptorSignaturesRequest = {
-          //   messagesList: tempMessagesList,
-          //   cetsHex: tempCetsHex,
-          //   privkey: fundPrivateKey,
-          //   fundTxId: dlcTxs.fundTx.txId.toString(),
-          //   fundVout: dlcTxs.fundTxVout,
-          //   localFundPubkey: dlcOffer.fundingPubkey.toString('hex'),
-          //   remoteFundPubkey: dlcAccept.fundingPubkey.toString('hex'),
-          //   fundInputAmount: this.getFundOutputValueSats(dlcTxs),
-          //   oraclePubkey: oracleAnnouncement.oraclePubkey.toString('hex'),
-          //   oracleRValues: oracleAnnouncement.oracleEvent.oracleNonces.map(
-          //     (nonce) => nonce.toString('hex'),
-          //   ),
-          // };
 
           const messagesForDdk = this.convertMessagesForDdk(tempMessagesList);
 
@@ -1343,29 +1234,6 @@ export default class BitcoinDdkProvider extends Provider {
 
         const messagesForDdk = this.convertMessagesForDdk(tempMessagesList);
 
-        console.log('tempCetHex', tempCetsHex[0]);
-
-        console.log('messagesForDdk', messagesForDdk);
-
-        const verifyObject = {
-          adaptorSigs: tempAdaptorPairs,
-          cets: tempCetsHex.map((cet) =>
-            this.convertTxToDdkTransaction(
-              Tx.decode(StreamReader.fromHex(cet)),
-            ),
-          ),
-          oracleInfo: [ddkOracleInfo],
-          pubkey,
-          fundingSPK,
-          totalCollateral: this.getFundOutputValueSats(dlcTxs),
-          msgs: messagesForDdk,
-        };
-
-        console.log(
-          `'verifyObject`,
-          JSON.stringify(this.convertToJsonSerializable(verifyObject)),
-        );
-
         sigsValidity.push(
           (async () => {
             const response = this._ddk.verifyCetAdaptorSigsFromOracleInfo(
@@ -1462,7 +1330,8 @@ export default class BitcoinDdkProvider extends Provider {
           // Create the correct P2WSH multisig funding script
           const network = await this.getConnectedNetwork();
           const nonEnumFundingPubKeys =
-            Buffer.compare(dlcOffer.fundingPubkey, dlcAccept.fundingPubkey) === -1
+            Buffer.compare(dlcOffer.fundingPubkey, dlcAccept.fundingPubkey) ===
+            -1
               ? [dlcOffer.fundingPubkey, dlcAccept.fundingPubkey]
               : [dlcAccept.fundingPubkey, dlcOffer.fundingPubkey];
 
@@ -2537,52 +2406,6 @@ Payout Group not found even with brute force search',
         ).toString('hex');
         return outcome.outcome === attestedOutcomeHash;
       });
-
-      console.log('FindAndSignCet - attestedOutcome:', attestedOutcome);
-      console.log('FindAndSignCet - outcomeIndex:', outcomeIndex);
-      console.log('FindAndSignCet - Total CETs:', dlcTxs.cets.length);
-      console.log('FindAndSignCet - Total adaptor sigs (offerer):', dlcAccept.cetAdaptorSignatures.sigs.length);
-      console.log('FindAndSignCet - Total adaptor sigs (accepter):', dlcSign.cetAdaptorSignatures.sigs.length);
-
-      const network = await this.getConnectedNetwork();
-
-      const fundingPubKeys =
-        Buffer.compare(dlcOffer.fundingPubkey, dlcAccept.fundingPubkey) === -1
-          ? [dlcOffer.fundingPubkey, dlcAccept.fundingPubkey]
-          : [dlcAccept.fundingPubkey, dlcOffer.fundingPubkey];
-
-      const p2ms = payments.p2ms({
-        m: 2,
-        pubkeys: fundingPubKeys,
-        network,
-      });
-
-      const paymentVariant = payments.p2wsh({
-        redeem: p2ms,
-        network,
-      });
-
-      const fundingSPK = Script.p2wpkhLock(
-        hash160(isOfferer ? dlcOffer.fundingPubkey : dlcAccept.fundingPubkey),
-      )
-        .serialize()
-        .slice(1);
-
-      console.log('test2');
-
-      console.log(`dlcTxs.fundtx`, dlcTxs.fundTx.serialize().toString('hex'));
-
-      console.log(
-        `dlcTxs.cets[outcomeIndex]`,
-        dlcTxs.cets[outcomeIndex].serialize().toString('hex'),
-      );
-
-      // Log the specific adaptor signature being used
-      const adaptorSig = isOfferer
-        ? dlcAccept.cetAdaptorSignatures.sigs[outcomeIndex].encryptedSig
-        : dlcSign.cetAdaptorSignatures.sigs[outcomeIndex].encryptedSig;
-      console.log('FindAndSignCet - Using adaptor sig:', adaptorSig.toString('hex'));
-      console.log('FindAndSignCet - Oracle signatures:', oracleAttestation.signatures.map(s => s.toString('hex')));
 
       finalCet = this._ddk
         .signCet(

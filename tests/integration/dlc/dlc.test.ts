@@ -30,7 +30,7 @@ import {
   SingleOracleInfo,
 } from '@node-dlc/messaging';
 import BN from 'bignumber.js';
-import { math } from 'bip-schnorr';
+import { math, verify } from 'bip-schnorr';
 import { BitcoinNetworks, chainHashFromNetwork } from 'bitcoin-networks';
 import * as chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
@@ -252,6 +252,8 @@ describe('dlc provider', () => {
 
       oracleAttestation = generateEnumOracleAttestation('trump', oracle);
 
+      oracleAttestation.validate();
+
       const cet = await ddk2.dlc.execute(
         dlcOffer,
         dlcAccept,
@@ -275,7 +277,7 @@ describe('dlc provider', () => {
     });
   });
 
-  describe('funding with DDK2', () => {
+  describe('funding with second DDK2', () => {
     it('should fund and execute enum DLC', async () => {
       const ddkInput = await getInput(ddk);
       const ddk2Input = await getInput(ddk2);
@@ -295,6 +297,7 @@ describe('dlc provider', () => {
       const announcement = OracleAnnouncement.deserialize(prefixedAnnouncement);
 
       console.log('announcement json', announcement.toJSON());
+      console.log('announcement', announcement.serialize().toString('hex'));
 
       const baseAttestation = Buffer.from(
         '0474657374c4b44e9571d88111e8d2bfbe271c50e9da043cc1ffcb6870197385da375d53390001f0516ea22cc69dd6db1253d6a5c889a742b8951391fc82acf467a6e86f41d65a48301a3e800676e40443779171e5ead6b5465d0520e5213879b78fc7f50846ae00010131',
@@ -310,6 +313,17 @@ describe('dlc provider', () => {
       const attestation = OracleAttestation.deserialize(prefixedAttestation);
 
       console.log('attestation json', attestation.toJSON());
+      console.log('attestation', attestation.serialize().toString('hex'));
+
+      // attestation.validate();
+
+      console.log('attestation.outcomes[0]', attestation.outcomes[0]);
+
+      const msg = math.taggedHash(
+        'DLC/oracle/attestation/v0',
+        Buffer.from(attestation.outcomes[0], 'utf8'),
+      );
+      verify(attestation.oraclePubkey, msg, attestation.signatures[0]);
 
       const contractDescriptor = new EnumeratedDescriptor();
 
