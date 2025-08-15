@@ -1,5 +1,15 @@
 # @atomicfinance/crypto
 
+## 4.1.0
+
+### Minor Changes
+
+- 0224065: Switch from yarn to pnpm and update eslint config
+
+### Patch Changes
+
+- b2394fa: Add alpha ddk support in BitcoinDdkProvider
+
 ## 4.0.3
 
 ### Patch Changes
