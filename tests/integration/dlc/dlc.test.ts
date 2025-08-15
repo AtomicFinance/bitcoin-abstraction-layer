@@ -1,6 +1,5 @@
 import 'mocha';
 
-import { InputSupplementationMode } from '@atomicfinance/types/lib';
 import { Sequence, Tx, Value } from '@node-dlc/bitcoin';
 import { StreamReader } from '@node-dlc/bufio';
 import {
@@ -33,7 +32,7 @@ import {
 import BN from 'bignumber.js';
 import { math } from 'bip-schnorr';
 import { BitcoinNetworks, chainHashFromNetwork } from 'bitcoin-networks';
-import chai from 'chai';
+import * as chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import * as crypto from 'crypto';
 
@@ -42,6 +41,7 @@ import {
   SignDlcAcceptResponse,
 } from '../../../packages/bitcoin-dlc-provider';
 import { Input } from '../../../packages/types';
+import { InputSupplementationMode } from '../../../packages/types/lib';
 import { chains, getInput } from '../common';
 import f from '../fixtures/blockchain.json';
 import { attestation_for_payout_amount_failure as AttestationWithPayoutAmountFailure } from '../fixtures/messages.json';

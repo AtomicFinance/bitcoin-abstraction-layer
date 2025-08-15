@@ -15,8 +15,8 @@
   ],
   "scripts": {
     "build": "../../node_modules/.bin/tsc --project tsconfig.json",
-    "lint": "../../node_modules/.bin/eslint --ignore-path ../../.eslintignore  -c ../../.eslintrc.js .",
-    "lint:fix": "../../node_modules/.bin/eslint --fix --ignore-path ../../.eslintignore  -c ../../.eslintrc.js .",
+    "lint": "../../node_modules/.bin/eslint  .",
+    "lint:fix": "../../node_modules/.bin/eslint --fix  .",
     "test": "../../node_modules/.bin/nyc --reporter=lcov --reporter=text --extension=.ts ../../node_modules/.bin/mocha --recursive \"tests/**/*.test.*\""
   },
   "author": "Atomic Finance <info@atomic.finance>",
@@ -28,6 +28,7 @@
     "@atomicfinance/bitcoin-utils": "^4.0.3",
     "@atomicfinance/crypto": "^4.0.3",
     "@atomicfinance/jsonrpc-provider": "^4.0.3",
+    "@atomicfinance/provider": "^4.0.3",
     "@atomicfinance/types": "^4.0.3",
     "@atomicfinance/utils": "^4.0.3",
     "@babel/runtime": "^7.12.1",
@@ -50,7 +51,8 @@
     "access": "public"
   },
   "devDependencies": {
-    "@types/lodash": "^4.14.168"
+    "@types/lodash": "^4.14.168",
+    "@types/node": "^20.0.0"
   },
   "sideEffects": false
 }

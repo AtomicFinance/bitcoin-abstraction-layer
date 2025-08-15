@@ -26,7 +26,7 @@ import {
 import BN from 'bignumber.js';
 import { math } from 'bip-schnorr';
 import { BitcoinNetworks } from 'bitcoin-networks';
-import chai from 'chai';
+import * as chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
 import {

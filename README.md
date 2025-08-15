@@ -88,9 +88,8 @@ const offerMessage = await alice.dlc.createDlcOffer(...)
 ## Development
 
 ```bash
-yarn install
-yarn bootstrap
-yarn watch
+pnpm install
+pnpm run build
 ```
 
 ## Changeset Versioning
@@ -98,18 +97,18 @@ yarn watch
 We use [changesets](https://github.com/changesets/changesets) to manage versioning and changelogs. When creating a pull request, include a summary of your changes in a changeset by running:
 
 ```bash
-yarn changeset
+pnpm changeset
 ```
 
 To bump the packages to the proper semantic version and publish:
 
 ```bash
-yarn version
-yarn publish
+pnpm version
+pnpm publish
 ```
 
 ## Production
 
 ```bash
-yarn build
+pnpm build
 ```

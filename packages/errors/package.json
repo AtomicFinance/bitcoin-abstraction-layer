@@ -19,11 +19,14 @@
   },
   "scripts": {
     "build": "../../node_modules/.bin/tsc --project tsconfig.json",
-    "lint": "../../node_modules/.bin/eslint --ignore-path ../../.eslintignore  -c ../../.eslintrc.js .",
-    "lint:fix": "../../node_modules/.bin/eslint --fix --ignore-path ../../.eslintignore  -c ../../.eslintrc.js ."
+    "lint": "../../node_modules/.bin/eslint  .",
+    "lint:fix": "../../node_modules/.bin/eslint --fix  ."
   },
   "publishConfig": {
     "access": "public"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  }
 }

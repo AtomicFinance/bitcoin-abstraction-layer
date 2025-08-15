@@ -170,7 +170,7 @@ export default class BitcoinDlcProvider
           if (targetPubkeys.includes(pubkeyHex)) {
             return Buffer.from(keyPair.privateKey).toString('hex');
           }
-        } catch (error) {
+        } catch {
           continue;
         }
       }
@@ -203,7 +203,7 @@ export default class BitcoinDlcProvider
               }
             }
           }
-        } catch (error) {
+        } catch {
           continue;
         }
       }
@@ -4437,11 +4437,11 @@ Payout Group not found even with brute force search',
     let txRaw = '';
     try {
       txRaw = await this.getMethod('getRawTransactionByHash')(input.txid);
-    } catch (e) {
+    } catch {
       try {
         txRaw = (await this.getMethod('jsonrpc')('gettransaction', input.txid))
           .hex;
-      } catch (e) {
+      } catch {
         throw Error(
           `Cannot find tx ${input.txid} in inputToFundingInput using getrawtransactionbyhash or gettransaction`,
         );

@@ -11,25 +11,25 @@ Before you can use the BAL, you need to have Node.js and npm (Node Package Manag
 You can install the BAL using npm. Open your terminal and run the following command:
 
 ```bash
-yarn add @atomicfinance/client
-yarn add @atomicfinance/bitcoin-cfd-provider
-yarn add @atomicfinance/bitcoin-dlc-provider
-yarn add @atomicfinance/bitcoin-wallet-provider
-yarn add @atomicfinance/bitcoin-js-wallet-provider
-yarn add bitcoin-networks
+pnpm add @atomicfinance/client
+pnpm add @atomicfinance/bitcoin-cfd-provider
+pnpm add @atomicfinance/bitcoin-dlc-provider
+pnpm add @atomicfinance/bitcoin-wallet-provider
+pnpm add @atomicfinance/bitcoin-js-wallet-provider
+pnpm add bitcoin-networks
 ```
 
-And add [cfd-js](https://github.com/atomicfinance/cfd-js) and [cfd-dlc-js](https://github.com/atomicfinance/cfd-dlc-js)
+And add [cfd-js](https://github.com/atomicfinance/cfd-dlc-js) and [cfd-dlc-js](https://github.com/atomicfinance/cfd-dlc-js)
 
 ```bash
-yarn add https://github.com/cryptogarageinc/cfd-js.git#v0.3.4
-yarn add https://github.com/atomicfinance/cfd-dlc-js.git#v0.0.34
+pnpm add https://github.com/cryptogarageinc/cfd-js.git#v0.3.4
+pnpm add https://github.com/atomicfinance/cfd-dlc-js.git#v0.0.34
 ```
 
 Lastly add node-dlc modules
 
 ```bash
-yarn add @node-dlc/messaging
+pnpm add @node-dlc/messaging
 ```
 
 This will install the BAL and its dependencies.

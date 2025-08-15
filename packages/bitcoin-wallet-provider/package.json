@@ -9,15 +9,17 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "../../node_modules/.bin/tsc --project tsconfig.json",
-    "prepublishOnly": "yarn run build",
-    "test": "yarn run build",
-    "lint": "../../node_modules/.bin/eslint --ignore-path ../../.eslintignore  -c ../../.eslintrc.js .",
-    "lint:fix": "../../node_modules/.bin/eslint --fix --ignore-path ../../.eslintignore  -c ../../.eslintrc.js ."
+    "prepublishOnly": "pnpm run build",
+    "test": "pnpm run build",
+    "lint": "../../node_modules/.bin/eslint  .",
+    "lint:fix": "../../node_modules/.bin/eslint --fix  ."
   },
   "dependencies": {
     "@atomicfinance/bitcoin-utils": "^4.0.3",
+    "@atomicfinance/errors": "^4.0.3",
     "@atomicfinance/provider": "^4.0.3",
     "@atomicfinance/types": "^4.0.3",
+    "@atomicfinance/utils": "^4.0.3",
     "@node-dlc/core": "1.1.0",
     "bip32": "^2.0.6",
     "bitcoin-networks": "^1.0.0",
@@ -27,7 +29,7 @@
   },
   "devDependencies": {
     "@types/lodash": "^4.14.160",
-    "@types/node": "16.10.3"
+    "@types/node": "20.19.10"
   },
   "publishConfig": {
     "access": "public"

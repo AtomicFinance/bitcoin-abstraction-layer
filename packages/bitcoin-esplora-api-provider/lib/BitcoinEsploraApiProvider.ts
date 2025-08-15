@@ -68,7 +68,7 @@ export default class BitcoinEsploraApiProvider
       });
       const rate = Math.round(feeEstimates[closestBlockOption]);
       return rate;
-    } catch (e) {
+    } catch {
       return this._defaultFeePerByte;
     }
   }

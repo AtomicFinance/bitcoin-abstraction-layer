@@ -1,22 +1,22 @@
 install:
-  yarn
+  pnpm install
 
 build:
-  yarn run build
+  pnpm run build
 
 test:
-  yarn run test
+  pnpm run test
 
 # sequential test
 seqtest:
-  yarn test:integration:sequential
+  pnpm test:integration:sequential
 
 lint:
-  yarn run lint
+  pnpm run lint
 
 clean:
   find . -name "node_modules" -type d -exec rm -rf '{}' +
 
 # Run a single test by name
 test-one TEST_NAME:
-  yarn test:integration:sequential --grep "{{TEST_NAME}}"
+  pnpm test:integration:sequential --grep "{{TEST_NAME}}"
