@@ -851,7 +851,6 @@ export default class BitcoinDdkProvider extends Provider {
     // Pass raw outcome strings to dlcdevkit - it will handle the tagged hashing internally
     // dlcdevkit expects raw strings and calls tagged_attestation_msg() internally
     const messages = eventDescriptor.outcomes;
-    console.log('DEBUG GenerateEnumMessages - messages to send:', messages);
     messagesList.push({ messages });
 
     return messagesList;
@@ -1143,8 +1142,6 @@ export default class BitcoinDdkProvider extends Provider {
       }
     }
 
-    console.log('about to do refund sig');
-
     const refundSignature = this._ddk.getRawFundingTransactionInputSignature(
       this.convertTxToDdkTransaction(dlcTxs.refundTx),
       Buffer.from(fundPrivateKey, 'hex'),
@@ -1185,7 +1182,6 @@ export default class BitcoinDdkProvider extends Provider {
         const oracleAnnouncement = (oracleInfo as SingleOracleInfo)
           .announcement;
 
-        const oracleEventCetsHex = cetsHex;
         const oracleEventSigs = isOfferer
           ? dlcAccept.cetAdaptorSignatures.sigs
           : dlcSign.cetAdaptorSignatures.sigs;
@@ -1193,7 +1189,6 @@ export default class BitcoinDdkProvider extends Provider {
         const sigsValidity: Promise<boolean>[] = [];
 
         const tempMessagesList = messagesList;
-        const tempCetsHex = oracleEventCetsHex;
         const tempSigs = oracleEventSigs;
         const tempAdaptorPairs = tempSigs.map((sig) => {
           return {
@@ -1212,11 +1207,6 @@ export default class BitcoinDdkProvider extends Provider {
         const verifyP2ms = payments.p2ms({
           m: 2,
           pubkeys: verifyFundingPubKeys,
-          network,
-        });
-
-        const verifyP2wsh = payments.p2wsh({
-          redeem: verifyP2ms,
           network,
         });
 
@@ -1341,11 +1331,6 @@ export default class BitcoinDdkProvider extends Provider {
             network,
           });
 
-          const nonEnumP2wsh = payments.p2wsh({
-            redeem: nonEnumP2ms,
-            network,
-          });
-
           // We need the redeem script (multisig), not the P2WSH output
           const fundingSPK = nonEnumP2ms.output!;
 
@@ -1410,11 +1395,6 @@ export default class BitcoinDdkProvider extends Provider {
     const network = await this.getConnectedNetwork();
     const psbt = new Psbt({ network });
 
-    console.log(
-      'CreateFundingSigsAlt - Original fundTx hex:',
-      dlcTxs.fundTx.serialize().toString('hex'),
-    );
-
     // Combine all funding inputs from both parties
     const allFundingInputs = [
       ...dlcOffer.fundingInputs,
@@ -1423,13 +1403,6 @@ export default class BitcoinDdkProvider extends Provider {
 
     // Sort by inputSerialId to reconstruct proper transaction order
     allFundingInputs.sort((a, b) => Number(a.inputSerialId - b.inputSerialId));
-
-    console.log('CreateFundingSigsAlt - Input order:');
-    allFundingInputs.forEach((input, index) => {
-      console.log(
-        `  ${index}: ${input.prevTx.txId.toString()}:${input.prevTxVout} (serial: ${input.inputSerialId})`,
-      );
-    });
 
     // Add all inputs to PSBT with proper witnessUtxo
     for (const fundingInput of allFundingInputs) {
@@ -1441,11 +1414,6 @@ export default class BitcoinDdkProvider extends Provider {
         value: Number(prevOut.value.sats),
       };
 
-      console.log(
-        `CreateFundingSigsAlt - Input ${fundingInput.prevTx.txId.toString()}:${fundingInput.prevTxVout} scriptPubKey:`,
-        witnessUtxo.script.toString('hex'),
-      );
-
       // Use sequence from the original transaction to ensure consistency
       const originalInput = transaction.ins.find(
         (input) =>
@@ -1456,10 +1424,6 @@ export default class BitcoinDdkProvider extends Provider {
       const sequenceValue = originalInput
         ? originalInput.sequence
         : Number(fundingInput.sequence);
-
-      console.log(
-        `CreateFundingSigsAlt - Input ${fundingInput.prevTx.txId.toString()}:${fundingInput.prevTxVout} sequence: ${sequenceValue} (original: ${originalInput?.sequence}, funding: ${Number(fundingInput.sequence)})`,
-      );
 
       psbt.addInput({
         hash: fundingInput.prevTx.txId.toString(),
@@ -1550,14 +1514,6 @@ export default class BitcoinDdkProvider extends Provider {
     const fundingSignatures = new FundingSignatures();
     fundingSignatures.witnessElements = witnessElements;
 
-    console.log(
-      `CreateFundingSigsAlt - Party: ${isOfferer ? 'offerer' : 'accepter'}, created ${witnessElements.length} witness elements`,
-    );
-
-    // TODO: Add transaction structure verification once we resolve PSBT finalization issues
-    console.log(`CreateFundingSigsAlt - Original txid: ${transaction.getId()}`);
-    console.log('✅ Signatures created successfully');
-
     return fundingSignatures;
   }
 
@@ -1581,15 +1537,6 @@ export default class BitcoinDdkProvider extends Provider {
 
     const fundTxSigs = await Promise.all(
       inputs.map(async (input, index) => {
-        console.log(
-          `input.txid,
-          input.vout,
-          BigInt(input.value),`,
-          input.txid,
-          input.vout,
-          BigInt(input.value),
-        );
-
         // Use DLC-specific signing for DLC inputs
         return this._ddk.getRawFundingTransactionInputSignature(
           this.convertTxToDdkTransaction(dlcTxs.fundTx),
@@ -1669,169 +1616,46 @@ export default class BitcoinDdkProvider extends Provider {
     dlcTxs: DlcTransactions,
     isOfferer: boolean,
   ): Promise<void> {
-    const network = await this.getConnectedNetwork();
-    const transaction = btTransaction.fromBuffer(dlcTxs.fundTx.serialize());
+    // Simply use the DDK verify method like the original
+    const sigsValidity: boolean[] = [];
 
     // Get the party whose signatures we're verifying
-    // If we're the offerer, we verify accepter's signatures (from dlcSign)
-    // If we're the accepter, we verify offerer's signatures (from dlcSign)
     const signingPartyInputs = isOfferer
       ? dlcAccept.fundingInputs
       : dlcOffer.fundingInputs;
 
-    // Combine all inputs to get the correct ordering
-    const allFundingInputs = [
-      ...dlcOffer.fundingInputs,
-      ...dlcAccept.fundingInputs,
-    ];
-    allFundingInputs.sort((a, b) => Number(a.inputSerialId - b.inputSerialId));
-
-    console.log(
-      `VerifyFundingSigsAlt - Verifying ${dlcSign.fundingSignatures.witnessElements.length} signatures from ${isOfferer ? 'accepter' : 'offerer'}`,
-    );
-
-    // Map each witness element to the correct input for verification
     let witnessIndex = 0;
     for (const fundingInput of signingPartyInputs) {
-      // Skip DLC inputs for now (same as CreateFundingSigsAlt)
+      // Skip DLC inputs for now
       if (fundingInput.dlcInput) {
         continue;
-      }
-
-      if (witnessIndex >= dlcSign.fundingSignatures.witnessElements.length) {
-        throw new Error(
-          `Not enough witness elements: expected at least ${witnessIndex + 1}, got ${dlcSign.fundingSignatures.witnessElements.length}`,
-        );
       }
 
       const witnessElement =
         dlcSign.fundingSignatures.witnessElements[witnessIndex];
       const signature = witnessElement[0].witness;
-      const publicKey = witnessElement[1].witness;
+      const pubkey = witnessElement[1].witness;
 
-      // Find this input's index in the sorted transaction
-      const inputIndex = allFundingInputs.findIndex(
-        (input) =>
-          input.prevTx.txId.toString() ===
-            fundingInput.prevTx.txId.toString() &&
-          input.prevTxVout === fundingInput.prevTxVout,
+      // Use DDK's verification method
+      const isValid = this._ddk.verifyFundTxSignature(
+        this.convertTxToDdkTransaction(dlcTxs.fundTx),
+        signature,
+        pubkey,
+        fundingInput.prevTx.txId.toString(),
+        fundingInput.prevTxVout,
+        fundingInput.prevTx.outputs[fundingInput.prevTxVout].value.sats,
       );
 
-      if (inputIndex === -1) {
-        throw new Error(
-          `Input not found in transaction: ${fundingInput.prevTx.txId.toString()}:${fundingInput.prevTxVout}`,
-        );
-      }
-
-      // Verify the signature using bitcoinjs-lib
-      try {
-        const prevOut = fundingInput.prevTx.outputs[fundingInput.prevTxVout];
-        const scriptPubKey = prevOut.scriptPubKey.serialize().slice(1); // Remove length prefix
-        const amount = Number(prevOut.value.sats);
-
-        // Create a PSBT for signature verification
-        const psbt = new Psbt({ network });
-
-        // Add all inputs (needed for proper sighash calculation)
-        for (const input of allFundingInputs) {
-          const prevOutput = input.prevTx.outputs[input.prevTxVout];
-          psbt.addInput({
-            hash: input.prevTx.txId.toString(),
-            index: input.prevTxVout,
-            sequence: 0,
-            witnessUtxo: {
-              script: prevOutput.scriptPubKey.serialize().slice(1),
-              value: Number(prevOutput.value.sats),
-            },
-          });
-        }
-
-        // Add all outputs
-        for (const output of transaction.outs) {
-          psbt.addOutput({
-            address: address.fromOutputScript(output.script, network),
-            value: output.value,
-          });
-        }
-
-        // Verify signature for P2WPKH input - use the original transaction
-        const sigHash = transaction.hashForWitnessV0(
-          inputIndex,
-          scriptPubKey,
-          amount,
-          btTransaction.SIGHASH_ALL,
-        );
-
-        // Debug signature format
-        console.log(
-          `  Input ${inputIndex} signature:`,
-          signature.toString('hex'),
-        );
-        console.log(
-          `  Input ${inputIndex} publicKey:`,
-          publicKey.toString('hex'),
-        );
-        console.log(`  Input ${inputIndex} sigHash:`, sigHash.toString('hex'));
-
-        // Extract DER signature (remove SIGHASH_ALL byte)
-        const derSignature =
-          signature.length > 0 ? signature.slice(0, -1) : signature;
-        console.log(
-          `  Input ${inputIndex} DER signature:`,
-          derSignature.toString('hex'),
-        );
-
-        // Convert DER signature to compact format (r,s components)
-        // ECPair.verify expects 64-byte compact format, not DER
-        const { r, s } = bip66.decode(derSignature);
-
-        // Pad r and s to 32 bytes each
-        const rPadded =
-          r.length < 32 ? Buffer.concat([Buffer.alloc(32 - r.length), r]) : r;
-        const sPadded =
-          s.length < 32 ? Buffer.concat([Buffer.alloc(32 - s.length), s]) : s;
-        const compactSignature = Buffer.concat([rPadded, sPadded]);
-
-        console.log(
-          `  Input ${inputIndex} compact signature:`,
-          compactSignature.toString('hex'),
-        );
-
-        // Verify signature
-        const keyPair = ECPair.fromPublicKey(publicKey, { network });
-        let isValid;
-        try {
-          isValid = keyPair.verify(sigHash, compactSignature);
-          console.log(`  Input ${inputIndex} verification result:`, isValid);
-        } catch (error) {
-          console.log(
-            `  Input ${inputIndex} verification error:`,
-            error.message,
-          );
-          throw error;
-        }
-
-        if (!isValid) {
-          throw new Error(
-            `Invalid signature for input ${inputIndex}: ${fundingInput.prevTx.txId.toString()}:${fundingInput.prevTxVout}`,
-          );
-        }
-
-        console.log(
-          `✓ Valid signature for input ${inputIndex}: ${fundingInput.prevTx.txId.toString()}:${fundingInput.prevTxVout}`,
-        );
-      } catch (error) {
-        throw new Error(
-          `Signature verification failed for input ${fundingInput.prevTx.txId.toString()}:${fundingInput.prevTxVout}: ${error.message}`,
-        );
-      }
-
+      sigsValidity.push(isValid);
       witnessIndex++;
     }
 
-    console.log(
-      `✓ All ${witnessIndex} signatures verified successfully for ${isOfferer ? 'offerer' : 'accepter'}`,
-    );
+    const areSigsValid = sigsValidity.every((b) => b);
+    console.log('areSigsValid', areSigsValid);
+
+    if (!areSigsValid) {
+      throw new Error('Invalid signatures received');
+    }
   }
 
   private async CreateFundingTx(
@@ -2432,24 +2256,6 @@ Payout Group not found even with brute force search',
         sliceIndex === 0
           ? oracleAttestation.signatures
           : oracleAttestation.signatures.slice(0, sliceIndex);
-
-      const network = await this.getConnectedNetwork();
-
-      const fundingPubKeys =
-        Buffer.compare(dlcOffer.fundingPubkey, dlcAccept.fundingPubkey) === -1
-          ? [dlcOffer.fundingPubkey, dlcAccept.fundingPubkey]
-          : [dlcAccept.fundingPubkey, dlcOffer.fundingPubkey];
-
-      const p2ms = payments.p2ms({
-        m: 2,
-        pubkeys: fundingPubKeys,
-        network,
-      });
-
-      const paymentVariant = payments.p2wsh({
-        redeem: p2ms,
-        network,
-      });
 
       finalCet = this._ddk
         .signCet(
@@ -3363,13 +3169,13 @@ Payout Group not found even with brute force search',
       false,
     );
 
-    // await this.VerifyFundingSigsAlt(
-    //   dlcOffer,
-    //   dlcAccept,
-    //   dlcSign,
-    //   dlcTxs,
-    //   false,
-    // );
+    await this.VerifyFundingSigsAlt(
+      dlcOffer,
+      dlcAccept,
+      dlcSign,
+      dlcTxs,
+      false,
+    );
 
     const fundingSignatures = await this.CreateFundingSigsAlt(
       dlcOffer,
