@@ -1,4 +1,5 @@
 /* eslint-env mocha */
+import * as ddkJs from '@bennyblader/ddk-ts';
 import BN from 'bignumber.js';
 import { generateMnemonic } from 'bip39';
 import * as cfdJs from 'cfd-js';
@@ -6,6 +7,7 @@ import * as chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
 import BitcoinCfdProvider from '../../packages/bitcoin-cfd-provider/lib';
+import BitcoinDdkProvider from '../../packages/bitcoin-ddk-provider/lib';
 import BitcoinDlcProvider from '../../packages/bitcoin-dlc-provider/lib';
 import { BitcoinJsWalletProvider } from '../../packages/bitcoin-js-wallet-provider';
 import { BitcoinNodeWalletProvider } from '../../packages/bitcoin-node-wallet-provider';
@@ -136,6 +138,30 @@ bitcoinWithJs5.addProvider(
 bitcoinWithJs5.addProvider(new BitcoinCfdProvider(cfdJs));
 bitcoinWithJs5.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
 
+const bitcoinWithDdk = new Client();
+bitcoinWithDdk.addProvider(mockedBitcoinRpcProvider() as unknown as Provider);
+bitcoinWithDdk.addProvider(
+  new BitcoinJsWalletProvider({
+    network,
+    mnemonic: generateMnemonic(256),
+    baseDerivationPath: `m/84'/${config.bitcoin.network.coinType}'/0'`,
+    addressType: bitcoin.AddressType.BECH32,
+  }) as any,
+);
+bitcoinWithDdk.addProvider(new BitcoinDdkProvider(network, ddkJs));
+
+const bitcoinWithDdk2 = new Client();
+bitcoinWithDdk2.addProvider(mockedBitcoinRpcProvider() as unknown as Provider);
+bitcoinWithDdk2.addProvider(
+  new BitcoinJsWalletProvider({
+    network,
+    mnemonic: generateMnemonic(256),
+    baseDerivationPath: `m/84'/${config.bitcoin.network.coinType}'/0'`,
+    addressType: bitcoin.AddressType.BECH32,
+  }) as any,
+);
+bitcoinWithDdk2.addProvider(new BitcoinDdkProvider(network, ddkJs));
+
 const chains = {
   bitcoinWithNode: {
     id: 'Bitcoin Node',
@@ -172,6 +198,18 @@ const chains = {
     id: 'Bitcoin Js',
     name: 'bitcoin',
     client: bitcoinWithJs5,
+    network: network,
+  },
+  bitcoinWithDdk: {
+    id: 'Bitcoin DDK',
+    name: 'bitcoin',
+    client: bitcoinWithDdk,
+    network: network,
+  },
+  bitcoinWithDdk2: {
+    id: 'Bitcoin DDK',
+    name: 'bitcoin',
+    client: bitcoinWithDdk2,
     network: network,
   },
 };
