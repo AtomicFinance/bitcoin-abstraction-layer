@@ -76,6 +76,7 @@ export default class Input {
       inputSerialId: this.inputSerialId,
       toJSON: Utxo.prototype.toJSON,
       toInput: Utxo.prototype.toInput,
+      toTxInputInfo: Utxo.prototype.toTxInputInfo,
     };
   }
 

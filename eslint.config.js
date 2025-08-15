@@ -37,6 +37,7 @@ module.exports = [
       '@typescript-eslint/no-unsafe-function-type': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
       'no-undef': 'off', // TypeScript handles this
+      '@typescript-eslint/no-unused-expressions': 'off',
     }
   },
   {
