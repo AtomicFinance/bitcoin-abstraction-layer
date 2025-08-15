@@ -34,6 +34,7 @@ interface IClient {
 export * from './cfd';
 export * from './common';
 export * from './dlc';
+export * from './ddk';
 export { default as Amount } from './models/Amount';
 export {
   default as Input,
