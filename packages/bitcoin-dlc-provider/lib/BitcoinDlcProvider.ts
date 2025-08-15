@@ -2972,10 +2972,10 @@ Payout Group not found even with brute force search',
     dlcAccept.acceptCollateral = acceptCollateralSatoshis;
     dlcAccept.fundingPubkey = fundingPubKey;
     dlcAccept.payoutSpk = payoutSPK;
-    dlcAccept.payoutSerialId = dlcAccept.payoutSerialId = payoutSerialId;
+    dlcAccept.payoutSerialId = payoutSerialId;
     dlcAccept.fundingInputs = fundingInputs;
     dlcAccept.changeSpk = changeSPK;
-    dlcAccept.changeSerialId = dlcAccept.changeSerialId = changeSerialId;
+    dlcAccept.changeSerialId = changeSerialId;
 
     assert(
       dlcAccept.changeSerialId !== dlcOffer.fundOutputSerialId,
