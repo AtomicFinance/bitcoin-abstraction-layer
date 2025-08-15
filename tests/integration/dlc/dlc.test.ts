@@ -217,32 +217,22 @@ describe('dlc provider', () => {
         [ddkInput],
       );
 
-      console.log('ABOUT TO RUN DLC ACCEPT');
-
       const acceptDlcOfferResponse: AcceptDlcOfferResponse =
         await ddk2.dlc.acceptDlcOffer(dlcOffer, [ddk2Input]);
 
       dlcAccept = acceptDlcOfferResponse.dlcAccept;
       dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
 
-      console.log('ABOUT TO RUN DLC SIGN');
-
       const signDlcAcceptResponse: SignDlcAcceptResponse =
         await ddk.dlc.signDlcAccept(dlcOffer, dlcAccept);
 
       dlcSign = signDlcAcceptResponse.dlcSign;
-
-      console.log('dlcSign', dlcSign.fundingSignatures);
 
       const fundTx = await ddk2.dlc.finalizeDlcSign(
         dlcOffer,
         dlcAccept,
         dlcSign,
         dlcTransactions,
-      );
-      console.log(
-        ` fundTx.serialize().toString('hex')`,
-        fundTx.serialize().toString('hex'),
       );
 
       const fundTxId = await ddk2.chain.sendRawTransaction(
@@ -261,11 +251,6 @@ describe('dlc provider', () => {
         dlcTransactions,
         oracleAttestation,
         false,
-      );
-
-      console.log(
-        `cet.serialize().toString('hex')`,
-        cet.serialize().toString('hex'),
       );
 
       const cetTxId = await bob.chain.sendRawTransaction(

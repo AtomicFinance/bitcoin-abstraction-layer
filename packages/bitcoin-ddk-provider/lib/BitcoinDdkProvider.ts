@@ -1,6 +1,8 @@
 import Provider from '@atomicfinance/provider';
 import {
   AdaptorSignature,
+  AddSignaturesToRefundTxRequest,
+  AddSignaturesToRefundTxResponse,
   Address,
   Amount,
   CalculateEcSignatureRequest,
@@ -72,7 +74,6 @@ import {
 } from '@node-dlc/messaging';
 import assert from 'assert';
 import BigNumber from 'bignumber.js';
-import * as bip66 from 'bip66';
 import { BitcoinNetwork, chainHashFromNetwork } from 'bitcoin-networks';
 import {
   address,
@@ -851,7 +852,6 @@ export default class BitcoinDdkProvider extends Provider {
     // Pass raw outcome strings to dlcdevkit - it will handle the tagged hashing internally
     // dlcdevkit expects raw strings and calls tagged_attestation_msg() internally
     const messages = eventDescriptor.outcomes;
-    console.log('DEBUG GenerateEnumMessages - messages to send:', messages);
     messagesList.push({ messages });
 
     return messagesList;
@@ -1143,8 +1143,6 @@ export default class BitcoinDdkProvider extends Provider {
       }
     }
 
-    console.log('about to do refund sig');
-
     const refundSignature = this._ddk.getRawFundingTransactionInputSignature(
       this.convertTxToDdkTransaction(dlcTxs.refundTx),
       Buffer.from(fundPrivateKey, 'hex'),
@@ -1250,10 +1248,6 @@ export default class BitcoinDdkProvider extends Provider {
         );
 
         let areSigsValid = (await Promise.all(sigsValidity)).every((b) => b);
-
-        console.log('areSigsValid', areSigsValid);
-
-        console.log('test1-bbb');
 
         await this.VerifyRefundSignatureAlt(
           dlcOffer,
@@ -1402,7 +1396,7 @@ export default class BitcoinDdkProvider extends Provider {
 
       // Use the same pattern as existing code - slice(1) to remove length prefix
       const witnessUtxo = {
-        script: prevOut.scriptPubKey.serialize().slice(1),
+        script: prevOut.scriptPubKey.serialize().subarray(1),
         value: Number(prevOut.value.sats),
       };
 
@@ -1550,7 +1544,7 @@ export default class BitcoinDdkProvider extends Provider {
         index: input.prevTxVout,
         sequence: 0,
         witnessUtxo: {
-          script: prevOutput.scriptPubKey.serialize().slice(1),
+          script: prevOutput.scriptPubKey.serialize().subarray(1),
           value: Number(prevOutput.value.sats),
         },
       });
@@ -1655,7 +1649,7 @@ export default class BitcoinDdkProvider extends Provider {
       index: dlcTxs.fundTxVout,
       sequence: 0,
       witnessUtxo: {
-        script: fundingOutput.scriptPubKey.serialize().slice(1), // Remove length prefix
+        script: fundingOutput.scriptPubKey.serialize().subarray(1), // Remove length prefix
         value: Number(fundingOutput.value.sats),
       },
       witnessScript: this.CreateFundingScript(dlcOffer, dlcAccept), // 2-of-2 multisig script
@@ -1665,7 +1659,7 @@ export default class BitcoinDdkProvider extends Provider {
     const refundOutput = dlcTxs.refundTx.outputs[0];
     psbt.addOutput({
       address: address.fromOutputScript(
-        refundOutput.scriptPubKey.serialize().slice(1),
+        refundOutput.scriptPubKey.serialize().subarray(1),
         network,
       ),
       value: Number(refundOutput.value.sats),
@@ -1738,13 +1732,6 @@ export default class BitcoinDdkProvider extends Provider {
     ];
     allFundingInputs.sort((a, b) => Number(a.inputSerialId - b.inputSerialId));
 
-    console.log('CreateFundingTx - Input order:');
-    allFundingInputs.forEach((input, index) => {
-      console.log(
-        `  ${index}: ${input.prevTx.txId.toString()}:${input.prevTxVout} (serial: ${input.inputSerialId})`,
-      );
-    });
-
     // Create a map of input txid:vout to witness elements
     const witnessMap = new Map<string, ScriptWitnessV0[]>();
 
@@ -1799,14 +1786,9 @@ export default class BitcoinDdkProvider extends Provider {
 
       // Use same script handling as CreateFundingSigsAlt
       const witnessUtxo = {
-        script: prevOut.scriptPubKey.serialize().slice(1),
+        script: prevOut.scriptPubKey.serialize().subarray(1),
         value: Number(prevOut.value.sats),
       };
-
-      console.log(
-        `CreateFundingTx - Input ${fundingInput.prevTx.txId.toString()}:${fundingInput.prevTxVout} scriptPubKey:`,
-        witnessUtxo.script.toString('hex'),
-      );
 
       // Use sequence from the original transaction (same as CreateFundingSigsAlt)
       const originalInput = originalTransaction.ins.find(
@@ -1818,10 +1800,6 @@ export default class BitcoinDdkProvider extends Provider {
       const sequenceValue = originalInput
         ? originalInput.sequence
         : Number(fundingInput.sequence);
-
-      console.log(
-        `CreateFundingTx - Input ${fundingInput.prevTx.txId.toString()}:${fundingInput.prevTxVout} sequence: ${sequenceValue}`,
-      );
 
       psbt.addInput({
         hash: fundingInput.prevTx.txId.toString(),
@@ -1859,23 +1837,6 @@ export default class BitcoinDdkProvider extends Provider {
         const signature = witnessElements[0].witness;
         const publicKey = witnessElements[1].witness;
 
-        // Debug the witness elements to understand their structure
-        console.log(
-          `Input ${inputIndex}: ${fundingInput.prevTx.txId.toString()}:${fundingInput.prevTxVout}`,
-        );
-        console.log(
-          'Signature length:',
-          signature.length,
-          'first few bytes:',
-          signature.slice(0, 10).toString('hex'),
-        );
-        console.log(
-          'PublicKey length:',
-          publicKey.length,
-          'key:',
-          publicKey.toString('hex'),
-        );
-
         // Try a simpler approach - let bitcoinjs-lib handle witness construction
         psbt.finalizeInput(inputIndex, () => ({
           finalScriptSig: Buffer.alloc(0),
@@ -1892,8 +1853,6 @@ export default class BitcoinDdkProvider extends Provider {
 
     // Extract the final transaction
     const finalTx = psbt.extractTransaction();
-
-    console.log('CreateFundingTx - Final fundTx hex:', finalTx.toHex());
 
     // Convert back to the expected Tx format
     return Tx.decode(StreamReader.fromBuffer(finalTx.toBuffer()));
@@ -2259,8 +2218,6 @@ Payout Group not found even with brute force search',
   ): Promise<Tx> {
     if (isOfferer === undefined)
       isOfferer = await this.isOfferer(dlcOffer, dlcAccept);
-
-    console.log('test1');
 
     const fundPrivateKey = await this.GetFundPrivateKey(
       dlcOffer,
@@ -2898,8 +2855,6 @@ Payout Group not found even with brute force search',
     const { dlcOffer } = checkTypes({ _dlcOffer });
     dlcOffer.validate();
 
-    console.log('accept dlc offer');
-
     const acceptCollateralSatoshis =
       dlcOffer.contractInfo.totalCollateral - dlcOffer.offerCollateral;
 
@@ -3094,8 +3049,6 @@ Payout Group not found even with brute force search',
         'fundingInputs for dlcAccept must be greater than acceptCollateralSatoshis plus acceptFees',
       );
     }
-
-    console.log('about to create dlc txs');
 
     const { dlcTransactions, messagesList } = await this.createDlcTxs(
       dlcOffer,
@@ -3304,51 +3257,85 @@ Payout Group not found even with brute force search',
 
   /**
    * Refund DLC
-   * @param _dlcOffer Dlc Offer Message
-   * @param _dlcAccept Dlc Accept Message
-   * @param _dlcSign Dlc Sign Message
-   * @param _dlcTxs Dlc Transactions message
+   * @param dlcOffer Dlc Offer Message
+   * @param dlcAccept Dlc Accept Message
+   * @param dlcSign Dlc Sign Message
+   * @param dlcTxs Dlc Transactions message
    * @returns {Promise<Tx>}
    */
-  // async refund(
-  //   _dlcOffer: DlcOffer,
-  //   _dlcAccept: DlcAccept,
-  //   _dlcSign: DlcSign,
-  //   _dlcTxs: DlcTransactions,
-  // ): Promise<Tx> {
-  //   const { dlcOffer, dlcAccept, dlcSign, dlcTxs } = checkTypes({
-  //     _dlcOffer,
-  //     _dlcAccept,
-  //     _dlcSign,
-  //     _dlcTxs,
-  //   });
+  async refund(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    dlcSign: DlcSign,
+    dlcTxs: DlcTransactions,
+  ): Promise<Tx> {
+    const network = await this.getConnectedNetwork();
+    const psbt = new Psbt({ network });
 
-  //   const signatures =
-  //     Buffer.compare(dlcOffer.fundingPubkey, dlcAccept.fundingPubkey) === -1
-  //       ? [
-  //           dlcSign.refundSignature.toString('hex'),
-  //           dlcAccept.refundSignature.toString('hex'),
-  //         ]
-  //       : [
-  //           dlcAccept.refundSignature.toString('hex'),
-  //           dlcSign.refundSignature.toString('hex'),
-  //         ];
+    // Verify refund transaction locktime matches expected
+    if (Number(dlcTxs.refundTx.locktime) !== dlcOffer.refundLocktime) {
+      throw new Error(
+        `Refund transaction locktime ${dlcTxs.refundTx.locktime} does not match expected ${dlcOffer.refundLocktime}`,
+      );
+    }
 
-  //   const addSigsToRefundTxRequest: AddSignaturesToRefundTxRequest = {
-  //     refundTxHex: dlcTxs.refundTx.serialize().toString('hex'),
-  //     signatures,
-  //     fundTxId: dlcTxs.fundTx.txId.toString(),
-  //     fundVout: dlcTxs.fundTxVout,
-  //     localFundPubkey: dlcOffer.fundingPubkey.toString('hex'),
-  //     remoteFundPubkey: dlcAccept.fundingPubkey.toString('hex'),
-  //   };
+    // Add the funding input
+    const fundingOutput = dlcTxs.fundTx.outputs[dlcTxs.fundTxVout];
+    psbt.addInput({
+      hash: dlcTxs.fundTx.txId.toString(),
+      index: dlcTxs.fundTxVout,
+      sequence: 0,
+      witnessUtxo: {
+        script: fundingOutput.scriptPubKey.serialize().subarray(1), // Remove length prefix
+        value: Number(fundingOutput.value.sats),
+      },
+      witnessScript: this.CreateFundingScript(dlcOffer, dlcAccept), // 2-of-2 multisig script
+    });
 
-  //   const refundHex = (
-  //     await this.AddSignaturesToRefundTx(addSigsToRefundTxRequest)
-  //   ).hex;
+    // Add the refund output
+    const refundOutput = dlcTxs.refundTx.outputs[0];
+    psbt.addOutput({
+      address: address.fromOutputScript(
+        refundOutput.scriptPubKey.serialize().subarray(1),
+        network,
+      ),
+      value: Number(refundOutput.value.sats),
+    });
 
-  //   return Tx.decode(StreamReader.fromHex(refundHex));
-  // }
+    // Set the locktime to match the refund transaction
+    psbt.setLocktime(Number(dlcTxs.refundTx.locktime));
+
+    // Sort funding pubkeys for consistent signature ordering
+    const fundingPubKeys =
+      Buffer.compare(dlcOffer.fundingPubkey, dlcAccept.fundingPubkey) === -1
+        ? [dlcOffer.fundingPubkey, dlcAccept.fundingPubkey]
+        : [dlcAccept.fundingPubkey, dlcOffer.fundingPubkey];
+
+    // Add both refund signatures as partial signatures
+    psbt.updateInput(0, {
+      partialSig: [
+        { pubkey: fundingPubKeys[0], signature: dlcSign.refundSignature },
+        { pubkey: fundingPubKeys[1], signature: dlcAccept.refundSignature },
+      ],
+    });
+
+    // Validate all signatures
+    psbt.validateSignaturesOfInput(
+      0,
+      (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
+        return ecc.verify(msghash, pubkey, signature);
+      },
+    );
+
+    // Finalize the input - this will create the final witness script
+    psbt.finalizeInput(0);
+
+    // Extract the final transaction
+    const finalTx = psbt.extractTransaction();
+
+    // Convert to the expected Tx format
+    return Tx.decode(StreamReader.fromBuffer(finalTx.toBuffer()));
+  }
 
   /**
    * Goal of createDlcClose is for alice (the initiator) to
@@ -3955,7 +3942,7 @@ Payout Group not found even with brute force search',
       const witnessI = dlcClose.fundingSignatures.witnessElements.findIndex(
         (el) =>
           Buffer.compare(
-            Script.p2wpkhLock(hash160(el[1].witness)).serialize().slice(1),
+            Script.p2wpkhLock(hash160(el[1].witness)).serialize().subarray(1),
             psbt.data.inputs[i].witnessUtxo.script,
           ) === 0,
       );
@@ -3991,7 +3978,7 @@ Payout Group not found even with brute force search',
     const input = _input as FundingInput;
     const prevTx = input.prevTx;
     const prevTxOut = prevTx.outputs[input.prevTxVout];
-    const scriptPubKey = prevTxOut.scriptPubKey.serialize().slice(1);
+    const scriptPubKey = prevTxOut.scriptPubKey.serialize().subarray(1);
     const _address = address.fromOutputScript(scriptPubKey, network);
     let derivationPath: string;
 
@@ -4196,7 +4183,7 @@ Payout Group not found even with brute force search',
     // Verify this matches the actual funding output address
     const actualFundingOutput = tx.outputs[dlcInputInfo.fundVout];
     const actualFundingAddress = address.fromOutputScript(
-      actualFundingOutput.scriptPubKey.serialize().slice(1),
+      actualFundingOutput.scriptPubKey.serialize().subarray(1),
       network,
     );
 
