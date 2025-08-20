@@ -1,9 +1,7 @@
 import Provider from '@atomicfinance/provider';
 import { Address, bitcoin } from '@atomicfinance/types';
-import { BIP32Factory } from 'bip32';
-import { mnemonicToSeedSync } from 'bip39';
-import { networks } from 'bitcoinjs-lib';
-import * as ecc from 'tiny-secp256k1';
+import { BitcoinNetwork } from 'bitcoin-networks';
+import { networks, payments } from 'bitcoinjs-lib';
 
 const BITCOIN_NETWORK_TO_CFD_NETWORK = {
   bitcoin: 'mainnet',
@@ -13,18 +11,26 @@ const BITCOIN_NETWORK_TO_CFD_NETWORK = {
 
 type DerivationCache = { [index: string]: Address };
 
-const bip32 = BIP32Factory(ecc);
-
 export default class BitcoinCfdAddressDerivationProvider extends Provider {
   _cfd: any;
   _mnemonic: string;
   _baseDerivationPath: string;
   _derivationCache: DerivationCache;
-  _baseNode: any;
+  _baseExtkey: any;
   _seed: any;
-  _network: any;
+  _network: any; // CFD network string (mainnet, testnet, regtest)
+  _bitcoinNetwork: BitcoinNetwork; // Full BitcoinNetwork object
+  _addressType: bitcoin.AddressType;
 
-  constructor(options: any, cfd: any) {
+  constructor(
+    options: {
+      network: BitcoinNetwork;
+      mnemonic: string;
+      addressType?: bitcoin.AddressType;
+      baseDerivationPath: string;
+    },
+    cfd: any,
+  ) {
     const {
       network: bitcoinNetwork,
       mnemonic,
@@ -44,38 +50,46 @@ export default class BitcoinCfdAddressDerivationProvider extends Provider {
     this._cfd = cfd;
     this._derivationCache = {};
     this._mnemonic = mnemonic;
-    this._network = network;
+    this._network = network; // CFD network string
+    this._bitcoinNetwork = bitcoinNetwork; // Full BitcoinNetwork object
+    this._addressType = addressType;
+    this._baseExtkey = null; // Initialize
+    this._seed = null; // Initialize
   }
 
   getCfdDerivationCache() {
     return this._derivationCache;
   }
 
-  async baseNode() {
-    if (this._baseNode) {
-      return this._baseNode;
+  async baseExtkey() {
+    if (this._baseExtkey) {
+      return this._baseExtkey;
     }
 
-    // Use bitcoinjs-lib for consistent BIP32 derivation
-    const seed = mnemonicToSeedSync(this._mnemonic);
+    const { seed } = await this._cfd.ConvertMnemonicToSeed({
+      mnemonic: this._mnemonic.split(' '),
+      passphrase: '',
+      strictCheck: true,
+      language: 'en',
+    });
+
     this._seed = seed;
 
-    // Convert network to bitcoinjs-lib format
-    let bjsNetwork;
-    if (this._network === 'mainnet') {
-      bjsNetwork = networks.bitcoin;
-    } else if (this._network === 'testnet') {
-      bjsNetwork = networks.testnet;
-    } else if (this._network === 'regtest') {
-      bjsNetwork = networks.regtest;
-    }
+    const { extkey } = await this._cfd.CreateExtkeyFromSeed({
+      seed,
+      network: this._network,
+      extkeyType: 'extPrivkey',
+    });
 
-    // Create master node and derive base path
-    const masterNode = bip32.fromSeed(seed, bjsNetwork);
-    const baseNode = masterNode.derivePath(this._baseDerivationPath);
+    const { extkey: baseExtkey } = await this._cfd.CreateExtkeyFromParentPath({
+      extkey,
+      network: this._network,
+      extkeyType: 'extPrivkey',
+      path: this._baseDerivationPath,
+    });
 
-    this._baseNode = baseNode;
-    return this._baseNode;
+    this._baseExtkey = baseExtkey;
+    return this._baseExtkey;
   }
 
   async setCfdDerivationCache(derivationCache: DerivationCache) {
@@ -95,14 +109,24 @@ export default class BitcoinCfdAddressDerivationProvider extends Provider {
       return this._derivationCache[path];
     }
 
-    const baseNode = await this.baseNode();
+    const baseExtkey = await this.baseExtkey();
     const subPath = path.replace(this._baseDerivationPath + '/', '');
 
-    // Use bitcoinjs-lib for derivation (ensures compatibility)
-    const derivedNode = baseNode.derivePath(subPath);
-    const publicKey = derivedNode.publicKey;
+    const { extkey: subExtkey } = await this._cfd.CreateExtkeyFromParentPath({
+      extkey: baseExtkey,
+      network: this._network,
+      extkeyType: 'extPrivkey',
+      path: subPath,
+    });
 
-    const address = this.getMethod('getAddressFromPublicKey')(publicKey);
+    const { pubkey: _publicKey } = await this._cfd.GetPubkeyFromExtkey({
+      extkey: subExtkey,
+      network: this._network,
+    });
+
+    const publicKey = Buffer.from(_publicKey, 'hex');
+
+    const address = this.getAddressFromPublicKey(publicKey);
 
     const addressObject = new Address({
       address,
@@ -135,5 +159,41 @@ export default class BitcoinCfdAddressDerivationProvider extends Provider {
     }
 
     return addresses;
+  }
+
+  getAddressFromPublicKey(publicKey: Buffer): string {
+    return this.getPaymentVariantFromPublicKey(publicKey).address;
+  }
+
+  getPaymentVariantFromPublicKey(publicKey: Buffer): { address?: string } {
+    // Convert network name to bitcoinjs-lib network
+    let bjsNetwork;
+    if (this._network === 'mainnet') {
+      bjsNetwork = networks.bitcoin;
+    } else if (this._network === 'testnet') {
+      bjsNetwork = networks.testnet;
+    } else if (this._network === 'regtest') {
+      bjsNetwork = networks.regtest;
+    }
+
+    if (this._addressType === bitcoin.AddressType.LEGACY) {
+      return payments.p2pkh({
+        pubkey: publicKey,
+        network: bjsNetwork,
+      });
+    } else if (this._addressType === bitcoin.AddressType.P2SH_SEGWIT) {
+      return payments.p2sh({
+        redeem: payments.p2wpkh({
+          pubkey: publicKey,
+          network: bjsNetwork,
+        }),
+        network: bjsNetwork,
+      });
+    } else if (this._addressType === bitcoin.AddressType.BECH32) {
+      return payments.p2wpkh({
+        pubkey: publicKey,
+        network: bjsNetwork,
+      });
+    }
   }
 }

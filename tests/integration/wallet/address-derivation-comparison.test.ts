@@ -151,9 +151,6 @@ describe('Address Derivation Provider Comparison', () => {
           'getDerivationPathAddress',
         )(derivationPath);
 
-        console.log('cfdAddress', cfdAddress);
-        console.log('ddkAddress', ddkAddress);
-
         expect(cfdAddress.address).to.equal(
           ddkAddress.address,
           `Addresses differ for path: ${derivationPath}`,
