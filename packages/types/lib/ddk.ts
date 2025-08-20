@@ -229,8 +229,14 @@ export interface DdkInterface {
 
   convertMnemonicToSeed(mnemonic: string, passphrase?: string | null): Buffer;
 
+  // New clean API functions (DDK v0.3.23+)
+  createExtkeyFromSeed(seed: Buffer, network: string): Buffer;
+  createExtkeyFromParentPath(extkey: Buffer, path: string): Buffer;
+  getPubkeyFromExtkey(extkey: Buffer, network: string): Buffer;
+
+  // Legacy functions (maintained for backward compatibility)
   createXprivFromParentPath(
-    xpriv: Buffer,
+    seedOrXpriv: Buffer,
     baseDerivationPath: string,
     network: string,
     path: string,
@@ -403,8 +409,25 @@ export declare function convertMnemonicToSeed(
   passphrase?: string | null,
 ): Buffer;
 
+// New clean API functions (DDK v0.3.23+)
+export declare function createExtkeyFromSeed(
+  seed: Buffer,
+  network: string,
+): Buffer;
+
+export declare function createExtkeyFromParentPath(
+  extkey: Buffer,
+  path: string,
+): Buffer;
+
+export declare function getPubkeyFromExtkey(
+  extkey: Buffer,
+  network: string,
+): Buffer;
+
+// Legacy functions (maintained for backward compatibility)
 export declare function createXprivFromParentPath(
-  xpriv: Buffer,
+  seedOrXpriv: Buffer,
   baseDerivationPath: string,
   network: string,
   path: string,
