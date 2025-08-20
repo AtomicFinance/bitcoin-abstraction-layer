@@ -1,6 +1,6 @@
 {
   "name": "@atomicfinance/bitcoin-esplora-batch-api-provider",
-  "version": "4.1.0",
+  "version": "4.1.1",
   "description": "",
   "module": "dist/index.js",
   "main": "dist/index.js",
@@ -24,10 +24,10 @@
     "node": ">=14"
   },
   "dependencies": {
-    "@atomicfinance/bitcoin-esplora-api-provider": "^4.1.0",
-    "@atomicfinance/node-provider": "^4.1.0",
-    "@atomicfinance/types": "^4.1.0",
-    "@atomicfinance/utils": "^4.1.0",
+    "@atomicfinance/bitcoin-esplora-api-provider": "^4.1.1",
+    "@atomicfinance/node-provider": "^4.1.1",
+    "@atomicfinance/types": "^4.1.1",
+    "@atomicfinance/utils": "^4.1.1",
     "@babel/runtime": "^7.12.1",
     "bignumber.js": "^9.0.0",
     "lodash": "^4.17.20"
