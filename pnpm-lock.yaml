@@ -13,8 +13,8 @@ importers:
   .:
     devDependencies:
       '@bennyblader/ddk-ts':
-        specifier: ^0.3.22
-        version: 0.3.22
+        specifier: ^0.3.23
+        version: 0.3.23
       '@changesets/cli':
         specifier: ^2.22.0
         version: 2.29.5
@@ -178,6 +178,34 @@ importers:
         specifier: ^6.0.1
         version: 6.0.1(webpack@5.101.0)
 
+  packages/bitcoin-cfd-address-derivation-provider:
+    dependencies:
+      '@atomicfinance/provider':
+        specifier: ^4.1.0
+        version: link:../provider
+      '@atomicfinance/types':
+        specifier: ^4.1.0
+        version: link:../types
+      bip32:
+        specifier: ^4.0.0
+        version: 4.0.0
+      bip39:
+        specifier: ^3.0.4
+        version: 3.1.0
+      bitcoin-networks:
+        specifier: ^1.0.0
+        version: 1.0.0
+      bitcoinjs-lib:
+        specifier: 6.1.7
+        version: 6.1.7
+      tiny-secp256k1:
+        specifier: ^2.2.0
+        version: 2.2.4
+    devDependencies:
+      '@types/node':
+        specifier: 20.19.10
+        version: 20.19.10
+
   packages/bitcoin-cfd-provider:
     dependencies:
       '@atomicfinance/provider':
@@ -196,6 +224,34 @@ importers:
       '@types/lodash':
         specifier: ^4.14.160
         version: 4.17.5
+      '@types/node':
+        specifier: 20.19.10
+        version: 20.19.10
+
+  packages/bitcoin-ddk-address-derivation-provider:
+    dependencies:
+      '@atomicfinance/provider':
+        specifier: ^4.1.0
+        version: link:../provider
+      '@atomicfinance/types':
+        specifier: ^4.1.0
+        version: link:../types
+      bip32:
+        specifier: ^4.0.0
+        version: 4.0.0
+      bip39:
+        specifier: ^3.0.4
+        version: 3.1.0
+      bitcoin-networks:
+        specifier: ^1.0.0
+        version: 1.0.0
+      bitcoinjs-lib:
+        specifier: 6.1.7
+        version: 6.1.7
+      tiny-secp256k1:
+        specifier: ^2.2.0
+        version: 2.2.4
+    devDependencies:
       '@types/node':
         specifier: 20.19.10
         version: 20.19.10
@@ -963,8 +1019,8 @@ packages:
       '@babel/helper-validator-identifier': 7.27.1
     dev: true
 
-  /@bennyblader/ddk-ts@0.3.22:
-    resolution: {integrity: sha512-aaDawNN0muHj58ti9gkLqKXgqGIh4v+6L1oYqr1X+QdBu02d/b2dDdPZGS267hMtYsaG0E/n0DFIONw1PZNbVQ==}
+  /@bennyblader/ddk-ts@0.3.23:
+    resolution: {integrity: sha512-cB8XUvX03ZmwZ5GuZtkgfZtU0iCBJzP5kqux8j3UovyB2tS0hBgzCNGj37xG1h8nJ1vWjLap4Kc+eV6uMzu7vQ==}
     engines: {node: '>= 6.14.2 < 7 || >= 8.11.2 < 9 || >= 9.11.0 < 10 || >= 10.0.0'}
     dev: true
 
@@ -1714,6 +1770,10 @@ packages:
     resolution: {integrity: sha512-QNqXyfVS2wm9hweSYD2O7F0G06uurj9kZ96TRQE5Y9hU7+tgdZwIkbAKc5Ocy1HxEY2kuDQa6cQ1WRs/O5LFKA==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
     dev: true
+
+  /@scure/base@1.2.6:
+    resolution: {integrity: sha512-g/nm5FgUa//MCj1gV09zTJTaM6KBAHqLN907YVQqf7zC49+DcO4B1so4ZX07Ef10Twr6nuqYEH9GEggFXA4Fmg==}
+    dev: false
 
   /@sindresorhus/is@4.6.0:
     resolution: {integrity: sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw==}
@@ -2769,6 +2829,16 @@ packages:
       tiny-secp256k1: 1.1.7
       typeforce: 1.18.0
       wif: 2.0.6
+
+  /bip32@4.0.0:
+    resolution: {integrity: sha512-aOGy88DDlVUhspIXJN+dVEtclhIsfAUppD43V0j40cPTld3pv/0X/MlrZSZ6jowIaQQzFwP8M6rFU2z2mVYjDQ==}
+    engines: {node: '>=6.0.0'}
+    dependencies:
+      '@noble/hashes': 1.8.0
+      '@scure/base': 1.2.6
+      typeforce: 1.18.0
+      wif: 2.0.6
+    dev: false
 
   /bip39@3.1.0:
     resolution: {integrity: sha512-c9kiwdk45Do5GL0vJMe7tS95VjCii65mYAH7DfWl3uW8AVzXKQVUm64i3hzVybBDMp9r7j9iNxR85+ul8MdN/A==}
