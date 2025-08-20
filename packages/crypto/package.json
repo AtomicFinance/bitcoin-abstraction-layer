@@ -1,6 +1,6 @@
 {
   "name": "@atomicfinance/crypto",
-  "version": "4.1.0",
+  "version": "4.1.1",
   "description": "",
   "module": "dist/index.js",
   "main": "dist/index.js",

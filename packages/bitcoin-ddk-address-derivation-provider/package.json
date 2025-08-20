@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/bitcoin-ddk-address-derivation-provider",
   "umdName": "BitcoinDdkAddressDerivationProvider",
-  "version": "4.1.0",
+  "version": "4.1.1",
   "description": "Bitcoin Abstraction Layer DDK Address Derivation Provider",
   "author": "Atomic Finance <info@atomic.finance>",
   "homepage": "",
@@ -15,8 +15,8 @@
     "lint:fix": "../../node_modules/.bin/eslint --fix  ."
   },
   "dependencies": {
-    "@atomicfinance/provider": "^4.1.0",
-    "@atomicfinance/types": "^4.1.0",
+    "@atomicfinance/provider": "^4.1.1",
+    "@atomicfinance/types": "^4.1.1",
     "bip32": "^4.0.0",
     "bip39": "^3.0.4",
     "bitcoin-networks": "^1.0.0",
