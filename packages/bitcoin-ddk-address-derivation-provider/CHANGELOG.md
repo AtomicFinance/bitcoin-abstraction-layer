@@ -1,5 +1,14 @@
 # @atomicfinance/bitcoin-ddk-address-derivation-provider
 
+## 4.1.2
+
+### Patch Changes
+
+- 5536d01: Add ensure buffer to BitcoinDdkProvider
+- Updated dependencies [5536d01]
+  - @atomicfinance/provider@4.1.2
+  - @atomicfinance/types@4.1.2
+
 ## 4.1.1
 
 ### Patch Changes
