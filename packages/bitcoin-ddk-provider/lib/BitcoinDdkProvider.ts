@@ -106,6 +106,22 @@ export default class BitcoinDdkProvider extends Provider {
   }
 
   /**
+   * Helper function to ensure we have a Buffer object
+   * Handles cases where Buffer objects have been serialized/deserialized
+   */
+  private ensureBuffer(
+    bufferLike: Buffer | { type: string; data: number[] } | any,
+  ): Buffer {
+    if (Buffer.isBuffer(bufferLike)) {
+      return bufferLike;
+    }
+    if (bufferLike && bufferLike.type === 'Buffer' && bufferLike.data) {
+      return Buffer.from(bufferLike.data);
+    }
+    return bufferLike;
+  }
+
+  /**
    * Find private key for DLC funding pubkey by deriving wallet addresses
    */
   private async findDlcFundingPrivateKey(
@@ -1451,6 +1467,8 @@ export default class BitcoinDdkProvider extends Provider {
         const { privKey } = partyInputMap.get(inputKey)!;
         const keyPair = ECPair.fromPrivateKey(Buffer.from(privKey, 'hex'));
 
+        console.log('test6');
+
         // Check if this is a DLC input (2-of-2 multisig from previous DLC)
         if (fundingInput.dlcInput) {
           // For DLC inputs, we'll need to handle 2-of-2 multisig signing differently
@@ -1473,7 +1491,7 @@ export default class BitcoinDdkProvider extends Provider {
 
           // For P2WPKH, create witness manually: [signature, publicKey]
           const sigWitness = new ScriptWitnessV0();
-          sigWitness.witness = partialSigs[0].signature;
+          sigWitness.witness = this.ensureBuffer(partialSigs[0].signature);
           const pubKeyWitness = new ScriptWitnessV0();
           pubKeyWitness.witness = keyPair.publicKey;
 
@@ -3534,7 +3552,9 @@ Payout Group not found even with brute force search',
 
     // Extract close signature from psbt and decode it to only extract r and s values
     const closeSignature = await script.signature.decode(
-      psbt.data.inputs[fundingInputIndex].partialSig[0].signature,
+      this.ensureBuffer(
+        psbt.data.inputs[fundingInputIndex].partialSig[0].signature,
+      ),
     ).signature;
 
     // Extract funding signatures from psbt
@@ -3546,9 +3566,9 @@ Payout Group not found even with brute force search',
     const witnessElements: ScriptWitnessV0[][] = [];
     for (let i = 0; i < inputSigs.length; i++) {
       const sigWitness = new ScriptWitnessV0();
-      sigWitness.witness = inputSigs[i].signature;
+      sigWitness.witness = this.ensureBuffer(inputSigs[i].signature);
       const pubKeyWitness = new ScriptWitnessV0();
-      pubKeyWitness.witness = inputSigs[i].pubkey;
+      pubKeyWitness.witness = this.ensureBuffer(inputSigs[i].pubkey);
       witnessElements.push([sigWitness, pubKeyWitness]);
     }
     const fundingSignatures = new FundingSignatures();
