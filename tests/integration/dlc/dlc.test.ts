@@ -272,6 +272,31 @@ describe('dlc provider', () => {
       const cetTx = await alice.getMethod('getTransactionByHash')(cetTxId);
       expect(cetTx._raw.vin.length).to.equal(1);
     });
+
+    describe('ddk provider contract id computation', () => {
+      it('should compute contract ID matching Rust implementation', async () => {
+        // Test data from Rust test case
+        const fundTxHex =
+          '01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff020000ffffffff0101000000000000000000000000';
+        const outputIndex = 1;
+        const temporaryId = Buffer.alloc(32, 34); // [34u8; 32]
+        const expectedId =
+          '81db60dcbef10a2d0cb92cb78400a96ee6a9b6da785d0230bdabf1e18a2d6ffb';
+
+        // Parse the transaction and get the txid
+        const fundTx = Tx.decode(StreamReader.fromHex(fundTxHex));
+        const fundTxId = fundTx.txId.serialize();
+
+        // Use DDK provider to test the computeContractId function
+        const actualId = ddk.getMethod('computeContractId')(
+          fundTxId,
+          outputIndex,
+          temporaryId,
+        );
+
+        expect(actualId.toString('hex')).to.equal(expectedId);
+      });
+    });
   });
 
   describe('enum event', () => {

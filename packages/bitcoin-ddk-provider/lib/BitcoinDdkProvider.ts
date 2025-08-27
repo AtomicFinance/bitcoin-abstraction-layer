@@ -34,7 +34,7 @@ import {
   PolynomialPayoutCurve,
   roundPayout,
 } from '@node-dlc/core';
-import { hash160, sha256, xor } from '@node-dlc/crypto';
+import { hash160, sha256 } from '@node-dlc/crypto';
 import {
   CetAdaptorSignatures,
   ContractDescriptor,
@@ -284,6 +284,39 @@ export default class BitcoinDdkProvider extends Provider {
     throw new Error(
       'Unable to convert signature to compact format: unknown format',
     );
+  }
+
+  /**
+   * Compute contract ID from fund transaction ID, output index, and temporary contract ID
+   * Matches the Rust implementation in rust-dlc
+   */
+  private computeContractId(
+    fundTxId: Buffer,
+    fundOutputIndex: number,
+    temporaryContractId: Buffer,
+  ): Buffer {
+    if (fundTxId.length !== 32) {
+      throw new Error('Fund transaction ID must be 32 bytes');
+    }
+    if (temporaryContractId.length !== 32) {
+      throw new Error('Temporary contract ID must be 32 bytes');
+    }
+    if (fundOutputIndex > 0xffff) {
+      throw new Error('Fund output index must fit in 16 bits');
+    }
+
+    const result = Buffer.alloc(32);
+
+    // XOR fund_tx_id with temporary_id, with byte order reversal for fund_tx_id
+    for (let i = 0; i < 32; i++) {
+      result[i] = fundTxId[31 - i] ^ temporaryContractId[i];
+    }
+
+    // XOR the fund output index into the last two bytes
+    result[30] ^= (fundOutputIndex >> 8) & 0xff; // High byte
+    result[31] ^= fundOutputIndex & 0xff; // Low byte
+
+    return result;
   }
 
   /**
@@ -3225,8 +3258,9 @@ Payout Group not found even with brute force search',
 
     const _dlcTransactions = dlcTransactions;
 
-    const contractId = xor(
+    const contractId = this.computeContractId(
       _dlcTransactions.fundTx.txId.serialize(),
+      _dlcTransactions.fundTxVout,
       dlcAccept.temporaryContractId,
     );
     _dlcTransactions.contractId = contractId;
@@ -3289,15 +3323,20 @@ Payout Group not found even with brute force search',
 
     const dlcTxs = dlcTransactions;
 
-    const contractId = xor(
+    const contractId = this.computeContractId(
       dlcTxs.fundTx.txId.serialize(),
+      dlcTxs.fundTxVout,
       dlcAccept.temporaryContractId,
     );
 
     assert(
       Buffer.compare(
         contractId,
-        xor(dlcTxs.fundTx.txId.serialize(), dlcAccept.temporaryContractId),
+        this.computeContractId(
+          dlcTxs.fundTx.txId.serialize(),
+          dlcTxs.fundTxVout,
+          dlcAccept.temporaryContractId,
+        ),
       ) === 0,
       'contractId must be the xor of funding txid, fundingOutputIndex and the tempContractId',
     );
