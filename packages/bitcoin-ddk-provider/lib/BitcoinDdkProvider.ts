@@ -320,6 +320,94 @@ export default class BitcoinDdkProvider extends Provider {
   }
 
   /**
+   * Create refund signature using PSBT method instead of DDK
+   */
+  private async createRefundSignaturePSBT(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    dlcTxs: DlcTransactions,
+    isOfferer: boolean,
+  ): Promise<Buffer> {
+    const network = await this.getConnectedNetwork();
+    const psbt = new Psbt({ network });
+
+    // Verify refund transaction locktime matches expected
+    if (Number(dlcTxs.refundTx.locktime) !== dlcOffer.refundLocktime) {
+      throw new Error(
+        `Refund transaction locktime ${dlcTxs.refundTx.locktime} does not match expected ${dlcOffer.refundLocktime}`,
+      );
+    }
+
+    // Create the same funding script as createDlcClose
+    const fundingPubKeys =
+      Buffer.compare(dlcOffer.fundingPubkey, dlcAccept.fundingPubkey) === -1
+        ? [dlcOffer.fundingPubkey, dlcAccept.fundingPubkey]
+        : [dlcAccept.fundingPubkey, dlcOffer.fundingPubkey];
+
+    const p2ms = payments.p2ms({
+      m: 2,
+      pubkeys: fundingPubKeys,
+      network,
+    });
+
+    const paymentVariant = payments.p2wsh({
+      redeem: p2ms,
+      network,
+    });
+
+    // Add the funding input
+    psbt.addInput({
+      hash: dlcTxs.fundTx.txId.serialize(),
+      index: dlcTxs.fundTxVout,
+      sequence: 0,
+      witnessUtxo: {
+        script: paymentVariant.output,
+        value: Number(this.getFundOutputValueSats(dlcTxs)),
+      },
+      witnessScript: paymentVariant.redeem.output,
+    });
+
+    // Add the refund outputs - refund transaction should have 2 outputs (offerer and accepter)
+    dlcTxs.refundTx.outputs.forEach((refundOutput) => {
+      psbt.addOutput({
+        address: address.fromOutputScript(
+          refundOutput.scriptPubKey.serialize().subarray(1),
+          network,
+        ),
+        value: Number(refundOutput.value.sats),
+      });
+    });
+
+    // Set the locktime to match the refund transaction
+    psbt.setLocktime(Number(dlcTxs.refundTx.locktime));
+
+    // Generate our keypair to sign the refund input
+    const fundPrivateKeyPair = await this.GetFundKeyPair(
+      dlcOffer,
+      dlcAccept,
+      isOfferer,
+    );
+
+    // Sign the input
+    psbt.signInput(0, fundPrivateKeyPair);
+
+    // Validate the signature
+    psbt.validateSignaturesOfInput(
+      0,
+      (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
+        return ecc.verify(msghash, pubkey, signature);
+      },
+    );
+
+    // Extract our signature and decode it to only extract r and s values (compact format)
+    const partialSig = psbt.data.inputs[0].partialSig[0];
+    const derSignature = partialSig.signature;
+
+    // Convert DER signature to compact format
+    return this.ensureCompactSignature(derSignature);
+  }
+
+  /**
    * Find private key for DLC funding pubkey by deriving wallet addresses
    */
   private async findDlcFundingPrivateKey(
@@ -1355,14 +1443,11 @@ export default class BitcoinDdkProvider extends Provider {
       }
     }
 
-    const refundSignature = this.ensureCompactSignature(
-      this._ddk.getRawFundingTransactionInputSignature(
-        this.convertTxToDdkTransaction(dlcTxs.refundTx),
-        Buffer.from(fundPrivateKey, 'hex'),
-        dlcTxs.fundTx.txId.toString(),
-        dlcTxs.fundTxVout,
-        dlcOffer.contractInfo.totalCollateral,
-      ),
+    const refundSignature = await this.createRefundSignaturePSBT(
+      dlcOffer,
+      dlcAccept,
+      dlcTxs,
+      isOfferer,
     );
 
     const cetSignatures = new CetAdaptorSignatures();
@@ -3477,51 +3562,72 @@ Payout Group not found even with brute force search',
       );
     }
 
-    // Add the funding input
-    const fundingOutput = dlcTxs.fundTx.outputs[dlcTxs.fundTxVout];
-    psbt.addInput({
-      hash: dlcTxs.fundTx.txId.toString(),
-      index: dlcTxs.fundTxVout,
-      sequence: 0,
-      witnessUtxo: {
-        script: fundingOutput.scriptPubKey.serialize().subarray(1), // Remove length prefix
-        value: Number(fundingOutput.value.sats),
-      },
-      witnessScript: this.CreateFundingScript(dlcOffer, dlcAccept), // 2-of-2 multisig script
-    });
-
-    // Add the refund output
-    const refundOutput = dlcTxs.refundTx.outputs[0];
-    psbt.addOutput({
-      address: address.fromOutputScript(
-        refundOutput.scriptPubKey.serialize().subarray(1),
-        network,
-      ),
-      value: Number(refundOutput.value.sats),
-    });
-
-    // Set the locktime to match the refund transaction
-    psbt.setLocktime(Number(dlcTxs.refundTx.locktime));
-
-    // Sort funding pubkeys for consistent signature ordering
+    // Create the same funding script as createDlcClose
     const fundingPubKeys =
       Buffer.compare(dlcOffer.fundingPubkey, dlcAccept.fundingPubkey) === -1
         ? [dlcOffer.fundingPubkey, dlcAccept.fundingPubkey]
         : [dlcAccept.fundingPubkey, dlcOffer.fundingPubkey];
 
+    const p2ms = payments.p2ms({
+      m: 2,
+      pubkeys: fundingPubKeys,
+      network,
+    });
+
+    const paymentVariant = payments.p2wsh({
+      redeem: p2ms,
+      network,
+    });
+
+    // Add the funding input
+    psbt.addInput({
+      hash: dlcTxs.fundTx.txId.serialize(),
+      index: dlcTxs.fundTxVout,
+      sequence: 0,
+      witnessUtxo: {
+        script: paymentVariant.output,
+        value: Number(this.getFundOutputValueSats(dlcTxs)),
+      },
+      witnessScript: paymentVariant.redeem.output,
+    });
+
+    // Add all refund outputs - refund transaction should have 2 outputs (offerer and accepter)
+    dlcTxs.refundTx.outputs.forEach((refundOutput) => {
+      psbt.addOutput({
+        address: address.fromOutputScript(
+          refundOutput.scriptPubKey.serialize().subarray(1),
+          network,
+        ),
+        value: Number(refundOutput.value.sats),
+      });
+    });
+
+    // Set the locktime to match the refund transaction
+    psbt.setLocktime(Number(dlcTxs.refundTx.locktime));
+
     // Add both refund signatures as partial signatures
-    // Ensure both signatures are in DER format (convert from compact if needed)
-    psbt.updateInput(0, {
-      partialSig: [
-        {
-          pubkey: fundingPubKeys[0],
+    // Map signatures to their correct pubkeys based on sorted order
+    const partialSigs = [];
+
+    // Determine which signature belongs to which pubkey
+    for (const pubkey of fundingPubKeys) {
+      if (Buffer.compare(pubkey, dlcOffer.fundingPubkey) === 0) {
+        // This is the offerer's pubkey, use dlcSign.refundSignature
+        partialSigs.push({
+          pubkey: pubkey,
           signature: this.ensureDerSignature(dlcSign.refundSignature),
-        },
-        {
-          pubkey: fundingPubKeys[1],
+        });
+      } else if (Buffer.compare(pubkey, dlcAccept.fundingPubkey) === 0) {
+        // This is the accepter's pubkey, use dlcAccept.refundSignature
+        partialSigs.push({
+          pubkey: pubkey,
           signature: this.ensureDerSignature(dlcAccept.refundSignature),
-        },
-      ],
+        });
+      }
+    }
+
+    psbt.updateInput(0, {
+      partialSig: partialSigs,
     });
 
     // Validate all signatures

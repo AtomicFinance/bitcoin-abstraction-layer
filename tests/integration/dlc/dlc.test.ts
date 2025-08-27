@@ -273,6 +273,138 @@ describe('dlc provider', () => {
       expect(cetTx._raw.vin.length).to.equal(1);
     });
 
+    it('should fund and refund enum DLC', async () => {
+      const oracle = new Oracle('olivia');
+
+      const ddkInput = await getInput(ddk);
+      const ddk2Input = await getInput(ddk2);
+
+      const eventId = 'trump-vs-kamala';
+
+      const oliviaInfo = oracle.GetOracleInfo();
+
+      const eventDescriptor = new EnumEventDescriptor();
+
+      const outcomes = ['trump', 'kamala', 'neither'];
+
+      eventDescriptor.outcomes = outcomes;
+
+      const event = new OracleEvent();
+      event.oracleNonces = oliviaInfo.rValues.map((rValue) =>
+        Buffer.from(rValue, 'hex'),
+      );
+      event.eventMaturityEpoch = 1617170572;
+      event.eventDescriptor = eventDescriptor;
+      event.eventId = eventId;
+
+      const announcement = new OracleAnnouncement();
+      announcement.announcementSig = Buffer.from(
+        oracle.GetSignature(
+          math
+            .taggedHash('DLC/oracle/announcement/v0', event.serialize())
+            .toString('hex'),
+        ),
+        'hex',
+      );
+
+      announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
+      announcement.oracleEvent = event;
+
+      const oracleInfo = new SingleOracleInfo();
+      oracleInfo.announcement = announcement;
+
+      const contractDescriptor = new EnumeratedDescriptor();
+
+      contractDescriptor.outcomes = [
+        {
+          outcome: sha256(Buffer.from('trump')).toString('hex'),
+          localPayout: BigInt(1e6),
+        },
+        {
+          outcome: sha256(Buffer.from('kamala')).toString('hex'),
+          localPayout: BigInt(0),
+        },
+        {
+          outcome: sha256(Buffer.from('neither')).toString('hex'),
+          localPayout: BigInt(500000),
+        },
+      ];
+
+      const totalCollateral = BigInt(1e6);
+
+      const contractInfo = new SingleContractInfo();
+      contractInfo.totalCollateral = totalCollateral;
+      contractInfo.contractDescriptor = contractDescriptor;
+      contractInfo.oracleInfo = oracleInfo;
+
+      const feeRatePerVb = BigInt(10);
+      const cetLocktime = 1617170572;
+      const refundLocktime = 1617170573;
+
+      dlcOffer = await ddk.dlc.createDlcOffer(
+        contractInfo,
+        totalCollateral - BigInt(2000),
+        feeRatePerVb,
+        cetLocktime,
+        refundLocktime,
+        [ddkInput],
+      );
+
+      DlcOffer.deserialize(dlcOffer.serialize()).validate();
+
+      const acceptDlcOfferResponse: AcceptDlcOfferResponse =
+        await ddk2.dlc.acceptDlcOffer(dlcOffer, [ddk2Input]);
+
+      dlcAccept = acceptDlcOfferResponse.dlcAccept;
+      dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
+
+      DlcAccept.deserialize(dlcAccept.serialize()).validate();
+      DlcTransactions.deserialize(dlcTransactions.serialize());
+
+      const signDlcAcceptResponse: SignDlcAcceptResponse =
+        await ddk.dlc.signDlcAccept(dlcOffer, dlcAccept);
+
+      dlcSign = signDlcAcceptResponse.dlcSign;
+
+      DlcSign.deserialize(dlcSign.serialize()).validate();
+
+      const fundTx = await ddk2.dlc.finalizeDlcSign(
+        dlcOffer,
+        dlcAccept,
+        dlcSign,
+        dlcTransactions,
+      );
+
+      const fundTxId = await ddk2.chain.sendRawTransaction(
+        fundTx.serialize().toString('hex'),
+      );
+      expect(fundTxId).to.not.be.undefined;
+
+      oracleAttestation = generateDdkCompatibleEnumOracleAttestation(
+        'trump',
+        oracle,
+        announcement.getEventId(),
+      );
+
+      oracleAttestation.validate();
+
+      const refundTx = await ddk2.dlc.refund(
+        dlcOffer,
+        dlcAccept,
+        dlcSign,
+        dlcTransactions,
+      );
+
+      const refundTxId = await bob.chain.sendRawTransaction(
+        refundTx.serialize().toString('hex'),
+      );
+      expect(refundTxId).to.not.be.undefined;
+      const refundTransaction = await alice.getMethod('getTransactionByHash')(
+        refundTxId,
+      );
+      expect(refundTransaction._raw.vin.length).to.equal(1);
+    });
+
     describe('ddk provider contract id computation', () => {
       it('should compute contract ID matching Rust implementation', async () => {
         // Test data from Rust test case
