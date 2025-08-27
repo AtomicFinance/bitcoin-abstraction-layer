@@ -191,6 +191,102 @@ export default class BitcoinDdkProvider extends Provider {
   }
 
   /**
+   * Detect if signature is in DER format and convert to compact format (64 bytes)
+   * by extracting r and s values, removing SIGHASH flag if present
+   */
+  private ensureCompactSignature(signature: Buffer): Buffer {
+    // If signature is already 64 bytes, it's likely already compact format
+    if (signature.length === 64) {
+      return signature;
+    }
+
+    // Check if it's DER format (starts with 0x30)
+    if (signature.length > 6 && signature[0] === 0x30) {
+      let derSig = signature;
+
+      // Remove SIGHASH flag if present (last byte is typically 0x01 for SIGHASH_ALL)
+      if (signature[signature.length - 1] === 0x01) {
+        derSig = signature.slice(0, -1);
+      }
+
+      // Parse DER format: 0x30 [total-length] 0x02 [R-length] [R] 0x02 [S-length] [S]
+      if (derSig[0] !== 0x30) {
+        throw new Error('Invalid DER signature: missing SEQUENCE tag');
+      }
+
+      const totalLength = derSig[1];
+      if (derSig.length < totalLength + 2) {
+        throw new Error('Invalid DER signature: length mismatch');
+      }
+
+      let offset = 2;
+
+      // Parse R value
+      if (derSig[offset] !== 0x02) {
+        throw new Error('Invalid DER signature: missing INTEGER tag for R');
+      }
+      offset++;
+
+      const rLength = derSig[offset];
+      offset++;
+
+      if (offset + rLength > derSig.length) {
+        throw new Error(
+          'Invalid DER signature: R length exceeds signature length',
+        );
+      }
+
+      let rBytes = derSig.slice(offset, offset + rLength);
+      offset += rLength;
+
+      // Parse S value
+      if (derSig[offset] !== 0x02) {
+        throw new Error('Invalid DER signature: missing INTEGER tag for S');
+      }
+      offset++;
+
+      const sLength = derSig[offset];
+      offset++;
+
+      if (offset + sLength > derSig.length) {
+        throw new Error(
+          'Invalid DER signature: S length exceeds signature length',
+        );
+      }
+
+      let sBytes = derSig.slice(offset, offset + sLength);
+
+      // Remove leading zero padding from r and s (DER may pad to prevent negative interpretation)
+      while (rBytes.length > 1 && rBytes[0] === 0x00) {
+        rBytes = rBytes.slice(1);
+      }
+      while (sBytes.length > 1 && sBytes[0] === 0x00) {
+        sBytes = sBytes.slice(1);
+      }
+
+      // Pad to 32 bytes each (compact format requires exactly 32 bytes for r and s)
+      while (rBytes.length < 32) {
+        rBytes = Buffer.concat([Buffer.from([0x00]), rBytes]);
+      }
+      while (sBytes.length < 32) {
+        sBytes = Buffer.concat([Buffer.from([0x00]), sBytes]);
+      }
+
+      if (rBytes.length !== 32 || sBytes.length !== 32) {
+        throw new Error('Invalid signature values: r or s exceeds 32 bytes');
+      }
+
+      // Combine r and s into 64-byte compact format
+      return Buffer.concat([rBytes, sBytes]);
+    }
+
+    // For other formats, throw error as we can't convert
+    throw new Error(
+      'Unable to convert signature to compact format: unknown format',
+    );
+  }
+
+  /**
    * Find private key for DLC funding pubkey by deriving wallet addresses
    */
   private async findDlcFundingPrivateKey(
@@ -919,10 +1015,10 @@ export default class BitcoinDdkProvider extends Provider {
    */
   private convertMessagesForDdk(tempMessagesList: Messages[]): Buffer[][][] {
     return tempMessagesList.map((message) => [
-      message.messages.map((m) =>
+      message.messages.map((m) => {
         // Convert outcome string to tagged attestation message (32-byte hash)
-        Buffer.from(this.computeTaggedAttestationMessage(m), 'hex'),
-      ),
+        return Buffer.from(this.computeTaggedAttestationMessage(m), 'hex');
+      }),
     ]);
   }
 
@@ -1226,12 +1322,14 @@ export default class BitcoinDdkProvider extends Provider {
       }
     }
 
-    const refundSignature = this._ddk.getRawFundingTransactionInputSignature(
-      this.convertTxToDdkTransaction(dlcTxs.refundTx),
-      Buffer.from(fundPrivateKey, 'hex'),
-      dlcTxs.fundTx.txId.toString(),
-      dlcTxs.fundTxVout,
-      dlcOffer.contractInfo.totalCollateral,
+    const refundSignature = this.ensureCompactSignature(
+      this._ddk.getRawFundingTransactionInputSignature(
+        this.convertTxToDdkTransaction(dlcTxs.refundTx),
+        Buffer.from(fundPrivateKey, 'hex'),
+        dlcTxs.fundTx.txId.toString(),
+        dlcTxs.fundTxVout,
+        dlcOffer.contractInfo.totalCollateral,
+      ),
     );
 
     const cetSignatures = new CetAdaptorSignatures();
@@ -1558,7 +1656,9 @@ export default class BitcoinDdkProvider extends Provider {
 
           // For P2WPKH, create witness manually: [signature, publicKey]
           const sigWitness = new ScriptWitnessV0();
-          sigWitness.witness = this.ensureBuffer(partialSigs[0].signature);
+          sigWitness.witness = this.ensureCompactSignature(
+            this.ensureBuffer(partialSigs[0].signature),
+          );
           const pubKeyWitness = new ScriptWitnessV0();
           pubKeyWitness.witness = keyPair.publicKey;
 
@@ -1670,7 +1770,9 @@ export default class BitcoinDdkProvider extends Provider {
       }
 
       psbt.updateInput(inputIndex, {
-        partialSig: [{ pubkey: publicKey, signature: signature }],
+        partialSig: [
+          { pubkey: publicKey, signature: this.ensureDerSignature(signature) },
+        ],
       });
 
       psbt.validateSignaturesOfInput(
@@ -1909,7 +2011,7 @@ export default class BitcoinDdkProvider extends Provider {
         }
 
         // For P2WPKH inputs, finalize the input with witness data
-        const signature = witnessElements[0].witness;
+        const signature = this.ensureDerSignature(witnessElements[0].witness);
         const publicKey = witnessElements[1].witness;
 
         // Try a simpler approach - let bitcoinjs-lib handle witness construction
