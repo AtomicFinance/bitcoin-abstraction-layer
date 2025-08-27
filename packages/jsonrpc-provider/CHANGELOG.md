@@ -1,5 +1,14 @@
 # @atomicfinance/jsonrpc-provider
 
+## 4.1.3
+
+### Patch Changes
+
+- bd75cc3: Ensure DER signature
+- Updated dependencies [bd75cc3]
+  - @atomicfinance/errors@4.1.3
+  - @atomicfinance/node-provider@4.1.3
+
 ## 4.1.2
 
 ### Patch Changes
