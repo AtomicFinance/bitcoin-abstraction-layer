@@ -1,5 +1,16 @@
 # @atomicfinance/bitcoin-ddk-provider
 
+## 4.1.6
+
+### Patch Changes
+
+- 5b7d9ea: Fix refund sig generation bitcoin ddk provider
+- Updated dependencies [5b7d9ea]
+  - @atomicfinance/bitcoin-utils@4.1.6
+  - @atomicfinance/provider@4.1.6
+  - @atomicfinance/types@4.1.6
+  - @atomicfinance/utils@4.1.6
+
 ## 4.1.5
 
 ### Patch Changes
