@@ -143,8 +143,10 @@ bitcoinWithDdk.addProvider(mockedBitcoinRpcProvider() as unknown as Provider);
 bitcoinWithDdk.addProvider(
   new BitcoinJsWalletProvider({
     network,
-    mnemonic: generateMnemonic(256),
-    baseDerivationPath: `m/84'/${config.bitcoin.network.coinType}'/0'`,
+    mnemonic:
+      'machine pink when divorce aisle sun life deposit casual turtle trend save',
+    // baseDerivationPath: `m/84'/${config.bitcoin.network.coinType}'/0'`,
+    baseDerivationPath: "m/84'/0'/0'/0/0",
     addressType: bitcoin.AddressType.BECH32,
   }) as any,
 );
