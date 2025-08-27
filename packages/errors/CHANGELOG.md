@@ -1,5 +1,11 @@
 # @atomicfinance/errors
 
+## 4.1.5
+
+### Patch Changes
+
+- f1806a6: Implement rust-dlc/ddk compatible Contract ID computation
+
 ## 4.1.4
 
 ### Patch Changes

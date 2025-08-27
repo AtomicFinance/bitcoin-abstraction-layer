@@ -1,5 +1,17 @@
 # @atomicfinance/bitcoin-rpc-provider
 
+## 4.1.5
+
+### Patch Changes
+
+- f1806a6: Implement rust-dlc/ddk compatible Contract ID computation
+- Updated dependencies [f1806a6]
+  - @atomicfinance/bitcoin-utils@4.1.5
+  - @atomicfinance/errors@4.1.5
+  - @atomicfinance/jsonrpc-provider@4.1.5
+  - @atomicfinance/types@4.1.5
+  - @atomicfinance/utils@4.1.5
+
 ## 4.1.4
 
 ### Patch Changes
