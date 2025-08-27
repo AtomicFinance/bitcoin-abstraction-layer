@@ -218,16 +218,23 @@ describe('dlc provider', () => {
         [ddkInput],
       );
 
+      DlcOffer.deserialize(dlcOffer.serialize()).validate();
+
       const acceptDlcOfferResponse: AcceptDlcOfferResponse =
         await ddk2.dlc.acceptDlcOffer(dlcOffer, [ddk2Input]);
 
       dlcAccept = acceptDlcOfferResponse.dlcAccept;
       dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
 
+      DlcAccept.deserialize(dlcAccept.serialize()).validate();
+      DlcTransactions.deserialize(dlcTransactions.serialize());
+
       const signDlcAcceptResponse: SignDlcAcceptResponse =
         await ddk.dlc.signDlcAccept(dlcOffer, dlcAccept);
 
       dlcSign = signDlcAcceptResponse.dlcSign;
+
+      DlcSign.deserialize(dlcSign.serialize()).validate();
 
       const fundTx = await ddk2.dlc.finalizeDlcSign(
         dlcOffer,
