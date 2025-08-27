@@ -398,7 +398,6 @@ describe('dlc provider', () => {
       const refundTxId = await bob.chain.sendRawTransaction(
         refundTx.serialize().toString('hex'),
       );
-      console.log('refundTxId', refundTxId);
       expect(refundTxId).to.not.be.undefined;
       const refundTransaction = await alice.getMethod('getTransactionByHash')(
         refundTxId,

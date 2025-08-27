@@ -3606,18 +3606,28 @@ Payout Group not found even with brute force search',
     psbt.setLocktime(Number(dlcTxs.refundTx.locktime));
 
     // Add both refund signatures as partial signatures
-    // Ensure both signatures are in DER format (convert from compact if needed)
-    psbt.updateInput(0, {
-      partialSig: [
-        {
-          pubkey: fundingPubKeys[0],
+    // Map signatures to their correct pubkeys based on sorted order
+    const partialSigs = [];
+
+    // Determine which signature belongs to which pubkey
+    for (const pubkey of fundingPubKeys) {
+      if (Buffer.compare(pubkey, dlcOffer.fundingPubkey) === 0) {
+        // This is the offerer's pubkey, use dlcSign.refundSignature
+        partialSigs.push({
+          pubkey: pubkey,
           signature: this.ensureDerSignature(dlcSign.refundSignature),
-        },
-        {
-          pubkey: fundingPubKeys[1],
+        });
+      } else if (Buffer.compare(pubkey, dlcAccept.fundingPubkey) === 0) {
+        // This is the accepter's pubkey, use dlcAccept.refundSignature
+        partialSigs.push({
+          pubkey: pubkey,
           signature: this.ensureDerSignature(dlcAccept.refundSignature),
-        },
-      ],
+        });
+      }
+    }
+
+    psbt.updateInput(0, {
+      partialSig: partialSigs,
     });
 
     // Validate all signatures
