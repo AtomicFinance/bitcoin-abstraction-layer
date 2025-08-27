@@ -1,5 +1,16 @@
 # @atomicfinance/bitcoin-esplora-batch-api-provider
 
+## 4.1.4
+
+### Patch Changes
+
+- 77dd82f: Ensure compact signatures for refund signatures in BitcoinDdkProvider
+- Updated dependencies [77dd82f]
+  - @atomicfinance/bitcoin-esplora-api-provider@4.1.4
+  - @atomicfinance/node-provider@4.1.4
+  - @atomicfinance/types@4.1.4
+  - @atomicfinance/utils@4.1.4
+
 ## 4.1.3
 
 ### Patch Changes

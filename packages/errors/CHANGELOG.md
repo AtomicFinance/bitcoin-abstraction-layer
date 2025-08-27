@@ -1,5 +1,11 @@
 # @atomicfinance/errors
 
+## 4.1.4
+
+### Patch Changes
+
+- 77dd82f: Ensure compact signatures for refund signatures in BitcoinDdkProvider
+
 ## 4.1.3
 
 ### Patch Changes
