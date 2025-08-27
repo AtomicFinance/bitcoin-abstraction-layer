@@ -122,6 +122,75 @@ export default class BitcoinDdkProvider extends Provider {
   }
 
   /**
+   * Detect if signature is in compact format (64 bytes) or DER format
+   * and convert compact to DER if needed, adding SIGHASH_ALL flag
+   */
+  private ensureDerSignature(signature: Buffer): Buffer {
+    // If signature is 64 bytes, it's likely compact format (32-byte r + 32-byte s)
+    if (signature.length === 64) {
+      // Convert compact signature to DER format
+      const r = signature.slice(0, 32);
+      const s = signature.slice(32, 64);
+
+      // Create DER encoding manually
+      // DER format: 0x30 [total-length] 0x02 [R-length] [R] 0x02 [S-length] [S]
+
+      // Remove leading zeros from r and s, but keep at least one byte
+      let rBytes = r;
+      while (
+        rBytes.length > 1 &&
+        rBytes[0] === 0x00 &&
+        (rBytes[1] & 0x80) === 0
+      ) {
+        rBytes = rBytes.slice(1);
+      }
+
+      let sBytes = s;
+      while (
+        sBytes.length > 1 &&
+        sBytes[0] === 0x00 &&
+        (sBytes[1] & 0x80) === 0
+      ) {
+        sBytes = sBytes.slice(1);
+      }
+
+      // Add padding byte if high bit is set (to keep numbers positive)
+      if ((rBytes[0] & 0x80) !== 0) {
+        rBytes = Buffer.concat([Buffer.from([0x00]), rBytes]);
+      }
+      if ((sBytes[0] & 0x80) !== 0) {
+        sBytes = Buffer.concat([Buffer.from([0x00]), sBytes]);
+      }
+
+      const totalLength = 2 + rBytes.length + 2 + sBytes.length;
+
+      const derSignature = Buffer.concat([
+        Buffer.from([0x30, totalLength]), // SEQUENCE tag and total length
+        Buffer.from([0x02, rBytes.length]), // INTEGER tag and R length
+        rBytes,
+        Buffer.from([0x02, sBytes.length]), // INTEGER tag and S length
+        sBytes,
+        Buffer.from([0x01]), // SIGHASH_ALL flag
+      ]);
+
+      return derSignature;
+    }
+
+    // If it's already DER format, check if it has SIGHASH flag
+    if (signature.length > 0 && signature[0] === 0x30) {
+      // Check if it already has a SIGHASH flag (last byte should be 0x01 for SIGHASH_ALL)
+      if (signature[signature.length - 1] !== 0x01) {
+        // Add SIGHASH_ALL flag
+        return Buffer.concat([signature, Buffer.from([0x01])]);
+      }
+      return signature;
+    }
+
+    // For other formats, return as-is
+    return signature;
+  }
+
+  /**
    * Find private key for DLC funding pubkey by deriving wallet addresses
    */
   private async findDlcFundingPrivateKey(
@@ -1207,8 +1276,8 @@ export default class BitcoinDdkProvider extends Provider {
         const tempSigs = oracleEventSigs;
         const tempAdaptorPairs = tempSigs.map((sig) => {
           return {
-            signature: sig.encryptedSig,
-            proof: sig.dleqProof,
+            signature: Buffer.concat([sig.encryptedSig, sig.dleqProof]),
+            proof: Buffer.from(''),
           };
         });
 
@@ -1467,8 +1536,6 @@ export default class BitcoinDdkProvider extends Provider {
         const { privKey } = partyInputMap.get(inputKey)!;
         const keyPair = ECPair.fromPrivateKey(Buffer.from(privKey, 'hex'));
 
-        console.log('test6');
-
         // Check if this is a DLC input (2-of-2 multisig from previous DLC)
         if (fundingInput.dlcInput) {
           // For DLC inputs, we'll need to handle 2-of-2 multisig signing differently
@@ -1629,9 +1696,13 @@ export default class BitcoinDdkProvider extends Provider {
     // Get the refund signature we need to verify
     // If we're the offerer, we verify accepter's refund signature (from dlcAccept)
     // If we're the accepter, we verify offerer's refund signature (from dlcSign)
-    const refundSignature = isOfferer
+    const rawRefundSignature = isOfferer
       ? dlcAccept.refundSignature
       : dlcSign.refundSignature;
+
+    // Ensure signature is in DER format (convert from compact if needed)
+    const refundSignature = this.ensureDerSignature(rawRefundSignature);
+
     const signingPubkey = isOfferer
       ? dlcAccept.fundingPubkey
       : dlcOffer.fundingPubkey;
@@ -3298,10 +3369,17 @@ Payout Group not found even with brute force search',
         : [dlcAccept.fundingPubkey, dlcOffer.fundingPubkey];
 
     // Add both refund signatures as partial signatures
+    // Ensure both signatures are in DER format (convert from compact if needed)
     psbt.updateInput(0, {
       partialSig: [
-        { pubkey: fundingPubKeys[0], signature: dlcSign.refundSignature },
-        { pubkey: fundingPubKeys[1], signature: dlcAccept.refundSignature },
+        {
+          pubkey: fundingPubKeys[0],
+          signature: this.ensureDerSignature(dlcSign.refundSignature),
+        },
+        {
+          pubkey: fundingPubKeys[1],
+          signature: this.ensureDerSignature(dlcAccept.refundSignature),
+        },
       ],
     });
 
