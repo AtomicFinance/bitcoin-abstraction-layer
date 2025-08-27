@@ -1,5 +1,11 @@
 # @atomicfinance/errors
 
+## 4.1.3
+
+### Patch Changes
+
+- bd75cc3: Ensure DER signature
+
 ## 4.1.2
 
 ### Patch Changes

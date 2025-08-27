@@ -1,5 +1,16 @@
 # @atomicfinance/bitcoin-dlc-provider
 
+## 4.1.3
+
+### Patch Changes
+
+- bd75cc3: Ensure DER signature
+- Updated dependencies [bd75cc3]
+  - @atomicfinance/bitcoin-utils@4.1.3
+  - @atomicfinance/provider@4.1.3
+  - @atomicfinance/types@4.1.3
+  - @atomicfinance/utils@4.1.3
+
 ## 4.1.2
 
 ### Patch Changes
