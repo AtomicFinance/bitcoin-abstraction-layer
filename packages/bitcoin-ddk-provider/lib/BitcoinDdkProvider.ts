@@ -1774,9 +1774,7 @@ export default class BitcoinDdkProvider extends Provider {
 
           // For P2WPKH, create witness manually: [signature, publicKey]
           const sigWitness = new ScriptWitnessV0();
-          sigWitness.witness = this.ensureCompactSignature(
-            this.ensureBuffer(partialSigs[0].signature),
-          );
+          sigWitness.witness = this.ensureBuffer(partialSigs[0].signature);
           const pubKeyWitness = new ScriptWitnessV0();
           pubKeyWitness.witness = keyPair.publicKey;
 
@@ -1889,7 +1887,10 @@ export default class BitcoinDdkProvider extends Provider {
 
       psbt.updateInput(inputIndex, {
         partialSig: [
-          { pubkey: publicKey, signature: this.ensureDerSignature(signature) },
+          {
+            pubkey: publicKey,
+            signature: this.ensureDerSignature(signature),
+          },
         ],
       });
 
