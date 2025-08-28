@@ -1,6 +1,6 @@
 import Provider from '@atomicfinance/provider';
 import { Address, bitcoin } from '@atomicfinance/types';
-import { BitcoinNetwork } from 'bitcoin-networks';
+import { BitcoinNetwork } from 'bitcoin-network';
 import { networks, payments } from 'bitcoinjs-lib';
 
 const BITCOIN_NETWORK_TO_CFD_NETWORK = {

@@ -22,7 +22,7 @@ npm install @atomicfinance/bitcoin-ddk-provider
 ```typescript
 import BitcoinDdkProvider from '@atomicfinance/bitcoin-ddk-provider';
 import * as ddkTs from '@bennyblader/ddk-ts';
-import { BitcoinNetwork } from 'bitcoin-networks';
+import { BitcoinNetwork } from 'bitcoin-network';
 
 // Create provider with ddk-ts implementation
 const network = BitcoinNetwork.MAINNET;
@@ -38,7 +38,7 @@ console.log(`DDK Version: ${version}`);
 ```typescript
 import BitcoinDdkProvider from '@atomicfinance/bitcoin-ddk-provider';
 import * as ddkRn from '@bennyblader/ddk-rn';
-import { BitcoinNetwork } from 'bitcoin-networks';
+import { BitcoinNetwork } from 'bitcoin-network';
 
 // Create provider with ddk-rn implementation
 const network = BitcoinNetwork.MAINNET;

@@ -14,10 +14,11 @@ import {
   Output,
   Transaction,
 } from '@atomicfinance/types';
+import * as ecc from '@bitcoin-js/tiny-secp256k1-asmjs';
 import assert from 'assert';
 import { BIP32Interface, fromSeed } from 'bip32';
 import { mnemonicToSeed } from 'bip39';
-import { BitcoinNetwork } from 'bitcoin-networks';
+import { BitcoinNetwork } from 'bitcoin-network';
 import * as bitcoin from 'bitcoinjs-lib';
 import {
   Psbt,
@@ -25,11 +26,9 @@ import {
   Transaction as BitcoinJsTransaction,
 } from 'bitcoinjs-lib';
 import { ECPairFactory, ECPairInterface } from 'ecpair';
-import * as ecc from 'tiny-secp256k1';
 
 const ECPair = ECPairFactory(ecc);
 import { signAsync as signBitcoinMessage } from 'bitcoinjs-message';
-import secp256k1 from 'secp256k1';
 
 const FEE_PER_BYTE_FALLBACK = 5;
 
@@ -227,7 +226,7 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
 
         const scriptStack = bitcoin.script.decompile(input.witnessScript);
         const pubkeys = scriptStack.filter(
-          (data) => Buffer.isBuffer(data) && secp256k1.publicKeyVerify(data),
+          (data) => Buffer.isBuffer(data) && ecc.isPoint(data),
         );
 
         await Promise.all(

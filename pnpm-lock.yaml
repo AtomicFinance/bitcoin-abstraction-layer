@@ -75,9 +75,9 @@ importers:
       bip39:
         specifier: ^3.0.2
         version: 3.1.0
-      bitcoin-networks:
-        specifier: ^1.0.0
-        version: 1.0.0
+      bitcoin-network:
+        specifier: 0.1.0
+        version: 0.1.0
       cfd-dlc-js:
         specifier: https://github.com/atomicfinance/cfd-dlc-js.git#v0.0.52
         version: github.com/atomicfinance/cfd-dlc-js/a60943ce2c3e09439ee0f817e25e18f234bab958
@@ -192,15 +192,12 @@ importers:
       bip39:
         specifier: ^3.0.4
         version: 3.1.0
-      bitcoin-networks:
-        specifier: ^1.0.0
-        version: 1.0.0
+      bitcoin-network:
+        specifier: 0.1.0
+        version: 0.1.0
       bitcoinjs-lib:
         specifier: 6.1.7
         version: 6.1.7
-      tiny-secp256k1:
-        specifier: ^2.2.0
-        version: 2.2.4
     devDependencies:
       '@types/node':
         specifier: 20.19.10
@@ -242,15 +239,12 @@ importers:
       bip39:
         specifier: ^3.0.4
         version: 3.1.0
-      bitcoin-networks:
-        specifier: ^1.0.0
-        version: 1.0.0
+      bitcoin-network:
+        specifier: 0.1.0
+        version: 0.1.0
       bitcoinjs-lib:
         specifier: 6.1.7
         version: 6.1.7
-      tiny-secp256k1:
-        specifier: ^2.2.0
-        version: 2.2.4
     devDependencies:
       '@types/node':
         specifier: 20.19.10
@@ -270,24 +264,24 @@ importers:
       '@atomicfinance/utils':
         specifier: ^4.1.8
         version: link:../utils
+      '@bitcoin-js/tiny-secp256k1-asmjs':
+        specifier: ^2.2.0
+        version: 2.2.4
       bignumber.js:
         specifier: ^9.0.1
         version: 9.3.1
       bip66:
         specifier: ^1.1.5
         version: 1.1.5
-      bitcoin-networks:
-        specifier: ^1.0.0
-        version: 1.0.0
+      bitcoin-network:
+        specifier: 0.1.0
+        version: 0.1.0
       bitcoinjs-lib:
         specifier: 6.1.7
         version: 6.1.7
       ecpair:
         specifier: ^2.1.0
         version: 2.1.0
-      tiny-secp256k1:
-        specifier: ^2.2.0
-        version: 2.2.4
     devDependencies:
       '@types/lodash':
         specifier: ^4.14.160
@@ -310,6 +304,9 @@ importers:
       '@atomicfinance/utils':
         specifier: ^4.1.8
         version: link:../utils
+      '@bitcoin-js/tiny-secp256k1-asmjs':
+        specifier: ^2.2.0
+        version: 2.2.4
       '@node-dlc/bitcoin':
         specifier: 1.1.0
         version: 1.1.0
@@ -331,9 +328,9 @@ importers:
       bip-schnorr:
         specifier: 0.6.2
         version: 0.6.2
-      bitcoin-networks:
-        specifier: ^1.0.0
-        version: 1.0.0
+      bitcoin-network:
+        specifier: 0.1.0
+        version: 0.1.0
       bitcoinjs-lib:
         specifier: 6.1.7
         version: 6.1.7
@@ -346,9 +343,6 @@ importers:
       randombytes:
         specifier: 2.1.0
         version: 2.1.0
-      tiny-secp256k1:
-        specifier: ^2.2.0
-        version: 2.2.4
       uuid:
         specifier: ^8.3.0
         version: 8.3.2
@@ -386,9 +380,9 @@ importers:
       bignumber.js:
         specifier: ^9.0.0
         version: 9.3.1
-      bitcoin-networks:
-        specifier: ^1.0.0
-        version: 1.0.0
+      bitcoin-network:
+        specifier: 0.1.0
+        version: 0.1.0
       lodash:
         specifier: ^4.17.20
         version: 4.17.21
@@ -457,6 +451,9 @@ importers:
       '@babel/runtime':
         specifier: ^7.12.1
         version: 7.28.2
+      '@bitcoin-js/tiny-secp256k1-asmjs':
+        specifier: ^2.2.0
+        version: 2.2.4
       '@node-dlc/core':
         specifier: 1.1.0
         version: 1.1.0
@@ -466,9 +463,9 @@ importers:
       bip39:
         specifier: ^3.0.2
         version: 3.1.0
-      bitcoin-networks:
-        specifier: ^1.0.0
-        version: 1.0.0
+      bitcoin-network:
+        specifier: 0.1.0
+        version: 0.1.0
       bitcoinjs-lib:
         specifier: 6.1.7
         version: 6.1.7
@@ -478,12 +475,6 @@ importers:
       ecpair:
         specifier: ^2.1.0
         version: 2.1.0
-      secp256k1:
-        specifier: ^4.0.3
-        version: 4.0.4
-      tiny-secp256k1:
-        specifier: ^2.2.0
-        version: 2.2.4
     devDependencies:
       '@types/node':
         specifier: ^20.0.0
@@ -512,12 +503,15 @@ importers:
       '@babel/runtime':
         specifier: ^7.12.1
         version: 7.28.2
+      '@bitcoin-js/tiny-secp256k1-asmjs':
+        specifier: ^2.2.0
+        version: 2.2.4
       bignumber.js:
         specifier: ^9.0.0
         version: 9.3.1
-      bitcoin-networks:
-        specifier: ^1.0.0
-        version: 1.0.0
+      bitcoin-network:
+        specifier: 0.1.0
+        version: 0.1.0
       bitcoinjs-lib:
         specifier: 6.1.7
         version: 6.1.7
@@ -527,9 +521,6 @@ importers:
       lodash:
         specifier: ^4.17.20
         version: 4.17.21
-      tiny-secp256k1:
-        specifier: ^2.2.0
-        version: 2.2.4
     devDependencies:
       '@types/lodash':
         specifier: ^4.14.168
@@ -561,9 +552,9 @@ importers:
       bignumber.js:
         specifier: ^9.0.0
         version: 9.3.1
-      bitcoin-networks:
-        specifier: ^1.0.0
-        version: 1.0.0
+      bitcoin-network:
+        specifier: 0.1.0
+        version: 0.1.0
       lodash:
         specifier: ^4.17.20
         version: 4.17.21
@@ -598,9 +589,9 @@ importers:
       bip174:
         specifier: 2.0.1
         version: 2.0.1
-      bitcoin-networks:
-        specifier: ^1.0.0
-        version: 1.0.0
+      bitcoin-network:
+        specifier: 0.1.0
+        version: 0.1.0
       bitcoinjs-lib:
         specifier: 6.1.7
         version: 6.1.7
@@ -641,9 +632,9 @@ importers:
       bip32:
         specifier: ^2.0.6
         version: 2.0.6
-      bitcoin-networks:
-        specifier: ^1.0.0
-        version: 1.0.0
+      bitcoin-network:
+        specifier: 0.1.0
+        version: 0.1.0
       bitcoinjs-lib:
         specifier: 6.1.7
         version: 6.1.7
@@ -834,9 +825,9 @@ importers:
       bip174:
         specifier: 2.0.1
         version: 2.0.1
-      bitcoin-networks:
-        specifier: ^1.0.0
-        version: 1.0.0
+      bitcoin-network:
+        specifier: 0.1.0
+        version: 0.1.0
       bitcoinjs-lib:
         specifier: 6.1.7
         version: 6.1.7
@@ -1023,6 +1014,13 @@ packages:
     resolution: {integrity: sha512-+sRW+S0wTfF9lfCawiJXYPPPAlCLYSJGW6ScuOB2yS/dISeXA3N9kwAIdDNuZDfFPDsFHrAjqE1U/XSTxQWF7A==}
     engines: {node: '>= 6.14.2 < 7 || >= 8.11.2 < 9 || >= 9.11.0 < 10 || >= 10.0.0'}
     dev: true
+
+  /@bitcoin-js/tiny-secp256k1-asmjs@2.2.4:
+    resolution: {integrity: sha512-Lo62disBIDwPrYAmMsSjEmqak41yb0OFGQVLdktXmcQLgtC1BI5Sd1eHSxNREKZmxMUXevtsgEhGB1DvvatRmQ==}
+    engines: {node: '>=14.0.0'}
+    dependencies:
+      uint8array-tools: 0.0.7
+    dev: false
 
   /@changesets/apply-release-plan@7.0.12:
     resolution: {integrity: sha512-EaET7As5CeuhTzvXTQCRZeBUcisoYPDDcXvgTE/2jmmypKp0RC7LxKj/yzqeh/1qFTZI7oDGFcL1PHRuQuketQ==}
@@ -2849,6 +2847,11 @@ packages:
     resolution: {integrity: sha512-nemMHz95EmS38a26XbbdxIYj5csHd3RMP3H5bwQknX0WYHF01qhpufP42mLOwVICuH2JmhIhXiWs89MfUGL7Xw==}
     dependencies:
       safe-buffer: 5.2.1
+
+  /bitcoin-network@0.1.0:
+    resolution: {integrity: sha512-zGUfUpSZ3BvSas/Nry03aIpjZhElQOwjrIC7aoMuTAZ224bXV6S5XsaeiQ/1+XILva+4TRqnO1UbKPS4WL6e2Q==}
+    dependencies:
+      bitcoinjs-lib: 6.1.7
 
   /bitcoin-networks@1.0.0:
     resolution: {integrity: sha512-/SJGWp2ywQtBxoYT/l2IQUWmWIs8UA9s13iBNtGX+Nn8hZoPoZAXhfYY73LQ8C9MBzGLScPdMHqdsaHJPfrtIw==}
@@ -7512,13 +7515,6 @@ packages:
       create-hmac: 1.1.7
       elliptic: 6.6.1
       nan: 2.23.0
-
-  /tiny-secp256k1@2.2.4:
-    resolution: {integrity: sha512-FoDTcToPqZE454Q04hH9o2EhxWsm7pOSpicyHkgTwKhdKWdsTUuqfP5MLq3g+VjAtl2vSx6JpXGdwA2qpYkI0Q==}
-    engines: {node: '>=14.0.0'}
-    dependencies:
-      uint8array-tools: 0.0.7
-    dev: false
 
   /tmp@0.0.33:
     resolution: {integrity: sha512-jRCJlojKnZ3addtTOjdIqoRuPEKBvNXcGYqzO6zWZX8KfKEpnGY5jfggJQ3EjKuu8D4bJRr0y+cYJFmYbImXGw==}

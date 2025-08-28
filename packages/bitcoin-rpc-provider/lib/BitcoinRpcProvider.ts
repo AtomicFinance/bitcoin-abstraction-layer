@@ -15,7 +15,7 @@ import {
   Transaction,
 } from '@atomicfinance/types';
 import { addressToString } from '@atomicfinance/utils';
-import { BitcoinNetwork } from 'bitcoin-networks';
+import { BitcoinNetwork } from 'bitcoin-network';
 import { flatten } from 'lodash';
 
 interface ProviderOptions {

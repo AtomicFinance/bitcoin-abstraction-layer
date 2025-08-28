@@ -11,7 +11,7 @@ import {
   ChainProvider,
 } from '@atomicfinance/types';
 import { addressToString } from '@atomicfinance/utils';
-import { BitcoinNetwork } from 'bitcoin-networks';
+import { BitcoinNetwork } from 'bitcoin-network';
 import { flatten } from 'lodash';
 
 import * as esplora from './types';

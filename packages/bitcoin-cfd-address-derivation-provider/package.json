@@ -19,9 +19,8 @@
     "@atomicfinance/types": "^4.1.8",
     "bip32": "^4.0.0",
     "bip39": "^3.0.4",
-    "bitcoin-networks": "^1.0.0",
-    "bitcoinjs-lib": "6.1.7",
-    "tiny-secp256k1": "^2.2.0"
+    "bitcoin-network": "0.1.0",
+    "bitcoinjs-lib": "6.1.7"
   },
   "devDependencies": {
     "@types/node": "20.19.10"

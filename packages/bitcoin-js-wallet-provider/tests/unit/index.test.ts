@@ -2,7 +2,7 @@
 
 import { Address } from '@atomicfinance/types/lib';
 import { generateMnemonic } from 'bip39';
-import { BitcoinNetworks } from 'bitcoin-networks';
+import { BitcoinNetworks } from 'bitcoin-network';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
