@@ -1,5 +1,14 @@
 # @atomicfinance/node-provider
 
+## 4.1.9
+
+### Patch Changes
+
+- 58031b0: React native compatibility
+- Updated dependencies [58031b0]
+  - @atomicfinance/errors@4.1.9
+  - @atomicfinance/provider@4.1.9
+
 ## 4.1.8
 
 ### Patch Changes

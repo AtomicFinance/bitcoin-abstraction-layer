@@ -1,5 +1,11 @@
 # @atomicfinance/types
 
+## 4.1.9
+
+### Patch Changes
+
+- 58031b0: React native compatibility
+
 ## 4.1.8
 
 ### Patch Changes
