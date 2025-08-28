@@ -355,11 +355,11 @@ export default class BitcoinDdkProvider extends Provider {
       network,
     });
 
-    // Add the funding input
+    // Add the funding input with sequence from refund transaction
     psbt.addInput({
       hash: dlcTxs.fundTx.txId.serialize(),
       index: dlcTxs.fundTxVout,
-      sequence: 0,
+      sequence: Number(dlcTxs.refundTx.inputs[0].sequence),
       witnessUtxo: {
         script: paymentVariant.output,
         value: Number(this.getFundOutputValueSats(dlcTxs)),
@@ -1934,30 +1934,47 @@ export default class BitcoinDdkProvider extends Provider {
       );
     }
 
-    // Create a PSBT for the refund transaction verification
+    // Create a PSBT for the refund transaction verification using same approach as createDlcClose
     const psbt = new Psbt({ network });
 
-    // Add the funding input
-    const fundingOutput = dlcTxs.fundTx.outputs[dlcTxs.fundTxVout];
-    psbt.addInput({
-      hash: dlcTxs.fundTx.txId.toString(),
-      index: dlcTxs.fundTxVout,
-      sequence: 0,
-      witnessUtxo: {
-        script: fundingOutput.scriptPubKey.serialize().subarray(1), // Remove length prefix
-        value: Number(fundingOutput.value.sats),
-      },
-      witnessScript: this.CreateFundingScript(dlcOffer, dlcAccept), // 2-of-2 multisig script
+    // Create the same funding script as createDlcClose
+    const fundingPubKeys =
+      Buffer.compare(dlcOffer.fundingPubkey, dlcAccept.fundingPubkey) === -1
+        ? [dlcOffer.fundingPubkey, dlcAccept.fundingPubkey]
+        : [dlcAccept.fundingPubkey, dlcOffer.fundingPubkey];
+
+    const p2ms = payments.p2ms({
+      m: 2,
+      pubkeys: fundingPubKeys,
+      network,
     });
 
-    // Add the refund output
-    const refundOutput = dlcTxs.refundTx.outputs[0];
-    psbt.addOutput({
-      address: address.fromOutputScript(
-        refundOutput.scriptPubKey.serialize().subarray(1),
-        network,
-      ),
-      value: Number(refundOutput.value.sats),
+    const paymentVariant = payments.p2wsh({
+      redeem: p2ms,
+      network,
+    });
+
+    // Add the funding input with sequence from refund transaction
+    psbt.addInput({
+      hash: dlcTxs.fundTx.txId.serialize(),
+      index: dlcTxs.fundTxVout,
+      sequence: Number(dlcTxs.refundTx.inputs[0].sequence),
+      witnessUtxo: {
+        script: paymentVariant.output,
+        value: Number(this.getFundOutputValueSats(dlcTxs)),
+      },
+      witnessScript: paymentVariant.redeem.output,
+    });
+
+    // Add all refund outputs - refund transaction should have 2 outputs (offerer and accepter)
+    dlcTxs.refundTx.outputs.forEach((refundOutput) => {
+      psbt.addOutput({
+        address: address.fromOutputScript(
+          refundOutput.scriptPubKey.serialize().subarray(1),
+          network,
+        ),
+        value: Number(refundOutput.value.sats),
+      });
     });
 
     // Set the locktime to match the refund transaction
@@ -3579,11 +3596,11 @@ Payout Group not found even with brute force search',
       network,
     });
 
-    // Add the funding input
+    // Add the funding input with sequence from refund transaction
     psbt.addInput({
       hash: dlcTxs.fundTx.txId.serialize(),
       index: dlcTxs.fundTxVout,
-      sequence: 0,
+      sequence: Number(dlcTxs.refundTx.inputs[0].sequence),
       witnessUtxo: {
         script: paymentVariant.output,
         value: Number(this.getFundOutputValueSats(dlcTxs)),
@@ -3643,6 +3660,15 @@ Payout Group not found even with brute force search',
 
     // Extract the final transaction
     const finalTx = psbt.extractTransaction();
+
+    // Verify that our PSBT matches the expected refund transaction
+    const expectedRefundTxId = dlcTxs.refundTx.txId.serialize().toString('hex');
+    const psbtTxId = finalTx.getHash().toString('hex');
+    if (psbtTxId !== expectedRefundTxId) {
+      throw new Error(
+        `PSBT transaction ID ${psbtTxId} does not match expected refund transaction ID ${expectedRefundTxId}`,
+      );
+    }
 
     // Convert to the expected Tx format
     return Tx.decode(StreamReader.fromBuffer(finalTx.toBuffer()));
