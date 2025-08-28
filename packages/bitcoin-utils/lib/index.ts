@@ -9,7 +9,7 @@ import {
 import { addressToString } from '@atomicfinance/utils';
 import BigNumber from 'bignumber.js';
 import * as varuint from 'bip174/src/lib/converter/varint';
-import { BitcoinNetwork, BitcoinNetworks } from 'bitcoin-networks';
+import { BitcoinNetwork, BitcoinNetworks } from 'bitcoin-network';
 import * as bitcoin from 'bitcoinjs-lib';
 import coinselect from 'coinselect';
 import coinselectAccumulative from 'coinselect/accumulative';

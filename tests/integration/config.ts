@@ -1,4 +1,4 @@
-import { BitcoinNetworks } from 'bitcoin-networks';
+import { BitcoinNetworks } from 'bitcoin-network';
 import * as dotenv from 'dotenv';
 import findConfig from 'find-config';
 

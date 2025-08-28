@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 
-import { BitcoinNetworks } from 'bitcoin-networks';
+import { BitcoinNetworks } from 'bitcoin-network';
 import chai, { expect } from 'chai';
 
 import { Client } from '../../../client/lib';

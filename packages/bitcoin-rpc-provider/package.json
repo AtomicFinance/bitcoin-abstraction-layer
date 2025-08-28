@@ -31,7 +31,7 @@
     "@atomicfinance/utils": "^4.1.8",
     "@babel/runtime": "^7.12.1",
     "bignumber.js": "^9.0.0",
-    "bitcoin-networks": "^1.0.0",
+    "bitcoin-network": "0.1.0",
     "lodash": "^4.17.20"
   },
   "publishConfig": {

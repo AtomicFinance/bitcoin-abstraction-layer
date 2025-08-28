@@ -16,7 +16,7 @@ pnpm add @atomicfinance/bitcoin-cfd-provider
 pnpm add @atomicfinance/bitcoin-dlc-provider
 pnpm add @atomicfinance/bitcoin-wallet-provider
 pnpm add @atomicfinance/bitcoin-js-wallet-provider
-pnpm add bitcoin-networks
+pnpm add bitcoin-network
 ```
 
 And add [cfd-js](https://github.com/atomicfinance/cfd-dlc-js) and [cfd-dlc-js](https://github.com/atomicfinance/cfd-dlc-js)

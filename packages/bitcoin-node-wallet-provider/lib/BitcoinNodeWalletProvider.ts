@@ -13,14 +13,14 @@ import {
   SendOptions,
   Transaction,
 } from '@atomicfinance/types';
-import { BitcoinNetwork, BitcoinNetworks } from 'bitcoin-networks';
+import * as ecc from '@bitcoin-js/tiny-secp256k1-asmjs';
+import { BitcoinNetwork, BitcoinNetworks } from 'bitcoin-network';
 import {
   Psbt,
   script,
   Transaction as BitcoinJsTransaction,
 } from 'bitcoinjs-lib';
 import { ECPairFactory } from 'ecpair';
-import * as ecc from 'tiny-secp256k1';
 
 const ECPair = ECPairFactory(ecc);
 import { flatten, isString, uniq } from 'lodash';

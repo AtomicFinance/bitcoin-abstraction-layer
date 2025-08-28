@@ -23,6 +23,7 @@ import {
   VerifySignatureRequest,
 } from '@atomicfinance/types';
 import { sleep } from '@atomicfinance/utils';
+import * as ecc from '@bitcoin-js/tiny-secp256k1-asmjs';
 import { Script, Sequence, Tx } from '@node-dlc/bitcoin';
 import { StreamReader } from '@node-dlc/bufio';
 import { BatchDlcTxBuilder } from '@node-dlc/core';
@@ -72,7 +73,7 @@ import {
 } from '@node-dlc/messaging';
 import assert from 'assert';
 import BigNumber from 'bignumber.js';
-import { BitcoinNetwork, chainHashFromNetwork } from 'bitcoin-networks';
+import { BitcoinNetwork, chainHashFromNetwork } from 'bitcoin-network';
 import {
   address,
   networks,
@@ -83,7 +84,6 @@ import {
 } from 'bitcoinjs-lib';
 import crypto from 'crypto';
 import { ECPairFactory, ECPairInterface } from 'ecpair';
-import * as ecc from 'tiny-secp256k1';
 
 import { checkTypes, generateSerialId, outputsToPayouts } from './utils/Utils';
 

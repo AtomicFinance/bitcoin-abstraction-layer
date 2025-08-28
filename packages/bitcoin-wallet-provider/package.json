@@ -22,7 +22,7 @@
     "@atomicfinance/utils": "^4.1.8",
     "@node-dlc/core": "1.1.0",
     "bip32": "^2.0.6",
-    "bitcoin-networks": "^1.0.0",
+    "bitcoin-network": "0.1.0",
     "bitcoinjs-lib": "6.1.7",
     "lodash": "^4.17.20",
     "memoizee": "^0.4.15"

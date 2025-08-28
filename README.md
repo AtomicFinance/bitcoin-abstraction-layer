@@ -67,7 +67,7 @@ import BitcoinCfdProvider from '@atomicfinance/bitcoin-cfd-provider'
 import BitcoinDlcProvider from '@atomicfinance/bitcoin-dlc-provider'
 import BitcoinWalletProvider from '@atomicfinance/bitcoin-wallet-provider'
 import BitcoinJsWalletProvider from '@atomicfinance/bitcoin-js-wallet-provider'
-import BitcoinNetworks from 'bitcoin-networks'
+import BitcoinNetworks from 'bitcoin-network'
 
 const network = BitcoinNetworks.bitcoin_testnet
 

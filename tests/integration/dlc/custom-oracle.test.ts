@@ -25,7 +25,7 @@ import {
 } from '@node-dlc/messaging';
 import BN from 'bignumber.js';
 import { math } from 'bip-schnorr';
-import { BitcoinNetworks } from 'bitcoin-networks';
+import { BitcoinNetworks } from 'bitcoin-network';
 import * as chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 

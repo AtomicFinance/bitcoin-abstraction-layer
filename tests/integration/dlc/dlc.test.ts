@@ -31,7 +31,7 @@ import {
 } from '@node-dlc/messaging';
 import BN from 'bignumber.js';
 import { math } from 'bip-schnorr';
-import { BitcoinNetworks, chainHashFromNetwork } from 'bitcoin-networks';
+import { BitcoinNetworks, chainHashFromNetwork } from 'bitcoin-network';
 import * as chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import * as crypto from 'crypto';
