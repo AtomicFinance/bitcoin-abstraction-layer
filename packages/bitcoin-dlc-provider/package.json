@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/bitcoin-dlc-provider",
   "umdName": "BitcoinDlcProvider",
-  "version": "4.1.8",
+  "version": "4.1.9",
   "description": "Bitcoin Abstraction Layer Dlc Provider",
   "author": "Atomic Finance <info@atomic.finance>",
   "homepage": "",
@@ -15,10 +15,10 @@
     "lint:fix": "../../node_modules/.bin/eslint --fix  ."
   },
   "dependencies": {
-    "@atomicfinance/bitcoin-utils": "4.1.8",
-    "@atomicfinance/provider": "^4.1.8",
-    "@atomicfinance/types": "^4.1.8",
-    "@atomicfinance/utils": "^4.1.8",
+    "@atomicfinance/bitcoin-utils": "4.1.9",
+    "@atomicfinance/provider": "^4.1.9",
+    "@atomicfinance/types": "^4.1.9",
+    "@atomicfinance/utils": "^4.1.9",
     "@node-dlc/bitcoin": "1.1.0",
     "@node-dlc/bufio": "1.1.0",
     "@node-dlc/core": "1.1.0",
