@@ -1,5 +1,15 @@
 # @atomicfinance/utils
 
+## 4.1.7
+
+### Patch Changes
+
+- 1203f06: Ensure refund tx includes sequence from original refund tx ddk provider
+- Updated dependencies [1203f06]
+  - @atomicfinance/crypto@4.1.7
+  - @atomicfinance/errors@4.1.7
+  - @atomicfinance/types@4.1.7
+
 ## 4.1.6
 
 ### Patch Changes

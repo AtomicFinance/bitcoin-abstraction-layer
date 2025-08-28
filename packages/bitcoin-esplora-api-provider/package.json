@@ -1,6 +1,6 @@
 {
   "name": "@atomicfinance/bitcoin-esplora-api-provider",
-  "version": "4.1.6",
+  "version": "4.1.7",
   "description": "",
   "module": "dist/index.js",
   "main": "dist/index.js",
@@ -24,12 +24,12 @@
     "node": ">=14"
   },
   "dependencies": {
-    "@atomicfinance/bitcoin-utils": "^4.1.6",
-    "@atomicfinance/crypto": "^4.1.6",
-    "@atomicfinance/errors": "^4.1.6",
-    "@atomicfinance/node-provider": "^4.1.6",
-    "@atomicfinance/types": "^4.1.6",
-    "@atomicfinance/utils": "^4.1.6",
+    "@atomicfinance/bitcoin-utils": "^4.1.7",
+    "@atomicfinance/crypto": "^4.1.7",
+    "@atomicfinance/errors": "^4.1.7",
+    "@atomicfinance/node-provider": "^4.1.7",
+    "@atomicfinance/types": "^4.1.7",
+    "@atomicfinance/utils": "^4.1.7",
     "@babel/runtime": "^7.12.1",
     "bignumber.js": "^9.0.0",
     "bitcoin-networks": "^1.0.0",
