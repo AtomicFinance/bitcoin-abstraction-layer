@@ -1,5 +1,17 @@
 # @atomicfinance/bitcoin-js-wallet-provider
 
+## 4.1.8
+
+### Patch Changes
+
+- e1d4e0d: Fix fund tx to use DER encoding for witness sig
+- Updated dependencies [e1d4e0d]
+  - @atomicfinance/bitcoin-utils@4.1.8
+  - @atomicfinance/bitcoin-wallet-provider@4.1.8
+  - @atomicfinance/provider@4.1.8
+  - @atomicfinance/types@4.1.8
+  - @atomicfinance/utils@4.1.8
+
 ## 4.1.7
 
 ### Patch Changes

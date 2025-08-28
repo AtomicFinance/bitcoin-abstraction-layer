@@ -1,5 +1,11 @@
 # @atomicfinance/crypto
 
+## 4.1.8
+
+### Patch Changes
+
+- e1d4e0d: Fix fund tx to use DER encoding for witness sig
+
 ## 4.1.7
 
 ### Patch Changes

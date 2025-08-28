@@ -1,5 +1,18 @@
 # @atomicfinance/bitcoin-esplora-api-provider
 
+## 4.1.8
+
+### Patch Changes
+
+- e1d4e0d: Fix fund tx to use DER encoding for witness sig
+- Updated dependencies [e1d4e0d]
+  - @atomicfinance/bitcoin-utils@4.1.8
+  - @atomicfinance/crypto@4.1.8
+  - @atomicfinance/errors@4.1.8
+  - @atomicfinance/node-provider@4.1.8
+  - @atomicfinance/types@4.1.8
+  - @atomicfinance/utils@4.1.8
+
 ## 4.1.7
 
 ### Patch Changes
