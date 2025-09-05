@@ -1,5 +1,16 @@
 # @atomicfinance/client
 
+## 4.1.10
+
+### Patch Changes
+
+- 99f0550: Bump @node-dlc to 1.1.1 and ensure consistent oraclePublicKey
+- Updated dependencies [99f0550]
+  - @atomicfinance/types@4.1.10
+  - @atomicfinance/bitcoin-utils@4.1.10
+  - @atomicfinance/errors@4.1.10
+  - @atomicfinance/provider@4.1.10
+
 ## 4.1.9
 
 ### Patch Changes
