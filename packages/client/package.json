@@ -19,8 +19,8 @@
     "@atomicfinance/errors": "^4.1.9",
     "@atomicfinance/provider": "^4.1.9",
     "@atomicfinance/types": "^4.1.9",
-    "@node-dlc/bitcoin": "1.1.0",
-    "@node-dlc/messaging": "1.1.0",
+    "@node-dlc/bitcoin": "1.1.1",
+    "@node-dlc/messaging": "1.1.1",
     "ajv": "^6.10.0",
     "lodash": "^4.17.20"
   },

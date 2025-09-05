@@ -1338,7 +1338,7 @@ export default class BitcoinDdkProvider extends Provider {
         const tempCetsHex = cetsHex;
 
         const ddkOracleInfo: DdkOracleInfo = {
-          publicKey: oracleAnnouncement.oraclePubkey,
+          publicKey: oracleAnnouncement.oraclePublicKey,
           nonces: oracleAnnouncement.oracleEvent.oracleNonces,
         };
 
@@ -1403,7 +1403,7 @@ export default class BitcoinDdkProvider extends Provider {
           const tempCetsHex = oracleEventCetsHex.slice(i, i + chunk);
 
           const ddkOracleInfo: DdkOracleInfo = {
-            publicKey: oracleAnnouncement.oraclePubkey,
+            publicKey: oracleAnnouncement.oraclePublicKey,
             nonces: oracleAnnouncement.oracleEvent.oracleNonces,
           };
 
@@ -1514,7 +1514,7 @@ export default class BitcoinDdkProvider extends Provider {
         const fundingSPK = verifyP2ms.output!;
 
         const ddkOracleInfo: DdkOracleInfo = {
-          publicKey: oracleAnnouncement.oraclePubkey,
+          publicKey: oracleAnnouncement.oraclePublicKey,
           nonces: oracleAnnouncement.oracleEvent.oracleNonces,
         };
 
@@ -1610,7 +1610,7 @@ export default class BitcoinDdkProvider extends Provider {
           const fundingSPK = nonEnumP2ms.output!;
 
           const ddkOracleInfo: DdkOracleInfo = {
-            publicKey: oracleAnnouncement.oraclePubkey,
+            publicKey: oracleAnnouncement.oraclePublicKey,
             nonces: oracleAnnouncement.oracleEvent.oracleNonces,
           };
 

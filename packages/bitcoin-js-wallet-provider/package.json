@@ -30,7 +30,7 @@
     "@atomicfinance/types": "^4.1.9",
     "@atomicfinance/utils": "^4.1.9",
     "@babel/runtime": "^7.12.1",
-    "@node-dlc/core": "1.1.0",
+    "@node-dlc/core": "1.1.1",
     "bip32": "^2.0.6",
     "bip39": "^3.0.2",
     "bitcoin-network": "0.1.0",

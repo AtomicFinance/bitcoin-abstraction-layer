@@ -57,7 +57,7 @@ export function generateEnumContractInfo(
     'hex',
   );
 
-  announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
+  announcement.oraclePublicKey = Buffer.from(oliviaInfo.publicKey, 'hex');
   announcement.oracleEvent = event;
 
   const oracleInfo = new SingleOracleInfo();
@@ -121,7 +121,7 @@ export function generateContractInfo(
     'hex',
   );
 
-  announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
+  announcement.oraclePublicKey = Buffer.from(oliviaInfo.publicKey, 'hex');
   announcement.oracleEvent = event;
 
   const oracleInfo = new SingleOracleInfo();
@@ -188,7 +188,7 @@ export function generateContractInfoCustomStrategyOracle(
     'hex',
   );
 
-  announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
+  announcement.oraclePublicKey = Buffer.from(oliviaInfo.publicKey, 'hex');
   announcement.oracleEvent = event;
 
   const oracleInfo = new SingleOracleInfo();
@@ -249,7 +249,7 @@ export function generateEnumCollateralContractInfo(
     'hex',
   );
 
-  announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
+  announcement.oraclePublicKey = Buffer.from(oliviaInfo.publicKey, 'hex');
   announcement.oracleEvent = event;
 
   const oracleInfo = new SingleOracleInfo();
@@ -302,7 +302,7 @@ export function generateLongCallOffer(
     'hex',
   );
 
-  announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
+  announcement.oraclePublicKey = Buffer.from(oliviaInfo.publicKey, 'hex');
   announcement.oracleEvent = event;
 
   const oracleInfo = new SingleOracleInfo();
@@ -344,7 +344,7 @@ export function generateOracleAttestation(
 
   const oracleAttestation = new OracleAttestation();
   oracleAttestation.eventId = eventId;
-  oracleAttestation.oraclePubkey = Buffer.from(oracleInfo.publicKey, 'hex');
+  oracleAttestation.oraclePublicKey = Buffer.from(oracleInfo.publicKey, 'hex');
   oracleAttestation.signatures = sigs;
   oracleAttestation.outcomes = outcomes;
 
@@ -370,7 +370,7 @@ export function generateEnumOracleAttestation(
 
   const oracleAttestation = new OracleAttestation();
   oracleAttestation.eventId = eventId;
-  oracleAttestation.oraclePubkey = Buffer.from(oracleInfo.publicKey, 'hex');
+  oracleAttestation.oraclePublicKey = Buffer.from(oracleInfo.publicKey, 'hex');
   oracleAttestation.signatures = sigs;
   oracleAttestation.outcomes = [outcome];
 
@@ -396,7 +396,7 @@ export function generateDdkCompatibleEnumOracleAttestation(
 
   const oracleAttestation = new OracleAttestation();
   oracleAttestation.eventId = eventId;
-  oracleAttestation.oraclePubkey = Buffer.from(oracleInfo.publicKey, 'hex');
+  oracleAttestation.oraclePublicKey = Buffer.from(oracleInfo.publicKey, 'hex');
   oracleAttestation.signatures = sigs;
   oracleAttestation.outcomes = [outcome];
 
