@@ -449,7 +449,7 @@ describe('Custom Strategy Oracle POC numdigits=21', () => {
         'hex',
       );
 
-      announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
+      announcement.oraclePublicKey = Buffer.from(oliviaInfo.publicKey, 'hex');
       announcement.oracleEvent = event;
 
       const roundingIntervals = buildRoundingIntervalsFromIntervals(

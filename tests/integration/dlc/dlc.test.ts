@@ -175,7 +175,7 @@ describe('dlc provider', () => {
         'hex',
       );
 
-      announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
+      announcement.oraclePublicKey = Buffer.from(oliviaInfo.publicKey, 'hex');
       announcement.oracleEvent = event;
 
       const oracleInfo = new SingleOracleInfo();
@@ -307,7 +307,7 @@ describe('dlc provider', () => {
         'hex',
       );
 
-      announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
+      announcement.oraclePublicKey = Buffer.from(oliviaInfo.publicKey, 'hex');
       announcement.oracleEvent = event;
 
       const oracleInfo = new SingleOracleInfo();
@@ -466,7 +466,7 @@ describe('dlc provider', () => {
         'hex',
       );
 
-      announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
+      announcement.oraclePublicKey = Buffer.from(oliviaInfo.publicKey, 'hex');
       announcement.oracleEvent = event;
 
       const oracleInfo = new SingleOracleInfo();
@@ -589,7 +589,7 @@ describe('dlc provider', () => {
         'hex',
       );
 
-      announcement.oraclePubkey = Buffer.from(oliviaInfo.publicKey, 'hex');
+      announcement.oraclePublicKey = Buffer.from(oliviaInfo.publicKey, 'hex');
       announcement.oracleEvent = event;
 
       const oracleInfo = new SingleOracleInfo();

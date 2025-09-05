@@ -1207,7 +1207,7 @@ export default class BitcoinDlcProvider
           localFundPubkey: dlcOffer.fundingPubkey.toString('hex'),
           remoteFundPubkey: dlcAccept.fundingPubkey.toString('hex'),
           fundInputAmount: this.getFundOutputValueSats(dlcTxs),
-          oraclePubkey: oracleAnnouncement.oraclePubkey.toString('hex'),
+          oraclePubkey: oracleAnnouncement.oraclePublicKey.toString('hex'),
           oracleRValues: oracleAnnouncement.oracleEvent.oracleNonces.map(
             (nonce) => nonce.toString('hex'),
           ),
@@ -1269,7 +1269,7 @@ export default class BitcoinDlcProvider
             localFundPubkey: dlcOffer.fundingPubkey.toString('hex'),
             remoteFundPubkey: dlcAccept.fundingPubkey.toString('hex'),
             fundInputAmount: this.getFundOutputValueSats(dlcTxs),
-            oraclePubkey: oracleAnnouncement.oraclePubkey.toString('hex'),
+            oraclePubkey: oracleAnnouncement.oraclePublicKey.toString('hex'),
             oracleRValues: oracleAnnouncement.oracleEvent.oracleNonces.map(
               (nonce) => nonce.toString('hex'),
             ),
@@ -1374,7 +1374,7 @@ export default class BitcoinDlcProvider
           {
             cetsHex: tempCetsHex,
             messagesList: tempMessagesList,
-            oraclePubkey: oracleAnnouncement.oraclePubkey.toString('hex'),
+            oraclePubkey: oracleAnnouncement.oraclePublicKey.toString('hex'),
             oracleRValues: oracleAnnouncement.oracleEvent.oracleNonces.map(
               (nonce) => nonce.toString('hex'),
             ),
@@ -1462,7 +1462,7 @@ export default class BitcoinDlcProvider
             {
               cetsHex: tempCetsHex,
               messagesList: tempMessagesList,
-              oraclePubkey: oracleAnnouncement.oraclePubkey.toString('hex'),
+              oraclePubkey: oracleAnnouncement.oraclePublicKey.toString('hex'),
               oracleRValues: oracleAnnouncement.oracleEvent.oracleNonces.map(
                 (nonce) => nonce.toString('hex'),
               ),
