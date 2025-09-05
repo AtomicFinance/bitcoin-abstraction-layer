@@ -7,7 +7,7 @@ dotenv.config({ path: findConfig('.env') });
 export default {
   bitcoin: {
     rpc: {
-      host: 'http://localhost:18443',
+      host: 'http://localhost:18443/wallet/default',
       username: process.env.RPC_USER || 'admin1',
       password: process.env.RPC_PASS || '123',
     },

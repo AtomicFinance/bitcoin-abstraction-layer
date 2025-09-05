@@ -15,7 +15,7 @@ import {
   AcceptDlcOfferResponse,
   SignDlcAcceptResponse,
 } from '../../../packages/bitcoin-dlc-provider';
-import { chains, getInput } from '../common';
+import { chains, getInput, importAddressesForTesting } from '../common';
 import Oracle from '../models/Oracle';
 import { generateDdkCompatibleEnumOracleAttestation } from '../utils/contract';
 

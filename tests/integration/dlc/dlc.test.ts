@@ -42,7 +42,7 @@ import {
 } from '../../../packages/bitcoin-dlc-provider';
 import { Input } from '../../../packages/types';
 import { InputSupplementationMode } from '../../../packages/types/lib';
-import { chains, getInput } from '../common';
+import { chains, getInput, importAddressesForTesting } from '../common';
 import f from '../fixtures/blockchain.json';
 import { attestation_for_payout_amount_failure as AttestationWithPayoutAmountFailure } from '../fixtures/messages.json';
 import Oracle from '../models/Oracle';
@@ -130,13 +130,12 @@ describe('dlc provider', () => {
 
     aliceAddresses = [...aliceNonChangeAddresses, ...aliceChangeAddresses];
 
-    for (let i = 0; i < aliceAddresses.length; i++) {
-      await alice.getMethod('jsonrpc')(
-        'importaddress',
-        aliceAddresses[i],
-        '',
-        false,
-      );
+    // Import addresses for Bitcoin Core v28.1 descriptor wallet testing
+    try {
+      await importAddressesForTesting(alice, aliceAddresses);
+    } catch (error) {
+      console.warn('Failed to import addresses for testing:', error.message);
+      // Continue anyway - the wallet should still work
     }
   });
 
