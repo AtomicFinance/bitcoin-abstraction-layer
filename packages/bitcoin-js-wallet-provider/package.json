@@ -1,6 +1,6 @@
 {
   "name": "@atomicfinance/bitcoin-js-wallet-provider",
-  "version": "4.1.11",
+  "version": "4.1.12",
   "description": "",
   "module": "dist/index.js",
   "main": "dist/index.js",
@@ -24,11 +24,11 @@
     "node": ">=14"
   },
   "dependencies": {
-    "@atomicfinance/bitcoin-utils": "^4.1.11",
-    "@atomicfinance/bitcoin-wallet-provider": "^4.1.11",
-    "@atomicfinance/provider": "^4.1.11",
-    "@atomicfinance/types": "^4.1.11",
-    "@atomicfinance/utils": "^4.1.11",
+    "@atomicfinance/bitcoin-utils": "^4.1.12",
+    "@atomicfinance/bitcoin-wallet-provider": "^4.1.12",
+    "@atomicfinance/provider": "^4.1.12",
+    "@atomicfinance/types": "^4.1.12",
+    "@atomicfinance/utils": "^4.1.12",
     "@babel/runtime": "^7.12.1",
     "@node-dlc/core": "1.1.2",
     "bip32": "^2.0.6",
