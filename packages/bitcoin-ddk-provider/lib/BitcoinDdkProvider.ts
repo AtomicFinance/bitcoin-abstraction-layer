@@ -1064,7 +1064,7 @@ export default class BitcoinDdkProvider extends Provider {
 
     const dlcTransactions = new DlcTransactions();
     dlcTransactions.fundTx = Tx.decode(
-      StreamReader.fromBuffer(dlcTxs.fund.rawBytes),
+      StreamReader.fromBuffer(Buffer.from(dlcTxs.fund.rawBytes)),
     );
 
     // Build serial IDs based on actual outputs in the transaction
@@ -1106,10 +1106,10 @@ export default class BitcoinDdkProvider extends Provider {
     }
 
     dlcTransactions.cets = dlcTxs.cets.map((cetTx) =>
-      Tx.decode(StreamReader.fromBuffer(cetTx.rawBytes)),
+      Tx.decode(StreamReader.fromBuffer(Buffer.from(cetTx.rawBytes))),
     );
     dlcTransactions.refundTx = Tx.decode(
-      StreamReader.fromBuffer(dlcTxs.refund.rawBytes),
+      StreamReader.fromBuffer(Buffer.from(dlcTxs.refund.rawBytes)),
     );
 
     return { dlcTransactions, messagesList };
@@ -1664,7 +1664,9 @@ export default class BitcoinDdkProvider extends Provider {
     dlcTxs: DlcTransactions,
     isOfferer: boolean,
   ): Promise<FundingSignatures> {
-    const transaction = btTransaction.fromBuffer(dlcTxs.fundTx.serialize());
+    const transaction = btTransaction.fromBuffer(
+      Buffer.from(dlcTxs.fundTx.serialize()),
+    );
     const network = await this.getConnectedNetwork();
     const psbt = new Psbt({ network });
 
@@ -1683,7 +1685,7 @@ export default class BitcoinDdkProvider extends Provider {
 
       // Use the same pattern as existing code - slice(1) to remove length prefix
       const witnessUtxo = {
-        script: prevOut.scriptPubKey.serialize().subarray(1),
+        script: Buffer.from(prevOut.scriptPubKey.serialize().subarray(1)),
         value: Number(prevOut.value.sats),
       };
 
@@ -1798,7 +1800,9 @@ export default class BitcoinDdkProvider extends Provider {
     isOfferer: boolean,
   ): Promise<void> {
     const network = await this.getConnectedNetwork();
-    const transaction = btTransaction.fromBuffer(dlcTxs.fundTx.serialize());
+    const transaction = btTransaction.fromBuffer(
+      Buffer.from(dlcTxs.fundTx.serialize()),
+    );
 
     // Get the party whose signatures we're verifying
     // If we're the offerer, we verify accepter's signatures (from dlcSign)
@@ -1831,7 +1835,7 @@ export default class BitcoinDdkProvider extends Provider {
         index: input.prevTxVout,
         sequence: 0,
         witnessUtxo: {
-          script: prevOutput.scriptPubKey.serialize().subarray(1),
+          script: Buffer.from(prevOutput.scriptPubKey.serialize().subarray(1)),
           value: Number(prevOutput.value.sats),
         },
       });
@@ -2091,7 +2095,7 @@ export default class BitcoinDdkProvider extends Provider {
 
     // Add all inputs to PSBT with proper sequence values
     const originalTransaction = btTransaction.fromBuffer(
-      dlcTxs.fundTx.serialize(),
+      Buffer.from(dlcTxs.fundTx.serialize()),
     );
 
     for (const fundingInput of allFundingInputs) {
@@ -2099,7 +2103,7 @@ export default class BitcoinDdkProvider extends Provider {
 
       // Use same script handling as CreateFundingSigsAlt
       const witnessUtxo = {
-        script: prevOut.scriptPubKey.serialize().subarray(1),
+        script: Buffer.from(prevOut.scriptPubKey.serialize().subarray(1)),
         value: Number(prevOut.value.sats),
       };
 
@@ -2168,7 +2172,7 @@ export default class BitcoinDdkProvider extends Provider {
     const finalTx = psbt.extractTransaction();
 
     // Convert back to the expected Tx format
-    return Tx.decode(StreamReader.fromBuffer(finalTx.toBuffer()));
+    return Tx.decode(StreamReader.fromBuffer(Buffer.from(finalTx.toBuffer())));
   }
 
   async FindOutcomeIndexFromPolynomialPayoutCurvePiece(
@@ -3678,7 +3682,7 @@ Payout Group not found even with brute force search',
     }
 
     // Convert to the expected Tx format
-    return Tx.decode(StreamReader.fromBuffer(finalTx.toBuffer()));
+    return Tx.decode(StreamReader.fromBuffer(Buffer.from(finalTx.toBuffer())));
   }
 
   /**
@@ -4288,7 +4292,9 @@ Payout Group not found even with brute force search',
       const witnessI = dlcClose.fundingSignatures.witnessElements.findIndex(
         (el) =>
           Buffer.compare(
-            Script.p2wpkhLock(hash160(el[1].witness)).serialize().subarray(1),
+            Buffer.from(
+              Script.p2wpkhLock(hash160(el[1].witness)).serialize().subarray(1),
+            ),
             psbt.data.inputs[i].witnessUtxo.script,
           ) === 0,
       );
@@ -4324,7 +4330,9 @@ Payout Group not found even with brute force search',
     const input = _input as FundingInput;
     const prevTx = input.prevTx;
     const prevTxOut = prevTx.outputs[input.prevTxVout];
-    const scriptPubKey = prevTxOut.scriptPubKey.serialize().subarray(1);
+    const scriptPubKey = Buffer.from(
+      prevTxOut.scriptPubKey.serialize().subarray(1),
+    );
     const _address = address.fromOutputScript(
       Buffer.from(scriptPubKey),
       network,
