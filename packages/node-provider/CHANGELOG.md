@@ -1,5 +1,14 @@
 # @atomicfinance/node-provider
 
+## 4.1.11
+
+### Patch Changes
+
+- 4372f72: Wrap fromOutputScript in buffer for cross platform support
+- Updated dependencies [4372f72]
+  - @atomicfinance/errors@4.1.11
+  - @atomicfinance/provider@4.1.11
+
 ## 4.1.10
 
 ### Patch Changes

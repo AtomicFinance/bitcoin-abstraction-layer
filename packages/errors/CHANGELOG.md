@@ -1,5 +1,11 @@
 # @atomicfinance/errors
 
+## 4.1.11
+
+### Patch Changes
+
+- 4372f72: Wrap fromOutputScript in buffer for cross platform support
+
 ## 4.1.10
 
 ### Patch Changes

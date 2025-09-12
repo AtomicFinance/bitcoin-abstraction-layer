@@ -1,5 +1,16 @@
 # @atomicfinance/bitcoin-esplora-batch-api-provider
 
+## 4.1.11
+
+### Patch Changes
+
+- 4372f72: Wrap fromOutputScript in buffer for cross platform support
+- Updated dependencies [4372f72]
+  - @atomicfinance/bitcoin-esplora-api-provider@4.1.11
+  - @atomicfinance/node-provider@4.1.11
+  - @atomicfinance/types@4.1.11
+  - @atomicfinance/utils@4.1.11
+
 ## 4.1.10
 
 ### Patch Changes
