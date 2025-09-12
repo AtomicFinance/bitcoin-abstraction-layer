@@ -1,5 +1,19 @@
 # @atomicfinance/bitcoin-rpc-provider
 
+## 4.1.12
+
+### Patch Changes
+
+- 054a95e: Add Buffer.from() wrapper for React Native compatibility
+- ebe6af2: Bump @node-dlc to 1.1.2 to fix react native buffer compatibility issues
+- Updated dependencies [054a95e]
+- Updated dependencies [ebe6af2]
+  - @atomicfinance/bitcoin-utils@4.1.12
+  - @atomicfinance/errors@4.1.12
+  - @atomicfinance/jsonrpc-provider@4.1.12
+  - @atomicfinance/types@4.1.12
+  - @atomicfinance/utils@4.1.12
+
 ## 4.1.11
 
 ### Patch Changes
