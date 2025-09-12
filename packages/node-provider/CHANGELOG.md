@@ -1,5 +1,16 @@
 # @atomicfinance/node-provider
 
+## 4.1.12
+
+### Patch Changes
+
+- 054a95e: Add Buffer.from() wrapper for React Native compatibility
+- ebe6af2: Bump @node-dlc to 1.1.2 to fix react native buffer compatibility issues
+- Updated dependencies [054a95e]
+- Updated dependencies [ebe6af2]
+  - @atomicfinance/errors@4.1.12
+  - @atomicfinance/provider@4.1.12
+
 ## 4.1.11
 
 ### Patch Changes
