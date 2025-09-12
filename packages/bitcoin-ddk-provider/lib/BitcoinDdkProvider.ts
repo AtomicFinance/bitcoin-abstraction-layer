@@ -371,7 +371,7 @@ export default class BitcoinDdkProvider extends Provider {
     dlcTxs.refundTx.outputs.forEach((refundOutput) => {
       psbt.addOutput({
         address: address.fromOutputScript(
-          refundOutput.scriptPubKey.serialize().subarray(1),
+          Buffer.from(refundOutput.scriptPubKey.serialize().subarray(1)),
           network,
         ),
         value: Number(refundOutput.value.sats),
@@ -1303,7 +1303,7 @@ export default class BitcoinDdkProvider extends Provider {
       .slice(1);
 
     const fundingAddress: string = address.fromOutputScript(
-      individualFundingSPK,
+      Buffer.from(individualFundingSPK),
       network,
     );
 
@@ -1709,7 +1709,7 @@ export default class BitcoinDdkProvider extends Provider {
     // Add all outputs to PSBT (maintains transaction structure)
     for (const output of transaction.outs) {
       psbt.addOutput({
-        address: address.fromOutputScript(output.script, network),
+        address: address.fromOutputScript(Buffer.from(output.script), network),
         value: output.value,
       });
     }
@@ -1840,7 +1840,7 @@ export default class BitcoinDdkProvider extends Provider {
     // Add all outputs
     for (const output of transaction.outs) {
       psbt.addOutput({
-        address: address.fromOutputScript(output.script, network),
+        address: address.fromOutputScript(Buffer.from(output.script), network),
         value: output.value,
       });
     }
@@ -1971,7 +1971,7 @@ export default class BitcoinDdkProvider extends Provider {
     dlcTxs.refundTx.outputs.forEach((refundOutput) => {
       psbt.addOutput({
         address: address.fromOutputScript(
-          refundOutput.scriptPubKey.serialize().subarray(1),
+          Buffer.from(refundOutput.scriptPubKey.serialize().subarray(1)),
           network,
         ),
         value: Number(refundOutput.value.sats),
@@ -2125,7 +2125,7 @@ export default class BitcoinDdkProvider extends Provider {
     // Add all outputs from the funding transaction
     for (const output of originalTransaction.outs) {
       psbt.addOutput({
-        address: address.fromOutputScript(output.script, network),
+        address: address.fromOutputScript(Buffer.from(output.script), network),
         value: output.value,
       });
     }
@@ -2624,7 +2624,7 @@ Payout Group not found even with brute force search',
       .slice(1);
 
     const fundingAddress: string = address.fromOutputScript(
-      fundingSPK,
+      Buffer.from(fundingSPK),
       network,
     );
 
@@ -2725,14 +2725,20 @@ Payout Group not found even with brute force search',
 
       if (Number(offerPayoutValue) > 0) {
         txOuts.push({
-          address: address.fromOutputScript(dlcOffer.payoutSpk, network),
+          address: address.fromOutputScript(
+            Buffer.from(dlcOffer.payoutSpk),
+            network,
+          ),
           amount: Number(offerPayoutValue),
         });
       }
 
       if (Number(acceptPayoutValue) > 0) {
         txOuts.push({
-          address: address.fromOutputScript(dlcAccept.payoutSpk, network),
+          address: address.fromOutputScript(
+            Buffer.from(dlcAccept.payoutSpk),
+            network,
+          ),
           amount: Number(acceptPayoutValue),
         });
       }
@@ -2971,12 +2977,12 @@ Payout Group not found even with brute force search',
       .slice(1);
 
     const offerFundingAddress: string = address.fromOutputScript(
-      offerFundingSPK,
+      Buffer.from(offerFundingSPK),
       network,
     );
 
     const acceptFundingAddress: string = address.fromOutputScript(
-      acceptFundingSPK,
+      Buffer.from(acceptFundingSPK),
       network,
     );
 
@@ -3364,7 +3370,7 @@ Payout Group not found even with brute force search',
     const contractId = this.computeContractId(
       _dlcTransactions.fundTx.txId.serialize(),
       _dlcTransactions.fundTxVout,
-      dlcAccept.temporaryContractId,
+      dlcOffer.temporaryContractId,
     );
     _dlcTransactions.contractId = contractId;
 
@@ -3429,7 +3435,7 @@ Payout Group not found even with brute force search',
     const contractId = this.computeContractId(
       dlcTxs.fundTx.txId.serialize(),
       dlcTxs.fundTxVout,
-      dlcAccept.temporaryContractId,
+      dlcOffer.temporaryContractId,
     );
 
     assert(
@@ -3438,7 +3444,7 @@ Payout Group not found even with brute force search',
         this.computeContractId(
           dlcTxs.fundTx.txId.serialize(),
           dlcTxs.fundTxVout,
-          dlcAccept.temporaryContractId,
+          dlcOffer.temporaryContractId,
         ),
       ) === 0,
       'contractId must be the xor of funding txid, fundingOutputIndex and the tempContractId',
@@ -3613,7 +3619,7 @@ Payout Group not found even with brute force search',
     dlcTxs.refundTx.outputs.forEach((refundOutput) => {
       psbt.addOutput({
         address: address.fromOutputScript(
-          refundOutput.scriptPubKey.serialize().subarray(1),
+          Buffer.from(refundOutput.scriptPubKey.serialize().subarray(1)),
           network,
         ),
         value: Number(refundOutput.value.sats),
@@ -3858,7 +3864,7 @@ Payout Group not found even with brute force search',
     psbt.addOutput({
       value: Number(offerFirst ? offerPayoutValue : acceptPayoutValue),
       address: address.fromOutputScript(
-        offerFirst ? dlcOffer.payoutSpk : dlcAccept.payoutSpk,
+        Buffer.from(offerFirst ? dlcOffer.payoutSpk : dlcAccept.payoutSpk),
         network,
       ),
     });
@@ -3866,7 +3872,7 @@ Payout Group not found even with brute force search',
     psbt.addOutput({
       value: Number(offerFirst ? acceptPayoutValue : offerPayoutValue),
       address: address.fromOutputScript(
-        offerFirst ? dlcAccept.payoutSpk : dlcOffer.payoutSpk,
+        Buffer.from(offerFirst ? dlcAccept.payoutSpk : dlcOffer.payoutSpk),
         network,
       ),
     });
@@ -4235,7 +4241,7 @@ Payout Group not found even with brute force search',
           : dlcClose.acceptPayoutSatoshis,
       ),
       address: address.fromOutputScript(
-        offerFirst ? dlcOffer.payoutSpk : dlcAccept.payoutSpk,
+        Buffer.from(offerFirst ? dlcOffer.payoutSpk : dlcAccept.payoutSpk),
         network,
       ),
     });
@@ -4247,7 +4253,7 @@ Payout Group not found even with brute force search',
           : dlcClose.offerPayoutSatoshis,
       ),
       address: address.fromOutputScript(
-        offerFirst ? dlcAccept.payoutSpk : dlcOffer.payoutSpk,
+        Buffer.from(offerFirst ? dlcAccept.payoutSpk : dlcOffer.payoutSpk),
         network,
       ),
     });
@@ -4319,7 +4325,10 @@ Payout Group not found even with brute force search',
     const prevTx = input.prevTx;
     const prevTxOut = prevTx.outputs[input.prevTxVout];
     const scriptPubKey = prevTxOut.scriptPubKey.serialize().subarray(1);
-    const _address = address.fromOutputScript(scriptPubKey, network);
+    const _address = address.fromOutputScript(
+      Buffer.from(scriptPubKey),
+      network,
+    );
     let derivationPath: string;
 
     if (findDerivationPath) {
@@ -4523,7 +4532,7 @@ Payout Group not found even with brute force search',
     // Verify this matches the actual funding output address
     const actualFundingOutput = tx.outputs[dlcInputInfo.fundVout];
     const actualFundingAddress = address.fromOutputScript(
-      actualFundingOutput.scriptPubKey.serialize().subarray(1),
+      Buffer.from(actualFundingOutput.scriptPubKey.serialize().subarray(1)),
       network,
     );
 
