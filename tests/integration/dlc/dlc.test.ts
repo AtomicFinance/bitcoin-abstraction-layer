@@ -130,13 +130,23 @@ describe('dlc provider', () => {
 
     aliceAddresses = [...aliceNonChangeAddresses, ...aliceChangeAddresses];
 
+    // Try to import addresses, but don't fail if Bitcoin Core doesn't support it
+    // This handles both legacy wallets (which support importaddress) and descriptor wallets (which don't)
     for (let i = 0; i < aliceAddresses.length; i++) {
-      await alice.getMethod('jsonrpc')(
-        'importaddress',
-        aliceAddresses[i],
-        '',
-        false,
-      );
+      try {
+        await alice.getMethod('jsonrpc')(
+          'importaddress',
+          aliceAddresses[i],
+          '',
+          false,
+        );
+      } catch (error) {
+        // Ignore importaddress errors - modern Bitcoin Core uses descriptor wallets
+        // The test should still work without importing addresses
+        console.warn(
+          `Failed to import address ${aliceAddresses[i]}: ${error.message}`,
+        );
+      }
     }
   });
 
@@ -271,6 +281,25 @@ describe('dlc provider', () => {
       expect(cetTxId).to.not.be.undefined;
       const cetTx = await alice.getMethod('getTransactionByHash')(cetTxId);
       expect(cetTx._raw.vin.length).to.equal(1);
+
+      // Test sighash functions with the established DLC setup
+      const sighashes = await ddk.getMethod('getFundingTransactionSighash')(
+        dlcOffer,
+        dlcAccept,
+        dlcTransactions,
+      );
+      expect(sighashes).to.be.an('array');
+      expect(sighashes.length).to.be.greaterThan(0);
+      (sighashes as string[]).forEach((sighash) => {
+        expect(sighash).to.have.length(64);
+        expect(sighash).to.match(/^[0-9a-f]{64}$/i);
+      });
+
+      const details = await ddk.getMethod(
+        'getFundingTransactionSighashDetails',
+      )(dlcOffer, dlcAccept, dlcTransactions);
+      expect(details).to.be.an('array');
+      expect((sighashes as string[])[0]).to.equal(details[0].sighash);
     });
 
     it('should fund and refund enum DLC', async () => {

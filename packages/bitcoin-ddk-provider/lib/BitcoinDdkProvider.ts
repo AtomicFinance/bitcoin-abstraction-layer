@@ -1830,10 +1830,21 @@ export default class BitcoinDdkProvider extends Provider {
     // Add all inputs (needed for proper sighash calculation)
     for (const input of allFundingInputs) {
       const prevOutput = input.prevTx.outputs[input.prevTxVout];
+
+      // Use sequence from the original transaction to ensure consistency with CreateFundingTx
+      const originalInput = transaction.ins.find(
+        (txInput) =>
+          txInput.hash.reverse().toString('hex') ===
+            input.prevTx.txId.toString() && txInput.index === input.prevTxVout,
+      );
+      const sequenceValue = originalInput
+        ? originalInput.sequence
+        : Number(input.sequence);
+
       psbt.addInput({
         hash: input.prevTx.txId.toString(),
         index: input.prevTxVout,
-        sequence: 0,
+        sequence: sequenceValue,
         witnessUtxo: {
           script: Buffer.from(prevOutput.scriptPubKey.serialize().subarray(1)),
           value: Number(prevOutput.value.sats),
@@ -1907,6 +1918,116 @@ export default class BitcoinDdkProvider extends Provider {
 
       witnessIndex++;
     }
+  }
+
+  /**
+   * Get sighash for funding transaction inputs
+   * @param dlcOffer DLC Offer
+   * @param dlcAccept DLC Accept
+   * @param dlcTxs DLC Transactions
+   * @param inputIndex Index of the input to get sighash for (optional, if not provided returns all)
+   * @returns Array of sighashes for each input or single sighash if inputIndex specified
+   */
+  async getFundingTransactionSighash(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    dlcTxs: DlcTransactions,
+    inputIndex?: number,
+  ): Promise<string[] | string> {
+    // Use the detailed function to ensure consistency
+    const details = await this.getFundingTransactionSighashDetails(
+      dlcOffer,
+      dlcAccept,
+      dlcTxs,
+    );
+
+    if (inputIndex !== undefined) {
+      // Return sighash for specific input
+      if (inputIndex >= details.length) {
+        throw new Error(
+          `Input index ${inputIndex} out of range. Total inputs: ${details.length}`,
+        );
+      }
+      return details[inputIndex].sighash;
+    } else {
+      // Return sighashes for all inputs
+      return details.map((detail) => detail.sighash);
+    }
+  }
+
+  /**
+   * Get detailed sighash information for funding transaction (useful for debugging)
+   * @param dlcOffer DLC Offer
+   * @param dlcAccept DLC Accept
+   * @param dlcTxs DLC Transactions
+   * @returns Detailed sighash information for each input
+   */
+  async getFundingTransactionSighashDetails(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    dlcTxs: DlcTransactions,
+  ): Promise<
+    Array<{
+      inputIndex: number;
+      txid: string;
+      vout: number;
+      sequence: number;
+      scriptPubKey: string;
+      value: number;
+      sighash: string;
+    }>
+  > {
+    const transaction = btTransaction.fromBuffer(
+      Buffer.from(dlcTxs.fundTx.serialize()),
+    );
+
+    // Combine all inputs to get the correct ordering
+    const allFundingInputs = [
+      ...dlcOffer.fundingInputs,
+      ...dlcAccept.fundingInputs,
+    ];
+    allFundingInputs.sort((a, b) => Number(a.inputSerialId - b.inputSerialId));
+
+    // Calculate detailed sighash information
+    const details = [];
+
+    for (let i = 0; i < allFundingInputs.length; i++) {
+      const input = allFundingInputs[i];
+      const prevOutput = input.prevTx.outputs[input.prevTxVout];
+
+      const originalInput = transaction.ins.find(
+        (txInput) =>
+          txInput.hash.reverse().toString('hex') ===
+            input.prevTx.txId.toString() && txInput.index === input.prevTxVout,
+      );
+      const sequenceValue = originalInput
+        ? originalInput.sequence
+        : Number(input.sequence);
+
+      const script = Buffer.from(
+        prevOutput.scriptPubKey.serialize().subarray(1),
+      );
+      const value = Number(prevOutput.value.sats);
+
+      const sighash = transaction.hashForWitnessV0(
+        i,
+        script,
+        value,
+        btTransaction.SIGHASH_ALL,
+      );
+
+      details.push({
+        inputIndex: i,
+        txid: input.prevTx.txId.toString(),
+        vout: input.prevTxVout,
+        sequence: sequenceValue,
+        scriptPubKey: script.toString('hex'),
+        value: value,
+        sighash: sighash.toString('hex'),
+      });
+    }
+
+    return details;
   }
 
   private async VerifyRefundSignatureAlt(

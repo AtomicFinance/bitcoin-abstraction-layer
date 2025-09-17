@@ -266,7 +266,18 @@ async function getInput(
     }
   }
 
-  await client.getMethod('jsonrpc')('importaddress', unusedAddress, '', false);
+  // Try to import address, but don't fail if Bitcoin Core doesn't support it
+  try {
+    await client.getMethod('jsonrpc')(
+      'importaddress',
+      unusedAddress,
+      '',
+      false,
+    );
+  } catch (error) {
+    // Ignore importaddress errors - modern Bitcoin Core uses descriptor wallets
+    console.warn(`Failed to import address ${unusedAddress}: ${error.message}`);
+  }
 
   const txRaw = await fundAddress(unusedAddress);
   const tx = await decodeRawTransaction(txRaw._raw.hex, network);
