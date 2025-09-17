@@ -181,10 +181,10 @@ importers:
   packages/bitcoin-cfd-address-derivation-provider:
     dependencies:
       '@atomicfinance/provider':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../provider
       '@atomicfinance/types':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../types
       bip32:
         specifier: ^4.0.0
@@ -206,13 +206,13 @@ importers:
   packages/bitcoin-cfd-provider:
     dependencies:
       '@atomicfinance/provider':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../provider
       '@atomicfinance/types':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../types
       '@atomicfinance/utils':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../utils
       lodash:
         specifier: ^4.17.20
@@ -228,10 +228,10 @@ importers:
   packages/bitcoin-ddk-address-derivation-provider:
     dependencies:
       '@atomicfinance/provider':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../provider
       '@atomicfinance/types':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../types
       bip32:
         specifier: ^4.0.0
@@ -253,16 +253,16 @@ importers:
   packages/bitcoin-ddk-provider:
     dependencies:
       '@atomicfinance/bitcoin-utils':
-        specifier: 4.1.12
+        specifier: 4.1.13
         version: link:../bitcoin-utils
       '@atomicfinance/provider':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../provider
       '@atomicfinance/types':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../types
       '@atomicfinance/utils':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../utils
       '@bitcoin-js/tiny-secp256k1-asmjs':
         specifier: ^2.2.0
@@ -293,16 +293,16 @@ importers:
   packages/bitcoin-dlc-provider:
     dependencies:
       '@atomicfinance/bitcoin-utils':
-        specifier: 4.1.12
+        specifier: 4.1.13
         version: link:../bitcoin-utils
       '@atomicfinance/provider':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../provider
       '@atomicfinance/types':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../types
       '@atomicfinance/utils':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../utils
       '@bitcoin-js/tiny-secp256k1-asmjs':
         specifier: ^2.2.0
@@ -357,22 +357,22 @@ importers:
   packages/bitcoin-esplora-api-provider:
     dependencies:
       '@atomicfinance/bitcoin-utils':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../bitcoin-utils
       '@atomicfinance/crypto':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../crypto
       '@atomicfinance/errors':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../errors
       '@atomicfinance/node-provider':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../node-provider
       '@atomicfinance/types':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../types
       '@atomicfinance/utils':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../utils
       '@babel/runtime':
         specifier: ^7.12.1
@@ -400,16 +400,16 @@ importers:
   packages/bitcoin-esplora-batch-api-provider:
     dependencies:
       '@atomicfinance/bitcoin-esplora-api-provider':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../bitcoin-esplora-api-provider
       '@atomicfinance/node-provider':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../node-provider
       '@atomicfinance/types':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../types
       '@atomicfinance/utils':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../utils
       '@babel/runtime':
         specifier: ^7.12.1
@@ -434,19 +434,19 @@ importers:
   packages/bitcoin-js-wallet-provider:
     dependencies:
       '@atomicfinance/bitcoin-utils':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../bitcoin-utils
       '@atomicfinance/bitcoin-wallet-provider':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../bitcoin-wallet-provider
       '@atomicfinance/provider':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../provider
       '@atomicfinance/types':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../types
       '@atomicfinance/utils':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../utils
       '@babel/runtime':
         specifier: ^7.12.1
@@ -483,22 +483,22 @@ importers:
   packages/bitcoin-node-wallet-provider:
     dependencies:
       '@atomicfinance/bitcoin-utils':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../bitcoin-utils
       '@atomicfinance/crypto':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../crypto
       '@atomicfinance/jsonrpc-provider':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../jsonrpc-provider
       '@atomicfinance/provider':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../provider
       '@atomicfinance/types':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../types
       '@atomicfinance/utils':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../utils
       '@babel/runtime':
         specifier: ^7.12.1
@@ -532,19 +532,19 @@ importers:
   packages/bitcoin-rpc-provider:
     dependencies:
       '@atomicfinance/bitcoin-utils':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../bitcoin-utils
       '@atomicfinance/errors':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../errors
       '@atomicfinance/jsonrpc-provider':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../jsonrpc-provider
       '@atomicfinance/types':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../types
       '@atomicfinance/utils':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../utils
       '@babel/runtime':
         specifier: ^7.12.1
@@ -569,16 +569,16 @@ importers:
   packages/bitcoin-utils:
     dependencies:
       '@atomicfinance/crypto':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../crypto
       '@atomicfinance/errors':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../errors
       '@atomicfinance/types':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../types
       '@atomicfinance/utils':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../utils
       '@babel/runtime':
         specifier: ^7.12.1
@@ -612,19 +612,19 @@ importers:
   packages/bitcoin-wallet-provider:
     dependencies:
       '@atomicfinance/bitcoin-utils':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../bitcoin-utils
       '@atomicfinance/errors':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../errors
       '@atomicfinance/provider':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../provider
       '@atomicfinance/types':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../types
       '@atomicfinance/utils':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../utils
       '@node-dlc/core':
         specifier: 1.1.2
@@ -655,16 +655,16 @@ importers:
   packages/client:
     dependencies:
       '@atomicfinance/bitcoin-utils':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../bitcoin-utils
       '@atomicfinance/errors':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../errors
       '@atomicfinance/provider':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../provider
       '@atomicfinance/types':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../types
       '@node-dlc/bitcoin':
         specifier: 1.1.2
@@ -717,10 +717,10 @@ importers:
   packages/jsonrpc-provider:
     dependencies:
       '@atomicfinance/errors':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../errors
       '@atomicfinance/node-provider':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../node-provider
       '@babel/runtime':
         specifier: ^7.12.1
@@ -745,10 +745,10 @@ importers:
   packages/node-provider:
     dependencies:
       '@atomicfinance/errors':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../errors
       '@atomicfinance/provider':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../provider
       '@babel/runtime':
         specifier: ^7.12.1
@@ -770,7 +770,7 @@ importers:
   packages/provider:
     dependencies:
       '@atomicfinance/types':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../types
       lodash:
         specifier: ^4.17.20
@@ -808,13 +808,13 @@ importers:
   packages/utils:
     dependencies:
       '@atomicfinance/crypto':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../crypto
       '@atomicfinance/errors':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../errors
       '@atomicfinance/types':
-        specifier: ^4.1.12
+        specifier: ^4.1.13
         version: link:../types
       '@babel/runtime':
         specifier: ^7.12.1

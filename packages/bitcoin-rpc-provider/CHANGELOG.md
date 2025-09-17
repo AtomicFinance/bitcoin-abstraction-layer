@@ -1,5 +1,17 @@
 # @atomicfinance/bitcoin-rpc-provider
 
+## 4.1.13
+
+### Patch Changes
+
+- 9674167: Ensure consistent sequence numbers in funding sig verification
+- Updated dependencies [9674167]
+  - @atomicfinance/bitcoin-utils@4.1.13
+  - @atomicfinance/errors@4.1.13
+  - @atomicfinance/jsonrpc-provider@4.1.13
+  - @atomicfinance/types@4.1.13
+  - @atomicfinance/utils@4.1.13
+
 ## 4.1.12
 
 ### Patch Changes

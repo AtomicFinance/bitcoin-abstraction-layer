@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/bitcoin-ddk-provider",
   "umdName": "BitcoinDdkProvider",
-  "version": "4.1.12",
+  "version": "4.1.13",
   "description": "Bitcoin Abstraction Layer Ddk Provider",
   "author": "Atomic Finance <info@atomic.finance>",
   "homepage": "",
@@ -15,10 +15,10 @@
     "lint:fix": "../../node_modules/.bin/eslint --fix  ."
   },
   "dependencies": {
-    "@atomicfinance/bitcoin-utils": "4.1.12",
-    "@atomicfinance/provider": "^4.1.12",
-    "@atomicfinance/types": "^4.1.12",
-    "@atomicfinance/utils": "^4.1.12",
+    "@atomicfinance/bitcoin-utils": "4.1.13",
+    "@atomicfinance/provider": "^4.1.13",
+    "@atomicfinance/types": "^4.1.13",
+    "@atomicfinance/utils": "^4.1.13",
     "bignumber.js": "^9.0.1",
     "bip66": "^1.1.5",
     "bitcoin-network": "0.1.0",
