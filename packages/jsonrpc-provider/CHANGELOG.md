@@ -1,5 +1,14 @@
 # @atomicfinance/jsonrpc-provider
 
+## 4.1.13
+
+### Patch Changes
+
+- 9674167: Ensure consistent sequence numbers in funding sig verification
+- Updated dependencies [9674167]
+  - @atomicfinance/errors@4.1.13
+  - @atomicfinance/node-provider@4.1.13
+
 ## 4.1.12
 
 ### Patch Changes
