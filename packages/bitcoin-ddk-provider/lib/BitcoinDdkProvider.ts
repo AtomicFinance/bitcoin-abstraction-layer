@@ -932,8 +932,12 @@ export default class BitcoinDdkProvider extends Provider {
     const localRegularInputs: Utxo[] = [];
     const localDlcInputs: DdkDlcInputInfo[] = [];
 
+    console.log('test1');
+
     for (const fundingInput of dlcOffer.fundingInputs) {
+      console.log('test2');
       if (fundingInput.dlcInput) {
+        console.log('test3');
         // This is a DLC input for splicing
         // The pubkeys should be from the original DLC to correctly spend its funding output
         localDlcInputs.push({
@@ -947,12 +951,16 @@ export default class BitcoinDdkProvider extends Provider {
           inputSerialId: fundingInput.inputSerialId,
           contractId: fundingInput.dlcInput.contractId,
         });
+        console.log('test4');
       } else {
         // Regular input
+        console.log('test5');
         const input = await this.fundingInputToInput(fundingInput, false);
         localRegularInputs.push(input.toUtxo());
       }
     }
+
+    console.log('test6');
 
     // Process remote inputs (no DLC inputs from acceptor side)
     const remoteInputs: Utxo[] = await Promise.all(
@@ -962,19 +970,32 @@ export default class BitcoinDdkProvider extends Provider {
       }),
     );
 
-    // Calculate input amounts
-    const localInputAmount = localRegularInputs.reduce<number>(
+    console.log('test7');
+
+    // Calculate input amounts (including both regular inputs and DLC inputs)
+    const localRegularInputAmount = localRegularInputs.reduce<number>(
       (prev, cur) => prev + cur.amount.GetSatoshiAmount(),
       0,
     );
+
+    const localDlcInputAmount = localDlcInputs.reduce<number>(
+      (prev, cur) => prev + Number(cur.fundAmount),
+      0,
+    );
+
+    const localInputAmount = localRegularInputAmount + localDlcInputAmount;
 
     const remoteInputAmount = remoteInputs.reduce<number>(
       (prev, cur) => prev + cur.amount.GetSatoshiAmount(),
       0,
     );
 
+    console.log('test8');
+
     let payouts: PayoutRequest[] = [];
     let messagesList: Messages[] = [];
+
+    console.log('test9');
 
     if (
       dlcOffer.contractInfo.type === MessageType.SingleContractInfo &&
@@ -985,6 +1006,7 @@ export default class BitcoinDdkProvider extends Provider {
         (dlcOffer.contractInfo as SingleContractInfo)
           .contractDescriptor as EnumeratedDescriptor
       ).outcomes) {
+        console.log('test10');
         payouts.push({
           local: outcome.localPayout,
           remote:
@@ -992,9 +1014,11 @@ export default class BitcoinDdkProvider extends Provider {
             dlcAccept.acceptCollateral -
             outcome.localPayout,
         });
+        console.log('test11');
         messagesList.push({ messages: [outcome.outcome] });
       }
     } else {
+      console.log('test12');
       const payoutResponses = this.GetPayouts(dlcOffer);
       const { payouts: tempPayouts, messagesList: tempMessagesList } =
         this.FlattenPayouts(payoutResponses);
@@ -1031,13 +1055,32 @@ export default class BitcoinDdkProvider extends Provider {
       dlcInputs: [],
     };
 
+    console.log('test13');
+
     // Determine whether to use regular or spliced DLC transactions
     const hasDlcInputs = localDlcInputs.length > 0;
+
+    console.log('test14');
 
     let dlcTxs: DdkDlcTransactions;
 
     if (hasDlcInputs) {
       // Use spliced DLC transactions when DLC inputs are present
+      console.log('test15');
+
+      console.log('params for create spliced dlc transactions');
+      console.log(outcomes);
+      console.log('localParams', this.convertToJsonSerializable(localParams));
+      console.log(
+        'localDlcInputs',
+        dlcOffer.fundingInputs[0].prevTx.serialize().toString('hex'),
+      );
+      console.log('remoteParams', this.convertToJsonSerializable(remoteParams));
+      console.log(dlcOffer.refundLocktime);
+      console.log(dlcOffer.feeRatePerVb);
+      console.log(dlcOffer.cetLocktime);
+      console.log(dlcOffer.fundOutputSerialId);
+
       dlcTxs = await this._ddk.createSplicedDlcTransactions(
         outcomes,
         localParams,
@@ -1046,8 +1089,9 @@ export default class BitcoinDdkProvider extends Provider {
         BigInt(dlcOffer.feeRatePerVb),
         0,
         dlcOffer.cetLocktime,
-        dlcOffer.fundOutputSerialId,
+        BigInt(dlcOffer.fundOutputSerialId),
       );
+      console.log('test16');
     } else {
       // Use regular DLC transactions when no DLC inputs
       dlcTxs = this._ddk.createDlcTransactions(
@@ -1677,7 +1721,9 @@ export default class BitcoinDdkProvider extends Provider {
     ];
 
     // Sort by inputSerialId to reconstruct proper transaction order
-    allFundingInputs.sort((a, b) => Number(a.inputSerialId - b.inputSerialId));
+    allFundingInputs.sort(
+      (a, b) => Number(a.inputSerialId) - Number(b.inputSerialId),
+    );
 
     // Add all inputs to PSBT with proper witnessUtxo
     for (const fundingInput of allFundingInputs) {
@@ -1816,7 +1862,9 @@ export default class BitcoinDdkProvider extends Provider {
       ...dlcOffer.fundingInputs,
       ...dlcAccept.fundingInputs,
     ];
-    allFundingInputs.sort((a, b) => Number(a.inputSerialId - b.inputSerialId));
+    allFundingInputs.sort(
+      (a, b) => Number(a.inputSerialId) - Number(b.inputSerialId),
+    );
 
     // Compare transaction IDs
     const dlcFundTxId = dlcTxs.fundTx.txId.toString();
@@ -1986,7 +2034,9 @@ export default class BitcoinDdkProvider extends Provider {
       ...dlcOffer.fundingInputs,
       ...dlcAccept.fundingInputs,
     ];
-    allFundingInputs.sort((a, b) => Number(a.inputSerialId - b.inputSerialId));
+    allFundingInputs.sort(
+      (a, b) => Number(a.inputSerialId) - Number(b.inputSerialId),
+    );
 
     // Calculate detailed sighash information
     const details = [];
@@ -2168,7 +2218,9 @@ export default class BitcoinDdkProvider extends Provider {
       ...dlcOffer.fundingInputs,
       ...dlcAccept.fundingInputs,
     ];
-    allFundingInputs.sort((a, b) => Number(a.inputSerialId - b.inputSerialId));
+    allFundingInputs.sort(
+      (a, b) => Number(a.inputSerialId) - Number(b.inputSerialId),
+    );
 
     // Create a map of input txid:vout to witness elements
     const witnessMap = new Map<string, ScriptWitnessV0[]>();

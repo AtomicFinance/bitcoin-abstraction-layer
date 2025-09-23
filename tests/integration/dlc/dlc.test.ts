@@ -434,6 +434,354 @@ describe('dlc provider', () => {
       expect(refundTransaction._raw.vin.length).to.equal(1);
     });
 
+    it('should fund and splice enum DLC', async () => {
+      const oracle = new Oracle('olivia');
+
+      const ddkInput = await getInput(ddk);
+      const ddk2Input = await getInput(ddk2);
+
+      const eventId = 'trump-vs-kamala';
+
+      const oliviaInfo = oracle.GetOracleInfo();
+
+      const eventDescriptor = new EnumEventDescriptor();
+
+      const outcomes = ['trump', 'kamala', 'neither'];
+
+      eventDescriptor.outcomes = outcomes;
+
+      const event = new OracleEvent();
+      event.oracleNonces = oliviaInfo.rValues.map((rValue) =>
+        Buffer.from(rValue, 'hex'),
+      );
+      event.eventMaturityEpoch = 1617170572;
+      event.eventDescriptor = eventDescriptor;
+      event.eventId = eventId;
+
+      const announcement = new OracleAnnouncement();
+      announcement.announcementSig = Buffer.from(
+        oracle.GetSignature(
+          math
+            .taggedHash('DLC/oracle/announcement/v0', event.serialize())
+            .toString('hex'),
+        ),
+        'hex',
+      );
+
+      announcement.oraclePublicKey = Buffer.from(oliviaInfo.publicKey, 'hex');
+      announcement.oracleEvent = event;
+
+      const oracleInfo = new SingleOracleInfo();
+      oracleInfo.announcement = announcement;
+
+      const contractDescriptor = new EnumeratedDescriptor();
+
+      contractDescriptor.outcomes = [
+        {
+          outcome: sha256(Buffer.from('trump')).toString('hex'),
+          localPayout: BigInt(1e6),
+        },
+        {
+          outcome: sha256(Buffer.from('kamala')).toString('hex'),
+          localPayout: BigInt(0),
+        },
+        {
+          outcome: sha256(Buffer.from('neither')).toString('hex'),
+          localPayout: BigInt(500000),
+        },
+      ];
+
+      const totalCollateral = BigInt(1e6);
+
+      const contractInfo = new SingleContractInfo();
+      contractInfo.totalCollateral = totalCollateral;
+      contractInfo.contractDescriptor = contractDescriptor;
+      contractInfo.oracleInfo = oracleInfo;
+
+      const feeRatePerVb = BigInt(10);
+      const cetLocktime = 1617170572;
+      const refundLocktime = 1617170573;
+
+      dlcOffer = await ddk.dlc.createDlcOffer(
+        contractInfo,
+        totalCollateral - BigInt(2000),
+        feeRatePerVb,
+        cetLocktime,
+        refundLocktime,
+        [ddkInput],
+      );
+
+      DlcOffer.deserialize(dlcOffer.serialize()).validate();
+
+      const acceptDlcOfferResponse: AcceptDlcOfferResponse =
+        await ddk2.dlc.acceptDlcOffer(dlcOffer, [ddk2Input]);
+
+      dlcAccept = acceptDlcOfferResponse.dlcAccept;
+      dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
+
+      DlcAccept.deserialize(dlcAccept.serialize()).validate();
+      DlcTransactions.deserialize(dlcTransactions.serialize());
+
+      const signDlcAcceptResponse: SignDlcAcceptResponse =
+        await ddk.dlc.signDlcAccept(dlcOffer, dlcAccept);
+
+      dlcSign = signDlcAcceptResponse.dlcSign;
+
+      DlcSign.deserialize(dlcSign.serialize()).validate();
+
+      const fundTx = await ddk2.dlc.finalizeDlcSign(
+        dlcOffer,
+        dlcAccept,
+        dlcSign,
+        dlcTransactions,
+      );
+
+      const fundTxId = await ddk2.chain.sendRawTransaction(
+        fundTx.serialize().toString('hex'),
+      );
+      expect(fundTxId).to.not.be.undefined;
+
+      // instead of executing, we splice the DLC
+
+      // Step 2: Extract DLC funding output details for splicing
+      const fundTx1Details = await ddk.getMethod('getTransactionByHash')(
+        fundTxId,
+      );
+      const fundingOutputValue = fundTx1Details._raw.vout[0].value;
+      const fundingOutputAmount = BigInt(Math.round(fundingOutputValue * 1e8)); // Convert to satoshis
+
+      // Get the funding pubkeys from the DLC messages
+      const aliceFundPubkey = dlcOffer.fundingPubkey.toString('hex');
+      const bobFundPubkey = dlcAccept.fundingPubkey.toString('hex');
+
+      // Try both possible orderings to find which one matches the actual funding address
+      // We need to determine which perspective was used in the original DLC
+      let correctLocalPubkey: string;
+      let correctRemotePubkey: string;
+
+      // Test Alice-local perspective first
+      try {
+        const testInputInfo1 = ddk.dlc.createDlcInputInfo(
+          fundTxId,
+          dlcTransactions.fundTxVout,
+          fundingOutputAmount,
+          aliceFundPubkey, // Alice local
+          bobFundPubkey, // Bob remote,
+          dlcTransactions.contractId.toString('hex'),
+          220,
+          BigInt(1),
+        );
+
+        // This will throw if address doesn't match
+        await ddk.dlc.createDlcFundingInput(
+          testInputInfo1,
+          fundTx.serialize().toString('hex'),
+        );
+
+        // If we get here, this ordering works
+        correctLocalPubkey = aliceFundPubkey;
+        correctRemotePubkey = bobFundPubkey;
+        console.log('Using Alice-local perspective for DLC input');
+      } catch (error) {
+        // Try Bob-local perspective
+        try {
+          const testInputInfo2 = ddk.dlc.createDlcInputInfo(
+            fundTxId,
+            dlcTransactions.fundTxVout,
+            fundingOutputAmount,
+            bobFundPubkey, // Bob local (from Alice's POV, Bob becomes local)
+            aliceFundPubkey, // Alice remote (from Alice's POV, Alice becomes remote)
+            dlcTransactions.contractId.toString('hex'),
+            220,
+            BigInt(1),
+          );
+
+          await ddk.dlc.createDlcFundingInput(
+            testInputInfo2,
+            fundTx.serialize().toString('hex'),
+          );
+
+          // If we get here, this ordering works
+          correctLocalPubkey = bobFundPubkey;
+          correctRemotePubkey = aliceFundPubkey;
+          console.log('Using Bob-local perspective for DLC input');
+        } catch (error2) {
+          throw new Error(
+            `Neither pubkey ordering matches the original funding address. Alice-local error: ${error.message}, Bob-local error: ${error2.message}`,
+          );
+        }
+      }
+
+      // Create DLC input info with the correct ordering
+      const dlcInputInfo = ddk.dlc.createDlcInputInfo(
+        fundTxId,
+        dlcTransactions.fundTxVout, // First output is the funding output
+        fundingOutputAmount,
+        correctLocalPubkey,
+        correctRemotePubkey,
+        dlcTransactions.contractId.toString('hex'),
+        220, // Standard P2WSH multisig max witness length
+        BigInt(1), // Input serial ID
+      );
+
+      // Step 3: Create second DLC that splices the first DLC's output
+      console.time('second-dlc-creation');
+
+      const oracle2 = new Oracle('oracle2', 1);
+      const aliceInput2 = await getInput(ddk); // Additional collateral input
+      const bobInput2 = await getInput(ddk2);
+
+      const cetLocktime2 = 1617170574;
+      const refundLocktime2 = 1617170575;
+
+      // Create DLC funding input from the first DLC
+      const dlcFundingInput = await ddk.dlc.createDlcFundingInput(
+        dlcInputInfo,
+        fundTx.serialize().toString('hex'),
+      );
+
+      // Calculate the maximum collateral possible with our inputs
+      const calculatedMaxCollateral = await ddk.dlc.calculateMaxCollateral(
+        [dlcFundingInput, aliceInput2],
+        feeRatePerVb,
+        1, // Single contract
+      );
+
+      // Reduce by a small buffer to account for fee calculation differences
+      const maxCollateral = calculatedMaxCollateral - BigInt(1000); // 1000 sat buffer
+
+      const { contractInfo: contractInfo2 } =
+        generateEnumCollateralContractInfo(oracle2, maxCollateral);
+
+      console.log('=============================================');
+
+      // Create second DLC offer that includes both DLC input and additional collateral
+      // Use the calculated max collateral for exact amounts (no change)
+      const dlcOffer2 = await ddk.dlc.createDlcOffer(
+        contractInfo2,
+        maxCollateral, // Use exact calculated amount - no guessing!
+        feeRatePerVb,
+        cetLocktime2,
+        refundLocktime2,
+        [dlcFundingInput, aliceInput2], // Include both DLC input and regular input
+        InputSupplementationMode.None, // No supplementation - exact amounts
+      );
+
+      // Bob accepts with his input
+      const { dlcAccept: dlcAccept2, dlcTransactions: dlcTransactions2 } =
+        await ddk2.dlc.acceptDlcOffer(dlcOffer2, [bobInput2]);
+
+      // Verify that the second DLC was created using spliced transactions
+      expect(dlcTransactions2).to.not.be.undefined;
+      expect(dlcTransactions2.fundTx).to.not.be.undefined;
+
+      // The funding transaction should have multiple inputs:
+      // - The DLC input from the first DLC
+      // - Alice's additional collateral input
+      // - Bob's input
+      const fundTx2Inputs = dlcTransactions2.fundTx.inputs.length;
+      expect(fundTx2Inputs).to.be.greaterThan(1);
+
+      // Alice signs the second DLC (DLC input signing handled automatically via funding pubkey derivation)
+      const { dlcSign: dlcSign2 } = await ddk.dlc.signDlcAccept(
+        dlcOffer2,
+        dlcAccept2,
+      );
+
+      // Finalize and broadcast second DLC
+      const fundTx2 = await ddk2.dlc.finalizeDlcSign(
+        dlcOffer2,
+        dlcAccept2,
+        dlcSign2,
+        dlcTransactions2,
+      );
+
+      const fundTxId2 = await ddk2.chain.sendRawTransaction(
+        fundTx2.serialize().toString('hex'),
+      );
+
+      console.timeEnd('second-dlc-creation');
+
+      // Step 4: Verify the splicing worked correctly
+      const fundTx2Details = await ddk.getMethod('getTransactionByHash')(
+        fundTxId2,
+      );
+
+      // Verify that one of the inputs references the first DLC's funding output
+      const hasFirstDlcInput = fundTx2Details._raw.vin.some(
+        (input) => input.txid === fundTxId && input.vout === 0,
+      );
+      expect(hasFirstDlcInput).to.be.true;
+
+      // Verify the second DLC has proper funding
+      expect(fundTx2Details._raw.vout.length).to.be.greaterThan(0);
+
+      const oracleAttestation2 = generateEnumOracleAttestation(
+        'paid',
+        oracle2,
+        'collateral',
+      );
+
+      const cet2 = await ddk2.dlc.execute(
+        dlcOffer2,
+        dlcAccept2,
+        dlcSign2,
+        dlcTransactions2,
+        oracleAttestation2,
+        false,
+      );
+
+      const cetTxId2 = await ddk2.chain.sendRawTransaction(
+        cet2.serialize().toString('hex'),
+      );
+
+      const cetTx2 = await ddk.getMethod('getTransactionByHash')(cetTxId2);
+      expect(cetTx2._raw.vin.length).to.equal(1);
+
+      // oracleAttestation = generateDdkCompatibleEnumOracleAttestation(
+      //   'trump',
+      //   oracle,
+      //   announcement.getEventId(),
+      // );
+
+      // oracleAttestation.validate();
+
+      // const cet = await ddk2.dlc.execute(
+      //   dlcOffer,
+      //   dlcAccept,
+      //   dlcSign,
+      //   dlcTransactions,
+      //   oracleAttestation,
+      //   false,
+      // );
+
+      // const cetTxId = await bob.chain.sendRawTransaction(
+      //   cet.serialize().toString('hex'),
+      // );
+      // expect(cetTxId).to.not.be.undefined;
+      // const cetTx = await alice.getMethod('getTransactionByHash')(cetTxId);
+      // expect(cetTx._raw.vin.length).to.equal(1);
+
+      // // Test sighash functions with the established DLC setup
+      // const sighashes = await ddk.getMethod('getFundingTransactionSighash')(
+      //   dlcOffer,
+      //   dlcAccept,
+      //   dlcTransactions,
+      // );
+      // expect(sighashes).to.be.an('array');
+      // expect(sighashes.length).to.be.greaterThan(0);
+      // (sighashes as string[]).forEach((sighash) => {
+      //   expect(sighash).to.have.length(64);
+      //   expect(sighash).to.match(/^[0-9a-f]{64}$/i);
+      // });
+
+      // const details = await ddk.getMethod(
+      //   'getFundingTransactionSighashDetails',
+      // )(dlcOffer, dlcAccept, dlcTransactions);
+      // expect(details).to.be.an('array');
+      // expect((sighashes as string[])[0]).to.equal(details[0].sighash);
+    });
+
     describe('ddk provider contract id computation', () => {
       it('should compute contract ID matching Rust implementation', async () => {
         // Test data from Rust test case
@@ -2329,6 +2677,304 @@ describe('DLC Splicing', () => {
       );
 
       const cetTx2 = await alice.getMethod('getTransactionByHash')(cetTxId2);
+      expect(cetTx2._raw.vin.length).to.equal(1);
+    });
+
+    it('should create a DLC with DDK provider, then use its funding output as input to a new spliced DLC', async () => {
+      console.log('test1');
+
+      // Step 1: Create and fund the first DLC (single-funded) using DDK provider
+      console.time('first-ddk-dlc-creation');
+
+      const oracle1 = new Oracle('oracle1', 1);
+      const ddkInput1 = await getInput(ddk);
+
+      const maxCollateral1 = await ddk.dlc.calculateMaxCollateral(
+        [ddkInput1],
+        BigInt(10),
+        1,
+      );
+
+      console.log('test2');
+
+      const { contractInfo: contractInfo1, totalCollateral: totalCollateral1 } =
+        generateEnumCollateralContractInfo(oracle1, maxCollateral1);
+
+      const feeRatePerVb = BigInt(10);
+      const cetLocktime1 = 1617170572;
+      const refundLocktime1 = 1617170573;
+
+      // Create first DLC offer (single-funded: ddk provides all collateral)
+      const dlcOffer1 = await ddk.dlc.createDlcOffer(
+        contractInfo1,
+        totalCollateral1, // DDK funds entire DLC
+        feeRatePerVb,
+        cetLocktime1,
+        refundLocktime1,
+        [ddkInput1],
+        InputSupplementationMode.None,
+      );
+
+      console.log('test3');
+
+      // DDK2 accepts without providing inputs (single-funded)
+      const { dlcAccept: dlcAccept1, dlcTransactions: dlcTransactions1 } =
+        await ddk2.dlc.acceptDlcOffer(dlcOffer1);
+
+      // DDK signs
+      const { dlcSign: dlcSign1 } = await ddk.dlc.signDlcAccept(
+        dlcOffer1,
+        dlcAccept1,
+      );
+
+      // Finalize and broadcast first DLC
+      const fundTx1 = await ddk2.dlc.finalizeDlcSign(
+        dlcOffer1,
+        dlcAccept1,
+        dlcSign1,
+        dlcTransactions1,
+      );
+
+      console.log('test4');
+
+      const fundTxId1 = await ddk2.chain.sendRawTransaction(
+        fundTx1.serialize().toString('hex'),
+      );
+
+      console.timeEnd('first-ddk-dlc-creation');
+
+      // Step 2: Extract DLC funding output details for splicing
+      const fundTx1Details = await ddk.getMethod('getTransactionByHash')(
+        fundTxId1,
+      );
+      const fundingOutputValue = fundTx1Details._raw.vout[0].value;
+      const fundingOutputAmount = BigInt(Math.round(fundingOutputValue * 1e8)); // Convert to satoshis
+
+      // Get the funding pubkeys from the DLC messages
+      const ddkFundPubkey = dlcOffer1.fundingPubkey.toString('hex');
+      const ddk2FundPubkey = dlcAccept1.fundingPubkey.toString('hex');
+
+      console.log('test5');
+
+      // Try both possible orderings to find which one matches the actual funding address
+      // We need to determine which perspective was used in the original DLC
+      let correctLocalPubkey: string;
+      let correctRemotePubkey: string;
+
+      // Test DDK-local perspective first
+      try {
+        const testInputInfo1 = ddk.dlc.createDlcInputInfo(
+          fundTxId1,
+          0,
+          fundingOutputAmount,
+          ddkFundPubkey, // DDK local
+          ddk2FundPubkey, // DDK2 remote,
+          dlcTransactions1.contractId.toString('hex'),
+          220,
+          BigInt(1),
+        );
+
+        console.log('test6');
+
+        // This will throw if address doesn't match
+        await ddk.dlc.createDlcFundingInput(
+          testInputInfo1,
+          fundTx1.serialize().toString('hex'),
+        );
+
+        console.log('test7');
+
+        // If we get here, this ordering works
+        correctLocalPubkey = ddkFundPubkey;
+        correctRemotePubkey = ddk2FundPubkey;
+        console.log('Using DDK-local perspective for DLC input');
+      } catch (error) {
+        // Try DDK2-local perspective
+        try {
+          const testInputInfo2 = ddk.dlc.createDlcInputInfo(
+            fundTxId1,
+            0,
+            fundingOutputAmount,
+            ddk2FundPubkey, // DDK2 local (from DDK's POV, DDK2 becomes local)
+            ddkFundPubkey, // DDK remote (from DDK's POV, DDK becomes remote)
+            dlcTransactions1.contractId.toString('hex'),
+            220,
+            BigInt(1),
+          );
+
+          console.log('test8');
+
+          await ddk.dlc.createDlcFundingInput(
+            testInputInfo2,
+            fundTx1.serialize().toString('hex'),
+          );
+
+          console.log('test9');
+
+          // If we get here, this ordering works
+          correctLocalPubkey = ddk2FundPubkey;
+          correctRemotePubkey = ddkFundPubkey;
+          console.log('Using DDK2-local perspective for DLC input');
+        } catch (error2) {
+          throw new Error(
+            `Neither pubkey ordering matches the original funding address. DDK-local error: ${error.message}, DDK2-local error: ${error2.message}`,
+          );
+        }
+      }
+
+      console.log('test10');
+
+      // Create DLC input info with the correct ordering
+      const dlcInputInfo = ddk.dlc.createDlcInputInfo(
+        fundTxId1,
+        0, // First output is the funding output
+        fundingOutputAmount,
+        correctLocalPubkey,
+        correctRemotePubkey,
+        dlcTransactions1.contractId.toString('hex'),
+        220, // Standard P2WSH multisig max witness length
+        BigInt(1), // Input serial ID
+      );
+
+      console.log('test11');
+
+      // Step 3: Create second DLC that splices the first DLC's output
+      console.time('second-ddk-dlc-creation');
+
+      const oracle2 = new Oracle('oracle2', 1);
+      const ddkInput2 = await getInput(ddk); // Additional collateral input
+      const ddk2Input2 = await getInput(ddk2);
+
+      const cetLocktime2 = 1617170574;
+      const refundLocktime2 = 1617170575;
+
+      console.log('test12');
+
+      // Create DLC funding input from the first DLC
+      const dlcFundingInput = await ddk.dlc.createDlcFundingInput(
+        dlcInputInfo,
+        fundTx1.serialize().toString('hex'),
+      );
+
+      console.log('test13');
+
+      // Calculate the maximum collateral possible with our inputs
+      const maxCollateral = await ddk.dlc.calculateMaxCollateral(
+        [dlcFundingInput, ddkInput2],
+        feeRatePerVb,
+        1, // Single contract
+      );
+
+      console.log('test14');
+
+      const { contractInfo: contractInfo2 } =
+        generateEnumCollateralContractInfo(oracle2, maxCollateral);
+
+      console.log('test15');
+
+      // Create second DLC offer that includes both DLC input and additional collateral
+      // Use the calculated max collateral for exact amounts (no change)
+      const dlcOffer2 = await ddk.dlc.createDlcOffer(
+        contractInfo2,
+        maxCollateral, // Use exact calculated amount - no guessing!
+        feeRatePerVb,
+        cetLocktime2,
+        refundLocktime2,
+        [dlcFundingInput, ddkInput2], // Include both DLC input and regular input
+        InputSupplementationMode.None, // No supplementation - exact amounts
+      );
+
+      console.log('test16');
+
+      // DDK2 accepts with his input
+      const { dlcAccept: dlcAccept2, dlcTransactions: dlcTransactions2 } =
+        await ddk2.dlc.acceptDlcOffer(dlcOffer2, [ddk2Input2]);
+
+      console.log('test17');
+
+      // Verify that the second DLC was created using spliced transactions
+      expect(dlcTransactions2).to.not.be.undefined;
+      expect(dlcTransactions2.fundTx).to.not.be.undefined;
+
+      console.log('test18');
+
+      // The funding transaction should have multiple inputs:
+      // - The DLC input from the first DLC
+      // - DDK's additional collateral input
+      // - DDK2's input
+      const fundTx2Inputs = dlcTransactions2.fundTx.inputs.length;
+      expect(fundTx2Inputs).to.be.greaterThan(1);
+
+      console.log('test19');
+
+      // DDK signs the second DLC (DLC input signing handled automatically via funding pubkey derivation)
+      const { dlcSign: dlcSign2 } = await ddk.dlc.signDlcAccept(
+        dlcOffer2,
+        dlcAccept2,
+      );
+
+      console.log('test20');
+
+      // Finalize and broadcast second DLC
+      const fundTx2 = await ddk2.dlc.finalizeDlcSign(
+        dlcOffer2,
+        dlcAccept2,
+        dlcSign2,
+        dlcTransactions2,
+      );
+
+      console.log('test21');
+
+      const fundTxId2 = await ddk2.chain.sendRawTransaction(
+        fundTx2.serialize().toString('hex'),
+      );
+
+      console.timeEnd('second-ddk-dlc-creation');
+
+      // Step 4: Verify the splicing worked correctly
+      const fundTx2Details = await ddk.getMethod('getTransactionByHash')(
+        fundTxId2,
+      );
+
+      console.log('test22');
+
+      // Verify that one of the inputs references the first DLC's funding output
+      const hasFirstDlcInput = fundTx2Details._raw.vin.some(
+        (input) => input.txid === fundTxId1 && input.vout === 0,
+      );
+      expect(hasFirstDlcInput).to.be.true;
+
+      // Verify the second DLC has proper funding
+      expect(fundTx2Details._raw.vout.length).to.be.greaterThan(0);
+
+      console.log('test23');
+
+      const oracleAttestation2 = generateDdkCompatibleEnumOracleAttestation(
+        'paid',
+        oracle2,
+        'collateral',
+      );
+
+      console.log('test24');
+
+      const cet2 = await ddk2.dlc.execute(
+        dlcOffer2,
+        dlcAccept2,
+        dlcSign2,
+        dlcTransactions2,
+        oracleAttestation2,
+        false,
+      );
+
+      console.log('test25');
+
+      const cetTxId2 = await ddk2.chain.sendRawTransaction(
+        cet2.serialize().toString('hex'),
+      );
+
+      console.log('test26');
+
+      const cetTx2 = await ddk.getMethod('getTransactionByHash')(cetTxId2);
       expect(cetTx2._raw.vin.length).to.equal(1);
     });
   });
