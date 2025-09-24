@@ -1804,9 +1804,52 @@ export default class BitcoinDdkProvider extends Provider {
         if (fundingInput.dlcInput) {
           // For DLC inputs, we'll need to handle 2-of-2 multisig signing differently
           // For now, throw an error as this requires implementing multisig support
-          throw new Error(
-            'DLC input signing not yet implemented in CreateFundingSigsAlt',
+          console.log('fundingInput.dlcInput', fundingInput.dlcInput);
+
+          const p2ms = payments.p2ms({
+            m: 2,
+            pubkeys: [
+              fundingInput.dlcInput.localFundPubkey,
+              fundingInput.dlcInput.remoteFundPubkey,
+            ],
+            network,
+          });
+
+          const paymentVariant = payments.p2wsh({
+            redeem: p2ms,
+            network,
+          });
+
+          const redeemScript = paymentVariant.redeem.output;
+
+          // Find the correct private key for this DLC input
+          const dlcPrivKey = await this.findDlcFundingPrivateKey(
+            fundingInput.dlcInput.localFundPubkey.toString('hex'),
+            fundingInput.dlcInput.remoteFundPubkey.toString('hex'),
           );
+          const keyPair = ECPair.fromPrivateKey(Buffer.from(dlcPrivKey, 'hex'));
+
+          // Update the input with the witnessScript before signing
+          psbt.updateInput(inputIndex, {
+            witnessScript: redeemScript,
+          });
+
+          psbt.signInput(inputIndex, keyPair);
+
+          const inputData = psbt.data.inputs[inputIndex];
+          const partialSigs = inputData.partialSig;
+          if (!partialSigs || partialSigs.length === 0) {
+            throw new Error(
+              `No signatures found for input ${inputIndex} after signing`,
+            );
+          }
+
+          const sigWitness = new ScriptWitnessV0();
+          sigWitness.witness = this.ensureBuffer(partialSigs[0].signature);
+          const pubKeyWitness = new ScriptWitnessV0();
+          pubKeyWitness.witness = keyPair.publicKey;
+
+          witnessElements.push([sigWitness, pubKeyWitness]);
         } else {
           // For P2WPKH inputs, use PSBT signing
           psbt.signInput(inputIndex, keyPair);
@@ -1918,8 +1961,67 @@ export default class BitcoinDdkProvider extends Provider {
     // Add the funding signatures to the PSBT as partial signatures
     let witnessIndex = 0;
     for (const fundingInput of signingPartyInputs) {
-      // Skip DLC inputs for now (same as CreateFundingSigsAlt)
+      // Handle DLC inputs with multisig verification
       if (fundingInput.dlcInput) {
+        const dlcInput = fundingInput.dlcInput;
+
+        // Create the multisig script for verification
+        const p2ms = payments.p2ms({
+          m: 2,
+          pubkeys: [dlcInput.localFundPubkey, dlcInput.remoteFundPubkey],
+          network,
+        });
+
+        const paymentVariant = payments.p2wsh({
+          redeem: p2ms,
+          network,
+        });
+
+        // Find this input's index in the sorted transaction
+        const inputIndex = allFundingInputs.findIndex(
+          (input) =>
+            input.prevTx.txId.toString() ===
+              fundingInput.prevTx.txId.toString() &&
+            input.prevTxVout === fundingInput.prevTxVout,
+        );
+
+        if (inputIndex === -1) {
+          throw new Error(
+            `DLC input not found in transaction: ${fundingInput.prevTx.txId.toString()}:${fundingInput.prevTxVout}`,
+          );
+        }
+
+        // Update the input with the witnessScript for verification
+        psbt.updateInput(inputIndex, {
+          witnessScript: paymentVariant.redeem.output,
+        });
+
+        // Add the DLC signature from witness elements if available
+        if (witnessIndex < dlcSign.fundingSignatures.witnessElements.length) {
+          const witnessElement =
+            dlcSign.fundingSignatures.witnessElements[witnessIndex];
+          const signature = witnessElement[0].witness;
+          const publicKey = witnessElement[1].witness;
+
+          psbt.updateInput(inputIndex, {
+            partialSig: [
+              {
+                pubkey: publicKey,
+                signature: this.ensureDerSignature(signature),
+              },
+            ],
+          });
+
+          // Verify the signature for this DLC input
+          psbt.validateSignaturesOfInput(
+            inputIndex,
+            (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
+              return ecc.verify(msghash, pubkey, signature);
+            },
+          );
+
+          witnessIndex++;
+        }
         continue;
       }
 
@@ -2228,14 +2330,9 @@ export default class BitcoinDdkProvider extends Provider {
     // Map witness elements correctly - CreateFundingSigsAlt only creates witness elements
     // for the party's own inputs, so we need to map them correctly
 
-    // For dlcSign (offerer's signatures), map to offerer's inputs only
+    // For dlcSign (offerer's signatures), map to offerer's inputs (including DLC inputs)
     let offererWitnessIndex = 0;
     dlcOffer.fundingInputs.forEach((fundingInput) => {
-      // Skip DLC inputs for now as in CreateFundingSigsAlt
-      if (fundingInput.dlcInput) {
-        return;
-      }
-
       if (
         offererWitnessIndex < dlcSign.fundingSignatures.witnessElements.length
       ) {
@@ -2248,14 +2345,9 @@ export default class BitcoinDdkProvider extends Provider {
       }
     });
 
-    // For fundingSignatures (accepter's signatures), map to accepter's inputs only
+    // For fundingSignatures (accepter's signatures), map to accepter's inputs (including DLC inputs)
     let accepterWitnessIndex = 0;
     dlcAccept.fundingInputs.forEach((fundingInput) => {
-      // Skip DLC inputs for now as in CreateFundingSigsAlt
-      if (fundingInput.dlcInput) {
-        return;
-      }
-
       if (accepterWitnessIndex < fundingSignatures.witnessElements.length) {
         const key = `${fundingInput.prevTx.txId.toString()}:${fundingInput.prevTxVout}`;
         witnessMap.set(
@@ -2318,8 +2410,84 @@ export default class BitcoinDdkProvider extends Provider {
 
       const witnessElements = witnessMap.get(inputKey);
       if (witnessElements && witnessElements.length === 2) {
-        // Skip DLC inputs for now as requested
+        // Handle DLC inputs with multisig finalization
         if (fundingInput.dlcInput) {
+          const dlcInput = fundingInput.dlcInput;
+
+          // Create the multisig script for finalization
+          // Use lexicographic ordering to match DDK library behavior
+          const orderedPubkeys =
+            Buffer.compare(
+              dlcInput.localFundPubkey,
+              dlcInput.remoteFundPubkey,
+            ) === -1
+              ? [dlcInput.localFundPubkey, dlcInput.remoteFundPubkey]
+              : [dlcInput.remoteFundPubkey, dlcInput.localFundPubkey];
+
+          const p2ms = payments.p2ms({
+            m: 2,
+            pubkeys: orderedPubkeys,
+            network,
+          });
+
+          const paymentVariant = payments.p2wsh({
+            redeem: p2ms,
+            network,
+          });
+
+          // Update the input with the witnessScript
+          psbt.updateInput(inputIndex, {
+            witnessScript: paymentVariant.redeem.output,
+          });
+
+          // Sign this DLC input ourselves
+          const dlcPrivKey = await this.findDlcFundingPrivateKey(
+            dlcInput.localFundPubkey.toString('hex'),
+            dlcInput.remoteFundPubkey.toString('hex'),
+          );
+          const keyPair = ECPair.fromPrivateKey(Buffer.from(dlcPrivKey, 'hex'));
+
+          psbt.signInput(inputIndex, keyPair);
+
+          // Get our signature and determine which pubkey it corresponds to
+          const ourPartialSig = psbt.data.inputs[inputIndex].partialSig[0];
+          const ourSig = this.ensureDerSignature(ourPartialSig.signature);
+          const ourPubkey = ourPartialSig.pubkey;
+
+          // Get the other party's signature from witnessElements
+          const otherPartySig = this.ensureDerSignature(
+            witnessElements[0].witness,
+          );
+          const otherPartyPubkey = witnessElements[1].witness;
+
+          // Order signatures according to pubkey order in the multisig script
+          // The multisig script has pubkeys in order: [localFundPubkey, remoteFundPubkey]
+          let sig1: Buffer, sig2: Buffer;
+
+          if (Buffer.compare(ourPubkey, dlcInput.localFundPubkey) === 0) {
+            // Our signature corresponds to localFundPubkey (first position)
+            sig1 = ourSig;
+            sig2 = otherPartySig;
+          } else {
+            // Our signature corresponds to remoteFundPubkey (second position)
+            sig1 = otherPartySig;
+            sig2 = ourSig;
+          }
+
+          // Finalize with proper multisig witness: [OP_0, sig1, sig2, redeemScript]
+          psbt.finalizeInput(inputIndex, () => ({
+            finalScriptSig: Buffer.alloc(0),
+            finalScriptWitness: Buffer.concat([
+              Buffer.from([0x04]), // witness stack count
+              Buffer.from([0x00]), // OP_0 (Bitcoin multisig bug)
+              Buffer.from([sig1.length]),
+              sig1,
+              Buffer.from([sig2.length]),
+              sig2,
+              Buffer.from([paymentVariant.redeem.output.length]),
+              paymentVariant.redeem.output,
+            ]),
+          }));
           continue;
         }
 
