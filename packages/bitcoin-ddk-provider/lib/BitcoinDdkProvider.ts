@@ -1325,10 +1325,24 @@ export default class BitcoinDdkProvider extends Provider {
     const cetsHex = dlcTxs.cets.map((cet) => cet.serialize().toString('hex'));
 
     // Create the correct P2WSH multisig funding script
+    // Use the same lexicographic ordering as everywhere else
     const fundingPubKeys =
       Buffer.compare(dlcOffer.fundingPubkey, dlcAccept.fundingPubkey) === -1
         ? [dlcOffer.fundingPubkey, dlcAccept.fundingPubkey]
         : [dlcAccept.fundingPubkey, dlcOffer.fundingPubkey];
+
+    console.log(
+      'dlcOffer.fundingPubkey:',
+      dlcOffer.fundingPubkey.toString('hex'),
+    );
+    console.log(
+      'dlcAccept.fundingPubkey:',
+      dlcAccept.fundingPubkey.toString('hex'),
+    );
+    console.log(
+      'CreateCetAdaptorAndRefundSigs fundingPubKeys order:',
+      fundingPubKeys.map((pk) => pk.toString('hex')),
+    );
 
     const p2ms = payments.p2ms({
       m: 2,
@@ -1388,12 +1402,34 @@ export default class BitcoinDdkProvider extends Provider {
 
         adaptorSigRequestPromises.push(
           (async () => {
+            console.log('tempCetsHex[0]', tempCetsHex[0]);
             const cetsForDdk = tempCetsHex.map((cetHex) =>
               this.convertTxToDdkTransaction(
                 Tx.decode(StreamReader.fromHex(cetHex)),
               ),
             );
             const messagesForDdk = this.convertMessagesForDdk(tempMessagesList);
+
+            console.log(
+              'cetsForDdk',
+              this.convertToJsonSerializable(cetsForDdk),
+            );
+            console.log(
+              'ddkOracleInfo',
+              this.convertToJsonSerializable(ddkOracleInfo),
+            );
+            console.log(
+              'fundingSPK',
+              this.convertToJsonSerializable(fundingSPK),
+            );
+            console.log(
+              'this.getFundOutputValueSats(dlcTxs)',
+              this.getFundOutputValueSats(dlcTxs),
+            );
+            console.log(
+              'messagesForDdk',
+              this.convertToJsonSerializable(messagesForDdk),
+            );
 
             const response = this._ddk.createCetAdaptorSigsFromOracleInfo(
               cetsForDdk,
@@ -2445,6 +2481,11 @@ export default class BitcoinDdkProvider extends Provider {
               ? [dlcInput.localFundPubkey, dlcInput.remoteFundPubkey]
               : [dlcInput.remoteFundPubkey, dlcInput.localFundPubkey];
 
+          console.log(
+            'CreateFundingTx DLC input pubkeys order:',
+            orderedPubkeys.map((pk) => pk.toString('hex')),
+          );
+
           const p2ms = payments.p2ms({
             m: 2,
             pubkeys: orderedPubkeys,
@@ -2928,6 +2969,8 @@ Payout Group not found even with brute force search',
         ).toString('hex');
         return outcome.outcome === attestedOutcomeHash;
       });
+
+      console.log('outcomeIndex', outcomeIndex);
 
       finalCet = this._ddk
         .signCet(

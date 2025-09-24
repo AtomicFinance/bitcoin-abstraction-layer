@@ -718,7 +718,7 @@ describe('dlc provider', () => {
       // Verify the second DLC has proper funding
       expect(fundTx2Details._raw.vout.length).to.be.greaterThan(0);
 
-      const oracleAttestation2 = generateEnumOracleAttestation(
+      const oracleAttestation2 = generateDdkCompatibleEnumOracleAttestation(
         'paid',
         oracle2,
         'collateral',
