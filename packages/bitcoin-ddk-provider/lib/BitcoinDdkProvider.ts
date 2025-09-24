@@ -1806,12 +1806,24 @@ export default class BitcoinDdkProvider extends Provider {
           // For now, throw an error as this requires implementing multisig support
           console.log('fundingInput.dlcInput', fundingInput.dlcInput);
 
-          const p2ms = payments.p2ms({
-            m: 2,
-            pubkeys: [
+          // Create the same funding script as createDlcClose
+          const fundingPubKeys =
+            Buffer.compare(
               fundingInput.dlcInput.localFundPubkey,
               fundingInput.dlcInput.remoteFundPubkey,
-            ],
+            ) === -1
+              ? [
+                  fundingInput.dlcInput.localFundPubkey,
+                  fundingInput.dlcInput.remoteFundPubkey,
+                ]
+              : [
+                  fundingInput.dlcInput.remoteFundPubkey,
+                  fundingInput.dlcInput.localFundPubkey,
+                ];
+
+          const p2ms = payments.p2ms({
+            m: 2,
+            pubkeys: fundingPubKeys,
             network,
           });
 
@@ -1965,10 +1977,19 @@ export default class BitcoinDdkProvider extends Provider {
       if (fundingInput.dlcInput) {
         const dlcInput = fundingInput.dlcInput;
 
+        // Create the same funding script as createDlcClose
+        const fundingPubKeys =
+          Buffer.compare(
+            dlcInput.localFundPubkey,
+            dlcInput.remoteFundPubkey,
+          ) === -1
+            ? [dlcInput.localFundPubkey, dlcInput.remoteFundPubkey]
+            : [dlcInput.remoteFundPubkey, dlcInput.localFundPubkey];
+
         // Create the multisig script for verification
         const p2ms = payments.p2ms({
           m: 2,
-          pubkeys: [dlcInput.localFundPubkey, dlcInput.remoteFundPubkey],
+          pubkeys: fundingPubKeys,
           network,
         });
 
@@ -2460,16 +2481,15 @@ export default class BitcoinDdkProvider extends Provider {
           );
           const otherPartyPubkey = witnessElements[1].witness;
 
-          // Order signatures according to pubkey order in the multisig script
-          // The multisig script has pubkeys in order: [localFundPubkey, remoteFundPubkey]
+          // Order signatures according to the lexicographic pubkey order used in the multisig script
           let sig1: Buffer, sig2: Buffer;
 
-          if (Buffer.compare(ourPubkey, dlcInput.localFundPubkey) === 0) {
-            // Our signature corresponds to localFundPubkey (first position)
+          if (Buffer.compare(ourPubkey, orderedPubkeys[0]) === 0) {
+            // Our signature corresponds to the first pubkey in lexicographic order
             sig1 = ourSig;
             sig2 = otherPartySig;
           } else {
-            // Our signature corresponds to remoteFundPubkey (second position)
+            // Our signature corresponds to the second pubkey in lexicographic order
             sig1 = otherPartySig;
             sig2 = ourSig;
           }
@@ -2934,6 +2954,8 @@ Payout Group not found even with brute force search',
         sliceIndex === 0
           ? oracleAttestation.signatures
           : oracleAttestation.signatures.slice(0, sliceIndex);
+
+      console.log('outcomeIndex', outcomeIndex);
 
       finalCet = this._ddk
         .signCet(
