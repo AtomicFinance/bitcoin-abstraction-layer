@@ -706,8 +706,6 @@ describe('dlc provider', () => {
         fundTxId2,
       );
 
-      console.log('fundTx2Details', fundTx2Details);
-
       // Verify the second DLC has proper funding
       expect(fundTx2Details._raw.vout.length).to.be.greaterThan(0);
 

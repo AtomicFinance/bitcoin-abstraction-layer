@@ -5,6 +5,7 @@ import {
   DlcOffer,
   DlcSign,
   DlcTransactions,
+  FundingInput,
   MessageType,
 } from '@node-dlc/messaging';
 import { BitcoinNetwork } from 'bitcoin-network';
@@ -438,4 +439,12 @@ export function computeContractId(
   result[31] ^= fundOutputIndex & 0xff; // Low byte
 
   return result;
+}
+
+export function sortFundingInputsBySerialId(
+  inputs: FundingInput[],
+): FundingInput[] {
+  return inputs.sort(
+    (a, b) => Number(a.inputSerialId) - Number(b.inputSerialId),
+  );
 }

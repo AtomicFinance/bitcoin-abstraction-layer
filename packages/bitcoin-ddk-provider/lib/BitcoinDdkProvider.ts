@@ -97,6 +97,7 @@ import {
   generateSerialId,
   orderPubkeysLexicographically,
   outputsToPayouts,
+  sortFundingInputsBySerialId,
 } from './utils/Utils';
 
 const ECPair = ECPairFactory(ecc);
@@ -1453,16 +1454,10 @@ export default class BitcoinDdkProvider extends Provider {
     const network = await this.getConnectedNetwork();
     const psbt = new Psbt({ network });
 
-    // Combine all funding inputs from both parties
-    const allFundingInputs = [
+    const allFundingInputs = sortFundingInputsBySerialId([
       ...dlcOffer.fundingInputs,
       ...dlcAccept.fundingInputs,
-    ];
-
-    // Sort by inputSerialId to reconstruct proper transaction order
-    allFundingInputs.sort(
-      (a, b) => Number(a.inputSerialId) - Number(b.inputSerialId),
-    );
+    ]);
 
     // Add all inputs to PSBT with proper witnessUtxo
     for (const fundingInput of allFundingInputs) {
@@ -1627,14 +1622,10 @@ export default class BitcoinDdkProvider extends Provider {
       ? dlcAccept.fundingInputs
       : dlcOffer.fundingInputs;
 
-    // Combine all inputs to get the correct ordering
-    const allFundingInputs = [
+    const allFundingInputs = sortFundingInputsBySerialId([
       ...dlcOffer.fundingInputs,
       ...dlcAccept.fundingInputs,
-    ];
-    allFundingInputs.sort(
-      (a, b) => Number(a.inputSerialId) - Number(b.inputSerialId),
-    );
+    ]);
 
     // Compare transaction IDs
     const dlcFundTxId = dlcTxs.fundTx.txId.toString();
@@ -1852,14 +1843,10 @@ export default class BitcoinDdkProvider extends Provider {
       Buffer.from(dlcTxs.fundTx.serialize()),
     );
 
-    // Combine all inputs to get the correct ordering
-    const allFundingInputs = [
+    const allFundingInputs = sortFundingInputsBySerialId([
       ...dlcOffer.fundingInputs,
       ...dlcAccept.fundingInputs,
-    ];
-    allFundingInputs.sort(
-      (a, b) => Number(a.inputSerialId) - Number(b.inputSerialId),
-    );
+    ]);
 
     // Calculate detailed sighash information
     const details = [];
@@ -2013,14 +2000,10 @@ export default class BitcoinDdkProvider extends Provider {
     const network = await this.getConnectedNetwork();
     const psbt = new Psbt({ network });
 
-    // Combine and sort all funding inputs by serial ID (same as CreateFundingSigs)
-    const allFundingInputs = [
+    const allFundingInputs = sortFundingInputsBySerialId([
       ...dlcOffer.fundingInputs,
       ...dlcAccept.fundingInputs,
-    ];
-    allFundingInputs.sort(
-      (a, b) => Number(a.inputSerialId) - Number(b.inputSerialId),
-    );
+    ]);
 
     // Create a map of input txid:vout to witness elements
     const witnessMap = new Map<string, ScriptWitnessV0[]>();
@@ -2281,15 +2264,13 @@ Payout Group not found',
   }
 
   async FindOutcomeIndexFromHyperbolaPayoutCurvePiece(
-    _dlcOffer: DlcOffer,
+    dlcOffer: DlcOffer,
     contractDescriptor: NumericalDescriptor,
     contractOraclePairIndex: number,
     hyperbolaPayoutCurvePiece: HyperbolaPayoutCurvePiece,
     oracleAttestation: OracleAttestation,
     outcome: bigint,
   ): Promise<FindOutcomeResponse> {
-    const { dlcOffer } = checkTypes({ _dlcOffer });
-
     const hyperbolaCurve = HyperbolaPayoutCurve.fromPayoutCurvePiece(
       hyperbolaPayoutCurvePiece,
     );
@@ -3101,13 +3082,7 @@ Payout Group not found even with brute force search',
       ),
     );
 
-    const fundingInputs: FundingInput[] = _fundingInputs.map(
-      (input) => input as FundingInput,
-    );
-
-    fundingInputs.sort(
-      (a, b) => Number(a.inputSerialId) - Number(b.inputSerialId),
-    );
+    const fundingInputs = sortFundingInputsBySerialId(_fundingInputs);
 
     const fundOutputSerialId = generateSerialId();
 
@@ -3297,10 +3272,8 @@ Payout Group not found even with brute force search',
         ),
       );
 
-      fundingInputs = _fundingInputs.map((input) => input as FundingInput);
-
-      fundingInputs.sort(
-        (a, b) => Number(a.inputSerialId) - Number(b.inputSerialId),
+      fundingInputs = sortFundingInputsBySerialId(
+        _fundingInputs.map((input) => input as FundingInput),
       );
     }
 
