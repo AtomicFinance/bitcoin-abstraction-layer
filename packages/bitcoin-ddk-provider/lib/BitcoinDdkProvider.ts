@@ -85,7 +85,19 @@ import {
 import crypto from 'crypto';
 import { ECPairFactory, ECPairInterface } from 'ecpair';
 
-import { checkTypes, generateSerialId, outputsToPayouts } from './utils/Utils';
+import {
+  checkTypes,
+  computeContractId,
+  createP2MSMultisig,
+  createP2WSHMultisig,
+  createP2WSHMultisigFromOrdered,
+  ensureBuffer,
+  ensureCompactSignature,
+  ensureDerSignature,
+  generateSerialId,
+  orderPubkeysLexicographically,
+  outputsToPayouts,
+} from './utils/Utils';
 
 const ECPair = ECPairFactory(ecc);
 
@@ -103,220 +115,6 @@ export default class BitcoinDdkProvider extends Provider {
     while (!this._ddk) {
       await sleep(10);
     }
-  }
-
-  /**
-   * Helper function to ensure we have a Buffer object
-   * Handles cases where Buffer objects have been serialized/deserialized
-   */
-  private ensureBuffer(
-    bufferLike: Buffer | { type: string; data: number[] } | any,
-  ): Buffer {
-    if (Buffer.isBuffer(bufferLike)) {
-      return bufferLike;
-    }
-    if (bufferLike && bufferLike.type === 'Buffer' && bufferLike.data) {
-      return Buffer.from(bufferLike.data);
-    }
-    return bufferLike;
-  }
-
-  /**
-   * Detect if signature is in compact format (64 bytes) or DER format
-   * and convert compact to DER if needed, adding SIGHASH_ALL flag
-   */
-  private ensureDerSignature(signature: Buffer): Buffer {
-    // If signature is 64 bytes, it's likely compact format (32-byte r + 32-byte s)
-    if (signature.length === 64) {
-      // Convert compact signature to DER format
-      const r = signature.slice(0, 32);
-      const s = signature.slice(32, 64);
-
-      // Create DER encoding manually
-      // DER format: 0x30 [total-length] 0x02 [R-length] [R] 0x02 [S-length] [S]
-
-      // Remove leading zeros from r and s, but keep at least one byte
-      let rBytes = r;
-      while (
-        rBytes.length > 1 &&
-        rBytes[0] === 0x00 &&
-        (rBytes[1] & 0x80) === 0
-      ) {
-        rBytes = rBytes.slice(1);
-      }
-
-      let sBytes = s;
-      while (
-        sBytes.length > 1 &&
-        sBytes[0] === 0x00 &&
-        (sBytes[1] & 0x80) === 0
-      ) {
-        sBytes = sBytes.slice(1);
-      }
-
-      // Add padding byte if high bit is set (to keep numbers positive)
-      if ((rBytes[0] & 0x80) !== 0) {
-        rBytes = Buffer.concat([Buffer.from([0x00]), rBytes]);
-      }
-      if ((sBytes[0] & 0x80) !== 0) {
-        sBytes = Buffer.concat([Buffer.from([0x00]), sBytes]);
-      }
-
-      const totalLength = 2 + rBytes.length + 2 + sBytes.length;
-
-      const derSignature = Buffer.concat([
-        Buffer.from([0x30, totalLength]), // SEQUENCE tag and total length
-        Buffer.from([0x02, rBytes.length]), // INTEGER tag and R length
-        rBytes,
-        Buffer.from([0x02, sBytes.length]), // INTEGER tag and S length
-        sBytes,
-        Buffer.from([0x01]), // SIGHASH_ALL flag
-      ]);
-
-      return derSignature;
-    }
-
-    // If it's already DER format, check if it has SIGHASH flag
-    if (signature.length > 0 && signature[0] === 0x30) {
-      // Check if it already has a SIGHASH flag (last byte should be 0x01 for SIGHASH_ALL)
-      if (signature[signature.length - 1] !== 0x01) {
-        // Add SIGHASH_ALL flag
-        return Buffer.concat([signature, Buffer.from([0x01])]);
-      }
-      return signature;
-    }
-
-    // For other formats, return as-is
-    return signature;
-  }
-
-  /**
-   * Detect if signature is in DER format and convert to compact format (64 bytes)
-   * by extracting r and s values, removing SIGHASH flag if present
-   */
-  private ensureCompactSignature(signature: Buffer): Buffer {
-    // If signature is already 64 bytes, it's likely already compact format
-    if (signature.length === 64) {
-      return signature;
-    }
-
-    // Check if it's DER format (starts with 0x30)
-    if (signature.length > 6 && signature[0] === 0x30) {
-      let derSig = signature;
-
-      // Remove SIGHASH flag if present (last byte is typically 0x01 for SIGHASH_ALL)
-      if (signature[signature.length - 1] === 0x01) {
-        derSig = signature.slice(0, -1);
-      }
-
-      // Parse DER format: 0x30 [total-length] 0x02 [R-length] [R] 0x02 [S-length] [S]
-      if (derSig[0] !== 0x30) {
-        throw new Error('Invalid DER signature: missing SEQUENCE tag');
-      }
-
-      const totalLength = derSig[1];
-      if (derSig.length < totalLength + 2) {
-        throw new Error('Invalid DER signature: length mismatch');
-      }
-
-      let offset = 2;
-
-      // Parse R value
-      if (derSig[offset] !== 0x02) {
-        throw new Error('Invalid DER signature: missing INTEGER tag for R');
-      }
-      offset++;
-
-      const rLength = derSig[offset];
-      offset++;
-
-      if (offset + rLength > derSig.length) {
-        throw new Error(
-          'Invalid DER signature: R length exceeds signature length',
-        );
-      }
-
-      let rBytes = derSig.slice(offset, offset + rLength);
-      offset += rLength;
-
-      // Parse S value
-      if (derSig[offset] !== 0x02) {
-        throw new Error('Invalid DER signature: missing INTEGER tag for S');
-      }
-      offset++;
-
-      const sLength = derSig[offset];
-      offset++;
-
-      if (offset + sLength > derSig.length) {
-        throw new Error(
-          'Invalid DER signature: S length exceeds signature length',
-        );
-      }
-
-      let sBytes = derSig.slice(offset, offset + sLength);
-
-      // Remove leading zero padding from r and s (DER may pad to prevent negative interpretation)
-      while (rBytes.length > 1 && rBytes[0] === 0x00) {
-        rBytes = rBytes.slice(1);
-      }
-      while (sBytes.length > 1 && sBytes[0] === 0x00) {
-        sBytes = sBytes.slice(1);
-      }
-
-      // Pad to 32 bytes each (compact format requires exactly 32 bytes for r and s)
-      while (rBytes.length < 32) {
-        rBytes = Buffer.concat([Buffer.from([0x00]), rBytes]);
-      }
-      while (sBytes.length < 32) {
-        sBytes = Buffer.concat([Buffer.from([0x00]), sBytes]);
-      }
-
-      if (rBytes.length !== 32 || sBytes.length !== 32) {
-        throw new Error('Invalid signature values: r or s exceeds 32 bytes');
-      }
-
-      // Combine r and s into 64-byte compact format
-      return Buffer.concat([rBytes, sBytes]);
-    }
-
-    // For other formats, throw error as we can't convert
-    throw new Error(
-      'Unable to convert signature to compact format: unknown format',
-    );
-  }
-
-  /**
-   * Compute contract ID from fund transaction ID, output index, and temporary contract ID
-   * Matches the Rust implementation in rust-dlc
-   */
-  private computeContractId(
-    fundTxId: Buffer,
-    fundOutputIndex: number,
-    temporaryContractId: Buffer,
-  ): Buffer {
-    if (fundTxId.length !== 32) {
-      throw new Error('Fund transaction ID must be 32 bytes');
-    }
-    if (temporaryContractId.length !== 32) {
-      throw new Error('Temporary contract ID must be 32 bytes');
-    }
-    if (fundOutputIndex > 0xffff) {
-      throw new Error('Fund output index must fit in 16 bits');
-    }
-
-    const result = Buffer.alloc(32);
-
-    // XOR fund_tx_id with temporary_id, with byte order reversal for fund_tx_id
-    for (let i = 0; i < 32; i++) {
-      result[i] = fundTxId[31 - i] ^ temporaryContractId[i];
-    }
-
-    // XOR the fund output index into the last two bytes
-    result[30] ^= (fundOutputIndex >> 8) & 0xff; // High byte
-    result[31] ^= fundOutputIndex & 0xff; // Low byte
-
-    return result;
   }
 
   /**
@@ -338,22 +136,11 @@ export default class BitcoinDdkProvider extends Provider {
       );
     }
 
-    // Create the same funding script as createDlcClose
-    const fundingPubKeys =
-      Buffer.compare(dlcOffer.fundingPubkey, dlcAccept.fundingPubkey) === -1
-        ? [dlcOffer.fundingPubkey, dlcAccept.fundingPubkey]
-        : [dlcAccept.fundingPubkey, dlcOffer.fundingPubkey];
-
-    const p2ms = payments.p2ms({
-      m: 2,
-      pubkeys: fundingPubKeys,
+    const paymentVariant = createP2WSHMultisig(
+      dlcOffer.fundingPubkey,
+      dlcAccept.fundingPubkey,
       network,
-    });
-
-    const paymentVariant = payments.p2wsh({
-      redeem: p2ms,
-      network,
-    });
+    );
 
     // Add the funding input with sequence from refund transaction
     psbt.addInput({
@@ -404,7 +191,7 @@ export default class BitcoinDdkProvider extends Provider {
     const derSignature = partialSig.signature;
 
     // Convert DER signature to compact format
-    return this.ensureCompactSignature(derSignature);
+    return ensureCompactSignature(derSignature);
   }
 
   /**
@@ -962,11 +749,18 @@ export default class BitcoinDdkProvider extends Provider {
       }),
     );
 
-    // Calculate input amounts
-    const localInputAmount = localRegularInputs.reduce<number>(
+    // Calculate input amounts (including both regular inputs and DLC inputs)
+    const localRegularInputAmount = localRegularInputs.reduce<number>(
       (prev, cur) => prev + cur.amount.GetSatoshiAmount(),
       0,
     );
+
+    const localDlcInputAmount = localDlcInputs.reduce<number>(
+      (prev, cur) => prev + Number(cur.fundAmount),
+      0,
+    );
+
+    const localInputAmount = localRegularInputAmount + localDlcInputAmount;
 
     const remoteInputAmount = remoteInputs.reduce<number>(
       (prev, cur) => prev + cur.amount.GetSatoshiAmount(),
@@ -1046,7 +840,7 @@ export default class BitcoinDdkProvider extends Provider {
         BigInt(dlcOffer.feeRatePerVb),
         0,
         dlcOffer.cetLocktime,
-        dlcOffer.fundOutputSerialId,
+        BigInt(dlcOffer.fundOutputSerialId),
       );
     } else {
       // Use regular DLC transactions when no DLC inputs
@@ -1280,19 +1074,12 @@ export default class BitcoinDdkProvider extends Provider {
 
     const cetsHex = dlcTxs.cets.map((cet) => cet.serialize().toString('hex'));
 
-    // Create the correct P2WSH multisig funding script
-    const fundingPubKeys =
-      Buffer.compare(dlcOffer.fundingPubkey, dlcAccept.fundingPubkey) === -1
-        ? [dlcOffer.fundingPubkey, dlcAccept.fundingPubkey]
-        : [dlcAccept.fundingPubkey, dlcOffer.fundingPubkey];
-
-    const p2ms = payments.p2ms({
-      m: 2,
-      pubkeys: fundingPubKeys,
-      network,
-    });
-
     // We need the redeem script (multisig), not the P2WSH output
+    const p2ms = createP2MSMultisig(
+      dlcOffer.fundingPubkey,
+      dlcAccept.fundingPubkey,
+      network,
+    );
     const fundingSPK = p2ms.output!;
 
     // For finding the private key, we still need the individual P2WPKH address
@@ -1499,16 +1286,12 @@ export default class BitcoinDdkProvider extends Provider {
 
         // Create the correct P2WSH multisig funding script for verification
         const network = await this.getConnectedNetwork();
-        const verifyFundingPubKeys =
-          Buffer.compare(dlcOffer.fundingPubkey, dlcAccept.fundingPubkey) === -1
-            ? [dlcOffer.fundingPubkey, dlcAccept.fundingPubkey]
-            : [dlcAccept.fundingPubkey, dlcOffer.fundingPubkey];
 
-        const verifyP2ms = payments.p2ms({
-          m: 2,
-          pubkeys: verifyFundingPubKeys,
+        const verifyP2ms = createP2MSMultisig(
+          dlcOffer.fundingPubkey,
+          dlcAccept.fundingPubkey,
           network,
-        });
+        );
 
         // We need the redeem script (multisig), not the P2WSH output
         const fundingSPK = verifyP2ms.output!;
@@ -1658,7 +1441,7 @@ export default class BitcoinDdkProvider extends Provider {
     }
   }
 
-  private async CreateFundingSigsAlt(
+  private async CreateFundingSigs(
     dlcOffer: DlcOffer,
     dlcAccept: DlcAccept,
     dlcTxs: DlcTransactions,
@@ -1677,7 +1460,9 @@ export default class BitcoinDdkProvider extends Provider {
     ];
 
     // Sort by inputSerialId to reconstruct proper transaction order
-    allFundingInputs.sort((a, b) => Number(a.inputSerialId - b.inputSerialId));
+    allFundingInputs.sort(
+      (a, b) => Number(a.inputSerialId) - Number(b.inputSerialId),
+    );
 
     // Add all inputs to PSBT with proper witnessUtxo
     for (const fundingInput of allFundingInputs) {
@@ -1756,11 +1541,42 @@ export default class BitcoinDdkProvider extends Provider {
 
         // Check if this is a DLC input (2-of-2 multisig from previous DLC)
         if (fundingInput.dlcInput) {
-          // For DLC inputs, we'll need to handle 2-of-2 multisig signing differently
-          // For now, throw an error as this requires implementing multisig support
-          throw new Error(
-            'DLC input signing not yet implemented in CreateFundingSigsAlt',
+          const paymentVariant = createP2WSHMultisig(
+            fundingInput.dlcInput.localFundPubkey,
+            fundingInput.dlcInput.remoteFundPubkey,
+            network,
           );
+
+          const redeemScript = paymentVariant.redeem.output;
+
+          // Find the correct private key for this DLC input
+          const dlcPrivKey = await this.findDlcFundingPrivateKey(
+            fundingInput.dlcInput.localFundPubkey.toString('hex'),
+            fundingInput.dlcInput.remoteFundPubkey.toString('hex'),
+          );
+          const keyPair = ECPair.fromPrivateKey(Buffer.from(dlcPrivKey, 'hex'));
+
+          // Update the input with the witnessScript before signing
+          psbt.updateInput(inputIndex, {
+            witnessScript: redeemScript,
+          });
+
+          psbt.signInput(inputIndex, keyPair);
+
+          const inputData = psbt.data.inputs[inputIndex];
+          const partialSigs = inputData.partialSig;
+          if (!partialSigs || partialSigs.length === 0) {
+            throw new Error(
+              `No signatures found for input ${inputIndex} after signing`,
+            );
+          }
+
+          const sigWitness = new ScriptWitnessV0();
+          sigWitness.witness = ensureBuffer(partialSigs[0].signature);
+          const pubKeyWitness = new ScriptWitnessV0();
+          pubKeyWitness.witness = keyPair.publicKey;
+
+          witnessElements.push([sigWitness, pubKeyWitness]);
         } else {
           // For P2WPKH inputs, use PSBT signing
           psbt.signInput(inputIndex, keyPair);
@@ -1776,7 +1592,7 @@ export default class BitcoinDdkProvider extends Provider {
 
           // For P2WPKH, create witness manually: [signature, publicKey]
           const sigWitness = new ScriptWitnessV0();
-          sigWitness.witness = this.ensureBuffer(partialSigs[0].signature);
+          sigWitness.witness = ensureBuffer(partialSigs[0].signature);
           const pubKeyWitness = new ScriptWitnessV0();
           pubKeyWitness.witness = keyPair.publicKey;
 
@@ -1792,7 +1608,7 @@ export default class BitcoinDdkProvider extends Provider {
     return fundingSignatures;
   }
 
-  private async VerifyFundingSigsAlt(
+  private async VerifyFundingSigs(
     dlcOffer: DlcOffer,
     dlcAccept: DlcAccept,
     dlcSign: DlcSign,
@@ -1816,7 +1632,9 @@ export default class BitcoinDdkProvider extends Provider {
       ...dlcOffer.fundingInputs,
       ...dlcAccept.fundingInputs,
     ];
-    allFundingInputs.sort((a, b) => Number(a.inputSerialId - b.inputSerialId));
+    allFundingInputs.sort(
+      (a, b) => Number(a.inputSerialId) - Number(b.inputSerialId),
+    );
 
     // Compare transaction IDs
     const dlcFundTxId = dlcTxs.fundTx.txId.toString();
@@ -1870,8 +1688,61 @@ export default class BitcoinDdkProvider extends Provider {
     // Add the funding signatures to the PSBT as partial signatures
     let witnessIndex = 0;
     for (const fundingInput of signingPartyInputs) {
-      // Skip DLC inputs for now (same as CreateFundingSigsAlt)
+      // Handle DLC inputs with multisig verification
       if (fundingInput.dlcInput) {
+        const dlcInput = fundingInput.dlcInput;
+
+        const paymentVariant = createP2WSHMultisig(
+          dlcInput.localFundPubkey,
+          dlcInput.remoteFundPubkey,
+          network,
+        );
+
+        // Find this input's index in the sorted transaction
+        const inputIndex = allFundingInputs.findIndex(
+          (input) =>
+            input.prevTx.txId.toString() ===
+              fundingInput.prevTx.txId.toString() &&
+            input.prevTxVout === fundingInput.prevTxVout,
+        );
+
+        if (inputIndex === -1) {
+          throw new Error(
+            `DLC input not found in transaction: ${fundingInput.prevTx.txId.toString()}:${fundingInput.prevTxVout}`,
+          );
+        }
+
+        // Update the input with the witnessScript for verification
+        psbt.updateInput(inputIndex, {
+          witnessScript: paymentVariant.redeem.output,
+        });
+
+        // Add the DLC signature from witness elements if available
+        if (witnessIndex < dlcSign.fundingSignatures.witnessElements.length) {
+          const witnessElement =
+            dlcSign.fundingSignatures.witnessElements[witnessIndex];
+          const signature = witnessElement[0].witness;
+          const publicKey = witnessElement[1].witness;
+
+          psbt.updateInput(inputIndex, {
+            partialSig: [
+              {
+                pubkey: publicKey,
+                signature: ensureDerSignature(signature),
+              },
+            ],
+          });
+
+          // Verify the signature for this DLC input
+          psbt.validateSignaturesOfInput(
+            inputIndex,
+            (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
+              return ecc.verify(msghash, pubkey, signature);
+            },
+          );
+
+          witnessIndex++;
+        }
         continue;
       }
 
@@ -1904,7 +1775,7 @@ export default class BitcoinDdkProvider extends Provider {
         partialSig: [
           {
             pubkey: publicKey,
-            signature: this.ensureDerSignature(signature),
+            signature: ensureDerSignature(signature),
           },
         ],
       });
@@ -1986,7 +1857,9 @@ export default class BitcoinDdkProvider extends Provider {
       ...dlcOffer.fundingInputs,
       ...dlcAccept.fundingInputs,
     ];
-    allFundingInputs.sort((a, b) => Number(a.inputSerialId - b.inputSerialId));
+    allFundingInputs.sort(
+      (a, b) => Number(a.inputSerialId) - Number(b.inputSerialId),
+    );
 
     // Calculate detailed sighash information
     const details = [];
@@ -2047,7 +1920,7 @@ export default class BitcoinDdkProvider extends Provider {
       : dlcSign.refundSignature;
 
     // Ensure signature is in DER format (convert from compact if needed)
-    const refundSignature = this.ensureDerSignature(rawRefundSignature);
+    const refundSignature = ensureDerSignature(rawRefundSignature);
 
     const signingPubkey = isOfferer
       ? dlcAccept.fundingPubkey
@@ -2063,22 +1936,11 @@ export default class BitcoinDdkProvider extends Provider {
     // Create a PSBT for the refund transaction verification using same approach as createDlcClose
     const psbt = new Psbt({ network });
 
-    // Create the same funding script as createDlcClose
-    const fundingPubKeys =
-      Buffer.compare(dlcOffer.fundingPubkey, dlcAccept.fundingPubkey) === -1
-        ? [dlcOffer.fundingPubkey, dlcAccept.fundingPubkey]
-        : [dlcAccept.fundingPubkey, dlcOffer.fundingPubkey];
-
-    const p2ms = payments.p2ms({
-      m: 2,
-      pubkeys: fundingPubKeys,
+    const paymentVariant = createP2WSHMultisig(
+      dlcOffer.fundingPubkey,
+      dlcAccept.fundingPubkey,
       network,
-    });
-
-    const paymentVariant = payments.p2wsh({
-      redeem: p2ms,
-      network,
-    });
+    );
 
     // Add the funding input with sequence from refund transaction
     psbt.addInput({
@@ -2132,23 +1994,11 @@ export default class BitcoinDdkProvider extends Provider {
   ): Buffer {
     const network = this.getBitcoinJsNetwork();
 
-    // Sort funding pubkeys in lexicographical order as per DLC spec
-    const fundingPubKeys =
-      Buffer.compare(dlcOffer.fundingPubkey, dlcAccept.fundingPubkey) === -1
-        ? [dlcOffer.fundingPubkey, dlcAccept.fundingPubkey]
-        : [dlcAccept.fundingPubkey, dlcOffer.fundingPubkey];
-
-    // Create 2-of-2 multisig script
-    const p2ms = payments.p2ms({
-      m: 2,
-      pubkeys: fundingPubKeys,
+    const paymentVariant = createP2WSHMultisig(
+      dlcOffer.fundingPubkey,
+      dlcAccept.fundingPubkey,
       network,
-    });
-
-    const paymentVariant = payments.p2wsh({
-      redeem: p2ms,
-      network,
-    });
+    );
 
     return paymentVariant.redeem!.output!;
   }
@@ -2163,27 +2013,24 @@ export default class BitcoinDdkProvider extends Provider {
     const network = await this.getConnectedNetwork();
     const psbt = new Psbt({ network });
 
-    // Combine and sort all funding inputs by serial ID (same as CreateFundingSigsAlt)
+    // Combine and sort all funding inputs by serial ID (same as CreateFundingSigs)
     const allFundingInputs = [
       ...dlcOffer.fundingInputs,
       ...dlcAccept.fundingInputs,
     ];
-    allFundingInputs.sort((a, b) => Number(a.inputSerialId - b.inputSerialId));
+    allFundingInputs.sort(
+      (a, b) => Number(a.inputSerialId) - Number(b.inputSerialId),
+    );
 
     // Create a map of input txid:vout to witness elements
     const witnessMap = new Map<string, ScriptWitnessV0[]>();
 
-    // Map witness elements correctly - CreateFundingSigsAlt only creates witness elements
+    // Map witness elements correctly - CreateFundingSigs only creates witness elements
     // for the party's own inputs, so we need to map them correctly
 
-    // For dlcSign (offerer's signatures), map to offerer's inputs only
+    // For dlcSign (offerer's signatures), map to offerer's inputs (including DLC inputs)
     let offererWitnessIndex = 0;
     dlcOffer.fundingInputs.forEach((fundingInput) => {
-      // Skip DLC inputs for now as in CreateFundingSigsAlt
-      if (fundingInput.dlcInput) {
-        return;
-      }
-
       if (
         offererWitnessIndex < dlcSign.fundingSignatures.witnessElements.length
       ) {
@@ -2196,14 +2043,9 @@ export default class BitcoinDdkProvider extends Provider {
       }
     });
 
-    // For fundingSignatures (accepter's signatures), map to accepter's inputs only
+    // For fundingSignatures (accepter's signatures), map to accepter's inputs (including DLC inputs)
     let accepterWitnessIndex = 0;
     dlcAccept.fundingInputs.forEach((fundingInput) => {
-      // Skip DLC inputs for now as in CreateFundingSigsAlt
-      if (fundingInput.dlcInput) {
-        return;
-      }
-
       if (accepterWitnessIndex < fundingSignatures.witnessElements.length) {
         const key = `${fundingInput.prevTx.txId.toString()}:${fundingInput.prevTxVout}`;
         witnessMap.set(
@@ -2222,13 +2064,13 @@ export default class BitcoinDdkProvider extends Provider {
     for (const fundingInput of allFundingInputs) {
       const prevOut = fundingInput.prevTx.outputs[fundingInput.prevTxVout];
 
-      // Use same script handling as CreateFundingSigsAlt
+      // Use same script handling as CreateFundingSigs
       const witnessUtxo = {
         script: Buffer.from(prevOut.scriptPubKey.serialize().subarray(1)),
         value: Number(prevOut.value.sats),
       };
 
-      // Use sequence from the original transaction (same as CreateFundingSigsAlt)
+      // Use sequence from the original transaction (same as CreateFundingSigs)
       const originalInput = originalTransaction.ins.find(
         (input) =>
           input.hash.reverse().toString('hex') ===
@@ -2266,13 +2108,76 @@ export default class BitcoinDdkProvider extends Provider {
 
       const witnessElements = witnessMap.get(inputKey);
       if (witnessElements && witnessElements.length === 2) {
-        // Skip DLC inputs for now as requested
+        // Handle DLC inputs with multisig finalization
         if (fundingInput.dlcInput) {
+          const dlcInput = fundingInput.dlcInput;
+
+          // Create the multisig script for finalization
+          // Use lexicographic ordering to match DDK library behavior
+          const orderedPubkeys = orderPubkeysLexicographically(
+            dlcInput.localFundPubkey,
+            dlcInput.remoteFundPubkey,
+          );
+
+          const paymentVariant = createP2WSHMultisigFromOrdered(
+            orderedPubkeys,
+            network,
+          );
+
+          // Update the input with the witnessScript
+          psbt.updateInput(inputIndex, {
+            witnessScript: paymentVariant.redeem.output,
+          });
+
+          // Sign this DLC input ourselves
+          const dlcPrivKey = await this.findDlcFundingPrivateKey(
+            dlcInput.localFundPubkey.toString('hex'),
+            dlcInput.remoteFundPubkey.toString('hex'),
+          );
+          const keyPair = ECPair.fromPrivateKey(Buffer.from(dlcPrivKey, 'hex'));
+
+          psbt.signInput(inputIndex, keyPair);
+
+          // Get our signature and determine which pubkey it corresponds to
+          const ourPartialSig = psbt.data.inputs[inputIndex].partialSig[0];
+          const ourSig = ensureDerSignature(ourPartialSig.signature);
+          const ourPubkey = ourPartialSig.pubkey;
+
+          // Get the other party's signature from witnessElements
+          const otherPartySig = ensureDerSignature(witnessElements[0].witness);
+
+          // Order signatures according to the lexicographic pubkey order used in the multisig script
+          let sig1: Buffer, sig2: Buffer;
+
+          if (Buffer.compare(ourPubkey, orderedPubkeys[0]) === 0) {
+            // Our signature corresponds to the first pubkey in lexicographic order
+            sig1 = ourSig;
+            sig2 = otherPartySig;
+          } else {
+            // Our signature corresponds to the second pubkey in lexicographic order
+            sig1 = otherPartySig;
+            sig2 = ourSig;
+          }
+
+          // Finalize with proper multisig witness: [OP_0, sig1, sig2, redeemScript]
+          psbt.finalizeInput(inputIndex, () => ({
+            finalScriptSig: Buffer.alloc(0),
+            finalScriptWitness: Buffer.concat([
+              Buffer.from([0x04]), // witness stack count
+              Buffer.from([0x00]), // OP_0 (Bitcoin multisig bug)
+              Buffer.from([sig1.length]),
+              sig1,
+              Buffer.from([sig2.length]),
+              sig2,
+              Buffer.from([paymentVariant.redeem.output.length]),
+              paymentVariant.redeem.output,
+            ]),
+          }));
           continue;
         }
 
         // For P2WPKH inputs, finalize the input with witness data
-        const signature = this.ensureDerSignature(witnessElements[0].witness);
+        const signature = ensureDerSignature(witnessElements[0].witness);
         const publicKey = witnessElements[1].witness;
 
         // Try a simpler approach - let bitcoinjs-lib handle witness construction
@@ -2914,21 +2819,15 @@ Payout Group not found even with brute force search',
 
     const network = await this.getConnectedNetwork();
 
-    const fundingPubKeys =
-      Buffer.compare(dlcOffer.fundingPubkey, dlcAccept.fundingPubkey) === -1
-        ? [dlcOffer.fundingPubkey, dlcAccept.fundingPubkey]
-        : [dlcAccept.fundingPubkey, dlcOffer.fundingPubkey];
+    const fundingPubKeys = orderPubkeysLexicographically(
+      dlcOffer.fundingPubkey,
+      dlcAccept.fundingPubkey,
+    );
 
-    const p2ms = payments.p2ms({
-      m: 2,
-      pubkeys: fundingPubKeys,
+    const paymentVariant = createP2WSHMultisigFromOrdered(
+      fundingPubKeys,
       network,
-    });
-
-    const paymentVariant = payments.p2wsh({
-      redeem: p2ms,
-      network,
-    });
+    );
 
     const sigHashRequestPromises: Promise<string>[] = [];
     const sigHashes = [];
@@ -3025,21 +2924,15 @@ Payout Group not found even with brute force search',
 
     const network = await this.getConnectedNetwork();
 
-    const fundingPubKeys =
-      Buffer.compare(dlcOffer.fundingPubkey, dlcAccept.fundingPubkey) === -1
-        ? [dlcOffer.fundingPubkey, dlcAccept.fundingPubkey]
-        : [dlcAccept.fundingPubkey, dlcOffer.fundingPubkey];
+    const fundingPubKeys = orderPubkeysLexicographically(
+      dlcOffer.fundingPubkey,
+      dlcAccept.fundingPubkey,
+    );
 
-    const p2ms = payments.p2ms({
-      m: 2,
-      pubkeys: fundingPubKeys,
+    const paymentVariant = createP2WSHMultisigFromOrdered(
+      fundingPubKeys,
       network,
-    });
-
-    const paymentVariant = payments.p2wsh({
-      redeem: p2ms,
-      network,
-    });
+    );
 
     const pubkey = isOfferer ? dlcAccept.fundingPubkey : dlcOffer.fundingPubkey;
 
@@ -3492,7 +3385,7 @@ Payout Group not found even with brute force search',
 
     const _dlcTransactions = dlcTransactions;
 
-    const contractId = this.computeContractId(
+    const contractId = computeContractId(
       _dlcTransactions.fundTx.txId.serialize(),
       _dlcTransactions.fundTxVout,
       dlcOffer.temporaryContractId,
@@ -3548,7 +3441,7 @@ Payout Group not found even with brute force search',
         true,
       );
 
-    const fundingSignatures = await this.CreateFundingSigsAlt(
+    const fundingSignatures = await this.CreateFundingSigs(
       dlcOffer,
       dlcAccept,
       dlcTransactions,
@@ -3557,22 +3450,10 @@ Payout Group not found even with brute force search',
 
     const dlcTxs = dlcTransactions;
 
-    const contractId = this.computeContractId(
+    const contractId = computeContractId(
       dlcTxs.fundTx.txId.serialize(),
       dlcTxs.fundTxVout,
       dlcOffer.temporaryContractId,
-    );
-
-    assert(
-      Buffer.compare(
-        contractId,
-        this.computeContractId(
-          dlcTxs.fundTx.txId.serialize(),
-          dlcTxs.fundTxVout,
-          dlcOffer.temporaryContractId,
-        ),
-      ) === 0,
-      'contractId must be the xor of funding txid, fundingOutputIndex and the tempContractId',
     );
 
     dlcTxs.contractId = contractId;
@@ -3601,6 +3482,17 @@ Payout Group not found even with brute force search',
   ): Promise<Tx> {
     let messagesList: Messages[] = [];
 
+    const contractId = computeContractId(
+      dlcTxs.fundTx.txId.serialize(),
+      dlcTxs.fundTxVout,
+      dlcOffer.temporaryContractId,
+    );
+
+    assert(
+      Buffer.compare(contractId, dlcSign.contractId) === 0,
+      `Finalize Dlc Sign Contract ID mismatch: ${contractId.toString('hex')} !== ${dlcSign.contractId.toString('hex')}`,
+    );
+
     if (
       dlcOffer.contractInfo.type === MessageType.SingleContractInfo &&
       (dlcOffer.contractInfo as SingleContractInfo).contractDescriptor.type ===
@@ -3628,15 +3520,9 @@ Payout Group not found even with brute force search',
       false,
     );
 
-    await this.VerifyFundingSigsAlt(
-      dlcOffer,
-      dlcAccept,
-      dlcSign,
-      dlcTxs,
-      false,
-    );
+    await this.VerifyFundingSigs(dlcOffer, dlcAccept, dlcSign, dlcTxs, false);
 
-    const fundingSignatures = await this.CreateFundingSigsAlt(
+    const fundingSignatures = await this.CreateFundingSigs(
       dlcOffer,
       dlcAccept,
       dlcTxs,
@@ -3711,22 +3597,15 @@ Payout Group not found even with brute force search',
       );
     }
 
-    // Create the same funding script as createDlcClose
-    const fundingPubKeys =
-      Buffer.compare(dlcOffer.fundingPubkey, dlcAccept.fundingPubkey) === -1
-        ? [dlcOffer.fundingPubkey, dlcAccept.fundingPubkey]
-        : [dlcAccept.fundingPubkey, dlcOffer.fundingPubkey];
+    const fundingPubKeys = orderPubkeysLexicographically(
+      dlcOffer.fundingPubkey,
+      dlcAccept.fundingPubkey,
+    );
 
-    const p2ms = payments.p2ms({
-      m: 2,
-      pubkeys: fundingPubKeys,
+    const paymentVariant = createP2WSHMultisigFromOrdered(
+      fundingPubKeys,
       network,
-    });
-
-    const paymentVariant = payments.p2wsh({
-      redeem: p2ms,
-      network,
-    });
+    );
 
     // Add the funding input with sequence from refund transaction
     psbt.addInput({
@@ -3764,13 +3643,13 @@ Payout Group not found even with brute force search',
         // This is the offerer's pubkey, use dlcSign.refundSignature
         partialSigs.push({
           pubkey: pubkey,
-          signature: this.ensureDerSignature(dlcSign.refundSignature),
+          signature: ensureDerSignature(dlcSign.refundSignature),
         });
       } else if (Buffer.compare(pubkey, dlcAccept.fundingPubkey) === 0) {
         // This is the accepter's pubkey, use dlcAccept.refundSignature
         partialSigs.push({
           pubkey: pubkey,
-          signature: this.ensureDerSignature(dlcAccept.refundSignature),
+          signature: ensureDerSignature(dlcAccept.refundSignature),
         });
       }
     }
@@ -3843,21 +3722,11 @@ Payout Group not found even with brute force search',
     const network = await this.getConnectedNetwork();
     const psbt = new Psbt({ network });
 
-    const fundingPubKeys =
-      Buffer.compare(dlcOffer.fundingPubkey, dlcAccept.fundingPubkey) === -1
-        ? [dlcOffer.fundingPubkey, dlcAccept.fundingPubkey]
-        : [dlcAccept.fundingPubkey, dlcOffer.fundingPubkey];
-
-    const p2ms = payments.p2ms({
-      m: 2,
-      pubkeys: fundingPubKeys,
+    const paymentVariant = createP2WSHMultisig(
+      dlcOffer.fundingPubkey,
+      dlcAccept.fundingPubkey,
       network,
-    });
-
-    const paymentVariant = payments.p2wsh({
-      redeem: p2ms,
-      network,
-    });
+    );
 
     // Initiate and build PSBT
     let inputs: Input[] = _inputs;
@@ -4035,9 +3904,7 @@ Payout Group not found even with brute force search',
 
     // Extract close signature from psbt and decode it to only extract r and s values
     const closeSignature = await script.signature.decode(
-      this.ensureBuffer(
-        psbt.data.inputs[fundingInputIndex].partialSig[0].signature,
-      ),
+      ensureBuffer(psbt.data.inputs[fundingInputIndex].partialSig[0].signature),
     ).signature;
 
     // Extract funding signatures from psbt
@@ -4049,9 +3916,9 @@ Payout Group not found even with brute force search',
     const witnessElements: ScriptWitnessV0[][] = [];
     for (let i = 0; i < inputSigs.length; i++) {
       const sigWitness = new ScriptWitnessV0();
-      sigWitness.witness = this.ensureBuffer(inputSigs[i].signature);
+      sigWitness.witness = ensureBuffer(inputSigs[i].signature);
       const pubKeyWitness = new ScriptWitnessV0();
-      pubKeyWitness.witness = this.ensureBuffer(inputSigs[i].pubkey);
+      pubKeyWitness.witness = ensureBuffer(inputSigs[i].pubkey);
       witnessElements.push([sigWitness, pubKeyWitness]);
     }
     const fundingSignatures = new FundingSignatures();
@@ -4297,21 +4164,11 @@ Payout Group not found even with brute force search',
     const network = await this.getConnectedNetwork();
     const psbt = new Psbt({ network });
 
-    const fundingPubKeys =
-      Buffer.compare(dlcOffer.fundingPubkey, dlcAccept.fundingPubkey) === -1
-        ? [dlcOffer.fundingPubkey, dlcAccept.fundingPubkey]
-        : [dlcAccept.fundingPubkey, dlcOffer.fundingPubkey];
-
-    const p2ms = payments.p2ms({
-      m: 2,
-      pubkeys: fundingPubKeys,
+    const paymentVariant = createP2WSHMultisig(
+      dlcOffer.fundingPubkey,
+      dlcAccept.fundingPubkey,
       network,
-    });
-
-    const paymentVariant = payments.p2wsh({
-      redeem: p2ms,
-      network,
-    });
+    );
 
     // Make temporary array to hold all inputs and then sort them
     // this method can be improved later
@@ -4645,16 +4502,10 @@ Payout Group not found even with brute force search',
     const network = await this.getConnectedNetwork();
 
     // Create 2-of-2 multisig payment using deterministic ordering
-    const p2ms = payments.p2ms({
-      m: 2,
-      pubkeys: orderedPubkeys,
+    const paymentVariant = createP2WSHMultisigFromOrdered(
+      orderedPubkeys,
       network,
-    });
-
-    const paymentVariant = payments.p2wsh({
-      redeem: p2ms,
-      network,
-    });
+    );
 
     const multisigAddress = paymentVariant.address!;
 

@@ -13,8 +13,8 @@ importers:
   .:
     devDependencies:
       '@bennyblader/ddk-ts':
-        specifier: ^0.3.25
-        version: 0.3.25
+        specifier: ^0.3.31
+        version: 0.3.31
       '@changesets/cli':
         specifier: ^2.22.0
         version: 2.29.5
@@ -1010,8 +1010,8 @@ packages:
       '@babel/helper-validator-identifier': 7.27.1
     dev: true
 
-  /@bennyblader/ddk-ts@0.3.25:
-    resolution: {integrity: sha512-+sRW+S0wTfF9lfCawiJXYPPPAlCLYSJGW6ScuOB2yS/dISeXA3N9kwAIdDNuZDfFPDsFHrAjqE1U/XSTxQWF7A==}
+  /@bennyblader/ddk-ts@0.3.31:
+    resolution: {integrity: sha512-juVHpJIgqoKOw/R5GjDooa8g/oEKFM43dUcSXynGRdSCkBoH1idKJqLVg2SGYLVXtfRrXcMbT4v4zm0y6KUZsg==}
     engines: {node: '>= 6.14.2 < 7 || >= 8.11.2 < 9 || >= 9.11.0 < 10 || >= 10.0.0'}
     dev: true
 

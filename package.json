@@ -4,7 +4,7 @@
   "private": true,
   "packageManager": "pnpm@8.15.0",
   "devDependencies": {
-    "@bennyblader/ddk-ts": "^0.3.25",
+    "@bennyblader/ddk-ts": "^0.3.31",
     "@changesets/cli": "^2.22.0",
     "@node-dlc/bitcoin": "1.1.2",
     "@node-dlc/bufio": "1.1.2",
