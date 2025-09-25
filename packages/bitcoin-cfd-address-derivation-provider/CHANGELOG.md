@@ -1,5 +1,19 @@
 # @atomicfinance/bitcoin-cfd-address-derivation-provider
 
+## 4.2.0
+
+### Minor Changes
+
+- ec43a60: Implement DDK DLC splicing support + util refactor
+
+### Patch Changes
+
+- b718514: Refactor funding input sorting
+- Updated dependencies [ec43a60]
+- Updated dependencies [b718514]
+  - @atomicfinance/provider@4.2.0
+  - @atomicfinance/types@4.2.0
+
 ## 4.1.13
 
 ### Patch Changes

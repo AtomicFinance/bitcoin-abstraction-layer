@@ -1,5 +1,15 @@
 # @atomicfinance/types
 
+## 4.2.0
+
+### Minor Changes
+
+- ec43a60: Implement DDK DLC splicing support + util refactor
+
+### Patch Changes
+
+- b718514: Refactor funding input sorting
+
 ## 4.1.13
 
 ### Patch Changes
