@@ -4290,18 +4290,60 @@ Payout Group not found even with brute force search',
     );
     let derivationPath: string;
 
+    // Check if this FundingInput has DLC input information
+    const dlcInputMessage = input.dlcInput;
+
     if (findDerivationPath) {
-      const inputAddress: Address = await this.client.wallet.findAddress([
-        _address,
-      ]);
-      if (inputAddress) {
-        derivationPath = inputAddress.derivationPath;
+      // Check if this is a DLC input first
+      if (dlcInputMessage) {
+        // For DLC inputs, we need to find which pubkey the wallet controls
+        // (could be localFundPubkey if we're the offerer, or remoteFundPubkey if we're the acceptor)
+        const localPubkey = dlcInputMessage.localFundPubkey;
+        const remotePubkey = dlcInputMessage.remoteFundPubkey;
+
+        // Convert both pubkeys to P2WPKH addresses
+        const localFundingSPK = Script.p2wpkhLock(hash160(localPubkey))
+          .serialize()
+          .slice(1);
+        const localFundingAddress = address.fromOutputScript(
+          Buffer.from(localFundingSPK),
+          network,
+        );
+
+        const remoteFundingSPK = Script.p2wpkhLock(hash160(remotePubkey))
+          .serialize()
+          .slice(1);
+        const remoteFundingAddress = address.fromOutputScript(
+          Buffer.from(remoteFundingSPK),
+          network,
+        );
+
+        try {
+          // Try to find either address - wallet will return the first one it controls
+          const inputAddress: Address = await this.client.wallet.findAddress([
+            localFundingAddress,
+            remoteFundingAddress,
+          ]);
+          if (inputAddress) {
+            derivationPath = inputAddress.derivationPath;
+          }
+        } catch (error) {
+          console.warn(
+            `Could not find derivation path for DLC pubkeys: ${error.message}`,
+          );
+        }
+      } else {
+        // For regular inputs, use the existing logic
+        const inputAddress: Address = await this.client.wallet.findAddress([
+          _address,
+        ]);
+        if (inputAddress) {
+          derivationPath = inputAddress.derivationPath;
+        }
       }
     }
 
     // Check if this FundingInput has DLC input information to preserve
-    const dlcInputMessage = input.dlcInput;
-
     let dlcInputInfo: DlcInputInfo | undefined;
     if (dlcInputMessage) {
       dlcInputInfo = {
