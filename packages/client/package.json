@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/client",
   "umdName": "Client",
-  "version": "4.2.1",
+  "version": "4.2.2",
   "description": "Bitcoin Abstraction Layer Provider",
   "author": "Atomic Finance <info@atomic.finance>",
   "homepage": "",
@@ -15,10 +15,10 @@
     "lint:fix": "../../node_modules/.bin/eslint --fix  ."
   },
   "dependencies": {
-    "@atomicfinance/bitcoin-utils": "^4.2.1",
-    "@atomicfinance/errors": "^4.2.1",
-    "@atomicfinance/provider": "^4.2.1",
-    "@atomicfinance/types": "^4.2.1",
+    "@atomicfinance/bitcoin-utils": "^4.2.2",
+    "@atomicfinance/errors": "^4.2.2",
+    "@atomicfinance/provider": "^4.2.2",
+    "@atomicfinance/types": "^4.2.2",
     "@node-dlc/bitcoin": "1.1.2",
     "@node-dlc/messaging": "1.1.2",
     "ajv": "^6.10.0",

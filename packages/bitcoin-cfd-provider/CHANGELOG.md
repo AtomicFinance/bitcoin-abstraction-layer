@@ -1,5 +1,15 @@
 # @atomicfinance/bitcoin-cfd-provider
 
+## 4.2.2
+
+### Patch Changes
+
+- e0cda38: Fix fundingInputToInput derivationPath dlcInput
+- Updated dependencies [e0cda38]
+  - @atomicfinance/provider@4.2.2
+  - @atomicfinance/types@4.2.2
+  - @atomicfinance/utils@4.2.2
+
 ## 4.2.1
 
 ### Patch Changes
