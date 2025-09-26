@@ -4467,10 +4467,10 @@ Payout Group not found even with brute force search',
 
     // Use the same deterministic ordering as cfd-dlc-js: lexicographic by hex
     // This matches GetOrderedPubkeys() in cfddlc_transactions.cpp
-    const orderedPubkeys =
-      dlcInputInfo.localFundPubkey < dlcInputInfo.remoteFundPubkey
-        ? [localPubkey, remotePubkey]
-        : [remotePubkey, localPubkey];
+    const orderedPubkeys = orderPubkeysLexicographically(
+      localPubkey,
+      remotePubkey,
+    );
 
     const network = await this.getConnectedNetwork();
 
