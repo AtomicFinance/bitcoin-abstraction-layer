@@ -1,5 +1,11 @@
 # @atomicfinance/crypto
 
+## 4.2.1
+
+### Patch Changes
+
+- 8d13721: Fix lexographic ordering dlc input pubkeys
+
 ## 4.2.0
 
 ### Minor Changes

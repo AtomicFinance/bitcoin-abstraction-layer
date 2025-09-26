@@ -1,5 +1,17 @@
 # @atomicfinance/bitcoin-rpc-provider
 
+## 4.2.1
+
+### Patch Changes
+
+- 8d13721: Fix lexographic ordering dlc input pubkeys
+- Updated dependencies [8d13721]
+  - @atomicfinance/bitcoin-utils@4.2.1
+  - @atomicfinance/errors@4.2.1
+  - @atomicfinance/jsonrpc-provider@4.2.1
+  - @atomicfinance/types@4.2.1
+  - @atomicfinance/utils@4.2.1
+
 ## 4.2.0
 
 ### Minor Changes
