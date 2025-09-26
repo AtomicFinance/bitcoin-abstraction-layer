@@ -555,71 +555,13 @@ describe('dlc provider', () => {
       const aliceFundPubkey = dlcOffer.fundingPubkey.toString('hex');
       const bobFundPubkey = dlcAccept.fundingPubkey.toString('hex');
 
-      // Try both possible orderings to find which one matches the actual funding address
-      // We need to determine which perspective was used in the original DLC
-      let correctLocalPubkey: string;
-      let correctRemotePubkey: string;
-
-      // Test Alice-local perspective first
-      try {
-        const testInputInfo1 = ddk.dlc.createDlcInputInfo(
-          fundTxId,
-          dlcTransactions.fundTxVout,
-          fundingOutputAmount,
-          aliceFundPubkey, // Alice local
-          bobFundPubkey, // Bob remote,
-          dlcTransactions.contractId.toString('hex'),
-          220,
-          BigInt(1),
-        );
-
-        // This will throw if address doesn't match
-        await ddk.dlc.createDlcFundingInput(
-          testInputInfo1,
-          fundTx.serialize().toString('hex'),
-        );
-
-        // If we get here, this ordering works
-        correctLocalPubkey = aliceFundPubkey;
-        correctRemotePubkey = bobFundPubkey;
-        console.log('Using Alice-local perspective for DLC input');
-      } catch (error) {
-        // Try Bob-local perspective
-        try {
-          const testInputInfo2 = ddk.dlc.createDlcInputInfo(
-            fundTxId,
-            dlcTransactions.fundTxVout,
-            fundingOutputAmount,
-            bobFundPubkey, // Bob local (from Alice's POV, Bob becomes local)
-            aliceFundPubkey, // Alice remote (from Alice's POV, Alice becomes remote)
-            dlcTransactions.contractId.toString('hex'),
-            220,
-            BigInt(1),
-          );
-
-          await ddk.dlc.createDlcFundingInput(
-            testInputInfo2,
-            fundTx.serialize().toString('hex'),
-          );
-
-          // If we get here, this ordering works
-          correctLocalPubkey = bobFundPubkey;
-          correctRemotePubkey = aliceFundPubkey;
-          console.log('Using Bob-local perspective for DLC input');
-        } catch (error2) {
-          throw new Error(
-            `Neither pubkey ordering matches the original funding address. Alice-local error: ${error.message}, Bob-local error: ${error2.message}`,
-          );
-        }
-      }
-
       // Create DLC input info with the correct ordering
       const dlcInputInfo = ddk.dlc.createDlcInputInfo(
         fundTxId,
         dlcTransactions.fundTxVout, // First output is the funding output
         fundingOutputAmount,
-        correctLocalPubkey,
-        correctRemotePubkey,
+        aliceFundPubkey,
+        bobFundPubkey,
         dlcTransactions.contractId.toString('hex'),
         220, // Standard P2WSH multisig max witness length
         BigInt(1), // Input serial ID
