@@ -530,8 +530,14 @@ export default class Dlc implements DlcProvider {
     return this.client.getMethod('VerifyDlcFundingInputSignature')(jsonObject);
   }
 
-  async fundingInputToInput(_input: FundingInput): Promise<IInput> {
-    return this.client.getMethod('fundingInputToInput')(_input);
+  async fundingInputToInput(
+    _input: FundingInput,
+    findDerivationPath = true,
+  ): Promise<IInput> {
+    return this.client.getMethod('fundingInputToInput')(
+      _input,
+      findDerivationPath,
+    );
   }
 
   async inputToFundingInput(input: IInput): Promise<FundingInput> {

@@ -694,6 +694,173 @@ describe('dlc provider', () => {
         expect(actualId.toString('hex')).to.equal(expectedId);
       });
     });
+
+    describe('ddk provider DLC input derivation path handling', () => {
+      it('should find derivation path for DLC inputs using correct pubkey (offerer or acceptor)', async () => {
+        const oracle = new Oracle('olivia');
+
+        // Create a simple DLC first to get a DLC input
+        const ddkInput = await getInput(ddk);
+        const ddk2Input = await getInput(ddk2);
+
+        const eventId = 'test-event';
+        const oliviaInfo = oracle.GetOracleInfo();
+        const eventDescriptor = new EnumEventDescriptor();
+        eventDescriptor.outcomes = ['outcome1', 'outcome2'];
+
+        const event = new OracleEvent();
+        event.oracleNonces = oliviaInfo.rValues.map((rValue) =>
+          Buffer.from(rValue, 'hex'),
+        );
+        event.eventMaturityEpoch = 1617170572;
+        event.eventDescriptor = eventDescriptor;
+        event.eventId = eventId;
+
+        const announcement = new OracleAnnouncement();
+        announcement.announcementSig = Buffer.from(
+          oracle.GetSignature(
+            math
+              .taggedHash('DLC/oracle/announcement/v0', event.serialize())
+              .toString('hex'),
+          ),
+          'hex',
+        );
+        announcement.oraclePublicKey = Buffer.from(oliviaInfo.publicKey, 'hex');
+        announcement.oracleEvent = event;
+
+        const oracleInfo = new SingleOracleInfo();
+        oracleInfo.announcement = announcement;
+
+        const contractDescriptor = new EnumeratedDescriptor();
+        contractDescriptor.outcomes = [
+          {
+            outcome: sha256(Buffer.from('outcome1')).toString('hex'),
+            localPayout: BigInt(100000),
+          },
+          {
+            outcome: sha256(Buffer.from('outcome2')).toString('hex'),
+            localPayout: BigInt(0),
+          },
+        ];
+
+        const totalCollateral = BigInt(100000);
+        const contractInfo = new SingleContractInfo();
+        contractInfo.totalCollateral = totalCollateral;
+        contractInfo.contractDescriptor = contractDescriptor;
+        contractInfo.oracleInfo = oracleInfo;
+
+        const feeRatePerVb = BigInt(10);
+        const cetLocktime = 1617170572;
+        const refundLocktime = 1617170573;
+
+        // Create and execute first DLC
+        const dlcOffer = await ddk.dlc.createDlcOffer(
+          contractInfo,
+          totalCollateral - BigInt(1000),
+          feeRatePerVb,
+          cetLocktime,
+          refundLocktime,
+          [ddkInput],
+        );
+
+        const acceptDlcOfferResponse: AcceptDlcOfferResponse =
+          await ddk2.dlc.acceptDlcOffer(dlcOffer, [ddk2Input]);
+
+        const dlcAccept = acceptDlcOfferResponse.dlcAccept;
+        const dlcTransactions = acceptDlcOfferResponse.dlcTransactions;
+
+        const signDlcAcceptResponse: SignDlcAcceptResponse =
+          await ddk.dlc.signDlcAccept(dlcOffer, dlcAccept);
+
+        const dlcSign = signDlcAcceptResponse.dlcSign;
+
+        const fundTx = await ddk2.dlc.finalizeDlcSign(
+          dlcOffer,
+          dlcAccept,
+          dlcSign,
+          dlcTransactions,
+        );
+
+        const fundTxId = await ddk2.chain.sendRawTransaction(
+          fundTx.serialize().toString('hex'),
+        );
+
+        // Get the funding output details for creating DLC input
+        const fundTxDetails = await ddk.getMethod('getTransactionByHash')(
+          fundTxId,
+        );
+        const fundingOutputValue = fundTxDetails._raw.vout[0].value;
+        const fundingOutputAmount = BigInt(
+          Math.round(fundingOutputValue * 1e8),
+        );
+
+        const aliceFundPubkey = dlcOffer.fundingPubkey.toString('hex');
+        const bobFundPubkey = dlcAccept.fundingPubkey.toString('hex');
+
+        // Create DLC input info
+        const dlcInputInfo = ddk.dlc.createDlcInputInfo(
+          fundTxId,
+          dlcTransactions.fundTxVout,
+          fundingOutputAmount,
+          aliceFundPubkey,
+          bobFundPubkey,
+          dlcTransactions.contractId.toString('hex'),
+          220,
+          BigInt(1),
+        );
+
+        // Create DLC funding input from the first DLC
+        const dlcInput = await ddk.dlc.createDlcFundingInput(
+          dlcInputInfo,
+          fundTx.serialize().toString('hex'),
+        );
+
+        const dlcFundingInput = await ddk.dlc.inputToFundingInput(dlcInput);
+
+        // Test the fundingInputToInput method directly
+        const convertedInput = await ddk.dlc.fundingInputToInput(
+          dlcFundingInput,
+          true, // findDerivationPath = true
+        );
+
+        // Verify that the derivation path was found
+        expect(convertedInput).to.not.be.undefined;
+        expect(convertedInput.derivationPath).to.not.be.undefined;
+        expect(convertedInput.derivationPath).to.be.a('string');
+        expect(convertedInput.derivationPath.length).to.be.greaterThan(0);
+
+        // Verify that DLC input info was preserved
+        expect(convertedInput.dlcInput).to.not.be.undefined;
+        expect(convertedInput.dlcInput.localFundPubkey).to.equal(
+          aliceFundPubkey,
+        );
+        expect(convertedInput.dlcInput.remoteFundPubkey).to.equal(
+          bobFundPubkey,
+        );
+      });
+
+      it('should handle regular inputs without DLC input correctly', async () => {
+        // Test that regular inputs (without DLC input) still work as before
+        const regularInput = await getInput(ddk);
+
+        // Convert regular input to funding input and back to test the method
+        const fundingInput = await ddk.dlc.inputToFundingInput(regularInput);
+
+        const convertedInput = await ddk.dlc.fundingInputToInput(
+          fundingInput,
+          true, // findDerivationPath = true
+        );
+
+        // Verify that the derivation path was found for regular input
+        expect(convertedInput).to.not.be.undefined;
+        expect(convertedInput.derivationPath).to.not.be.undefined;
+        expect(convertedInput.derivationPath).to.be.a('string');
+        expect(convertedInput.derivationPath.length).to.be.greaterThan(0);
+
+        // Verify that no DLC input info is present for regular inputs
+        expect(convertedInput.dlcInput).to.be.undefined;
+      });
+    });
   });
 
   describe('enum event', () => {
