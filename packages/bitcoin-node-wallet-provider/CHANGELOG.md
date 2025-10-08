@@ -1,5 +1,18 @@
 # @atomicfinance/bitcoin-node-wallet-provider
 
+## 4.2.3
+
+### Patch Changes
+
+- f6e1e50: Bump @node-dlc to 1.1.3
+- Updated dependencies [f6e1e50]
+  - @atomicfinance/types@4.2.3
+  - @atomicfinance/bitcoin-utils@4.2.3
+  - @atomicfinance/crypto@4.2.3
+  - @atomicfinance/jsonrpc-provider@4.2.3
+  - @atomicfinance/provider@4.2.3
+  - @atomicfinance/utils@4.2.3
+
 ## 4.2.2
 
 ### Patch Changes
