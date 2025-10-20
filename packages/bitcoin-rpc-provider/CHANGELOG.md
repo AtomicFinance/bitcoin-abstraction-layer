@@ -1,5 +1,17 @@
 # @atomicfinance/bitcoin-rpc-provider
 
+## 4.2.4
+
+### Patch Changes
+
+- 735d7b9: Bump @node-dlc to 1.1.4
+- Updated dependencies [735d7b9]
+  - @atomicfinance/types@4.2.4
+  - @atomicfinance/bitcoin-utils@4.2.4
+  - @atomicfinance/errors@4.2.4
+  - @atomicfinance/jsonrpc-provider@4.2.4
+  - @atomicfinance/utils@4.2.4
+
 ## 4.2.3
 
 ### Patch Changes

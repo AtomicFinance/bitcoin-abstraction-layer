@@ -1,5 +1,11 @@
 # @atomicfinance/crypto
 
+## 4.2.4
+
+### Patch Changes
+
+- 735d7b9: Bump @node-dlc to 1.1.4
+
 ## 4.2.3
 
 ### Patch Changes
