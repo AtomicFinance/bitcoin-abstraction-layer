@@ -4417,7 +4417,7 @@ Payout Group not found even with brute force search',
         dlcInputInfo.remoteFundPubkey,
         'hex',
       );
-      dlcInput.contractId = Buffer.alloc(32); // Placeholder contract ID
+      dlcInput.contractId = Buffer.from(dlcInputInfo.contractId, 'hex');
 
       fundingInput.dlcInput = dlcInput;
     }
