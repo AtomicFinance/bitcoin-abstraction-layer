@@ -1,5 +1,11 @@
 # @atomicfinance/types
 
+## 4.2.5
+
+### Patch Changes
+
+- 295d995: Ensure contractId is not null for dlcFundingInput
+
 ## 4.2.4
 
 ### Patch Changes

@@ -1,5 +1,16 @@
 # @atomicfinance/bitcoin-esplora-batch-api-provider
 
+## 4.2.5
+
+### Patch Changes
+
+- 295d995: Ensure contractId is not null for dlcFundingInput
+- Updated dependencies [295d995]
+  - @atomicfinance/bitcoin-esplora-api-provider@4.2.5
+  - @atomicfinance/node-provider@4.2.5
+  - @atomicfinance/types@4.2.5
+  - @atomicfinance/utils@4.2.5
+
 ## 4.2.4
 
 ### Patch Changes

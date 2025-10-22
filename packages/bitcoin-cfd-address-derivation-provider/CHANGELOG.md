@@ -1,5 +1,14 @@
 # @atomicfinance/bitcoin-cfd-address-derivation-provider
 
+## 4.2.5
+
+### Patch Changes
+
+- 295d995: Ensure contractId is not null for dlcFundingInput
+- Updated dependencies [295d995]
+  - @atomicfinance/provider@4.2.5
+  - @atomicfinance/types@4.2.5
+
 ## 4.2.4
 
 ### Patch Changes

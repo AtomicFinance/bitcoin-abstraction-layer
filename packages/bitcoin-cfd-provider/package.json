@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/bitcoin-cfd-provider",
   "umdName": "BitcoinCfdProvider",
-  "version": "4.2.4",
+  "version": "4.2.5",
   "description": "Bitcoin Abstraction Layer Cfd Provider",
   "author": "Atomic Finance <info@atomic.finance>",
   "homepage": "",
@@ -15,9 +15,9 @@
     "lint:fix": "../../node_modules/.bin/eslint --fix  ."
   },
   "dependencies": {
-    "@atomicfinance/provider": "^4.2.4",
-    "@atomicfinance/types": "^4.2.4",
-    "@atomicfinance/utils": "^4.2.4",
+    "@atomicfinance/provider": "^4.2.5",
+    "@atomicfinance/types": "^4.2.5",
+    "@atomicfinance/utils": "^4.2.5",
     "lodash": "^4.17.20"
   },
   "devDependencies": {

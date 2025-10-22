@@ -1,7 +1,7 @@
 {
   "name": "@atomicfinance/bitcoin-wallet-provider",
   "umdName": "BitcoinWalletProvider",
-  "version": "4.2.4",
+  "version": "4.2.5",
   "description": "Bitcoin Abstraction Layer Wallet Provider",
   "author": "Atomic Finance <info@atomic.finance>",
   "homepage": "",
@@ -15,11 +15,11 @@
     "lint:fix": "../../node_modules/.bin/eslint --fix  ."
   },
   "dependencies": {
-    "@atomicfinance/bitcoin-utils": "^4.2.4",
-    "@atomicfinance/errors": "^4.2.4",
-    "@atomicfinance/provider": "^4.2.4",
-    "@atomicfinance/types": "^4.2.4",
-    "@atomicfinance/utils": "^4.2.4",
+    "@atomicfinance/bitcoin-utils": "^4.2.5",
+    "@atomicfinance/errors": "^4.2.5",
+    "@atomicfinance/provider": "^4.2.5",
+    "@atomicfinance/types": "^4.2.5",
+    "@atomicfinance/utils": "^4.2.5",
     "@node-dlc/core": "1.1.4",
     "bip32": "^2.0.6",
     "bitcoin-network": "0.1.0",
