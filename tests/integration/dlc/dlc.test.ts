@@ -608,6 +608,10 @@ describe('dlc provider', () => {
         InputSupplementationMode.None, // No supplementation - exact amounts
       );
 
+      expect(
+        dlcOffer2.fundingInputs[0].dlcInput.contractId.toString('hex'),
+      ).to.equal(dlcTransactions.contractId.toString('hex'));
+
       // Bob accepts with his input
       const { dlcAccept: dlcAccept2, dlcTransactions: dlcTransactions2 } =
         await ddk2.dlc.acceptDlcOffer(dlcOffer2, [bobInput2]);
