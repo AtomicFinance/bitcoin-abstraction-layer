@@ -3,12 +3,14 @@ import {
   AdaptorSignature,
   Address,
   Amount,
+  bitcoinNetworkToDdkString,
   CalculateEcSignatureRequest,
   CreateRawTransactionRequest,
   CreateSignatureHashRequest,
   DdkDlcInputInfo,
   DdkDlcTransactions,
   DdkInterface,
+  DdkNetworkString,
   DdkOracleInfo,
   DdkTransaction,
   DlcInputInfo,
@@ -104,11 +106,26 @@ const ECPair = ECPairFactory(ecc);
 
 export default class BitcoinDdkProvider extends Provider {
   private _network: BitcoinNetwork;
+  private _networkString: DdkNetworkString;
   private _ddk: DdkInterface;
 
-  constructor(network: BitcoinNetwork, ddkLib: DdkInterface) {
+  constructor(
+    network: BitcoinNetwork | DdkNetworkString,
+    ddkLib: DdkInterface,
+  ) {
     super();
-    this._network = network;
+
+    // Handle both BitcoinNetwork objects and strings
+    if (typeof network === 'string') {
+      this._networkString = bitcoinNetworkToDdkString(network);
+      // For string inputs, we need to create a compatible BitcoinNetwork object
+      // This is a fallback for compatibility
+      this._network = { name: network } as BitcoinNetwork;
+    } else {
+      this._network = network;
+      this._networkString = bitcoinNetworkToDdkString(network);
+    }
+
     this._ddk = ddkLib;
   }
 
@@ -305,16 +322,8 @@ export default class BitcoinDdkProvider extends Provider {
   }
 
   async GetCfdNetwork(): Promise<string> {
-    const network = await this.getConnectedNetwork();
-
-    switch (network.name) {
-      case 'bitcoin_testnet':
-        return 'testnet';
-      case 'bitcoin_regtest':
-        return 'regtest';
-      default:
-        return 'bitcoin';
-    }
+    // Use the pre-computed network string instead of converting each time
+    return this._networkString;
   }
 
   /**

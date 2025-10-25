@@ -18,6 +18,7 @@
     "@node-dlc/bitcoin": "1.1.4",
     "@node-dlc/messaging": "1.1.4",
     "@node-dlc/noise": "1.1.2",
+    "bitcoin-network": "0.1.0",
     "lodash": "^4.17.20"
   },
   "devDependencies": {

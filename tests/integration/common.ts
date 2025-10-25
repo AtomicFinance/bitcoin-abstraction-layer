@@ -148,6 +148,7 @@ bitcoinWithDdk.addProvider(
     addressType: bitcoin.AddressType.BECH32,
   }) as any,
 );
+// Test BitcoinNetwork object input
 bitcoinWithDdk.addProvider(new BitcoinDdkProvider(network, ddkJs));
 
 const bitcoinWithDdk2 = new Client();
@@ -160,7 +161,24 @@ bitcoinWithDdk2.addProvider(
     addressType: bitcoin.AddressType.BECH32,
   }) as any,
 );
-bitcoinWithDdk2.addProvider(new BitcoinDdkProvider(network, ddkJs));
+// Test DdkNetworkString input (should work the same as BitcoinNetwork object)
+bitcoinWithDdk2.addProvider(new BitcoinDdkProvider('regtest', ddkJs));
+
+// Additional DDK client for testing mainnet network handling
+const bitcoinWithDdkMainnet = new Client();
+bitcoinWithDdkMainnet.addProvider(
+  mockedBitcoinRpcProvider() as unknown as Provider,
+);
+bitcoinWithDdkMainnet.addProvider(
+  new BitcoinJsWalletProvider({
+    network,
+    mnemonic: generateMnemonic(256),
+    baseDerivationPath: `m/84'/${config.bitcoin.network.coinType}'/0'`,
+    addressType: bitcoin.AddressType.BECH32,
+  }) as any,
+);
+// Test mainnet string input
+bitcoinWithDdkMainnet.addProvider(new BitcoinDdkProvider('bitcoin', ddkJs));
 
 const chains = {
   bitcoinWithNode: {
@@ -201,15 +219,21 @@ const chains = {
     network: network,
   },
   bitcoinWithDdk: {
-    id: 'Bitcoin DDK',
+    id: 'Bitcoin DDK (BitcoinNetwork)',
     name: 'bitcoin',
     client: bitcoinWithDdk,
     network: network,
   },
   bitcoinWithDdk2: {
-    id: 'Bitcoin DDK',
+    id: 'Bitcoin DDK (DdkNetworkString)',
     name: 'bitcoin',
     client: bitcoinWithDdk2,
+    network: network,
+  },
+  bitcoinWithDdkMainnet: {
+    id: 'Bitcoin DDK (Mainnet String)',
+    name: 'bitcoin',
+    client: bitcoinWithDdkMainnet,
     network: network,
   },
 };

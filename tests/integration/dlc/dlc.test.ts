@@ -1,5 +1,6 @@
 import 'mocha';
 
+import * as ddkJs from '@bennyblader/ddk-ts';
 import { Sequence, Tx, Value } from '@node-dlc/bitcoin';
 import { StreamReader } from '@node-dlc/bufio';
 import {
@@ -37,6 +38,7 @@ import chaiAsPromised from 'chai-as-promised';
 import * as crypto from 'crypto';
 
 import { computeContractId } from '../../../packages/bitcoin-ddk-provider/lib';
+import BitcoinDdkProvider from '../../../packages/bitcoin-ddk-provider/lib';
 import {
   AcceptDlcOfferResponse,
   SignDlcAcceptResponse,
@@ -152,6 +154,30 @@ describe('dlc provider', () => {
   });
 
   describe('funding with DDK', () => {
+    it('should handle different network input types', async () => {
+      // Test that both BitcoinNetwork object and string inputs work
+      const ddkWithObject = new BitcoinDdkProvider(network, ddkJs);
+      const ddkWithString = new BitcoinDdkProvider('regtest', ddkJs);
+
+      // Both should return the same network string
+      const networkFromObject = await ddkWithObject.GetCfdNetwork();
+      const networkFromString = await ddkWithString.GetCfdNetwork();
+
+      expect(networkFromObject).to.equal('regtest');
+      expect(networkFromString).to.equal('regtest');
+      expect(networkFromObject).to.equal(networkFromString);
+
+      // Test mainnet string input
+      const ddkWithMainnet = new BitcoinDdkProvider('bitcoin', ddkJs);
+      const mainnetNetwork = await ddkWithMainnet.GetCfdNetwork();
+      expect(mainnetNetwork).to.equal('bitcoin');
+
+      // Test testnet string input
+      const ddkWithTestnet = new BitcoinDdkProvider('testnet', ddkJs);
+      const testnetNetwork = await ddkWithTestnet.GetCfdNetwork();
+      expect(testnetNetwork).to.equal('testnet');
+    });
+
     it('should fund and execute enum DLC', async () => {
       const oracle = new Oracle('olivia');
 
