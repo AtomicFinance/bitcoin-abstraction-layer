@@ -1,5 +1,16 @@
 # @atomicfinance/bitcoin-ddk-provider
 
+## 4.2.6
+
+### Patch Changes
+
+- 4f7eaa7: Bump @node-dlc to 1.1.15
+- Updated dependencies [4f7eaa7]
+  - @atomicfinance/types@4.2.6
+  - @atomicfinance/bitcoin-utils@4.2.6
+  - @atomicfinance/provider@4.2.6
+  - @atomicfinance/utils@4.2.6
+
 ## 4.2.5
 
 ### Patch Changes

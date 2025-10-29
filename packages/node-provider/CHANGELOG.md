@@ -1,5 +1,14 @@
 # @atomicfinance/node-provider
 
+## 4.2.6
+
+### Patch Changes
+
+- 4f7eaa7: Bump @node-dlc to 1.1.15
+- Updated dependencies [4f7eaa7]
+  - @atomicfinance/errors@4.2.6
+  - @atomicfinance/provider@4.2.6
+
 ## 4.2.5
 
 ### Patch Changes

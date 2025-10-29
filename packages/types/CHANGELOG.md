@@ -1,5 +1,11 @@
 # @atomicfinance/types
 
+## 4.2.6
+
+### Patch Changes
+
+- 4f7eaa7: Bump @node-dlc to 1.1.15
+
 ## 4.2.5
 
 ### Patch Changes
