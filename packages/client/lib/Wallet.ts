@@ -8,6 +8,7 @@ import {
   bitcoin as bT,
   CreateMultisigResponse,
   Input,
+  InputSupplementationMode,
   Output,
   Transaction as Tx,
   WalletProvider,
@@ -227,6 +228,7 @@ export default class Wallet implements WalletProvider {
     collaterals: number[],
     feePerByte?: number,
     fixedInputs: bT.Input[] = [],
+    inputSupplementationMode: InputSupplementationMode = InputSupplementationMode.Required,
     numAddressPerCall = 100,
   ): Promise<{
     inputs: bT.UTXO[];
@@ -236,6 +238,7 @@ export default class Wallet implements WalletProvider {
       collaterals,
       feePerByte,
       fixedInputs,
+      inputSupplementationMode,
       numAddressPerCall,
     );
   }

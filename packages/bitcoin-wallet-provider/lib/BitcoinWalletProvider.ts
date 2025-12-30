@@ -11,6 +11,7 @@ import {
   BigNumber,
   bitcoin as bT,
   ChainProvider,
+  InputSupplementationMode,
   SendOptions,
   Transaction,
   WalletProvider,
@@ -778,6 +779,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
       collaterals: number[],
       feePerByte?: number,
       fixedInputs: bT.Input[] = [],
+      inputSupplementationMode: InputSupplementationMode = InputSupplementationMode.Required,
       numAddressPerCall = 100,
     ) {
       let addressIndex = 0;
