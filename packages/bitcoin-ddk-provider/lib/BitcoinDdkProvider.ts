@@ -341,12 +341,15 @@ export default class BitcoinDdkProvider extends Provider {
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
 
-      if (supplementation === InputSupplementationMode.Required) {
+      if (
+        supplementation === InputSupplementationMode.Required ||
+        supplementation === InputSupplementationMode.None
+      ) {
         throw Error(
           `Not enough balance GetInputsForAmountWithMode. Error: ${errorMessage}`,
         );
       } else {
-        // Optional + None mode: fallback to provided inputs
+        // Optional mode: fallback to provided inputs
         return fixedInputs;
       }
     }
