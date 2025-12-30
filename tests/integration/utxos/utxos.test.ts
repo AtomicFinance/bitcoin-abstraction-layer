@@ -5,11 +5,12 @@ import { FundingInput } from '@node-dlc/messaging';
 import { expect } from 'chai';
 
 import Client from '../../../packages/client';
-import { Input } from '../../../packages/types';
+import { Input, InputSupplementationMode } from '../../../packages/types';
 import { chains, fundAddress, getInput } from '../common';
 
 const chain = chains.bitcoinWithJs;
 const alice = chain.client;
+const bob = chains.bitcoinWithDdk3.client;
 
 describe('utxos', () => {
   describe('getUtxosForAmount', () => {
@@ -103,3 +104,76 @@ interface Output {
 }
 
 const BurnAddress = 'bcrt1qxcjufgh2jarkp2qkx68azh08w9v5gah8u6es8s';
+
+describe('GetInputsForAmountWithMode', () => {
+  describe('InputSupplementationMode', () => {
+    describe('InputSupplementationMode.None', () => {
+      it('should return the minimal necessary UTXOs of the fixed set provided', async () => {
+        const fixedInput1 = await getInput(bob);
+        const fixedInput2 = await getInput(bob);
+        const fixedInput3 = await getInput(bob);
+        // Bob now has 3x2 BTC
+
+        const targetAmount = BigInt(3 * 1e8); // Only need 3 BTC, i.e. first 2 inputs
+        const feeRate = BigInt(10);
+
+        const result: Input[] = await bob.getMethod(
+          'GetInputsForAmountWithMode',
+        )(
+          [targetAmount],
+          feeRate,
+          [fixedInput1, fixedInput2, fixedInput3], // 6 BTC supplied
+          InputSupplementationMode.None,
+        );
+
+        // None mode: YES coin selection (selects subset), NO supplementation (doesn't scan wallet)
+        expect(result.length).to.equal(2); // Should select only 2 of the 3 fixed inputs
+
+        // Verify selected inputs are from the fixed inputs
+        result.forEach((selectedInput) => {
+          const isFromFixed = [fixedInput1, fixedInput2, fixedInput3].some(
+            (fixed) =>
+              fixed.txid === selectedInput.txid &&
+              fixed.vout === selectedInput.vout,
+          );
+          expect(isFromFixed).to.be.true;
+        });
+      });
+
+      it('should throw error if fixed inputs are unsufficient', async () => {
+        const fixedInput = await getInput(bob);
+        // Bob now has 4x2 BTC
+
+        const targetAmount = BigInt(3 * 1e8); // Need 3 BTC
+        const feeRate = BigInt(10);
+
+        try {
+          await bob.getMethod('GetInputsForAmountWithMode')(
+            [targetAmount],
+            feeRate,
+            [fixedInput], // only 2 BTC supplied
+            InputSupplementationMode.None,
+          );
+          expect.fail('Should have thrown error');
+        } catch (error) {
+          expect(error.message).to.include('Not enough balance');
+        }
+      });
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('should handle empty amounts array', async () => {
+      await getInput(bob);
+
+      const result: Input[] = await bob.getMethod('GetInputsForAmountWithMode')(
+        [],
+        BigInt(10),
+        [],
+        InputSupplementationMode.None,
+      );
+
+      expect(result.length).to.equal(0);
+    });
+  });
+});
