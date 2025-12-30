@@ -695,7 +695,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
 
         if (!feePerByte) feePerByte = await feePerBytePromise;
         const minRelayFee = await this.getMethod('getMinRelayFee')();
-        if (feePerByte < minRelayFee) {
+        if (Number(feePerByte) < minRelayFee) {
           throw new Error(
             `Fee supplied (${feePerByte} sat/b) too low. Minimum relay fee is ${minRelayFee} sat/b`,
           );
@@ -811,7 +811,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
       if (inputSupplementationMode === InputSupplementationMode.None) {
         if (!feePerByte) feePerByte = await feePerBytePromise;
         const minRelayFee = await this.getMethod('getMinRelayFee')();
-        if (feePerByte < minRelayFee) {
+        if (Number(feePerByte) < minRelayFee) {
           throw new Error(
             `Fee supplied (${feePerByte} sat/b) too low. Minimum relay fee is ${minRelayFee} sat/b`,
           );
@@ -903,7 +903,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
 
         if (!feePerByte) feePerByte = await feePerBytePromise;
         const minRelayFee = await this.getMethod('getMinRelayFee')();
-        if (feePerByte < minRelayFee) {
+        if (Number(feePerByte) < minRelayFee) {
           throw new Error(
             `Fee supplied (${feePerByte} sat/b) too low. Minimum relay fee is ${minRelayFee} sat/b`,
           );
