@@ -782,6 +782,61 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
       inputSupplementationMode: InputSupplementationMode = InputSupplementationMode.Required,
       numAddressPerCall = 100,
     ) {
+      const feePerBytePromise = this.getMethod('getFeePerByte')();
+
+      // Process fixed inputs once, outside the loop
+      const fixedUtxos: bT.UTXO[] = [];
+      if (fixedInputs.length > 0) {
+        for (const input of fixedInputs) {
+          const txHex = await this.getMethod('getRawTransactionByHash')(
+            input.txid,
+          );
+          const tx = decodeRawTransaction(txHex, this._network);
+          const value = new BigNumber(tx.vout[input.vout].value)
+            .times(1e8)
+            .toNumber();
+          const address = tx.vout[input.vout].scriptPubKey.addresses[0];
+          const walletAddress = await this.getWalletAddress(address);
+          const utxo = {
+            ...input,
+            value,
+            address,
+            derivationPath: walletAddress.derivationPath,
+          };
+          fixedUtxos.push(utxo);
+        }
+      }
+
+      // For 'None' mode, use only fixed inputs without scanning
+      if (inputSupplementationMode === InputSupplementationMode.None) {
+        if (!feePerByte) feePerByte = await feePerBytePromise;
+        const minRelayFee = await this.getMethod('getMinRelayFee')();
+        if (feePerByte < minRelayFee) {
+          throw new Error(
+            `Fee supplied (${feePerByte} sat/b) too low. Minimum relay fee is ${minRelayFee} sat/b`,
+          );
+        }
+
+        // Coin selection is applied here
+        const { fee, inputs } = dualFundingCoinSelect(
+          fixedUtxos,
+          collaterals.map((c) => BigInt(c)),
+          BigInt(feePerByte),
+        );
+
+        if (inputs.length > 0) {
+          return {
+            inputs,
+            fee,
+          };
+        }
+
+        throw new InsufficientBalanceError(
+          'Not enough balance for dual funding (InputSupplementationMode.None)',
+        );
+      }
+
+      // For 'Required' or 'Optional' modes, scan for additional UTXOs
       let addressIndex = 0;
       let changeAddresses: Address[] = [];
       let externalAddresses: Address[] = [];
@@ -790,8 +845,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
         nonChange: 0,
       };
 
-      const feePerBytePromise = this.getMethod('getFeePerByte')();
-      let utxos: bT.UTXO[] = [];
+      let utxos: bT.UTXO[] = [...fixedUtxos]; // Initalize with fixedUtxos
 
       while (
         addressCountMap.change < ADDRESS_GAP ||
@@ -821,29 +875,6 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
           addrList = addrList.concat(externalAddresses);
         }
 
-        const fixedUtxos: bT.UTXO[] = [];
-        if (fixedInputs.length > 0) {
-          for (const input of fixedInputs) {
-            const txHex = await this.getMethod('getRawTransactionByHash')(
-              input.txid,
-            );
-            const tx = decodeRawTransaction(txHex, this._network);
-            const value = new BigNumber(tx.vout[input.vout].value)
-              .times(1e8)
-              .toNumber();
-            const address = tx.vout[input.vout].scriptPubKey.addresses[0];
-            const walletAddress = await this.getWalletAddress(address);
-            const utxo = {
-              ...input,
-              value,
-              address,
-              derivationPath: walletAddress.derivationPath,
-            };
-            fixedUtxos.push(utxo);
-          }
-        }
-
-        if (fixedUtxos.length === 0) {
           const _utxos: bT.UTXO[] = await this.getMethod(
             'getUnspentTransactions',
           )(addrList);
@@ -856,9 +887,6 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
               };
             }),
           );
-        } else {
-          utxos = fixedUtxos;
-        }
 
         const transactionCounts: bT.AddressTxCounts = await this.getMethod(
           'getAddressTransactionCounts',
