@@ -776,8 +776,8 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
     }
 
     async getInputsForDualFunding(
-      collaterals: number[],
-      feePerByte?: number,
+      collaterals: bigint[],
+      feePerByte?: bigint,
       fixedInputs: bT.Input[] = [],
       inputSupplementationMode: InputSupplementationMode = InputSupplementationMode.Required,
       numAddressPerCall = 100,

@@ -225,8 +225,8 @@ export default class Wallet implements WalletProvider {
   }
 
   async getInputsForDualFunding(
-    collaterals: number[],
-    feePerByte?: number,
+    collaterals: bigint[],
+    feePerByte?: bigint,
     fixedInputs: bT.Input[] = [],
     inputSupplementationMode: InputSupplementationMode = InputSupplementationMode.Required,
     numAddressPerCall = 100,
