@@ -328,18 +328,13 @@ export default class BitcoinDdkProvider extends Provider {
   ): Promise<Input[]> {
     if (amounts.length === 0) return [];
 
-    // For "none" mode, use exactly the provided inputs
-    if (supplementation === InputSupplementationMode.None) {
-      return fixedInputs;
-    }
-
-    // For "required" and "optional" modes, attempt supplementation
+    // Convert to UTXOs
     const fixedUtxos = fixedInputs.map((input) => input.toUtxo());
 
     try {
       const inputsForAmount: InputsForDualAmountResponse = await this.getMethod(
         'getInputsForDualFunding',
-      )(amounts, feeRatePerVb, fixedUtxos);
+      )(amounts, feeRatePerVb, fixedUtxos, supplementation);
 
       // Convert UTXO objects to Input class instances
       return inputsForAmount.inputs.map((utxo) => Input.fromUTXO(utxo));
@@ -351,7 +346,7 @@ export default class BitcoinDdkProvider extends Provider {
           `Not enough balance GetInputsForAmountWithMode. Error: ${errorMessage}`,
         );
       } else {
-        // Optional mode: fallback to provided inputs
+        // Optional + None mode: fallback to provided inputs
         return fixedInputs;
       }
     }
