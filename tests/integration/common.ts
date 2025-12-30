@@ -162,6 +162,18 @@ bitcoinWithDdk2.addProvider(
 );
 bitcoinWithDdk2.addProvider(new BitcoinDdkProvider(network, ddkJs));
 
+const bitcoinWithDdk3 = new Client();
+bitcoinWithDdk3.addProvider(mockedBitcoinRpcProvider() as unknown as Provider);
+bitcoinWithDdk3.addProvider(
+  new BitcoinJsWalletProvider({
+    network,
+    mnemonic: generateMnemonic(256),
+    baseDerivationPath: `m/84'/${config.bitcoin.network.coinType}'/0'`,
+    addressType: bitcoin.AddressType.BECH32,
+  }) as any,
+);
+bitcoinWithDdk3.addProvider(new BitcoinDdkProvider(network, ddkJs));
+
 const chains = {
   bitcoinWithNode: {
     id: 'Bitcoin Node',
@@ -210,6 +222,12 @@ const chains = {
     id: 'Bitcoin DDK',
     name: 'bitcoin',
     client: bitcoinWithDdk2,
+    network: network,
+  },
+  bitcoinWithDdk3: {
+    id: 'Bitcoin DDK',
+    name: 'bitcoin',
+    client: bitcoinWithDdk3,
     network: network,
   },
 };
