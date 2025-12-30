@@ -875,18 +875,18 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
           addrList = addrList.concat(externalAddresses);
         }
 
-          const _utxos: bT.UTXO[] = await this.getMethod(
-            'getUnspentTransactions',
-          )(addrList);
-          utxos.push(
-            ..._utxos.map((utxo) => {
-              const addr = addrList.find((a) => a.address === utxo.address);
-              return {
-                ...utxo,
-                derivationPath: addr.derivationPath,
-              };
-            }),
-          );
+        const _utxos: bT.UTXO[] = await this.getMethod(
+          'getUnspentTransactions',
+        )(addrList);
+        utxos.push(
+          ..._utxos.map((utxo) => {
+            const addr = addrList.find((a) => a.address === utxo.address);
+            return {
+              ...utxo,
+              derivationPath: addr.derivationPath,
+            };
+          }),
+        );
 
         const transactionCounts: bT.AddressTxCounts = await this.getMethod(
           'getAddressTransactionCounts',
