@@ -820,8 +820,8 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
         // Coin selection is applied here
         const { fee, inputs } = dualFundingCoinSelect(
           fixedUtxos,
-          collaterals.map((c) => BigInt(c)),
-          BigInt(feePerByte),
+          collaterals,
+          feePerByte,
         );
 
         if (inputs.length > 0) {
