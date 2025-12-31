@@ -156,7 +156,7 @@ describe('GetInputsForAmountWithMode', () => {
           );
           expect.fail('Should have thrown error');
         } catch (error) {
-          expect(error.message).to.include('Not enough balance');
+          expect(error.message).to.include('Invalid InputSupplementationMode');
         }
       });
     });
