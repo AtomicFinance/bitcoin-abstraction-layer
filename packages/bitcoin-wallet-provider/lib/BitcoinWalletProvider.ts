@@ -399,7 +399,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
       const foundAddress = await this.findAddress([address]);
       if (foundAddress) return foundAddress;
 
-      throw new Error('Wallet does not contain address');
+      throw new Error(`Wallet does not contain address: ${address}`);
     }
 
     getAddressFromPublicKey(publicKey: Buffer) {
