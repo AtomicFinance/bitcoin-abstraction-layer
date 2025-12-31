@@ -160,6 +160,34 @@ describe('GetInputsForAmountWithMode', () => {
         }
       });
     });
+    describe('InputSupplementationMode.Required', () => {
+      it('should deduplicate UTXOs', async () => {
+        const fixedInput = await getInput(bob);
+        // Bob now has 5x2 BTC
+
+        const targetAmount = BigInt(9.5 * 1e8); // Need all 5 UTXOs
+        const feeRate = BigInt(10);
+
+        const result: Input[] = await bob.getMethod(
+          'GetInputsForAmountWithMode',
+        )(
+          [targetAmount],
+          feeRate,
+          [fixedInput], // 2 BTC supplied, 8 will be fetched
+          InputSupplementationMode.Required,
+        );
+
+        // None mode: YES coin selection (selects subset), YES supplementation (scan wallet)
+        expect(result.length).to.equal(5); // Should select all 5 inputs, deduplicating the fixed input
+
+        const fixedInputs = result.filter(
+          (input) =>
+            input.txid === fixedInput.txid && input.vout === fixedInput.vout,
+        );
+
+        expect(fixedInputs.length).to.equal(1);
+      });
+    });
   });
 
   describe('Edge Cases', () => {
