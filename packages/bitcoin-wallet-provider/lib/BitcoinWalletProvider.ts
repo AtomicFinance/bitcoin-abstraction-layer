@@ -827,6 +827,10 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
 
       // For 'None' mode, use only fixed inputs without scanning
       if (inputSupplementationMode === InputSupplementationMode.None) {
+        if (!fixedInputs.length) {
+          throw new Error('No fixedInputs provided');
+        }
+
         if (!feePerByte) feePerByte = await feePerBytePromise;
         const minRelayFee = await this.getMethod('getMinRelayFee')();
         if (Number(feePerByte) < minRelayFee) {
