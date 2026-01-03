@@ -801,9 +801,12 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
             const walletAddress = await this.getWalletAddress(address);
             derivationPath = walletAddress.derivationPath ?? undefined;
           } catch (error) {
-            console.warn(
-              `getAddress failed with error: ${(error ?? {})?.message ?? 'unknown'}`,
-            );
+            const errorMessage = `getAddress failed with error: ${error?.message ?? 'unknown'}`;
+            if (inputSupplementationMode === InputSupplementationMode.None) {
+              console.warn(errorMessage);
+            } else {
+              throw new Error(errorMessage);
+            }
           }
           const utxo = {
             ...input,
