@@ -339,7 +339,13 @@ export default class BitcoinDdkProvider extends Provider {
       )(amounts, feeRatePerVb, fixedUtxos, supplementation, coinSelectMode);
 
       // Convert UTXO objects to Input class instances
-      return inputsForAmount.inputs.map((utxo) => Input.fromUTXO(utxo));
+      return inputsForAmount.inputs.map((utxo) => {
+        // Try to find match first -- as it may include DLC information
+        const matchedInput = fixedInputs.find(
+          (input) => input.txid === utxo.txid && input.vout === utxo.vout,
+        );
+        return matchedInput ? matchedInput : Input.fromUTXO(utxo);
+      });
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
 
