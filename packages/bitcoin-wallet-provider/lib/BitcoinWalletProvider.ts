@@ -16,12 +16,14 @@ import {
   Transaction,
   WalletProvider,
 } from '@atomicfinance/types';
+import { CoinSelectMode } from '@atomicfinance/types/dist/models/Input';
 import { addressToString } from '@atomicfinance/utils';
 import { dualFundingCoinSelect } from '@node-dlc/core';
 import { BIP32Interface } from 'bip32';
 import { BitcoinNetwork } from 'bitcoin-network';
 import * as bitcoin from 'bitcoinjs-lib';
 import memoize from 'memoizee';
+import { getCoinSelectFunction } from './coinselect';
 
 const ADDRESS_GAP = 30;
 const NONCHANGE_ADDRESS = 0;
@@ -780,6 +782,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
       feePerByte?: bigint,
       fixedInputs: bT.Input[] = [],
       inputSupplementationMode: InputSupplementationMode = InputSupplementationMode.Required,
+      coinSelectMode: CoinSelectMode = CoinSelectMode.Coinselect,
       numAddressPerCall = 100,
     ) {
       const feePerBytePromise = this.getMethod('getFeePerByte')();
@@ -828,9 +831,17 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
           );
         }
 
-        // Coin selection is applied here
-        const { fee, inputs } = dualFundingCoinSelect(
+        const coinSelectResult = getCoinSelectFunction(coinSelectMode)(
           fixedUtxos,
+          collaterals.map((value) => ({
+            value: Number(value),
+          })),
+          Number(feePerByte),
+        );
+
+        // Further coin selection is applied here
+        const { fee, inputs } = dualFundingCoinSelect(
+          coinSelectResult.inputs as bT.UTXO[],
           collaterals,
           feePerByte,
         );
@@ -920,10 +931,19 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
           );
         }
 
-        const { fee, inputs } = dualFundingCoinSelect(
+        const coinSelectResult = getCoinSelectFunction(coinSelectMode)(
           utxos,
-          collaterals.map((c) => BigInt(c)),
-          BigInt(feePerByte),
+          collaterals.map((value) => ({
+            value: Number(value),
+          })),
+          Number(feePerByte),
+        );
+
+        // Further coin selection is applied here
+        const { fee, inputs } = dualFundingCoinSelect(
+          coinSelectResult.inputs as bT.UTXO[],
+          collaterals,
+          feePerByte,
         );
 
         if (inputs.length > 0) {
