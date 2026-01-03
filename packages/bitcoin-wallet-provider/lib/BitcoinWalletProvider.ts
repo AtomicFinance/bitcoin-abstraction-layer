@@ -796,12 +796,20 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
             .times(1e8)
             .toNumber();
           const address = tx.vout[input.vout].scriptPubKey.addresses[0];
-          const walletAddress = await this.getWalletAddress(address);
+          let derivationPath: string | undefined;
+          try {
+            const walletAddress = await this.getWalletAddress(address);
+            derivationPath = walletAddress.derivationPath ?? undefined;
+          } catch (error) {
+            console.warn(
+              `getAddress failed with error: ${(error ?? {})?.message ?? 'unknown'}`,
+            );
+          }
           const utxo = {
             ...input,
             value,
             address,
-            derivationPath: walletAddress.derivationPath,
+            derivationPath,
           };
           fixedUtxos.push(utxo);
         }
