@@ -4,6 +4,7 @@ import {
   Address,
   Amount,
   CalculateEcSignatureRequest,
+  CoinSelectMode,
   CreateRawTransactionRequest,
   CreateSignatureHashRequest,
   DdkDlcInputInfo,
@@ -325,6 +326,7 @@ export default class BitcoinDdkProvider extends Provider {
     feeRatePerVb: bigint,
     fixedInputs: Input[] = [],
     supplementation: InputSupplementationMode = InputSupplementationMode.Required,
+    coinSelectMode: CoinSelectMode = CoinSelectMode.Coinselect,
   ): Promise<Input[]> {
     if (amounts.length === 0) return [];
 
@@ -334,7 +336,7 @@ export default class BitcoinDdkProvider extends Provider {
     try {
       const inputsForAmount: InputsForDualAmountResponse = await this.getMethod(
         'getInputsForDualFunding',
-      )(amounts, feeRatePerVb, fixedUtxos, supplementation);
+      )(amounts, feeRatePerVb, fixedUtxos, supplementation, coinSelectMode);
 
       // Convert UTXO objects to Input class instances
       return inputsForAmount.inputs.map((utxo) => Input.fromUTXO(utxo));
