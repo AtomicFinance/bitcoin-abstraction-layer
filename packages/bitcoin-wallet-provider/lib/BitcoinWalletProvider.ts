@@ -867,7 +867,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
         }
 
         throw new InsufficientBalanceError(
-          'Not enough balance for dual funding (InputSupplementationMode.None)',
+          'Total value of fixedUtxos is insufficient to cover outputs',
         );
       }
 
