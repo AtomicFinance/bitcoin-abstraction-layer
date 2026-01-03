@@ -848,6 +848,10 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
           Number(feePerByte),
         );
 
+        if (!(coinSelectResult.inputs?.length >= 1)) {
+          throw new Error(`CoinSelect failed (mode: ${coinSelectMode})`);
+        }
+
         // Further coin selection is applied here
         const { fee, inputs } = dualFundingCoinSelect(
           coinSelectResult.inputs as bT.UTXO[],
@@ -948,6 +952,10 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
           })),
           Number(feePerByte),
         );
+
+        if (!(coinSelectResult.inputs?.length >= 1)) {
+          throw new Error(`CoinSelect failed (mode: ${coinSelectMode})`);
+        }
 
         // Further coin selection is applied here
         const { fee, inputs } = dualFundingCoinSelect(
