@@ -788,7 +788,10 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
       const feePerBytePromise = this.getMethod('getFeePerByte')();
 
       if (!collaterals.length) {
-        throw new Error('No collaterals provided');
+        return {
+          inputs: [],
+          fee: 0n,
+        };
       }
 
       // Process fixed inputs once, outside the loop
@@ -827,10 +830,6 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
 
       // For 'None' mode, use only fixed inputs without scanning
       if (inputSupplementationMode === InputSupplementationMode.None) {
-        if (!fixedInputs.length) {
-          throw new Error('No fixedInputs provided');
-        }
-
         if (!feePerByte) feePerByte = await feePerBytePromise;
         const minRelayFee = await this.getMethod('getMinRelayFee')();
         if (Number(feePerByte) < minRelayFee) {
