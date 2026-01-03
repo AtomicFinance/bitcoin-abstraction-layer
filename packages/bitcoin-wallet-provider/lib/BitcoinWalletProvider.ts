@@ -23,7 +23,7 @@ import { BIP32Interface } from 'bip32';
 import { BitcoinNetwork } from 'bitcoin-network';
 import * as bitcoin from 'bitcoinjs-lib';
 import memoize from 'memoizee';
-import { getCoinSelectFunction } from './coinselect';
+import { runCoinSelect } from './coinselect';
 
 const ADDRESS_GAP = 30;
 const NONCHANGE_ADDRESS = 0;
@@ -831,7 +831,8 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
           );
         }
 
-        const coinSelectResult = getCoinSelectFunction(coinSelectMode)(
+        const coinSelectResult = runCoinSelect(
+          coinSelectMode,
           fixedUtxos,
           collaterals.map((value) => ({
             value: Number(value),
@@ -931,7 +932,8 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
           );
         }
 
-        const coinSelectResult = getCoinSelectFunction(coinSelectMode)(
+        const coinSelectResult = runCoinSelect(
+          coinSelectMode,
           utxos,
           collaterals.map((value) => ({
             value: Number(value),
