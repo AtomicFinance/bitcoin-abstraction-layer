@@ -23,6 +23,7 @@ import { BIP32Interface } from 'bip32';
 import { BitcoinNetwork } from 'bitcoin-network';
 import * as bitcoin from 'bitcoinjs-lib';
 import memoize from 'memoizee';
+
 import { runCoinSelect } from './coinselect';
 
 const ADDRESS_GAP = 30;
