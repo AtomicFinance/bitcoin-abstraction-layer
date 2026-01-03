@@ -289,7 +289,10 @@ describe('GetInputsForAmountWithMode', () => {
       const fixedInput2 = await getInput(charlie);
       const fixedInput3 = await getInput(charlie);
 
-      const targetAmount = BigInt(3.5 * 1e8); // Need 3.5 BTC
+      // Blackjack mode needs a target that can be matched closely without wasting value
+      // With 2 BTC UTXOs (2e8 sats each), 2 UTXOs = 4e8 sats total
+      // Target must be close to 4 BTC minus fees/threshold to avoid wasting value
+      const targetAmount = BigInt(3.99996 * 1e8); // 399,996,000 sats
       const feeRate = BigInt(10);
 
       // Blackjack mode: tries to match target without going over (within threshold)
@@ -303,7 +306,7 @@ describe('GetInputsForAmountWithMode', () => {
         CoinSelectMode.Blackjack,
       );
 
-      // Should select 2 UTXOs (4 BTC) to cover 3.5 BTC + fees
+      // Should select 2 UTXOs (4 BTC) to match ~4 BTC target
       expect(result.length).to.equal(2);
     });
 
