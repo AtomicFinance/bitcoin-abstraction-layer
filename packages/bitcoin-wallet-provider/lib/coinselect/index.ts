@@ -6,9 +6,6 @@ import splitFn from 'coinselect/split.js';
 import type { CoinSelectFunction, Utxo, CoinSelectResult } from './types.js';
 import { CoinSelectMode } from '@atomicfinance/types/dist/models/Input';
 
-export { coinselectFn, accumulativeFn, blackjackFn, breakFn, splitFn };
-export type { CoinSelectFunction, Utxo, CoinSelectResult };
-
 export const getCoinSelectFunction = (
   coinSelectMode: CoinSelectMode,
 ): CoinSelectFunction => {
