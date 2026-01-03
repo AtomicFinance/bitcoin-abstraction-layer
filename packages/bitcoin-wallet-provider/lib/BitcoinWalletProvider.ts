@@ -787,6 +787,10 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
     ) {
       const feePerBytePromise = this.getMethod('getFeePerByte')();
 
+      if (!collaterals.length) {
+        throw new Error('No collaterals provided');
+      }
+
       // Process fixed inputs once, outside the loop
       const fixedUtxos: bT.UTXO[] = [];
       if (fixedInputs.length > 0) {
