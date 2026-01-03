@@ -12,6 +12,17 @@ export enum InputSupplementationMode {
 }
 
 /**
+ * Coinselect method (https://github.com/bitcoinjs/coinselect)
+ */
+export enum CoinSelectMode {
+  Coinselect = 'coinselect', // Blackjack, with Accumulative fallback
+  Accumulative = 'accumlative', // Accumulative - accumulates inputs until the target value (+fees) is reached, skipping detrimental inputs
+  Blackjack = 'blackjack', // Blackjack - accumulates inputs until the target value (+fees) is matched, does not accumulate inputs that go over the target value (within a threshold)
+  Break = 'break', // Break - breaks the input values into equal denominations of output (as provided)
+  Split = 'split', // Split - splits the input values evenly between all outputs, any provided output with .value remains unchanged
+}
+
+/**
  * DLC-specific input information for splice transactions
  */
 export interface DlcInputInfo {
