@@ -3157,6 +3157,7 @@ Payout Group not found even with brute force search',
   async acceptDlcOffer(
     _dlcOffer: DlcOffer,
     fixedInputs?: Input[] | FundingInput[],
+    coinSelectMode?: CoinSelectMode,
   ): Promise<AcceptDlcOfferResponse> {
     const { dlcOffer } = checkTypes({ _dlcOffer });
     dlcOffer.validate();
@@ -3266,6 +3267,7 @@ Payout Group not found even with brute force search',
           dlcOffer.feeRatePerVb,
           fixedInputs as Input[],
           supplementationMode,
+          coinSelectMode,
         );
       }
 
