@@ -401,6 +401,7 @@ export default class BitcoinDdkProvider extends Provider {
     feeRatePerVb: bigint,
     fixedInputs: Input[],
     inputSupplementationMode: InputSupplementationMode = InputSupplementationMode.Required,
+    coinSelectMode: CoinSelectMode = CoinSelectMode.Coinselect,
   ): Promise<InitializeResponse> {
     const network = await this.getConnectedNetwork();
     const payoutAddress: Address =
@@ -428,6 +429,7 @@ export default class BitcoinDdkProvider extends Provider {
       feeRatePerVb,
       fixedInputs,
       inputSupplementationMode,
+      coinSelectMode,
     );
     const fundingInputs: FundingInput[] = await Promise.all(
       inputs.map(async (input) => {
