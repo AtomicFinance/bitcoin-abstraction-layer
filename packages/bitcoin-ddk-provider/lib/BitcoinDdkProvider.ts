@@ -3025,6 +3025,7 @@ Payout Group not found even with brute force search',
     refundLocktime: number,
     fixedInputs?: Input[] | FundingInput[],
     inputSupplementationMode?: InputSupplementationMode,
+    coinSelectMode?: CoinSelectMode,
   ): Promise<DlcOffer> {
     contractInfo.validate();
     const network = await this.getConnectedNetwork();
@@ -3075,6 +3076,7 @@ Payout Group not found even with brute force search',
         feeRatePerVb,
         fixedInputs as Input[],
         inputSupplementationMode || InputSupplementationMode.Required,
+        coinSelectMode || CoinSelectMode.Coinselect,
       );
 
       fundingPubKey = initResult.fundingPubKey;
