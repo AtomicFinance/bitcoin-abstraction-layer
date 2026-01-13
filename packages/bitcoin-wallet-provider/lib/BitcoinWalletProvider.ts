@@ -18,7 +18,7 @@ import {
 } from '@atomicfinance/types';
 import { CoinSelectMode } from '@atomicfinance/types/dist/models/Input';
 import { addressToString } from '@atomicfinance/utils';
-import { dualFundingCoinSelect } from '@node-dlc/core';
+import { dualFundingCoinSelect, Value } from '@node-dlc/core';
 import { BIP32Interface } from 'bip32';
 import { BitcoinNetwork } from 'bitcoin-network';
 import * as bitcoin from 'bitcoinjs-lib';
@@ -658,9 +658,9 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
               input.txid,
             );
             const tx = decodeRawTransaction(txHex, this._network);
-            const value = new BigNumber(tx.vout[input.vout].value)
-              .times(1e8)
-              .toNumber();
+            const value = Number(
+              Value.fromBitcoin(tx.vout[input.vout].value).sats,
+            );
             const address = tx.vout[input.vout].scriptPubKey.addresses[0];
             const walletAddress = await this.getWalletAddress(address);
             const utxo = {
@@ -803,9 +803,9 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
             input.txid,
           );
           const tx = decodeRawTransaction(txHex, this._network);
-          const value = new BigNumber(tx.vout[input.vout].value)
-            .times(1e8)
-            .toNumber();
+          const value = Number(
+            Value.fromBitcoin(tx.vout[input.vout].value).sats,
+          );
           const address = tx.vout[input.vout].scriptPubKey.addresses[0];
           let derivationPath: string | undefined;
           try {
