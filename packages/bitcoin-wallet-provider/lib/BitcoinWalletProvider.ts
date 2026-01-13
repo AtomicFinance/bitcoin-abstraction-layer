@@ -11,12 +11,12 @@ import {
   BigNumber,
   bitcoin as bT,
   ChainProvider,
+  CoinSelectMode,
   InputSupplementationMode,
   SendOptions,
   Transaction,
   WalletProvider,
 } from '@atomicfinance/types';
-import { CoinSelectMode } from '@atomicfinance/types/dist/models/Input';
 import { addressToString } from '@atomicfinance/utils';
 import { dualFundingCoinSelect, Value } from '@node-dlc/core';
 import { BIP32Interface } from 'bip32';

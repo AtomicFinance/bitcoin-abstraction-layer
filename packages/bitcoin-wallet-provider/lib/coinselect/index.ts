@@ -1,4 +1,4 @@
-import { CoinSelectMode } from '@atomicfinance/types/dist/models/Input';
+import { CoinSelectMode } from '@atomicfinance/types';
 import coinselectFn from 'coinselect';
 import accumulativeFn from 'coinselect/accumulative.js';
 import blackjackFn from 'coinselect/blackjack.js';
