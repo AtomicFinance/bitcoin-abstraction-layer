@@ -251,28 +251,30 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
       )._raw;
       const fixedInputs = [transaction.vin[0]]; // TODO: should this pick more than 1 input? RBF doesn't mandate it
 
-      const lookupAddresses = transaction.vout.map(
-        (vout) => vout.scriptPubKey.addresses[0],
-      );
+      const lookupAddresses = transaction.vout
+        .map((vout) => vout.scriptPubKey.addresses?.[0])
+        .filter((addr) => addr !== undefined);
       const changeAddress = await this.findAddress(lookupAddresses, true);
       const changeOutput = transaction.vout.find(
-        (vout) => vout.scriptPubKey.addresses[0] === changeAddress.address,
+        (vout) => vout.scriptPubKey.addresses?.[0] === changeAddress.address,
       );
 
       let outputs = transaction.vout;
       if (changeOutput) {
         outputs = outputs.filter(
           (vout) =>
-            vout.scriptPubKey.addresses[0] !==
-            changeOutput.scriptPubKey.addresses[0],
+            vout.scriptPubKey.addresses?.[0] !==
+            changeOutput.scriptPubKey.addresses?.[0],
         );
       }
 
       // TODO more checks?
-      const transactions = outputs.map((output) => ({
-        address: output.scriptPubKey.addresses[0],
-        value: new BigNumber(output.value).times(1e8).toNumber(),
-      }));
+      const transactions = outputs
+        .filter((output) => output.scriptPubKey.addresses?.[0])
+        .map((output) => ({
+          address: output.scriptPubKey.addresses[0],
+          value: new BigNumber(output.value).times(1e8).toNumber(),
+        }));
       const { hex, fee } = await this._buildTransaction(
         transactions,
         newFeePerByte,
@@ -661,7 +663,12 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
             const value = Number(
               Value.fromBitcoin(tx.vout[input.vout].value).sats,
             );
-            const address = tx.vout[input.vout].scriptPubKey.addresses[0];
+            const address = tx.vout[input.vout].scriptPubKey.addresses?.[0];
+            if (!address) {
+              throw new Error(
+                `Input ${input.txid}:${input.vout} has no valid address`,
+              );
+            }
             const walletAddress = await this.getWalletAddress(address);
             const utxo = {
               ...input,
@@ -806,7 +813,12 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
           const value = Number(
             Value.fromBitcoin(tx.vout[input.vout].value).sats,
           );
-          const address = tx.vout[input.vout].scriptPubKey.addresses[0];
+          const address = tx.vout[input.vout].scriptPubKey.addresses?.[0];
+          if (!address) {
+            throw new Error(
+              `Input ${input.txid}:${input.vout} has no valid address`,
+            );
+          }
           let derivationPath: string | undefined;
           try {
             const walletAddress = await this.getWalletAddress(address);
