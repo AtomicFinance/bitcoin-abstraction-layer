@@ -892,7 +892,10 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
         nonChange: 0,
       };
 
-      let utxos: bT.UTXO[] = [...fixedUtxos]; // Initalize with fixedUtxos
+      const utxos: bT.UTXO[] = [...fixedUtxos]; // Initalize with fixedUtxos
+      const seenLocations = new Set<string>(
+        utxos.map(({ txid, vout }) => `${txid}:${vout}`),
+      );
 
       while (
         addressCountMap.change < ADDRESS_GAP ||
@@ -922,27 +925,20 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
           addrList = addrList.concat(externalAddresses);
         }
 
-        const _utxos: bT.UTXO[] = await this.getMethod(
+        const fetchedUtxos: bT.UTXO[] = await this.getMethod(
           'getUnspentTransactions',
         )(addrList);
-        // De duplicate UTXOs
-        const _uniqueUtxos: bT.UTXO[] = _utxos.filter(
-          (utxo) =>
-            !utxos.find(
-              (existingUtxo) =>
-                existingUtxo.txid === utxo.txid &&
-                existingUtxo.vout === utxo.vout,
-            ),
-        );
-        utxos = utxos.concat(
-          ..._uniqueUtxos.map((utxo) => {
-            const addr = addrList.find((a) => a.address === utxo.address);
-            return {
-              ...utxo,
-              derivationPath: addr.derivationPath,
-            };
-          }),
-        );
+
+        for (const utxo of fetchedUtxos) {
+          const location = `${utxo.txid}:${utxo.vout}`;
+          if (seenLocations.has(location)) continue;
+          seenLocations.add(location);
+          const addr = addrList.find((a) => a.address === utxo.address);
+          utxos.push({
+            ...utxo,
+            derivationPath: addr.derivationPath,
+          });
+        }
 
         const transactionCounts: bT.AddressTxCounts = await this.getMethod(
           'getAddressTransactionCounts',
