@@ -1,5 +1,14 @@
 # @atomicfinance/bitcoin-cfd-address-derivation-provider
 
+## 4.2.7
+
+### Patch Changes
+
+- 8e9f8f0: Bump @node-dlc to 1.1.7
+- Updated dependencies [8e9f8f0]
+  - @atomicfinance/types@4.2.7
+  - @atomicfinance/provider@4.2.7
+
 ## 4.2.6
 
 ### Patch Changes
