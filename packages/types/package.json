@@ -15,9 +15,9 @@
     "lint:fix": "../../node_modules/.bin/eslint --fix  ."
   },
   "dependencies": {
-    "@node-dlc/bitcoin": "1.1.5",
-    "@node-dlc/messaging": "1.1.5",
-    "@node-dlc/noise": "1.1.5",
+    "@node-dlc/bitcoin": "1.1.7",
+    "@node-dlc/messaging": "1.1.7",
+    "@node-dlc/noise": "1.1.7",
     "lodash": "^4.17.20"
   },
   "devDependencies": {
