@@ -20,7 +20,7 @@
     "@atomicfinance/provider": "^4.2.6",
     "@atomicfinance/types": "^4.2.6",
     "@atomicfinance/utils": "^4.2.6",
-    "@node-dlc/core": "1.1.5",
+    "@node-dlc/core": "1.1.7",
     "bip32": "^2.0.6",
     "bitcoin-network": "0.1.0",
     "bitcoinjs-lib": "6.1.7",
