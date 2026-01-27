@@ -39,6 +39,7 @@ export { default as Amount } from './models/Amount';
 export {
   default as Input,
   InputSupplementationMode,
+  CoinSelectMode,
   DlcInputInfo,
 } from './models/Input';
 export { default as OracleInfo } from './models/OracleInfo';

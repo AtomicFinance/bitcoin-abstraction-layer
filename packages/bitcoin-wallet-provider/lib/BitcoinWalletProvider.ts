@@ -11,16 +11,20 @@ import {
   BigNumber,
   bitcoin as bT,
   ChainProvider,
+  CoinSelectMode,
+  InputSupplementationMode,
   SendOptions,
   Transaction,
   WalletProvider,
 } from '@atomicfinance/types';
 import { addressToString } from '@atomicfinance/utils';
-import { dualFundingCoinSelect } from '@node-dlc/core';
+import { dualFundingCoinSelect, Value } from '@node-dlc/core';
 import { BIP32Interface } from 'bip32';
 import { BitcoinNetwork } from 'bitcoin-network';
 import * as bitcoin from 'bitcoinjs-lib';
 import memoize from 'memoizee';
+
+import { runCoinSelect } from './coinselect';
 
 const ADDRESS_GAP = 30;
 const NONCHANGE_ADDRESS = 0;
@@ -247,28 +251,30 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
       )._raw;
       const fixedInputs = [transaction.vin[0]]; // TODO: should this pick more than 1 input? RBF doesn't mandate it
 
-      const lookupAddresses = transaction.vout.map(
-        (vout) => vout.scriptPubKey.addresses[0],
-      );
+      const lookupAddresses = transaction.vout
+        .map((vout) => vout.scriptPubKey.addresses?.[0])
+        .filter((addr) => addr !== undefined);
       const changeAddress = await this.findAddress(lookupAddresses, true);
       const changeOutput = transaction.vout.find(
-        (vout) => vout.scriptPubKey.addresses[0] === changeAddress.address,
+        (vout) => vout.scriptPubKey.addresses?.[0] === changeAddress.address,
       );
 
       let outputs = transaction.vout;
       if (changeOutput) {
         outputs = outputs.filter(
           (vout) =>
-            vout.scriptPubKey.addresses[0] !==
-            changeOutput.scriptPubKey.addresses[0],
+            vout.scriptPubKey.addresses?.[0] !==
+            changeOutput.scriptPubKey.addresses?.[0],
         );
       }
 
       // TODO more checks?
-      const transactions = outputs.map((output) => ({
-        address: output.scriptPubKey.addresses[0],
-        value: new BigNumber(output.value).times(1e8).toNumber(),
-      }));
+      const transactions = outputs
+        .filter((output) => output.scriptPubKey.addresses?.[0])
+        .map((output) => ({
+          address: output.scriptPubKey.addresses[0],
+          value: new BigNumber(output.value).times(1e8).toNumber(),
+        }));
       const { hex, fee } = await this._buildTransaction(
         transactions,
         newFeePerByte,
@@ -398,7 +404,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
       const foundAddress = await this.findAddress([address]);
       if (foundAddress) return foundAddress;
 
-      throw new Error('Wallet does not contain address');
+      throw new Error(`Wallet does not contain address: ${address}`);
     }
 
     getAddressFromPublicKey(publicKey: Buffer) {
@@ -654,10 +660,15 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
               input.txid,
             );
             const tx = decodeRawTransaction(txHex, this._network);
-            const value = new BigNumber(tx.vout[input.vout].value)
-              .times(1e8)
-              .toNumber();
-            const address = tx.vout[input.vout].scriptPubKey.addresses[0];
+            const value = Number(
+              Value.fromBitcoin(tx.vout[input.vout].value).sats,
+            );
+            const address = tx.vout[input.vout].scriptPubKey.addresses?.[0];
+            if (!address) {
+              throw new Error(
+                `Input ${input.txid}:${input.vout} has no valid address`,
+              );
+            }
             const walletAddress = await this.getWalletAddress(address);
             const utxo = {
               ...input,
@@ -694,7 +705,7 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
 
         if (!feePerByte) feePerByte = await feePerBytePromise;
         const minRelayFee = await this.getMethod('getMinRelayFee')();
-        if (feePerByte < minRelayFee) {
+        if (Number(feePerByte) < minRelayFee) {
           throw new Error(
             `Fee supplied (${feePerByte} sat/b) too low. Minimum relay fee is ${minRelayFee} sat/b`,
           );
@@ -775,11 +786,104 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
     }
 
     async getInputsForDualFunding(
-      collaterals: number[],
-      feePerByte?: number,
+      collaterals: bigint[],
+      feePerByte?: bigint,
       fixedInputs: bT.Input[] = [],
+      inputSupplementationMode: InputSupplementationMode = InputSupplementationMode.Required,
+      coinSelectMode: CoinSelectMode = CoinSelectMode.Coinselect,
       numAddressPerCall = 100,
     ) {
+      const feePerBytePromise = this.getMethod('getFeePerByte')();
+
+      if (!collaterals.length) {
+        return {
+          inputs: [],
+          fee: 0n,
+        };
+      }
+
+      // Process fixed inputs once, outside the loop
+      const fixedUtxos: bT.UTXO[] = [];
+      if (fixedInputs.length > 0) {
+        for (const input of fixedInputs) {
+          const txHex = await this.getMethod('getRawTransactionByHash')(
+            input.txid,
+          );
+          const tx = decodeRawTransaction(txHex, this._network);
+          const value = Number(
+            Value.fromBitcoin(tx.vout[input.vout].value).sats,
+          );
+          const address = tx.vout[input.vout].scriptPubKey.addresses?.[0];
+          if (!address) {
+            throw new Error(
+              `Input ${input.txid}:${input.vout} has no valid address`,
+            );
+          }
+          let derivationPath: string | undefined;
+          try {
+            const walletAddress = await this.getWalletAddress(address);
+            derivationPath = walletAddress.derivationPath ?? undefined;
+          } catch (error) {
+            const errorMessage = `getAddress failed with error: ${error?.message ?? 'unknown'}`;
+            if (inputSupplementationMode === InputSupplementationMode.None) {
+              console.warn(errorMessage);
+            } else {
+              throw new Error(errorMessage);
+            }
+          }
+          const utxo = {
+            ...input,
+            value,
+            address,
+            derivationPath,
+          };
+          fixedUtxos.push(utxo);
+        }
+      }
+
+      // For 'None' mode, use only fixed inputs without scanning
+      if (inputSupplementationMode === InputSupplementationMode.None) {
+        if (!feePerByte) feePerByte = await feePerBytePromise;
+        const minRelayFee = await this.getMethod('getMinRelayFee')();
+        if (Number(feePerByte) < minRelayFee) {
+          throw new Error(
+            `Fee supplied (${feePerByte} sat/b) too low. Minimum relay fee is ${minRelayFee} sat/b`,
+          );
+        }
+
+        const coinSelectResult = runCoinSelect(
+          coinSelectMode,
+          fixedUtxos,
+          collaterals.map((value) => ({
+            value: Number(value),
+          })),
+          Number(feePerByte),
+        );
+
+        if (!(coinSelectResult.inputs?.length >= 1)) {
+          throw new Error(`CoinSelect failed (mode: ${coinSelectMode})`);
+        }
+
+        // Further coin selection is applied here
+        const { fee, inputs } = dualFundingCoinSelect(
+          coinSelectResult.inputs as bT.UTXO[],
+          collaterals,
+          feePerByte,
+        );
+
+        if (inputs.length > 0) {
+          return {
+            inputs,
+            fee,
+          };
+        }
+
+        throw new InsufficientBalanceError(
+          'Total value of fixedUtxos is insufficient to cover outputs',
+        );
+      }
+
+      // For 'Required' or 'Optional' modes, scan for additional UTXOs
       let addressIndex = 0;
       let changeAddresses: Address[] = [];
       let externalAddresses: Address[] = [];
@@ -788,8 +892,10 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
         nonChange: 0,
       };
 
-      const feePerBytePromise = this.getMethod('getFeePerByte')();
-      let utxos: bT.UTXO[] = [];
+      const utxos: bT.UTXO[] = [...fixedUtxos]; // Initalize with fixedUtxos
+      const seenLocations = new Set<string>(
+        utxos.map(({ txid, vout }) => `${txid}:${vout}`),
+      );
 
       while (
         addressCountMap.change < ADDRESS_GAP ||
@@ -819,43 +925,19 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
           addrList = addrList.concat(externalAddresses);
         }
 
-        const fixedUtxos: bT.UTXO[] = [];
-        if (fixedInputs.length > 0) {
-          for (const input of fixedInputs) {
-            const txHex = await this.getMethod('getRawTransactionByHash')(
-              input.txid,
-            );
-            const tx = decodeRawTransaction(txHex, this._network);
-            const value = new BigNumber(tx.vout[input.vout].value)
-              .times(1e8)
-              .toNumber();
-            const address = tx.vout[input.vout].scriptPubKey.addresses[0];
-            const walletAddress = await this.getWalletAddress(address);
-            const utxo = {
-              ...input,
-              value,
-              address,
-              derivationPath: walletAddress.derivationPath,
-            };
-            fixedUtxos.push(utxo);
-          }
-        }
+        const fetchedUtxos: bT.UTXO[] = await this.getMethod(
+          'getUnspentTransactions',
+        )(addrList);
 
-        if (fixedUtxos.length === 0) {
-          const _utxos: bT.UTXO[] = await this.getMethod(
-            'getUnspentTransactions',
-          )(addrList);
-          utxos.push(
-            ..._utxos.map((utxo) => {
-              const addr = addrList.find((a) => a.address === utxo.address);
-              return {
-                ...utxo,
-                derivationPath: addr.derivationPath,
-              };
-            }),
-          );
-        } else {
-          utxos = fixedUtxos;
+        for (const utxo of fetchedUtxos) {
+          const location = `${utxo.txid}:${utxo.vout}`;
+          if (seenLocations.has(location)) continue;
+          seenLocations.add(location);
+          const addr = addrList.find((a) => a.address === utxo.address);
+          utxos.push({
+            ...utxo,
+            derivationPath: addr.derivationPath,
+          });
         }
 
         const transactionCounts: bT.AddressTxCounts = await this.getMethod(
@@ -864,16 +946,30 @@ export default <T extends Constructor<Provider>>(superclass: T) => {
 
         if (!feePerByte) feePerByte = await feePerBytePromise;
         const minRelayFee = await this.getMethod('getMinRelayFee')();
-        if (feePerByte < minRelayFee) {
+        if (Number(feePerByte) < minRelayFee) {
           throw new Error(
             `Fee supplied (${feePerByte} sat/b) too low. Minimum relay fee is ${minRelayFee} sat/b`,
           );
         }
 
-        const { fee, inputs } = dualFundingCoinSelect(
+        const coinSelectResult = runCoinSelect(
+          coinSelectMode,
           utxos,
-          collaterals.map((c) => BigInt(c)),
-          BigInt(feePerByte),
+          collaterals.map((value) => ({
+            value: Number(value),
+          })),
+          Number(feePerByte),
+        );
+
+        if (!(coinSelectResult.inputs?.length >= 1)) {
+          throw new Error(`CoinSelect failed (mode: ${coinSelectMode})`);
+        }
+
+        // Further coin selection is applied here
+        const { fee, inputs } = dualFundingCoinSelect(
+          coinSelectResult.inputs as bT.UTXO[],
+          collaterals,
+          feePerByte,
         );
 
         if (inputs.length > 0) {

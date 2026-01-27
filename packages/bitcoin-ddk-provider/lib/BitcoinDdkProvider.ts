@@ -4,6 +4,7 @@ import {
   Address,
   Amount,
   CalculateEcSignatureRequest,
+  CoinSelectMode,
   CreateRawTransactionRequest,
   CreateSignatureHashRequest,
   DdkDlcInputInfo,
@@ -325,27 +326,34 @@ export default class BitcoinDdkProvider extends Provider {
     feeRatePerVb: bigint,
     fixedInputs: Input[] = [],
     supplementation: InputSupplementationMode = InputSupplementationMode.Required,
+    coinSelectMode: CoinSelectMode = CoinSelectMode.Coinselect,
   ): Promise<Input[]> {
     if (amounts.length === 0) return [];
 
-    // For "none" mode, use exactly the provided inputs
-    if (supplementation === InputSupplementationMode.None) {
-      return fixedInputs;
-    }
-
-    // For "required" and "optional" modes, attempt supplementation
+    // Convert to UTXOs
     const fixedUtxos = fixedInputs.map((input) => input.toUtxo());
 
     try {
       const inputsForAmount: InputsForDualAmountResponse = await this.getMethod(
         'getInputsForDualFunding',
-      )(amounts, feeRatePerVb, fixedUtxos);
+      )(amounts, feeRatePerVb, fixedUtxos, supplementation, coinSelectMode);
 
       // Convert UTXO objects to Input class instances
-      return inputsForAmount.inputs.map((utxo) => Input.fromUTXO(utxo));
+      return inputsForAmount.inputs.map((utxo) => {
+        // Try to find match first -- as it may include DLC information
+        const matchedInput = fixedInputs.find(
+          (input) => input.txid === utxo.txid && input.vout === utxo.vout,
+        );
+        return matchedInput ? matchedInput : Input.fromUTXO(utxo);
+      });
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
 
+      if (supplementation === InputSupplementationMode.None) {
+        throw Error(
+          `Invalid InputSupplementationMode (None). GetInputsForAmountWithMode. Error: ${errorMessage}`,
+        );
+      }
       if (supplementation === InputSupplementationMode.Required) {
         throw Error(
           `Not enough balance GetInputsForAmountWithMode. Error: ${errorMessage}`,
@@ -393,6 +401,7 @@ export default class BitcoinDdkProvider extends Provider {
     feeRatePerVb: bigint,
     fixedInputs: Input[],
     inputSupplementationMode: InputSupplementationMode = InputSupplementationMode.Required,
+    coinSelectMode: CoinSelectMode = CoinSelectMode.Coinselect,
   ): Promise<InitializeResponse> {
     const network = await this.getConnectedNetwork();
     const payoutAddress: Address =
@@ -420,6 +429,7 @@ export default class BitcoinDdkProvider extends Provider {
       feeRatePerVb,
       fixedInputs,
       inputSupplementationMode,
+      coinSelectMode,
     );
     const fundingInputs: FundingInput[] = await Promise.all(
       inputs.map(async (input) => {
@@ -3015,6 +3025,7 @@ Payout Group not found even with brute force search',
     refundLocktime: number,
     fixedInputs?: Input[] | FundingInput[],
     inputSupplementationMode?: InputSupplementationMode,
+    coinSelectMode?: CoinSelectMode,
   ): Promise<DlcOffer> {
     contractInfo.validate();
     const network = await this.getConnectedNetwork();
@@ -3065,6 +3076,7 @@ Payout Group not found even with brute force search',
         feeRatePerVb,
         fixedInputs as Input[],
         inputSupplementationMode || InputSupplementationMode.Required,
+        coinSelectMode || CoinSelectMode.Coinselect,
       );
 
       fundingPubKey = initResult.fundingPubKey;
@@ -3145,6 +3157,7 @@ Payout Group not found even with brute force search',
   async acceptDlcOffer(
     _dlcOffer: DlcOffer,
     fixedInputs?: Input[] | FundingInput[],
+    coinSelectMode?: CoinSelectMode,
   ): Promise<AcceptDlcOfferResponse> {
     const { dlcOffer } = checkTypes({ _dlcOffer });
     dlcOffer.validate();
@@ -3254,6 +3267,7 @@ Payout Group not found even with brute force search',
           dlcOffer.feeRatePerVb,
           fixedInputs as Input[],
           supplementationMode,
+          coinSelectMode,
         );
       }
 
