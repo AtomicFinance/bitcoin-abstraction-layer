@@ -43,7 +43,7 @@ import {
 } from '../../../packages/bitcoin-dlc-provider';
 import { Input } from '../../../packages/types';
 import { InputSupplementationMode } from '../../../packages/types/lib';
-import { chains, getInput } from '../common';
+import { chains, getInput, mineBlock } from '../common';
 import f from '../fixtures/blockchain.json';
 import { attestation_for_payout_amount_failure as AttestationWithPayoutAmountFailure } from '../fixtures/messages.json';
 import Oracle from '../models/Oracle';
@@ -67,6 +67,10 @@ const bob = chains.bitcoinWithJs2.client;
 const carol = chains.bitcoinWithJs3.client;
 const ddk = chains.bitcoinWithDdk.client;
 const ddk2 = chains.bitcoinWithDdk2.client;
+
+// SatsConnect provider for testing (fordefiOfferer has BitcoinSatsConnectProvider added)
+const satsConnectOfferer = chains.fordefiOfferer.client;
+const satsConnectAccepter = chains.lygosAccepter.client; // DDK-based accepter
 
 describe('bitcoin networks', () => {
   it('have correct genesis block hashes', async () => {
@@ -864,6 +868,319 @@ describe('dlc provider', () => {
         // Verify that no DLC input info is present for regular inputs
         expect(convertedInput.dlcInput).to.be.undefined;
       });
+    });
+  });
+
+  describe('funding with SatsConnect Provider', () => {
+    it('should fund and execute enum DLC (SatsConnect offerer, DDK accepter)', async () => {
+      const oracle = new Oracle('olivia');
+
+      const offererInput = await getInput(satsConnectOfferer);
+      const accepterInput = await getInput(satsConnectAccepter);
+
+      const eventId = 'trump-vs-kamala-sats-connect';
+
+      const oliviaInfo = oracle.GetOracleInfo();
+
+      const eventDescriptor = new EnumEventDescriptor();
+
+      const outcomes = ['trump', 'kamala', 'neither'];
+
+      eventDescriptor.outcomes = outcomes;
+
+      const event = new OracleEvent();
+      event.oracleNonces = oliviaInfo.rValues.map((rValue) =>
+        Buffer.from(rValue, 'hex'),
+      );
+      event.eventMaturityEpoch = 1617170572;
+      event.eventDescriptor = eventDescriptor;
+      event.eventId = eventId;
+
+      const announcement = new OracleAnnouncement();
+      announcement.announcementSig = Buffer.from(
+        oracle.GetSignature(
+          math
+            .taggedHash('DLC/oracle/announcement/v0', event.serialize())
+            .toString('hex'),
+        ),
+        'hex',
+      );
+
+      announcement.oraclePublicKey = Buffer.from(oliviaInfo.publicKey, 'hex');
+      announcement.oracleEvent = event;
+
+      const oracleInfo = new SingleOracleInfo();
+      oracleInfo.announcement = announcement;
+
+      const contractDescriptor = new EnumeratedDescriptor();
+
+      contractDescriptor.outcomes = [
+        {
+          outcome: sha256(Buffer.from('trump')).toString('hex'),
+          localPayout: BigInt(1e6),
+        },
+        {
+          outcome: sha256(Buffer.from('kamala')).toString('hex'),
+          localPayout: BigInt(0),
+        },
+        {
+          outcome: sha256(Buffer.from('neither')).toString('hex'),
+          localPayout: BigInt(500000),
+        },
+      ];
+
+      const totalCollateral = BigInt(1e6);
+
+      const contractInfo = new SingleContractInfo();
+      contractInfo.totalCollateral = totalCollateral;
+      contractInfo.contractDescriptor = contractDescriptor;
+      contractInfo.oracleInfo = oracleInfo;
+
+      const feeRatePerVb = BigInt(10);
+      const cetLocktime = 1617170572;
+      const refundLocktime = 1617170573;
+
+      // Step 1: SatsConnect offerer creates offer using BitcoinSatsConnectProvider
+      console.log('Step 1: Creating DLC offer...');
+      const dlcOfferResponse = await satsConnectOfferer.dlc.createDlcOffer(
+        contractInfo,
+        totalCollateral - BigInt(2000),
+        feeRatePerVb,
+        cetLocktime,
+        refundLocktime,
+        [offererInput],
+      );
+
+      console.log('Step 1: DLC offer created successfully');
+      DlcOffer.deserialize(dlcOfferResponse.serialize()).validate();
+
+      // Step 2: DDK accepter accepts the offer
+      console.log('Step 2: Accepting DLC offer...');
+      const acceptDlcOfferResponse: AcceptDlcOfferResponse =
+        await satsConnectAccepter.dlc.acceptDlcOffer(dlcOfferResponse, [
+          accepterInput,
+        ]);
+      console.log('Step 2: DLC offer accepted successfully');
+
+      const acceptDlcAccept = acceptDlcOfferResponse.dlcAccept;
+      const acceptDlcTransactions = acceptDlcOfferResponse.dlcTransactions;
+
+      DlcAccept.deserialize(acceptDlcAccept.serialize()).validate();
+      DlcTransactions.deserialize(acceptDlcTransactions.serialize());
+
+      // Step 3: SatsConnect offerer signs the accept
+      // This uses the SatsConnectProvider + FordefiWalletEmulator with DDK
+      console.log('Step 3: Signing DLC accept with SatsConnect...');
+      const signDlcAcceptResponse: SignDlcAcceptResponse =
+        await satsConnectOfferer.dlc.signDlcAccept(
+          dlcOfferResponse,
+          acceptDlcAccept,
+          acceptDlcTransactions,
+        );
+      console.log('Step 3: DLC accept signed successfully');
+
+      const satsConnectDlcSign = signDlcAcceptResponse.dlcSign;
+
+      DlcSign.deserialize(satsConnectDlcSign.serialize()).validate();
+
+      // Step 4: DDK accepter finalizes and broadcasts the funding transaction
+      const fundTx = await satsConnectAccepter.dlc.finalizeDlcSign(
+        dlcOfferResponse,
+        acceptDlcAccept,
+        satsConnectDlcSign,
+        acceptDlcTransactions,
+      );
+
+      const fundTxId = await satsConnectAccepter.chain.sendRawTransaction(
+        fundTx.serialize().toString('hex'),
+      );
+      expect(fundTxId).to.not.be.undefined;
+      console.log('Step 4: Funding transaction broadcast successfully');
+      console.log(`  Funding TxId: ${fundTxId}`);
+
+      // Mine a block to confirm the funding transaction
+      await mineBlock();
+
+      // Step 5: Execute with oracle attestation
+      const satsConnectOracleAttestation =
+        generateDdkCompatibleEnumOracleAttestation(
+          'trump',
+          oracle,
+          announcement.getEventId(),
+        );
+
+      satsConnectOracleAttestation.validate();
+
+      const cet = await satsConnectAccepter.dlc.execute(
+        dlcOfferResponse,
+        acceptDlcAccept,
+        satsConnectDlcSign,
+        acceptDlcTransactions,
+        satsConnectOracleAttestation,
+        false, // isOfferer = false (accepter executes)
+      );
+
+      const cetTxId = await satsConnectAccepter.chain.sendRawTransaction(
+        cet.serialize().toString('hex'),
+      );
+      expect(cetTxId).to.not.be.undefined;
+      console.log('Step 5: CET executed and broadcast successfully');
+      console.log(`  CET TxId: ${cetTxId}`);
+      console.log(`  Outcome: trump`);
+
+      // Mine a block to confirm the CET
+      await mineBlock();
+
+      const cetTx = await alice.getMethod('getTransactionByHash')(cetTxId);
+      expect(cetTx._raw.vin.length).to.equal(1);
+      console.log('DLC executed successfully - CET confirmed on-chain');
+    });
+
+    it('should fund and refund enum DLC (SatsConnect offerer, DDK accepter)', async () => {
+      const oracle = new Oracle('olivia');
+
+      const offererInput = await getInput(satsConnectOfferer);
+      const accepterInput = await getInput(satsConnectAccepter);
+
+      const eventId = 'trump-vs-kamala-sats-connect-refund';
+
+      const oliviaInfo = oracle.GetOracleInfo();
+
+      const eventDescriptor = new EnumEventDescriptor();
+
+      const outcomes = ['trump', 'kamala', 'neither'];
+
+      eventDescriptor.outcomes = outcomes;
+
+      const event = new OracleEvent();
+      event.oracleNonces = oliviaInfo.rValues.map((rValue) =>
+        Buffer.from(rValue, 'hex'),
+      );
+      event.eventMaturityEpoch = 1617170572;
+      event.eventDescriptor = eventDescriptor;
+      event.eventId = eventId;
+
+      const announcement = new OracleAnnouncement();
+      announcement.announcementSig = Buffer.from(
+        oracle.GetSignature(
+          math
+            .taggedHash('DLC/oracle/announcement/v0', event.serialize())
+            .toString('hex'),
+        ),
+        'hex',
+      );
+
+      announcement.oraclePublicKey = Buffer.from(oliviaInfo.publicKey, 'hex');
+      announcement.oracleEvent = event;
+
+      const oracleInfo = new SingleOracleInfo();
+      oracleInfo.announcement = announcement;
+
+      const contractDescriptor = new EnumeratedDescriptor();
+
+      contractDescriptor.outcomes = [
+        {
+          outcome: sha256(Buffer.from('trump')).toString('hex'),
+          localPayout: BigInt(1e6),
+        },
+        {
+          outcome: sha256(Buffer.from('kamala')).toString('hex'),
+          localPayout: BigInt(0),
+        },
+        {
+          outcome: sha256(Buffer.from('neither')).toString('hex'),
+          localPayout: BigInt(500000),
+        },
+      ];
+
+      const totalCollateral = BigInt(1e6);
+
+      const contractInfo = new SingleContractInfo();
+      contractInfo.totalCollateral = totalCollateral;
+      contractInfo.contractDescriptor = contractDescriptor;
+      contractInfo.oracleInfo = oracleInfo;
+
+      const feeRatePerVb = BigInt(10);
+      const cetLocktime = 1617170572;
+      const refundLocktime = 1617170573;
+
+      // Step 1: SatsConnect offerer creates offer
+      const dlcOfferResponse = await satsConnectOfferer.dlc.createDlcOffer(
+        contractInfo,
+        totalCollateral - BigInt(2000),
+        feeRatePerVb,
+        cetLocktime,
+        refundLocktime,
+        [offererInput],
+      );
+
+      DlcOffer.deserialize(dlcOfferResponse.serialize()).validate();
+
+      // Step 2: DDK accepter accepts the offer
+      const acceptDlcOfferResponse: AcceptDlcOfferResponse =
+        await satsConnectAccepter.dlc.acceptDlcOffer(dlcOfferResponse, [
+          accepterInput,
+        ]);
+
+      const acceptDlcAccept = acceptDlcOfferResponse.dlcAccept;
+      const acceptDlcTransactions = acceptDlcOfferResponse.dlcTransactions;
+
+      DlcAccept.deserialize(acceptDlcAccept.serialize()).validate();
+      DlcTransactions.deserialize(acceptDlcTransactions.serialize());
+
+      // Step 3: SatsConnect offerer signs the accept
+      const signDlcAcceptResponse: SignDlcAcceptResponse =
+        await satsConnectOfferer.dlc.signDlcAccept(
+          dlcOfferResponse,
+          acceptDlcAccept,
+          acceptDlcTransactions,
+        );
+
+      const satsConnectDlcSign = signDlcAcceptResponse.dlcSign;
+
+      DlcSign.deserialize(satsConnectDlcSign.serialize()).validate();
+
+      // Step 4: DDK accepter finalizes and broadcasts the funding transaction
+      const fundTx = await satsConnectAccepter.dlc.finalizeDlcSign(
+        dlcOfferResponse,
+        acceptDlcAccept,
+        satsConnectDlcSign,
+        acceptDlcTransactions,
+      );
+
+      const fundTxId = await satsConnectAccepter.chain.sendRawTransaction(
+        fundTx.serialize().toString('hex'),
+      );
+      expect(fundTxId).to.not.be.undefined;
+      console.log('Step 4: Funding transaction broadcast successfully');
+      console.log(`  Funding TxId: ${fundTxId}`);
+
+      // Mine a block to confirm funding
+      await mineBlock();
+
+      // Step 5: Refund instead of execute
+      const refundTx = await satsConnectAccepter.dlc.refund(
+        dlcOfferResponse,
+        acceptDlcAccept,
+        satsConnectDlcSign,
+        acceptDlcTransactions,
+      );
+
+      const refundTxId = await satsConnectAccepter.chain.sendRawTransaction(
+        refundTx.serialize().toString('hex'),
+      );
+      expect(refundTxId).to.not.be.undefined;
+      console.log('Step 5: Refund transaction broadcast successfully');
+      console.log(`  Refund TxId: ${refundTxId}`);
+
+      // Mine a block to confirm refund
+      await mineBlock();
+
+      const refundTxResult = await alice.getMethod('getTransactionByHash')(
+        refundTxId,
+      );
+      expect(refundTxResult._raw.vin.length).to.equal(1);
+      console.log('DLC refunded successfully - Refund tx confirmed on-chain');
     });
   });
 
