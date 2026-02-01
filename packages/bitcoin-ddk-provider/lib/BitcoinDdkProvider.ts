@@ -4,6 +4,7 @@ import {
   Address,
   Amount,
   CalculateEcSignatureRequest,
+  CetAdaptorSignatureInputs,
   CreateRawTransactionRequest,
   CreateSignatureHashRequest,
   DdkDlcInputInfo,
@@ -1440,6 +1441,125 @@ export default class BitcoinDdkProvider extends Provider {
         }
       }
     }
+  }
+
+  /**
+   * Get debug information for CET adaptor signature verification.
+   * This method returns detailed info about each CET including sighash,
+   * adaptor point, and other data useful for debugging adaptor signature issues.
+   */
+  public async getCetAdaptorSignatureDebugInfo(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+  ): Promise<{
+    cets: Array<{
+      cetIndex: number;
+      cetTxid: string;
+      sighash: string;
+      adaptorPoint: string;
+      inputIndex: number;
+      scriptPubkey: string;
+      value: bigint;
+      message: string;
+      outputs: Array<{ value: bigint; scriptPubkey: string }>;
+    }>;
+    fundingScript: string;
+    fundOutputValue: bigint;
+    oraclePubkey: string;
+    oracleNonces: string[];
+    offerFundingPubkey: string;
+    acceptFundingPubkey: string;
+  }> {
+    const { dlcTransactions, messagesList } = await this.createDlcTxs(
+      dlcOffer,
+      dlcAccept,
+    );
+
+    const network = await this.getConnectedNetwork();
+    const p2ms = createP2MSMultisig(
+      dlcOffer.fundingPubkey,
+      dlcAccept.fundingPubkey,
+      network,
+    );
+    const fundingScript = p2ms.output!;
+    const fundOutputValue = this.getFundOutputValueSats(dlcTransactions);
+
+    // Get oracle info
+    const oracleInfo = (dlcOffer.contractInfo as SingleContractInfo)
+      .oracleInfo as SingleOracleInfo;
+    const announcement = oracleInfo.announcement;
+
+    const ddkOracleInfo: DdkOracleInfo = {
+      publicKey: announcement.oraclePublicKey,
+      nonces: announcement.oracleEvent.oracleNonces,
+    };
+
+    const cetsDebugInfo: Array<{
+      cetIndex: number;
+      cetTxid: string;
+      sighash: string;
+      adaptorPoint: string;
+      inputIndex: number;
+      scriptPubkey: string;
+      value: bigint;
+      message: string;
+      outputs: Array<{ value: bigint; scriptPubkey: string }>;
+    }> = [];
+
+    for (let i = 0; i < dlcTransactions.cets.length; i++) {
+      const cet = dlcTransactions.cets[i];
+      const cetForDdk = this.convertTxToDdkTransaction(cet);
+      // convertMessagesForDdk returns Buffer[][][] - get [0][0] to get Buffer[]
+      const msgsForCet = this.convertMessagesForDdk([messagesList[i]])[0][0];
+
+      try {
+        const debugInfo: CetAdaptorSignatureInputs =
+          this._ddk.getCetAdaptorSignatureInputs(
+            cetForDdk,
+            [ddkOracleInfo],
+            fundingScript,
+            fundOutputValue,
+            [msgsForCet],
+          );
+
+        const sighash = this._ddk.getCetSighash(
+          cetForDdk,
+          fundingScript,
+          fundOutputValue,
+        );
+
+        cetsDebugInfo.push({
+          cetIndex: i,
+          cetTxid: debugInfo.cetTxid,
+          sighash: sighash.toString('hex'),
+          adaptorPoint: debugInfo.adaptorPoint.toString('hex'),
+          inputIndex: debugInfo.inputIndex,
+          scriptPubkey: debugInfo.scriptPubkey.toString('hex'),
+          value: debugInfo.value,
+          message: messagesList[i].messages.join(','),
+          outputs: cetForDdk.outputs.map((output) => ({
+            value: output.value,
+            scriptPubkey: output.scriptPubkey.toString('hex'),
+          })),
+        });
+      } catch (error: unknown) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        console.error(`Error getting debug info for CET ${i}:`, errorMessage);
+      }
+    }
+
+    return {
+      cets: cetsDebugInfo,
+      fundingScript: fundingScript.toString('hex'),
+      fundOutputValue,
+      oraclePubkey: announcement.oraclePublicKey.toString('hex'),
+      oracleNonces: announcement.oracleEvent.oracleNonces.map((n) =>
+        n.toString('hex'),
+      ),
+      offerFundingPubkey: dlcOffer.fundingPubkey.toString('hex'),
+      acceptFundingPubkey: dlcAccept.fundingPubkey.toString('hex'),
+    };
   }
 
   private async CreateFundingSigs(

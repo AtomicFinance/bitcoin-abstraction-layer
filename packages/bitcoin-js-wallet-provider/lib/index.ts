@@ -1,3 +1,4 @@
 import BitcoinJsWalletProvider from './BitcoinJsWalletProvider';
+import BitcoinSingleKeyWalletProvider from './BitcoinSingleKeyWalletProvider';
 
-export { BitcoinJsWalletProvider };
+export { BitcoinJsWalletProvider, BitcoinSingleKeyWalletProvider };

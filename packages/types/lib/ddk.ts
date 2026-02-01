@@ -39,6 +39,15 @@ export interface DdkOracleInfo {
   nonces: Array<Buffer>;
 }
 
+export interface CetAdaptorSignatureInputs {
+  cetTxid: string;
+  sighash: Buffer;
+  adaptorPoint: Buffer;
+  inputIndex: number;
+  scriptPubkey: Buffer;
+  value: bigint;
+}
+
 export interface PartyParams {
   fundPubkey: Buffer;
   changeScriptPubkey: Buffer;
@@ -114,6 +123,11 @@ export interface DdkInterface {
     fundOutputValue: bigint,
     msgs: Array<Array<Array<Buffer>>>,
   ): Array<AdaptorSignature>;
+
+  createCetAdaptorPointsFromOracleInfo(
+    oracleInfo: Array<DdkOracleInfo>,
+    msgs: Array<Array<Array<Buffer>>>,
+  ): Array<Buffer>;
 
   verifyCetAdaptorSigFromOracleInfo(
     adaptorSig: AdaptorSignature,
@@ -259,6 +273,21 @@ export interface DdkInterface {
     localPrivkey: Buffer,
     remoteSignature: Buffer,
   ): DdkTransaction;
+
+  // Debug methods for CET adaptor signature verification
+  getCetAdaptorSignatureInputs(
+    cet: DdkTransaction,
+    oracleInfo: Array<DdkOracleInfo>,
+    fundingScriptPubkey: Buffer,
+    fundOutputValue: bigint,
+    msgs: Array<Array<Buffer>>,
+  ): CetAdaptorSignatureInputs;
+
+  getCetSighash(
+    cet: DdkTransaction,
+    fundingScriptPubkey: Buffer,
+    fundOutputValue: bigint,
+  ): Buffer;
 }
 
 // Legacy function declarations for backward compatibility
@@ -451,3 +480,18 @@ export declare function signMultiSigInput(
   localPrivkey: Buffer,
   remoteSignature: Buffer,
 ): DdkTransaction;
+
+// Debug methods for CET adaptor signature verification
+export declare function getCetAdaptorSignatureInputs(
+  cet: DdkTransaction,
+  oracleInfo: Array<DdkOracleInfo>,
+  fundingScriptPubkey: Buffer,
+  fundOutputValue: bigint,
+  msgs: Array<Array<Buffer>>,
+): CetAdaptorSignatureInputs;
+
+export declare function getCetSighash(
+  cet: DdkTransaction,
+  fundingScriptPubkey: Buffer,
+  fundOutputValue: bigint,
+): Buffer;

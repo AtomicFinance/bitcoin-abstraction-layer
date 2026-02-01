@@ -1,0 +1,51 @@
+{
+  "name": "@atomicfinance/bitcoin-sats-connect-provider",
+  "version": "4.2.7",
+  "description": "Bitcoin SatsConnect Provider for DLC operations with wallet emulator",
+  "module": "dist/index.js",
+  "main": "dist/index.js",
+  "directories": {
+    "dist": "dist",
+    "src": "lib"
+  },
+  "files": [
+    "dist",
+    "lib"
+  ],
+  "scripts": {
+    "build": "../../node_modules/.bin/tsc --project tsconfig.json",
+    "lint": "../../node_modules/.bin/eslint  .",
+    "lint:fix": "../../node_modules/.bin/eslint --fix  .",
+    "test": "../../node_modules/.bin/nyc --reporter=lcov --reporter=text --extension=.ts ../../node_modules/.bin/mocha --recursive \"tests/**/*.test.*\""
+  },
+  "author": "Atomic Finance <info@atomic.finance>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14"
+  },
+  "dependencies": {
+    "@atomicfinance/bitcoin-utils": "^4.2.7",
+    "@atomicfinance/bitcoin-wallet-provider": "^4.2.7",
+    "@atomicfinance/provider": "^4.2.7",
+    "@atomicfinance/types": "^4.2.7",
+    "@atomicfinance/utils": "^4.2.7",
+    "@babel/runtime": "^7.12.1",
+    "@node-dlc/core": "1.1.7",
+    "@node-dlc/messaging": "1.1.7",
+    "bip32": "^2.0.6",
+    "bip39": "^3.0.2",
+    "bitcoin-network": "0.1.0",
+    "bitcoinjs-lib": "6.1.7",
+    "bitcoinjs-message": "^2.1.0",
+    "ecpair": "^2.1.0",
+    "@bitcoin-js/tiny-secp256k1-asmjs": "^2.2.0",
+    "@node-dlc/bufio": "1.1.7"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": false,
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  }
+}
