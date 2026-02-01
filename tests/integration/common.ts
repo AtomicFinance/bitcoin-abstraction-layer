@@ -9,9 +9,16 @@ import chaiAsPromised from 'chai-as-promised';
 import BitcoinCfdProvider from '../../packages/bitcoin-cfd-provider/lib';
 import BitcoinDdkProvider from '../../packages/bitcoin-ddk-provider/lib';
 import BitcoinDlcProvider from '../../packages/bitcoin-dlc-provider/lib';
-import { BitcoinJsWalletProvider } from '../../packages/bitcoin-js-wallet-provider';
+import {
+  BitcoinJsWalletProvider,
+  BitcoinSingleKeyWalletProvider,
+} from '../../packages/bitcoin-js-wallet-provider';
 import { BitcoinNodeWalletProvider } from '../../packages/bitcoin-node-wallet-provider';
 import { BitcoinRpcProvider } from '../../packages/bitcoin-rpc-provider';
+import {
+  BitcoinSatsConnectProvider,
+  FordefiWalletEmulator,
+} from '../../packages/bitcoin-sats-connect-provider/lib';
 import { decodeRawTransaction } from '../../packages/bitcoin-utils';
 import { Client } from '../../packages/client';
 import * as errors from '../../packages/errors';
@@ -162,6 +169,53 @@ bitcoinWithDdk2.addProvider(
 );
 bitcoinWithDdk2.addProvider(new BitcoinDdkProvider(network, ddkJs));
 
+/**
+ * Fordefi single-key wallet (offerer) with SatsConnect provider
+ * Address: tb1q6se58v8t8eh6jkpuvpf7uygavxg5rcmxs3ehqu
+ */
+const FORDEFI_PRIVATE_KEY =
+  '0a8b645f148e6cdc3c7145c18b014bdfc27daaf1b169f6c0eedaa35bcf287199';
+
+const fordefiWalletEmulator = new FordefiWalletEmulator({
+  network,
+  privateKey: FORDEFI_PRIVATE_KEY,
+  ddk: ddkJs,
+});
+
+const fordefiOfferer = new Client();
+fordefiOfferer.addProvider(mockedBitcoinRpcProvider() as unknown as Provider);
+fordefiOfferer.addProvider(
+  new BitcoinSingleKeyWalletProvider({
+    network,
+    privateKey: FORDEFI_PRIVATE_KEY,
+    addressType: bitcoin.AddressType.BECH32,
+  }) as any,
+);
+// SatsConnect provider handles signDlcAccept (no DDK provider needed)
+fordefiOfferer.addProvider(
+  new BitcoinSatsConnectProvider({
+    network,
+    wallet: fordefiWalletEmulator,
+    ddk: ddkJs,
+  }) as any,
+);
+
+/**
+ * Lygos BE mnemonic wallet (accepter)
+ */
+const lygosAccepter = new Client();
+lygosAccepter.addProvider(mockedBitcoinRpcProvider() as unknown as Provider);
+lygosAccepter.addProvider(
+  new BitcoinJsWalletProvider({
+    network,
+    mnemonic:
+      'access glide critic adapt stairs august celery recycle rebuild lady mutual start scrap oblige nuclear leave science park good lawsuit drip spirit close ginger',
+    baseDerivationPath: `m/84'/${config.bitcoin.network.coinType}'/0'`,
+    addressType: bitcoin.AddressType.BECH32,
+  }) as any,
+);
+lygosAccepter.addProvider(new BitcoinDdkProvider(network, ddkJs));
+
 const chains = {
   bitcoinWithNode: {
     id: 'Bitcoin Node',
@@ -210,6 +264,18 @@ const chains = {
     id: 'Bitcoin DDK',
     name: 'bitcoin',
     client: bitcoinWithDdk2,
+    network: network,
+  },
+  fordefiOfferer: {
+    id: 'Fordefi Offerer (Single Key + SatsConnect)',
+    name: 'bitcoin',
+    client: fordefiOfferer,
+    network: network,
+  },
+  lygosAccepter: {
+    id: 'Lygos Accepter',
+    name: 'bitcoin',
+    client: lygosAccepter,
     network: network,
   },
 };

@@ -4,7 +4,7 @@
   "private": true,
   "packageManager": "pnpm@8.15.0",
   "devDependencies": {
-    "@bennyblader/ddk-ts": "^0.3.31",
+    "@bennyblader/ddk-ts": "^0.3.33",
     "@changesets/cli": "^2.22.0",
     "@node-dlc/bitcoin": "1.1.7",
     "@node-dlc/bufio": "1.1.7",
@@ -73,6 +73,7 @@
     "test:unit": "turbo run test:unit",
     "test:integration": "cross-env NODE_ENV=test NODE_OPTIONS=--import=tsx nyc --reporter=text --reporter=lcov mocha --require dotenv/config --require source-map-support/register --extension ts,tsx --timeout 60000 --max-old-space-size=4096 \"tests/integration/**/*.ts\"",
     "test:integration:sequential": "cross-env NODE_ENV=test NODE_OPTIONS=--import=tsx nyc --reporter=text --reporter=lcov mocha --require dotenv/config --require source-map-support/register --extension ts,tsx --timeout 60000 --max-old-space-size=4096 \"tests/integration/**/*.ts\"",
+    "test:message:verification": "cross-env NODE_ENV=test NODE_OPTIONS=--import=tsx nyc --reporter=text --reporter=lcov mocha --require dotenv/config --require source-map-support/register --extension ts,tsx --timeout 60000 --max-old-space-size=4096 --grep \"DLC Message Verification|DLC Adaptor Signature Verification\" \"tests/integration/dlc/dlc-message-verification.test.ts\"",
     "prepublishOnly": "pnpm build",
     "changeset": "changeset",
     "version": "pnpm changeset version",

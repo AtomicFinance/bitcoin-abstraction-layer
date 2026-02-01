@@ -169,13 +169,19 @@ export default class Dlc implements DlcProvider {
    * Sign Dlc Accept Message
    * @param dlcOffer Dlc Offer Message
    * @param dlcAccept Dlc Accept Message
+   * @param dlcTransactions Optional Dlc Transactions (required for SatsConnectProvider)
    * @returns {Promise<SignDlcAcceptResponse}
    */
   async signDlcAccept(
     dlcOffer: DlcOffer,
     dlcAccept: DlcAccept,
+    dlcTransactions?: DlcTransactions,
   ): Promise<SignDlcAcceptResponse> {
-    return this.client.getMethod('signDlcAccept')(dlcOffer, dlcAccept);
+    return this.client.getMethod('signDlcAccept')(
+      dlcOffer,
+      dlcAccept,
+      dlcTransactions,
+    );
   }
 
   /**
