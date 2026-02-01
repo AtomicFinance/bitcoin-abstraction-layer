@@ -8,8 +8,8 @@ import { ECPairFactory, ECPairInterface } from 'ecpair';
 
 import {
   AddressPurpose,
-  DlcSignOfferParams,
   DlcSignOfferResult,
+  EmulatorDlcSignOfferParams,
   SatsConnectResponse,
   SatsConnectWalletAddress,
   WalletInterface,
@@ -137,7 +137,7 @@ export class FordefiWalletEmulator implements WalletInterface {
 
         case 'dlc_signOffer':
           return (await this._dlcSignOffer(
-            params as DlcSignOfferParams,
+            params as EmulatorDlcSignOfferParams,
           )) as SatsConnectResponse<T>;
 
         case 'signPsbt':
@@ -232,7 +232,7 @@ export class FordefiWalletEmulator implements WalletInterface {
    * - cetTransactions: Array of Base64 adaptor signatures
    */
   private async _dlcSignOffer(
-    params: DlcSignOfferParams,
+    params: EmulatorDlcSignOfferParams,
   ): Promise<SatsConnectResponse<DlcSignOfferResult>> {
     // Validate required DDK params
     if (

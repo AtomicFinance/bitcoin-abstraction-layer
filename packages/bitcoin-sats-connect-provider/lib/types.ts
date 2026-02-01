@@ -65,7 +65,7 @@ export interface WalletInterface {
   request<T>(method: string, params?: unknown): Promise<SatsConnectResponse<T>>;
 }
 
-// DLC Sign Offer parameters
+// DLC Sign Offer parameters (matches Fordefi's dlc_signOffer interface)
 export interface DlcSignOfferParams {
   fundingTransaction: {
     psbt: string;
@@ -77,14 +77,18 @@ export interface DlcSignOfferParams {
   };
   cetTransactions: Array<{
     psbt: string;
-    adaptorPoint: string;
+    adaptorPoint: string; // Base64-encoded 33-byte compressed SEC1 point
   }>;
-  // DDK-specific data for adaptor signature creation
-  cets?: DdkTransaction[];
-  oracleInfo?: DdkOracleInfo[];
-  fundingScriptPubkey?: Buffer;
-  fundOutputValue?: bigint;
-  messages?: Buffer[][][];
+}
+
+// Extended params for FordefiWalletEmulator (includes DDK data for local adaptor sig creation)
+export interface EmulatorDlcSignOfferParams extends DlcSignOfferParams {
+  // DDK-specific data needed by emulator to create adaptor signatures locally
+  cets: DdkTransaction[];
+  oracleInfo: DdkOracleInfo[];
+  fundingScriptPubkey: Buffer;
+  fundOutputValue: bigint;
+  messages: Buffer[][][];
 }
 
 // Response from dlc_signOffer

@@ -584,27 +584,36 @@ export class BitcoinSatsConnectProvider
         }
       });
 
-      // Get DDK params for adaptor signature creation
+      // Compute adaptor points using DDK
+      // This follows the Fordefi interface: wallet receives adaptorPoints, not messages
       const { messagesList } = this.getPayoutsFromContractInfo(dlcOffer);
       const oracleInfo = this.getOracleInfoForDdk(dlcOffer);
+      const messagesForDdk = this.convertMessagesForDdk(messagesList);
+
+      // Compute adaptor points from oracle info and messages
+      const adaptorPoints = this._ddk.createCetAdaptorPointsFromOracleInfo(
+        oracleInfo,
+        messagesForDdk,
+      );
+
+      // Convert adaptor points to base64 for the wallet interface
+      const adaptorPointsBase64 = adaptorPoints.map((point: Buffer) =>
+        point.toString('base64'),
+      );
+
+      // Get additional DDK params needed for emulator (not used by real Fordefi wallet)
       const p2ms = this.createP2MSMultisig(
         dlcOffer.fundingPubkey,
         dlcAccept.fundingPubkey,
       );
       const fundingScriptPubkey = p2ms.output!;
       const fundOutputValue = this.getFundOutputValueSats(dlcTransactions);
-
-      // Convert CETs to DDK format
       const cetsForDdk = dlcTransactions.cets.map((cet) =>
         this.convertTxToDdkTransaction(cet),
       );
 
-      // Convert messages to DDK format
-      const messagesForDdk = this.convertMessagesForDdk(messagesList);
-
-      // Create adaptor points for backward compatibility (not used by emulator)
-      const adaptorPoints = cetPsbts.map(() => '00'.repeat(33));
-
+      // Build params matching Fordefi's dlc_signOffer interface
+      // Also includes DDK params for FordefiWalletEmulator (ignored by real Fordefi wallet)
       const params = {
         fundingTransaction: {
           psbt: fundingPsbt.toBase64(),
@@ -619,9 +628,9 @@ export class BitcoinSatsConnectProvider
         },
         cetTransactions: cetPsbts.map((cetPsbt, index) => ({
           psbt: cetPsbt.toBase64(),
-          adaptorPoint: adaptorPoints[index],
+          adaptorPoint: adaptorPointsBase64[index],
         })),
-        // DDK params for adaptor signature creation
+        // DDK params for FordefiWalletEmulator (ignored by real Fordefi wallet)
         cets: cetsForDdk,
         oracleInfo: oracleInfo,
         fundingScriptPubkey: fundingScriptPubkey,

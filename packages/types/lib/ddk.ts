@@ -124,6 +124,11 @@ export interface DdkInterface {
     msgs: Array<Array<Array<Buffer>>>,
   ): Array<AdaptorSignature>;
 
+  createCetAdaptorPointsFromOracleInfo(
+    oracleInfo: Array<DdkOracleInfo>,
+    msgs: Array<Array<Array<Buffer>>>,
+  ): Array<Buffer>;
+
   verifyCetAdaptorSigFromOracleInfo(
     adaptorSig: AdaptorSignature,
     cet: DdkTransaction,
