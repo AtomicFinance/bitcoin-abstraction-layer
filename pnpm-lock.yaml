@@ -589,6 +589,9 @@ importers:
       '@bitcoin-js/tiny-secp256k1-asmjs':
         specifier: ^2.2.0
         version: 2.2.4
+      '@node-dlc/bufio':
+        specifier: 1.1.7
+        version: 1.1.7
       '@node-dlc/core':
         specifier: 1.1.7
         version: 1.1.7
