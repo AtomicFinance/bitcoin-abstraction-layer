@@ -23,7 +23,7 @@ import {
   VerifySignatureRequest,
 } from '@atomicfinance/types';
 import { sleep } from '@atomicfinance/utils';
-import * as ecc from '@bitcoin-js/tiny-secp256k1-asmjs';
+import { getEcc, getECPair } from '@atomicfinance/utils';
 import { Script, Sequence, Tx } from '@node-dlc/bitcoin';
 import { StreamReader } from '@node-dlc/bufio';
 import { BatchDlcTxBuilder } from '@node-dlc/core';
@@ -83,7 +83,7 @@ import {
   Transaction as btTransaction,
 } from 'bitcoinjs-lib';
 import crypto from 'crypto';
-import { ECPairFactory, ECPairInterface } from 'ecpair';
+import { ECPairInterface } from 'ecpair';
 
 import {
   checkTypes,
@@ -99,8 +99,6 @@ import {
   outputsToPayouts,
   sortFundingInputsBySerialId,
 } from './utils/Utils';
-
-const ECPair = ECPairFactory(ecc);
 
 export default class BitcoinDdkProvider extends Provider {
   private _network: BitcoinNetwork;
@@ -183,7 +181,7 @@ export default class BitcoinDdkProvider extends Provider {
     psbt.validateSignaturesOfInput(
       0,
       (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
-        return ecc.verify(msghash, pubkey, signature);
+        return getEcc().verify(msghash, pubkey, signature);
       },
     );
 
@@ -1532,7 +1530,7 @@ export default class BitcoinDdkProvider extends Provider {
       if (partyInputMap.has(inputKey)) {
         // This input belongs to this party - sign it
         const { privKey } = partyInputMap.get(inputKey)!;
-        const keyPair = ECPair.fromPrivateKey(Buffer.from(privKey, 'hex'));
+        const keyPair = getECPair().fromPrivateKey(Buffer.from(privKey, 'hex'));
 
         // Check if this is a DLC input (2-of-2 multisig from previous DLC)
         if (fundingInput.dlcInput) {
@@ -1549,7 +1547,9 @@ export default class BitcoinDdkProvider extends Provider {
             fundingInput.dlcInput.localFundPubkey.toString('hex'),
             fundingInput.dlcInput.remoteFundPubkey.toString('hex'),
           );
-          const keyPair = ECPair.fromPrivateKey(Buffer.from(dlcPrivKey, 'hex'));
+          const keyPair = getECPair().fromPrivateKey(
+            Buffer.from(dlcPrivKey, 'hex'),
+          );
 
           // Update the input with the witnessScript before signing
           psbt.updateInput(inputIndex, {
@@ -1728,7 +1728,7 @@ export default class BitcoinDdkProvider extends Provider {
           psbt.validateSignaturesOfInput(
             inputIndex,
             (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
-              return ecc.verify(msghash, pubkey, signature);
+              return getEcc().verify(msghash, pubkey, signature);
             },
           );
 
@@ -1774,7 +1774,7 @@ export default class BitcoinDdkProvider extends Provider {
       psbt.validateSignaturesOfInput(
         inputIndex,
         (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
-          return ecc.verify(msghash, pubkey, signature);
+          return getEcc().verify(msghash, pubkey, signature);
         },
       );
 
@@ -1965,7 +1965,7 @@ export default class BitcoinDdkProvider extends Provider {
       psbt.validateSignaturesOfInput(
         0,
         (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
-          return ecc.verify(msghash, pubkey, signature);
+          return getEcc().verify(msghash, pubkey, signature);
         },
       );
     } catch (error) {
@@ -2117,7 +2117,9 @@ export default class BitcoinDdkProvider extends Provider {
             dlcInput.localFundPubkey.toString('hex'),
             dlcInput.remoteFundPubkey.toString('hex'),
           );
-          const keyPair = ECPair.fromPrivateKey(Buffer.from(dlcPrivKey, 'hex'));
+          const keyPair = getECPair().fromPrivateKey(
+            Buffer.from(dlcPrivKey, 'hex'),
+          );
 
           psbt.signInput(inputIndex, keyPair);
 
@@ -3635,7 +3637,7 @@ Payout Group not found even with brute force search',
     psbt.validateSignaturesOfInput(
       0,
       (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
-        return ecc.verify(msghash, pubkey, signature);
+        return getEcc().verify(msghash, pubkey, signature);
       },
     );
 
@@ -3871,7 +3873,7 @@ Payout Group not found even with brute force search',
     // Validate signatures
     psbt.validateSignaturesOfAllInputs(
       (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
-        return ecc.verify(msghash, pubkey, signature);
+        return getEcc().verify(msghash, pubkey, signature);
       },
     );
 
@@ -4264,7 +4266,7 @@ Payout Group not found even with brute force search',
 
     psbt.validateSignaturesOfAllInputs(
       (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
-        return ecc.verify(msghash, pubkey, signature);
+        return getEcc().verify(msghash, pubkey, signature);
       },
     );
     psbt.finalizeAllInputs();

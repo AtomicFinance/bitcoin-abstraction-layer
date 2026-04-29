@@ -60,8 +60,7 @@ import {
   VerifyRefundTxSignatureResponse,
   VerifySignatureRequest,
 } from '@atomicfinance/types';
-import { sleep } from '@atomicfinance/utils';
-import * as ecc from '@bitcoin-js/tiny-secp256k1-asmjs';
+import { getEcc, sleep } from '@atomicfinance/utils';
 import { Script, Sequence, Tx } from '@node-dlc/bitcoin';
 import { StreamReader } from '@node-dlc/bufio';
 import { BatchDlcTxBuilder } from '@node-dlc/core';
@@ -3795,7 +3794,7 @@ Payout Group not found even with brute force search',
     // Validate signatures
     psbt.validateSignaturesOfAllInputs(
       (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
-        return ecc.verify(msghash, pubkey, signature);
+        return getEcc().verify(msghash, pubkey, signature);
       },
     );
 
@@ -4196,7 +4195,7 @@ Payout Group not found even with brute force search',
 
     psbt.validateSignaturesOfAllInputs(
       (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
-        return ecc.verify(msghash, pubkey, signature);
+        return getEcc().verify(msghash, pubkey, signature);
       },
     );
     psbt.finalizeAllInputs();

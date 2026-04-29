@@ -24,8 +24,31 @@ export default class Client implements IClient {
   _providers: Provider[];
   version: string;
 
-  validateTransaction: Ajv.ValidateFunction;
-  validateBlock: Ajv.ValidateFunction;
+  // Ajv compilation is deferred until first use — it cost ~70 ms in the
+  // ctor and the validators are rarely (if ever) invoked. See
+  // bitcoin-abstraction-layer/docs/perf/buildchainclient-4s-investigation.md.
+  private _ajv?: Ajv.Ajv;
+  private _validateTransaction?: Ajv.ValidateFunction;
+  private _validateBlock?: Ajv.ValidateFunction;
+
+  private _getAjv(): Ajv.Ajv {
+    if (!this._ajv) this._ajv = new Ajv();
+    return this._ajv;
+  }
+
+  get validateTransaction(): Ajv.ValidateFunction {
+    if (!this._validateTransaction) {
+      this._validateTransaction = this._getAjv().compile(TransactionSchema);
+    }
+    return this._validateTransaction;
+  }
+
+  get validateBlock(): Ajv.ValidateFunction {
+    if (!this._validateBlock) {
+      this._validateBlock = this._getAjv().compile(BlockSchema);
+    }
+    return this._validateBlock;
+  }
 
   _dlc: Dlc;
   _cfd: Cfd;
@@ -51,10 +74,7 @@ export default class Client implements IClient {
       this.addProvider(provider);
     }
 
-    const ajv = new Ajv();
-    this.validateTransaction = ajv.compile(TransactionSchema);
-    this.validateBlock = ajv.compile(BlockSchema);
-
+    // Ajv setup is deferred to first validate*() call — see lazy getters above.
     this._chain = new Chain(this);
     this._dlc = new Dlc(this);
     this._cfd = new Cfd(this);
