@@ -1,5 +1,14 @@
 # @atomicfinance/jsonrpc-provider
 
+## 4.2.8
+
+### Patch Changes
+
+- 82c2f2b: Lazy load ECC
+- Updated dependencies [82c2f2b]
+  - @atomicfinance/errors@4.2.8
+  - @atomicfinance/node-provider@4.2.8
+
 ## 4.2.7
 
 ### Patch Changes
