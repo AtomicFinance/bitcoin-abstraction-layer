@@ -13,16 +13,13 @@ import {
   SendOptions,
   Transaction,
 } from '@atomicfinance/types';
-import * as ecc from '@bitcoin-js/tiny-secp256k1-asmjs';
+import { getECPair } from '@atomicfinance/utils';
 import { BitcoinNetwork, BitcoinNetworks } from 'bitcoin-network';
 import {
   Psbt,
   script,
   Transaction as BitcoinJsTransaction,
 } from 'bitcoinjs-lib';
-import { ECPairFactory } from 'ecpair';
-
-const ECPair = ECPairFactory(ecc);
 import { flatten, isString, uniq } from 'lodash';
 
 const BIP70_CHAIN_TO_NETWORK: { [index: string]: BitcoinNetwork } = {
@@ -149,7 +146,7 @@ export default class BitcoinNodeWalletProvider extends Provider {
         (address) => address.derivationPath === input.derivationPath,
       );
       const wif = await this.dumpPrivKey(address.address);
-      const keyPair = ECPair.fromWIF(wif, this._network);
+      const keyPair = getECPair().fromWIF(wif, this._network);
       psbt.signInput(input.index, keyPair);
     }
 
@@ -173,7 +170,7 @@ export default class BitcoinNodeWalletProvider extends Provider {
     const wallets = [];
     for (const address of addresses) {
       const wif = await this.dumpPrivKey(address);
-      const wallet = ECPair.fromWIF(wif, this._network);
+      const wallet = getECPair().fromWIF(wif, this._network);
       wallets.push(wallet);
     }
 

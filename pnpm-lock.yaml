@@ -819,6 +819,9 @@ importers:
       '@babel/runtime':
         specifier: ^7.12.1
         version: 7.28.2
+      '@bitcoin-js/tiny-secp256k1-asmjs':
+        specifier: ^2.2.0
+        version: 2.2.4
       bignumber.js:
         specifier: ^9.0.0
         version: 9.3.1
@@ -834,6 +837,9 @@ importers:
       coinselect:
         specifier: ^3.1.11
         version: 3.1.13
+      ecpair:
+        specifier: ^2.1.0
+        version: 2.1.0
       lodash:
         specifier: ^4.17.20
         version: 4.17.21
