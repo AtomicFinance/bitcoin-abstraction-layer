@@ -111,3 +111,4 @@ export {
   validateSecretAndHash,
   validateExpiration,
 };
+export { getEcc, getECPair } from './lazyEcc';

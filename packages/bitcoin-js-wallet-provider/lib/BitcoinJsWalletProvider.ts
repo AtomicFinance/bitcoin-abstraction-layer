@@ -14,7 +14,7 @@ import {
   Output,
   Transaction,
 } from '@atomicfinance/types';
-import * as ecc from '@bitcoin-js/tiny-secp256k1-asmjs';
+import { getEcc, getECPair } from '@atomicfinance/utils';
 import assert from 'assert';
 import { BIP32Interface, fromSeed } from 'bip32';
 import { mnemonicToSeed } from 'bip39';
@@ -25,10 +25,8 @@ import {
   script,
   Transaction as BitcoinJsTransaction,
 } from 'bitcoinjs-lib';
-import { ECPairFactory, ECPairInterface } from 'ecpair';
-
-const ECPair = ECPairFactory(ecc);
 import { signAsync as signBitcoinMessage } from 'bitcoinjs-message';
+import { ECPairInterface } from 'ecpair';
 
 const FEE_PER_BYTE_FALLBACK = 5;
 
@@ -96,7 +94,7 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
 
   async keyPair(derivationPath: string): Promise<ECPairInterface> {
     const wif = await this._toWIF(derivationPath);
-    return ECPair.fromWIF(wif, this._network);
+    return getECPair().fromWIF(wif, this._network);
   }
 
   private async _toWIF(derivationPath: string): Promise<string> {
@@ -226,7 +224,7 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
 
         const scriptStack = bitcoin.script.decompile(input.witnessScript);
         const pubkeys = scriptStack.filter(
-          (data) => Buffer.isBuffer(data) && ecc.isPoint(data),
+          (data) => Buffer.isBuffer(data) && getEcc().isPoint(data),
         );
 
         await Promise.all(
@@ -255,7 +253,7 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
 
     psbt.validateSignaturesOfAllInputs(
       (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
-        ecc.verify(msghash, pubkey, signature),
+        getEcc().verify(msghash, pubkey, signature),
     ); // ensure all signatures are valid!
     return psbt.toBase64();
   }
@@ -274,7 +272,7 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
     try {
       psbt.validateSignaturesOfAllInputs(
         (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
-          ecc.verify(msghash, pubkey, signature),
+          getEcc().verify(msghash, pubkey, signature),
       ); // ensure all signatures are valid!
       psbt.finalizeAllInputs();
     } catch {
@@ -488,7 +486,7 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
       psbt.validateSignaturesOfInput(
         i,
         (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
-          ecc.verify(msghash, pubkey, signature),
+          getEcc().verify(msghash, pubkey, signature),
       );
     }
 
@@ -579,7 +577,7 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
       psbt.validateSignaturesOfInput(
         i,
         (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
-          ecc.verify(msghash, pubkey, signature),
+          getEcc().verify(msghash, pubkey, signature),
       );
     }
 
