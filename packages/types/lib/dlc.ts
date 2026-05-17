@@ -39,6 +39,7 @@ export interface DlcProvider {
   createDlcTxs(
     _dlcOffer: DlcOffer,
     _dlcAccept: DlcAccept,
+    _options?: { offerRefundPayout?: bigint; acceptRefundPayout?: bigint },
   ): Promise<CreateDlcTxsResponse>;
 
   /**

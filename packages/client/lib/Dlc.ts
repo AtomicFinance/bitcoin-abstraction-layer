@@ -88,8 +88,9 @@ export default class Dlc implements DlcProvider {
   async createDlcTxs(
     dlcOffer: DlcOffer,
     dlcAccept: DlcAccept,
+    options?: { offerRefundPayout?: bigint; acceptRefundPayout?: bigint },
   ): Promise<CreateDlcTxsResponse> {
-    return this.client.getMethod('createDlcTxs')(dlcOffer, dlcAccept);
+    return this.client.getMethod('createDlcTxs')(dlcOffer, dlcAccept, options);
   }
 
   /**

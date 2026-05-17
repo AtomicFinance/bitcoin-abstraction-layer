@@ -49,6 +49,7 @@ export interface PartyParams {
   inputAmount: bigint;
   collateral: bigint;
   dlcInputs: Array<DdkDlcInputInfo>;
+  refundPayout?: bigint;
 }
 
 export interface Payout {

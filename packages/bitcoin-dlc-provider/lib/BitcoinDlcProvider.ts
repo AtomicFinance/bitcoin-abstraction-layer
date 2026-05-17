@@ -695,6 +695,7 @@ export default class BitcoinDlcProvider
   public async createDlcTxs(
     dlcOffer: DlcOffer,
     dlcAccept: DlcAccept,
+    _options?: { offerRefundPayout?: bigint; acceptRefundPayout?: bigint },
   ): Promise<CreateDlcTxsResponse> {
     const localFundPubkey = dlcOffer.fundingPubkey.toString('hex');
     const remoteFundPubkey = dlcAccept.fundingPubkey.toString('hex');

@@ -706,6 +706,7 @@ export default class BitcoinDdkProvider extends Provider {
   public async createDlcTxs(
     dlcOffer: DlcOffer,
     dlcAccept: DlcAccept,
+    options?: { offerRefundPayout?: bigint; acceptRefundPayout?: bigint },
   ): Promise<CreateDlcTxsResponse> {
     const localFundPubkey = dlcOffer.fundingPubkey.toString('hex');
     const remoteFundPubkey = dlcAccept.fundingPubkey.toString('hex');
@@ -810,6 +811,7 @@ export default class BitcoinDdkProvider extends Provider {
       inputAmount: BigInt(localInputAmount),
       collateral: BigInt(dlcOffer.offerCollateral),
       dlcInputs: localDlcInputs,
+      refundPayout: options?.offerRefundPayout,
     };
 
     const remoteParams: PartyParams = {
@@ -822,6 +824,7 @@ export default class BitcoinDdkProvider extends Provider {
       inputAmount: BigInt(remoteInputAmount),
       collateral: BigInt(dlcAccept.acceptCollateral),
       dlcInputs: [],
+      refundPayout: options?.acceptRefundPayout,
     };
 
     // Determine whether to use regular or spliced DLC transactions
