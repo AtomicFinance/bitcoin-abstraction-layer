@@ -826,6 +826,7 @@ export default class BitcoinDdkProvider extends Provider {
 
     // Determine whether to use regular or spliced DLC transactions
     const hasDlcInputs = localDlcInputs.length > 0;
+    const contractFlags = dlcOffer.contractFlags[0];
 
     let dlcTxs: DdkDlcTransactions;
 
@@ -840,6 +841,7 @@ export default class BitcoinDdkProvider extends Provider {
         0,
         dlcOffer.cetLocktime,
         BigInt(dlcOffer.fundOutputSerialId),
+        contractFlags,
       );
     } else {
       // Use regular DLC transactions when no DLC inputs
@@ -852,6 +854,7 @@ export default class BitcoinDdkProvider extends Provider {
         0,
         dlcOffer.cetLocktime,
         BigInt(dlcOffer.fundOutputSerialId),
+        contractFlags,
       );
     }
 
@@ -3017,6 +3020,7 @@ Payout Group not found even with brute force search',
     refundLocktime: number,
     fixedInputs?: Input[] | FundingInput[],
     inputSupplementationMode?: InputSupplementationMode,
+    contractFlags?: number,
   ): Promise<DlcOffer> {
     contractInfo.validate();
     const network = await this.getConnectedNetwork();
@@ -3093,7 +3097,7 @@ Payout Group not found even with brute force search',
       'changeSerialId cannot equal the fundOutputSerialId',
     );
 
-    dlcOffer.contractFlags = Buffer.from('00', 'hex');
+    dlcOffer.contractFlags = Buffer.from([contractFlags ?? 0x00]);
     dlcOffer.chainHash = chainHashFromNetwork(network);
     dlcOffer.contractInfo = contractInfo;
     dlcOffer.fundingPubkey = fundingPubKey;

@@ -71,6 +71,7 @@ export interface DlcProvider {
     refundLocktime: number,
     fixedInputs?: Input[],
     inputSupplementationMode?: InputSupplementationMode,
+    contractFlags?: number,
   ): Promise<DlcOffer>;
 
   /**

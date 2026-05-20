@@ -2581,6 +2581,7 @@ Payout Group not found even with brute force search',
     refundLocktime: number,
     fixedInputs?: Input[] | FundingInput[],
     inputSupplementationMode?: InputSupplementationMode,
+    contractFlags?: number,
   ): Promise<DlcOffer> {
     contractInfo.validate();
     const network = await this.getConnectedNetwork();
@@ -2663,7 +2664,7 @@ Payout Group not found even with brute force search',
       'changeSerialId cannot equal the fundOutputSerialId',
     );
 
-    dlcOffer.contractFlags = Buffer.from('00', 'hex');
+    dlcOffer.contractFlags = Buffer.from([contractFlags ?? 0x00]);
     dlcOffer.chainHash = chainHashFromNetwork(network);
     dlcOffer.contractInfo = contractInfo;
     dlcOffer.fundingPubkey = fundingPubKey;
@@ -2715,6 +2716,7 @@ Payout Group not found even with brute force search',
     cetLocktime: number,
     refundLocktimes: number[],
     fixedInputs?: Input[],
+    contractFlags?: number,
   ): Promise<DlcOffer[]> {
     if (
       contractInfos.length !== offerCollaterals.length ||
@@ -2770,7 +2772,7 @@ Payout Group not found even with brute force search',
       // Generate a random 32-byte temporary contract ID
       dlcOffer.temporaryContractId = crypto.randomBytes(32);
 
-      dlcOffer.contractFlags = Buffer.from('00', 'hex');
+      dlcOffer.contractFlags = Buffer.from([contractFlags ?? 0x00]);
       dlcOffer.chainHash = chainHashFromNetwork(network);
       dlcOffer.contractInfo = contractInfo;
       dlcOffer.fundingPubkey = fundingPubKey;
