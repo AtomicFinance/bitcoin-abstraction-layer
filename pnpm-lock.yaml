@@ -638,6 +638,9 @@ importers:
       bitcoinjs-lib:
         specifier: 6.1.7
         version: 6.1.7
+      coinselect:
+        specifier: ^3.1.11
+        version: 3.1.13
       lodash:
         specifier: ^4.17.20
         version: 4.17.21
