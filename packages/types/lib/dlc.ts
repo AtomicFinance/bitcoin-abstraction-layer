@@ -1,3 +1,5 @@
+export const CONTRACT_FLAG_REFUND_TO_ACCEPTER = 0x01;
+
 import { Tx } from '@node-dlc/bitcoin';
 import {
   CetAdaptorSignatures,

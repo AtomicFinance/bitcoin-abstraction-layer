@@ -177,7 +177,6 @@ export default class BitcoinDlcProvider
 
     // If not found in existing addresses, do comprehensive search
     // For DLC splicing, funding pubkeys can be at much higher derivation paths
-    console.log('Searching extensively for DLC funding private key...');
 
     for (const isChange of [false, true]) {
       for (let i = 0; i < 1000; i++) {
