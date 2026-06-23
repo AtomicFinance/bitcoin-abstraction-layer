@@ -109,6 +109,7 @@ export default class Dlc implements DlcProvider {
     refundLocktime: number,
     fixedInputs?: IInput[],
     inputSupplementationMode?: InputSupplementationMode,
+    contractFlags?: number,
   ): Promise<DlcOffer> {
     return this.client.getMethod('createDlcOffer')(
       contractInfo,
@@ -118,6 +119,7 @@ export default class Dlc implements DlcProvider {
       refundLocktime,
       fixedInputs,
       inputSupplementationMode,
+      contractFlags,
     );
   }
 
@@ -128,6 +130,7 @@ export default class Dlc implements DlcProvider {
     cetLocktime: number,
     refundLocktimes: number[],
     fixedInputs?: IInput[],
+    contractFlags?: number,
   ): Promise<DlcOffer[]> {
     return this.client.getMethod('batchCreateDlcOffer')(
       contractInfos,
@@ -136,6 +139,7 @@ export default class Dlc implements DlcProvider {
       cetLocktime,
       refundLocktimes,
       fixedInputs,
+      contractFlags,
     );
   }
 

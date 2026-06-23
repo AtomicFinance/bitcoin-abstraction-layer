@@ -155,6 +155,7 @@ export interface DdkInterface {
     fundLockTime: number,
     cetLockTime: number,
     fundOutputSerialId: bigint,
+    contractFlags?: number,
   ): DdkDlcTransactions;
 
   createFundTxLockingScript(
@@ -181,6 +182,7 @@ export interface DdkInterface {
     fundLockTime: number,
     cetLockTime: number,
     fundOutputSerialId: bigint,
+    contractFlags?: number,
   ): DdkDlcTransactions;
 
   getChangeOutputAndFees(
@@ -330,6 +332,7 @@ export declare function createDlcTransactions(
   fundLockTime: number,
   cetLockTime: number,
   fundOutputSerialId: bigint,
+  contractFlags?: number,
 ): DdkDlcTransactions;
 
 export declare function createFundTxLockingScript(
@@ -356,6 +359,7 @@ export declare function createSplicedDlcTransactions(
   fundLockTime: number,
   cetLockTime: number,
   fundOutputSerialId: bigint,
+  contractFlags?: number,
 ): DdkDlcTransactions;
 
 export declare function getChangeOutputAndFees(
