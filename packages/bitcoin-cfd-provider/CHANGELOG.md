@@ -1,5 +1,14 @@
 # @atomicfinance/bitcoin-cfd-provider
 
+## 4.3.0
+
+### Patch Changes
+
+- Updated dependencies [d041351]
+  - @atomicfinance/types@4.3.0
+  - @atomicfinance/provider@4.3.0
+  - @atomicfinance/utils@4.3.0
+
 ## 4.2.8
 
 ### Patch Changes

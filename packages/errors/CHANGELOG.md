@@ -1,5 +1,7 @@
 # @atomicfinance/errors
 
+## 4.3.0
+
 ## 4.2.8
 
 ### Patch Changes

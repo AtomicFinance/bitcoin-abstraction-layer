@@ -1,5 +1,11 @@
 # @atomicfinance/types
 
+## 4.3.0
+
+### Minor Changes
+
+- d041351: Add contractFlags parameter to DLC offer and transaction creation
+
 ## 4.2.8
 
 ### Patch Changes

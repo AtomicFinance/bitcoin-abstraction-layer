@@ -1,5 +1,19 @@
 # @atomicfinance/bitcoin-ddk-provider
 
+## 4.3.0
+
+### Minor Changes
+
+- d041351: Add contractFlags parameter to DLC offer and transaction creation
+
+### Patch Changes
+
+- Updated dependencies [d041351]
+  - @atomicfinance/types@4.3.0
+  - @atomicfinance/bitcoin-utils@4.3.0
+  - @atomicfinance/provider@4.3.0
+  - @atomicfinance/utils@4.3.0
+
 ## 4.2.8
 
 ### Patch Changes
