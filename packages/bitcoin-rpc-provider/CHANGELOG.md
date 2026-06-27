@@ -1,5 +1,17 @@
 # @atomicfinance/bitcoin-rpc-provider
 
+## 4.3.1
+
+### Patch Changes
+
+- 3df9ca2: Bump @node-dlc 1.1.9 and ddk-ts 0.3.41 to fix backward compatibility dlc protocol issues contract flags
+- Updated dependencies [3df9ca2]
+  - @atomicfinance/types@4.3.1
+  - @atomicfinance/bitcoin-utils@4.3.1
+  - @atomicfinance/errors@4.3.1
+  - @atomicfinance/jsonrpc-provider@4.3.1
+  - @atomicfinance/utils@4.3.1
+
 ## 4.3.0
 
 ### Patch Changes
