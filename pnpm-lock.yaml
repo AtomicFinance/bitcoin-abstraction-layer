@@ -13,23 +13,23 @@ importers:
   .:
     devDependencies:
       '@bennyblader/ddk-ts':
-        specifier: ^0.3.40
-        version: 0.3.40
+        specifier: ^0.3.41
+        version: 0.3.41
       '@changesets/cli':
         specifier: ^2.22.0
         version: 2.29.5
       '@node-dlc/bitcoin':
-        specifier: 1.1.7
-        version: 1.1.7
+        specifier: 1.1.9
+        version: 1.1.9
       '@node-dlc/bufio':
-        specifier: 1.1.7
-        version: 1.1.7
+        specifier: 1.1.9
+        version: 1.1.9
       '@node-dlc/core':
-        specifier: 1.1.7
-        version: 1.1.7
+        specifier: 1.1.9
+        version: 1.1.9
       '@node-dlc/messaging':
-        specifier: 1.1.7
-        version: 1.1.7
+        specifier: 1.1.9
+        version: 1.1.9
       '@swc-node/register':
         specifier: ^0.1.12
         version: 0.1.12
@@ -181,10 +181,10 @@ importers:
   packages/bitcoin-cfd-address-derivation-provider:
     dependencies:
       '@atomicfinance/provider':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../provider
       '@atomicfinance/types':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../types
       bip32:
         specifier: ^4.0.0
@@ -206,13 +206,13 @@ importers:
   packages/bitcoin-cfd-provider:
     dependencies:
       '@atomicfinance/provider':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../provider
       '@atomicfinance/types':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../types
       '@atomicfinance/utils':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../utils
       lodash:
         specifier: ^4.17.20
@@ -228,10 +228,10 @@ importers:
   packages/bitcoin-ddk-address-derivation-provider:
     dependencies:
       '@atomicfinance/provider':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../provider
       '@atomicfinance/types':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../types
       bip32:
         specifier: ^4.0.0
@@ -253,16 +253,16 @@ importers:
   packages/bitcoin-ddk-provider:
     dependencies:
       '@atomicfinance/bitcoin-utils':
-        specifier: 4.2.8
+        specifier: 4.3.0
         version: link:../bitcoin-utils
       '@atomicfinance/provider':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../provider
       '@atomicfinance/types':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../types
       '@atomicfinance/utils':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../utils
       '@bitcoin-js/tiny-secp256k1-asmjs':
         specifier: ^2.2.0
@@ -293,35 +293,35 @@ importers:
   packages/bitcoin-dlc-provider:
     dependencies:
       '@atomicfinance/bitcoin-utils':
-        specifier: 4.2.8
+        specifier: 4.3.0
         version: link:../bitcoin-utils
       '@atomicfinance/provider':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../provider
       '@atomicfinance/types':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../types
       '@atomicfinance/utils':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../utils
       '@bitcoin-js/tiny-secp256k1-asmjs':
         specifier: ^2.2.0
         version: 2.2.4
       '@node-dlc/bitcoin':
-        specifier: 1.1.7
-        version: 1.1.7
+        specifier: 1.1.9
+        version: 1.1.9
       '@node-dlc/bufio':
-        specifier: 1.1.7
-        version: 1.1.7
+        specifier: 1.1.9
+        version: 1.1.9
       '@node-dlc/core':
-        specifier: 1.1.7
-        version: 1.1.7
+        specifier: 1.1.9
+        version: 1.1.9
       '@node-dlc/crypto':
-        specifier: 1.1.7
-        version: 1.1.7
+        specifier: 1.1.9
+        version: 1.1.9
       '@node-dlc/messaging':
-        specifier: 1.1.7
-        version: 1.1.7
+        specifier: 1.1.9
+        version: 1.1.9
       bignumber.js:
         specifier: ^9.0.1
         version: 9.3.1
@@ -357,22 +357,22 @@ importers:
   packages/bitcoin-esplora-api-provider:
     dependencies:
       '@atomicfinance/bitcoin-utils':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../bitcoin-utils
       '@atomicfinance/crypto':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../crypto
       '@atomicfinance/errors':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../errors
       '@atomicfinance/node-provider':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../node-provider
       '@atomicfinance/types':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../types
       '@atomicfinance/utils':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../utils
       '@babel/runtime':
         specifier: ^7.12.1
@@ -400,16 +400,16 @@ importers:
   packages/bitcoin-esplora-batch-api-provider:
     dependencies:
       '@atomicfinance/bitcoin-esplora-api-provider':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../bitcoin-esplora-api-provider
       '@atomicfinance/node-provider':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../node-provider
       '@atomicfinance/types':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../types
       '@atomicfinance/utils':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../utils
       '@babel/runtime':
         specifier: ^7.12.1
@@ -434,19 +434,19 @@ importers:
   packages/bitcoin-js-wallet-provider:
     dependencies:
       '@atomicfinance/bitcoin-utils':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../bitcoin-utils
       '@atomicfinance/bitcoin-wallet-provider':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../bitcoin-wallet-provider
       '@atomicfinance/provider':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../provider
       '@atomicfinance/types':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../types
       '@atomicfinance/utils':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../utils
       '@babel/runtime':
         specifier: ^7.12.1
@@ -455,8 +455,8 @@ importers:
         specifier: ^2.2.0
         version: 2.2.4
       '@node-dlc/core':
-        specifier: 1.1.7
-        version: 1.1.7
+        specifier: 1.1.9
+        version: 1.1.9
       bip32:
         specifier: ^2.0.6
         version: 2.0.6
@@ -483,22 +483,22 @@ importers:
   packages/bitcoin-node-wallet-provider:
     dependencies:
       '@atomicfinance/bitcoin-utils':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../bitcoin-utils
       '@atomicfinance/crypto':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../crypto
       '@atomicfinance/jsonrpc-provider':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../jsonrpc-provider
       '@atomicfinance/provider':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../provider
       '@atomicfinance/types':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../types
       '@atomicfinance/utils':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../utils
       '@babel/runtime':
         specifier: ^7.12.1
@@ -532,19 +532,19 @@ importers:
   packages/bitcoin-rpc-provider:
     dependencies:
       '@atomicfinance/bitcoin-utils':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../bitcoin-utils
       '@atomicfinance/errors':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../errors
       '@atomicfinance/jsonrpc-provider':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../jsonrpc-provider
       '@atomicfinance/types':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../types
       '@atomicfinance/utils':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../utils
       '@babel/runtime':
         specifier: ^7.12.1
@@ -569,16 +569,16 @@ importers:
   packages/bitcoin-utils:
     dependencies:
       '@atomicfinance/crypto':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../crypto
       '@atomicfinance/errors':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../errors
       '@atomicfinance/types':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../types
       '@atomicfinance/utils':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../utils
       '@babel/runtime':
         specifier: ^7.12.1
@@ -612,23 +612,23 @@ importers:
   packages/bitcoin-wallet-provider:
     dependencies:
       '@atomicfinance/bitcoin-utils':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../bitcoin-utils
       '@atomicfinance/errors':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../errors
       '@atomicfinance/provider':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../provider
       '@atomicfinance/types':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../types
       '@atomicfinance/utils':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../utils
       '@node-dlc/core':
-        specifier: 1.1.7
-        version: 1.1.7
+        specifier: 1.1.9
+        version: 1.1.9
       bip32:
         specifier: ^2.0.6
         version: 2.0.6
@@ -655,23 +655,23 @@ importers:
   packages/client:
     dependencies:
       '@atomicfinance/bitcoin-utils':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../bitcoin-utils
       '@atomicfinance/errors':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../errors
       '@atomicfinance/provider':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../provider
       '@atomicfinance/types':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../types
       '@node-dlc/bitcoin':
-        specifier: 1.1.7
-        version: 1.1.7
+        specifier: 1.1.9
+        version: 1.1.9
       '@node-dlc/messaging':
-        specifier: 1.1.7
-        version: 1.1.7
+        specifier: 1.1.9
+        version: 1.1.9
       ajv:
         specifier: ^6.10.0
         version: 6.12.6
@@ -717,10 +717,10 @@ importers:
   packages/jsonrpc-provider:
     dependencies:
       '@atomicfinance/errors':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../errors
       '@atomicfinance/node-provider':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../node-provider
       '@babel/runtime':
         specifier: ^7.12.1
@@ -745,10 +745,10 @@ importers:
   packages/node-provider:
     dependencies:
       '@atomicfinance/errors':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../errors
       '@atomicfinance/provider':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../provider
       '@babel/runtime':
         specifier: ^7.12.1
@@ -770,7 +770,7 @@ importers:
   packages/provider:
     dependencies:
       '@atomicfinance/types':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../types
       lodash:
         specifier: ^4.17.20
@@ -786,14 +786,14 @@ importers:
   packages/types:
     dependencies:
       '@node-dlc/bitcoin':
-        specifier: 1.1.7
-        version: 1.1.7
+        specifier: 1.1.9
+        version: 1.1.9
       '@node-dlc/messaging':
-        specifier: 1.1.7
-        version: 1.1.7
+        specifier: 1.1.9
+        version: 1.1.9
       '@node-dlc/noise':
-        specifier: 1.1.7
-        version: 1.1.7
+        specifier: 1.1.9
+        version: 1.1.9
       lodash:
         specifier: ^4.17.20
         version: 4.17.21
@@ -808,13 +808,13 @@ importers:
   packages/utils:
     dependencies:
       '@atomicfinance/crypto':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../crypto
       '@atomicfinance/errors':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../errors
       '@atomicfinance/types':
-        specifier: ^4.2.8
+        specifier: ^4.3.0
         version: link:../types
       '@babel/runtime':
         specifier: ^7.12.1
@@ -1016,30 +1016,9 @@ packages:
       '@babel/helper-validator-identifier': 7.27.1
     dev: true
 
-  /@bennyblader/ddk-ts-darwin-arm64@0.3.40:
-    resolution: {integrity: sha512-a6p3o6eRjn8EwmjfFlPOf1NpktvFNj5a6YokNMvHkJuEU0eauMNO6n3eOL0POr714sH7nFW08Dpak+As7DPZrw==}
+  /@bennyblader/ddk-ts@0.3.41:
+    resolution: {integrity: sha512-rtvys3yzLlOfFyyRU6H12B2Dl8I3JfotpenZ38nV21xk7sX8WeWVTLgD365h4zoXRUpQShBjEgddD5OLclB1Bw==}
     engines: {node: '>= 6.14.2 < 7 || >= 8.11.2 < 9 || >= 9.11.0 < 10 || >= 10.0.0'}
-    cpu: [arm64]
-    os: [darwin]
-    requiresBuild: true
-    dev: true
-    optional: true
-
-  /@bennyblader/ddk-ts-linux-x64-gnu@0.3.40:
-    resolution: {integrity: sha512-CFVGRSZxd7Vho0FioT2xCXC9LVYsLeqim3ywBS95wTKNrwnA0K2ez8tWwizKtTfuXIhwAkmkMMniEqnXlZ7lSQ==}
-    engines: {node: '>= 6.14.2 < 7 || >= 8.11.2 < 9 || >= 9.11.0 < 10 || >= 10.0.0'}
-    cpu: [x64]
-    os: [linux]
-    requiresBuild: true
-    dev: true
-    optional: true
-
-  /@bennyblader/ddk-ts@0.3.40:
-    resolution: {integrity: sha512-8UE779LxuOc1G3eu4yMNZP3BrMfQjbc7nFWr4Ns2G98giHt8NBmpfYo0SLsAycovm3R6Ocx2tiZozrfmW07K0w==}
-    engines: {node: '>= 6.14.2 < 7 || >= 8.11.2 < 9 || >= 9.11.0 < 10 || >= 10.0.0'}
-    optionalDependencies:
-      '@bennyblader/ddk-ts-darwin-arm64': 0.3.40
-      '@bennyblader/ddk-ts-linux-x64-gnu': 0.3.40
     dev: true
 
   /@bitcoin-js/tiny-secp256k1-asmjs@2.2.4:
@@ -1682,56 +1661,56 @@ packages:
     resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
     engines: {node: ^14.21.3 || >=16}
 
-  /@node-dlc/bitcoin@1.1.7:
-    resolution: {integrity: sha512-iZ6OnuSfBp1xd09zX8lNmwRZ/n2RYSX9lICD3s6vvGzubliFjj1GV3DJyHbmPOX/vv/MQDusFSJayxU494OUTw==}
+  /@node-dlc/bitcoin@1.1.9:
+    resolution: {integrity: sha512-hT2v/V84ocYETML45gDrHcoAIgG2oF9uETqnBrObhAv3wv0qV5eyl71BaAH062ghe0wgnVswAvLqPYtPWY+QCw==}
     dependencies:
-      '@node-dlc/bufio': 1.1.7
-      '@node-dlc/crypto': 1.1.7
+      '@node-dlc/bufio': 1.1.9
+      '@node-dlc/crypto': 1.1.9
 
-  /@node-dlc/bufio@1.1.7:
-    resolution: {integrity: sha512-2FkHES+93m+Eue7YFc0GfCHhnhtYcmdjrazMjIrolOmi7azGNkAHdR/RIpVT6UmSx3dY2Srk5Iyd2JPjQ8n0gw==}
+  /@node-dlc/bufio@1.1.9:
+    resolution: {integrity: sha512-NIGmVyheYE9wtdihdzOwP10aD96TaF28x486dcqysl5cPHNb4VX1EMBDH2aCl1ZpgHgYXhHQl8S7dDrMEu0LpA==}
     dependencies:
       decimal.js: 10.6.0
 
-  /@node-dlc/checksum@1.1.7:
-    resolution: {integrity: sha512-0LSkIzLedOnjIRJ5tQtAUAGN2ag7z5/CVPKsPErlBK9eczP1NpYaQ5fMkfChB2cXc4OHc1ZCgV3f2MTgilU65w==}
+  /@node-dlc/checksum@1.1.9:
+    resolution: {integrity: sha512-RZyPvc4MZvcXXEeCn3Cc3cTM9JIKnQILzfNlQ+8Abm6hcko9jzpaNCmryaAMle3TmF9IsYNrxhyZO+CRY88Mbg==}
 
-  /@node-dlc/common@1.1.7:
-    resolution: {integrity: sha512-SlgW8MiRXCTnRBl3ZpHuRxaSZf0SmoKD/yZigvZaEYVlhJU2AyEOqdJupb1pTI5w6AEWm/hvkNP3/TvwtFv4Yw==}
+  /@node-dlc/common@1.1.9:
+    resolution: {integrity: sha512-F/kcjnBrM3q8luBbjzndayHH/QZ33vr7zYZs4jf668Y371amSQWktxvak9Qt4ocSr/J4aeTcO6XlvKINZZI8jw==}
     dependencies:
-      '@node-dlc/bitcoin': 1.1.7
-      '@node-dlc/bufio': 1.1.7
+      '@node-dlc/bitcoin': 1.1.9
+      '@node-dlc/bufio': 1.1.9
 
-  /@node-dlc/core@1.1.7:
-    resolution: {integrity: sha512-PeZ+NWcKYKSkOp/4aRgLRSmwxSFsRBeiElmlVIoTjnPsVfHDpCQ+iIjJrSz/iXNYJhYEbOPryMX0w7UCdql9RA==}
+  /@node-dlc/core@1.1.9:
+    resolution: {integrity: sha512-cFx7kaZC5bbC7oo8WejQAe7a/CzVqyM+aFUdWw0aNyRQ1N0RyP79zda0agCMq2lh6TCPLvV0i2eLpZiaF8Y6AA==}
     dependencies:
-      '@node-dlc/bitcoin': 1.1.7
-      '@node-dlc/bufio': 1.1.7
-      '@node-dlc/common': 1.1.7
-      '@node-dlc/crypto': 1.1.7
-      '@node-dlc/messaging': 1.1.7
+      '@node-dlc/bitcoin': 1.1.9
+      '@node-dlc/bufio': 1.1.9
+      '@node-dlc/common': 1.1.9
+      '@node-dlc/crypto': 1.1.9
+      '@node-dlc/messaging': 1.1.9
       bignumber.js: 9.3.1
       bitcoin-network: 0.1.0
       decimal.js: 10.6.0
 
-  /@node-dlc/crypto@1.1.7:
-    resolution: {integrity: sha512-h+sE4BqQWl6GWKWIYkZ1uOZJzv47FKneoLgQnZLxHnNiMoAY344XPaip2ANg975CKLXsFg4aGAUZ3I00Ev35gw==}
+  /@node-dlc/crypto@1.1.9:
+    resolution: {integrity: sha512-UmEmHSFdONK05gAvTWcpvMIMmG/ECd+ThhiNsLX0Rh8Yc3Xt0SrU7unuo2szDCWfRthakn6TbaomoLLMiV31Eg==}
     engines: {node: '>=10.17'}
     dependencies:
       secp256k1: 5.0.1
 
-  /@node-dlc/logger@1.1.7:
-    resolution: {integrity: sha512-nR6WJqtBxmmYsh5dBSDAGIRbG9T5a117RpQEZy5343ZwHLUi0Q7u7HzqtjVzVr91egHy+rhEK0mxmz7v0Wfxgg==}
+  /@node-dlc/logger@1.1.9:
+    resolution: {integrity: sha512-sUJUEAxkhM39SRcZoxIfKtGG/jvF8QAVY4/mB4LLXSxcrVlMV9oGauWyqESLSueJ0CPmWMJMOLQKcWQ6g/5qhg==}
 
-  /@node-dlc/messaging@1.1.7:
-    resolution: {integrity: sha512-ryq91u64pll3FXfYTuoFHB3giVua+CzwBYH+h2b+pjTIpcNR45fppssRDG/5BfJa+PLvGiOIAn1PX1ts7hPHdA==}
+  /@node-dlc/messaging@1.1.9:
+    resolution: {integrity: sha512-T41rENz1y3mjg6EiJBYgGm1KBYiHoTipheuf+hBhpp4+KUDP7WTPK92uqbEyMLVyK4NbA9kXlWnguXc36ATzlQ==}
     dependencies:
-      '@node-dlc/bitcoin': 1.1.7
-      '@node-dlc/bufio': 1.1.7
-      '@node-dlc/checksum': 1.1.7
-      '@node-dlc/common': 1.1.7
-      '@node-dlc/crypto': 1.1.7
-      '@node-dlc/wire': 1.1.7
+      '@node-dlc/bitcoin': 1.1.9
+      '@node-dlc/bufio': 1.1.9
+      '@node-dlc/checksum': 1.1.9
+      '@node-dlc/common': 1.1.9
+      '@node-dlc/crypto': 1.1.9
+      '@node-dlc/wire': 1.1.9
       '@types/json-bigint': 1.0.4
       bip-schnorr: 0.6.3
       bitcoin-network: 0.1.0
@@ -1740,22 +1719,22 @@ packages:
       json-bigint: 1.0.0
       secp256k1: 5.0.1
 
-  /@node-dlc/noise@1.1.7:
-    resolution: {integrity: sha512-bGC4q81/I8bgDEehbU1tARoqOys888AtHNTnvQuQCZXtmFXtNGBIeKUKi5blszD9rie+VX4qcrMf1te1gYDoyg==}
+  /@node-dlc/noise@1.1.9:
+    resolution: {integrity: sha512-oyU5oadK83zcisboua4s/Mna0cpH7PXJpvA2UcXuY2v+LWA8/sCLQljQUnuKc7moz1Vg62aPHEYcGouGbo+UhA==}
     dependencies:
-      '@node-dlc/crypto': 1.1.7
-      '@node-dlc/logger': 1.1.7
+      '@node-dlc/crypto': 1.1.9
+      '@node-dlc/logger': 1.1.9
 
-  /@node-dlc/wire@1.1.7:
-    resolution: {integrity: sha512-NwAoHkYnHRv19viXcKmkQA8eOGabyBWocmzj7oS4M0o43RKjMLvwRpyBtfoTZaZrBpkEiq5Dzz5JiNQDhY07Mg==}
+  /@node-dlc/wire@1.1.9:
+    resolution: {integrity: sha512-sNTAD8Y2/eihUT+AABhJpRPjYalH0mHdoQYgPODLFFrg6e3edlCcfq7TTpxES615Rx1hw6huJO6tl9J4DoTgsg==}
     dependencies:
-      '@node-dlc/bitcoin': 1.1.7
-      '@node-dlc/bufio': 1.1.7
-      '@node-dlc/checksum': 1.1.7
-      '@node-dlc/common': 1.1.7
-      '@node-dlc/crypto': 1.1.7
-      '@node-dlc/logger': 1.1.7
-      '@node-dlc/noise': 1.1.7
+      '@node-dlc/bitcoin': 1.1.9
+      '@node-dlc/bufio': 1.1.9
+      '@node-dlc/checksum': 1.1.9
+      '@node-dlc/common': 1.1.9
+      '@node-dlc/crypto': 1.1.9
+      '@node-dlc/logger': 1.1.9
+      '@node-dlc/noise': 1.1.9
 
   /@node-rs/helper@0.2.1:
     resolution: {integrity: sha512-DEPYwfkkhJlVLFu6hWVGZi96jUCBahi1WoHZAC7gSFoeoJtxwJ+FrJSDx/8c9aIwAf477NnKj8bRJzFm98Me3A==}
