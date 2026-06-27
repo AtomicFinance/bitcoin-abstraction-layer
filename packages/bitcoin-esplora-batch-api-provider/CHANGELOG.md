@@ -1,5 +1,16 @@
 # @atomicfinance/bitcoin-esplora-batch-api-provider
 
+## 4.3.1
+
+### Patch Changes
+
+- 3df9ca2: Bump @node-dlc 1.1.9 and ddk-ts 0.3.41 to fix backward compatibility dlc protocol issues contract flags
+- Updated dependencies [3df9ca2]
+  - @atomicfinance/types@4.3.1
+  - @atomicfinance/bitcoin-esplora-api-provider@4.3.1
+  - @atomicfinance/node-provider@4.3.1
+  - @atomicfinance/utils@4.3.1
+
 ## 4.3.0
 
 ### Patch Changes
