@@ -13,8 +13,8 @@ importers:
   .:
     devDependencies:
       '@bennyblader/ddk-ts':
-        specifier: ^0.3.41
-        version: 0.3.41
+        specifier: ^0.3.42
+        version: 0.3.42
       '@changesets/cli':
         specifier: ^2.22.0
         version: 2.29.5
@@ -1016,9 +1016,30 @@ packages:
       '@babel/helper-validator-identifier': 7.27.1
     dev: true
 
-  /@bennyblader/ddk-ts@0.3.41:
-    resolution: {integrity: sha512-rtvys3yzLlOfFyyRU6H12B2Dl8I3JfotpenZ38nV21xk7sX8WeWVTLgD365h4zoXRUpQShBjEgddD5OLclB1Bw==}
+  /@bennyblader/ddk-ts-darwin-arm64@0.3.42:
+    resolution: {integrity: sha512-6AXhl8UmU42cfSTyu6aSQTwm3EPhJiHjHE0zTWDv+P1aPZiUsNbFZOY81fnz1t5w0KE9t06IaEYY3Mf0Q0ne9Q==}
     engines: {node: '>= 6.14.2 < 7 || >= 8.11.2 < 9 || >= 9.11.0 < 10 || >= 10.0.0'}
+    cpu: [arm64]
+    os: [darwin]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@bennyblader/ddk-ts-linux-x64-gnu@0.3.42:
+    resolution: {integrity: sha512-Q/ZmjiXj3IWDfI4QXyEha9S6b9ZZ+T4NRDhvaY6ShhixdStT6mR43hkFw+5WRWxoWMT2HALjkct54L3VyWUjig==}
+    engines: {node: '>= 6.14.2 < 7 || >= 8.11.2 < 9 || >= 9.11.0 < 10 || >= 10.0.0'}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@bennyblader/ddk-ts@0.3.42:
+    resolution: {integrity: sha512-fTifJ0bUCQSMxBJGpefTx6VciLdCL1tNWiW9P+gR7295d+2N35VySJhaMupLG+ctU50oNzP8u/YhvwIHMURYUQ==}
+    engines: {node: '>= 6.14.2 < 7 || >= 8.11.2 < 9 || >= 9.11.0 < 10 || >= 10.0.0'}
+    optionalDependencies:
+      '@bennyblader/ddk-ts-darwin-arm64': 0.3.42
+      '@bennyblader/ddk-ts-linux-x64-gnu': 0.3.42
     dev: true
 
   /@bitcoin-js/tiny-secp256k1-asmjs@2.2.4:
