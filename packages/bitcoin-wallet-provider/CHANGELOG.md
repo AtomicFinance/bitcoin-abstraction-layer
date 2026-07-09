@@ -1,5 +1,17 @@
 # @atomicfinance/bitcoin-wallet-provider
 
+## 4.3.2
+
+### Patch Changes
+
+- dd55924: Bump @node-dlc to 1.2.0, which preserves raw DLC change scripts (taproot change output support)
+- Updated dependencies [dd55924]
+  - @atomicfinance/types@4.3.2
+  - @atomicfinance/bitcoin-utils@4.3.2
+  - @atomicfinance/errors@4.3.2
+  - @atomicfinance/provider@4.3.2
+  - @atomicfinance/utils@4.3.2
+
 ## 4.3.1
 
 ### Patch Changes
