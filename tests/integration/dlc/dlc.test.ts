@@ -1,5 +1,6 @@
 import 'mocha';
 
+import * as ecc from '@bitcoin-js/tiny-secp256k1-asmjs';
 import { Sequence, Tx, Value } from '@node-dlc/bitcoin';
 import { StreamReader } from '@node-dlc/bufio';
 import {
@@ -32,6 +33,7 @@ import {
 import BN from 'bignumber.js';
 import { math } from 'bip-schnorr';
 import { BitcoinNetworks, chainHashFromNetwork } from 'bitcoin-network';
+import { initEccLib } from 'bitcoinjs-lib';
 import * as chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import * as crypto from 'crypto';
@@ -59,6 +61,9 @@ import {
 
 chai.use(chaiAsPromised);
 const expect = chai.expect;
+
+// Required for bitcoinjs-lib to parse taproot (P2TR) scripts in message validation
+initEccLib(ecc);
 
 const chain = chains.bitcoinWithJs;
 const alice = chain.client;
@@ -301,6 +306,149 @@ describe('dlc provider', () => {
       )(dlcOffer, dlcAccept, dlcTransactions);
       expect(details).to.be.an('array');
       expect((sighashes as string[])[0]).to.equal(details[0].sighash);
+    });
+
+    it('should fund and execute enum DLC with taproot change output', async () => {
+      const oracle = new Oracle('olivia');
+
+      const ddkInput = await getInput(ddk);
+      const ddk2Input = await getInput(ddk2);
+
+      const eventId = 'trump-vs-kamala';
+
+      const oliviaInfo = oracle.GetOracleInfo();
+
+      const eventDescriptor = new EnumEventDescriptor();
+      eventDescriptor.outcomes = ['trump', 'kamala', 'neither'];
+
+      const event = new OracleEvent();
+      event.oracleNonces = oliviaInfo.rValues.map((rValue) =>
+        Buffer.from(rValue, 'hex'),
+      );
+      event.eventMaturityEpoch = 1617170572;
+      event.eventDescriptor = eventDescriptor;
+      event.eventId = eventId;
+
+      const announcement = new OracleAnnouncement();
+      announcement.announcementSig = Buffer.from(
+        oracle.GetSignature(
+          math
+            .taggedHash('DLC/oracle/announcement/v0', event.serialize())
+            .toString('hex'),
+        ),
+        'hex',
+      );
+      announcement.oraclePublicKey = Buffer.from(oliviaInfo.publicKey, 'hex');
+      announcement.oracleEvent = event;
+
+      const oracleInfo = new SingleOracleInfo();
+      oracleInfo.announcement = announcement;
+
+      const contractDescriptor = new EnumeratedDescriptor();
+      contractDescriptor.outcomes = [
+        {
+          outcome: sha256(Buffer.from('trump')).toString('hex'),
+          localPayout: BigInt(1e6),
+        },
+        {
+          outcome: sha256(Buffer.from('kamala')).toString('hex'),
+          localPayout: BigInt(0),
+        },
+        {
+          outcome: sha256(Buffer.from('neither')).toString('hex'),
+          localPayout: BigInt(500000),
+        },
+      ];
+
+      const totalCollateral = BigInt(1e6);
+
+      const contractInfo = new SingleContractInfo();
+      contractInfo.totalCollateral = totalCollateral;
+      contractInfo.contractDescriptor = contractDescriptor;
+      contractInfo.oracleInfo = oracleInfo;
+
+      const feeRatePerVb = BigInt(10);
+      const cetLocktime = 1617170572;
+      const refundLocktime = 1617170573;
+
+      const taprootDlcOffer = await ddk.dlc.createDlcOffer(
+        contractInfo,
+        totalCollateral - BigInt(2000),
+        feeRatePerVb,
+        cetLocktime,
+        refundLocktime,
+        [ddkInput],
+      );
+
+      // Override the change output with a P2TR script (OP_1 <32-byte x-only key>)
+      // to verify the funding flow supports taproot outputs end to end
+      const taprootSpk = Buffer.concat([
+        Buffer.from([0x51, 0x20]),
+        taprootDlcOffer.fundingPubkey.subarray(1, 33),
+      ]);
+      taprootDlcOffer.changeSpk = taprootSpk;
+
+      DlcOffer.deserialize(taprootDlcOffer.serialize()).validate();
+
+      const taprootAcceptResponse: AcceptDlcOfferResponse =
+        await ddk2.dlc.acceptDlcOffer(taprootDlcOffer, [ddk2Input]);
+
+      const taprootDlcAccept = taprootAcceptResponse.dlcAccept;
+      const taprootDlcTransactions = taprootAcceptResponse.dlcTransactions;
+
+      DlcAccept.deserialize(taprootDlcAccept.serialize()).validate();
+
+      const taprootSignResponse: SignDlcAcceptResponse =
+        await ddk.dlc.signDlcAccept(taprootDlcOffer, taprootDlcAccept);
+
+      const taprootDlcSign = taprootSignResponse.dlcSign;
+
+      const fundTx = await ddk2.dlc.finalizeDlcSign(
+        taprootDlcOffer,
+        taprootDlcAccept,
+        taprootDlcSign,
+        taprootDlcTransactions,
+      );
+
+      const taprootChangeOutput = fundTx.outputs.find((output) =>
+        output.scriptPubKey.serializeCmds().equals(taprootSpk),
+      );
+      expect(taprootChangeOutput).to.not.be.undefined;
+
+      const fundTxId = await ddk2.chain.sendRawTransaction(
+        fundTx.serialize().toString('hex'),
+      );
+      expect(fundTxId).to.not.be.undefined;
+
+      const fundTxDetails = await ddk.getMethod('getTransactionByHash')(
+        fundTxId,
+      );
+      const taprootVout = fundTxDetails._raw.vout.find(
+        (vout) => vout.scriptPubKey.hex === taprootSpk.toString('hex'),
+      );
+      expect(taprootVout).to.not.be.undefined;
+      expect(taprootVout.scriptPubKey.type).to.equal('witness_v1_taproot');
+
+      const taprootOracleAttestation =
+        generateDdkCompatibleEnumOracleAttestation(
+          'trump',
+          oracle,
+          announcement.getEventId(),
+        );
+
+      const cet = await ddk2.dlc.execute(
+        taprootDlcOffer,
+        taprootDlcAccept,
+        taprootDlcSign,
+        taprootDlcTransactions,
+        taprootOracleAttestation,
+        false,
+      );
+
+      const cetTxId = await ddk2.chain.sendRawTransaction(
+        cet.serialize().toString('hex'),
+      );
+      expect(cetTxId).to.not.be.undefined;
     });
 
     it('should fund and refund enum DLC', async () => {
