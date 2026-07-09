@@ -19,17 +19,17 @@ importers:
         specifier: ^2.22.0
         version: 2.29.5
       '@node-dlc/bitcoin':
-        specifier: 1.1.9
-        version: 1.1.9
+        specifier: 1.2.0
+        version: 1.2.0
       '@node-dlc/bufio':
-        specifier: 1.1.9
-        version: 1.1.9
+        specifier: 1.2.0
+        version: 1.2.0
       '@node-dlc/core':
-        specifier: 1.1.9
-        version: 1.1.9
+        specifier: 1.2.0
+        version: 1.2.0
       '@node-dlc/messaging':
-        specifier: 1.1.9
-        version: 1.1.9
+        specifier: 1.2.0
+        version: 1.2.0
       '@swc-node/register':
         specifier: ^0.1.12
         version: 0.1.12
@@ -308,20 +308,20 @@ importers:
         specifier: ^2.2.0
         version: 2.2.4
       '@node-dlc/bitcoin':
-        specifier: 1.1.9
-        version: 1.1.9
+        specifier: 1.2.0
+        version: 1.2.0
       '@node-dlc/bufio':
-        specifier: 1.1.9
-        version: 1.1.9
+        specifier: 1.2.0
+        version: 1.2.0
       '@node-dlc/core':
-        specifier: 1.1.9
-        version: 1.1.9
+        specifier: 1.2.0
+        version: 1.2.0
       '@node-dlc/crypto':
-        specifier: 1.1.9
-        version: 1.1.9
+        specifier: 1.2.0
+        version: 1.2.0
       '@node-dlc/messaging':
-        specifier: 1.1.9
-        version: 1.1.9
+        specifier: 1.2.0
+        version: 1.2.0
       bignumber.js:
         specifier: ^9.0.1
         version: 9.3.1
@@ -455,8 +455,8 @@ importers:
         specifier: ^2.2.0
         version: 2.2.4
       '@node-dlc/core':
-        specifier: 1.1.9
-        version: 1.1.9
+        specifier: 1.2.0
+        version: 1.2.0
       bip32:
         specifier: ^2.0.6
         version: 2.0.6
@@ -627,8 +627,8 @@ importers:
         specifier: ^4.3.1
         version: link:../utils
       '@node-dlc/core':
-        specifier: 1.1.9
-        version: 1.1.9
+        specifier: 1.2.0
+        version: 1.2.0
       bip32:
         specifier: ^2.0.6
         version: 2.0.6
@@ -667,11 +667,11 @@ importers:
         specifier: ^4.3.1
         version: link:../types
       '@node-dlc/bitcoin':
-        specifier: 1.1.9
-        version: 1.1.9
+        specifier: 1.2.0
+        version: 1.2.0
       '@node-dlc/messaging':
-        specifier: 1.1.9
-        version: 1.1.9
+        specifier: 1.2.0
+        version: 1.2.0
       ajv:
         specifier: ^6.10.0
         version: 6.12.6
@@ -786,14 +786,14 @@ importers:
   packages/types:
     dependencies:
       '@node-dlc/bitcoin':
-        specifier: 1.1.9
-        version: 1.1.9
+        specifier: 1.2.0
+        version: 1.2.0
       '@node-dlc/messaging':
-        specifier: 1.1.9
-        version: 1.1.9
+        specifier: 1.2.0
+        version: 1.2.0
       '@node-dlc/noise':
-        specifier: 1.1.9
-        version: 1.1.9
+        specifier: 1.2.0
+        version: 1.2.0
       lodash:
         specifier: ^4.17.20
         version: 4.17.21
@@ -1682,56 +1682,56 @@ packages:
     resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
     engines: {node: ^14.21.3 || >=16}
 
-  /@node-dlc/bitcoin@1.1.9:
-    resolution: {integrity: sha512-hT2v/V84ocYETML45gDrHcoAIgG2oF9uETqnBrObhAv3wv0qV5eyl71BaAH062ghe0wgnVswAvLqPYtPWY+QCw==}
+  /@node-dlc/bitcoin@1.2.0:
+    resolution: {integrity: sha512-S5xR9+kpJPGnzNvH2Gmmpy7TElAQ/LYddzRfjrhWUH/1xulCPFeH+oQw8QBZmhCE5pzbDs+15m/rpEA9cDermA==}
     dependencies:
-      '@node-dlc/bufio': 1.1.9
-      '@node-dlc/crypto': 1.1.9
+      '@node-dlc/bufio': 1.2.0
+      '@node-dlc/crypto': 1.2.0
 
-  /@node-dlc/bufio@1.1.9:
-    resolution: {integrity: sha512-NIGmVyheYE9wtdihdzOwP10aD96TaF28x486dcqysl5cPHNb4VX1EMBDH2aCl1ZpgHgYXhHQl8S7dDrMEu0LpA==}
+  /@node-dlc/bufio@1.2.0:
+    resolution: {integrity: sha512-0z2lutHiO/XFIprRNdnu23pf7Y+x1+hdBqYe4wg65giEp94nSqXI5FyyAc2KkgiHES16g0rAR9lAZURUPBtalA==}
     dependencies:
       decimal.js: 10.6.0
 
-  /@node-dlc/checksum@1.1.9:
-    resolution: {integrity: sha512-RZyPvc4MZvcXXEeCn3Cc3cTM9JIKnQILzfNlQ+8Abm6hcko9jzpaNCmryaAMle3TmF9IsYNrxhyZO+CRY88Mbg==}
+  /@node-dlc/checksum@1.2.0:
+    resolution: {integrity: sha512-vKkOe0OR9AAbNk+68P6VYJs3SUb+WTXzwHe3aexxTFRZQaGpfB3AtgE3sg206JdVkVbzRANcvgV6UfFsIp46qg==}
 
-  /@node-dlc/common@1.1.9:
-    resolution: {integrity: sha512-F/kcjnBrM3q8luBbjzndayHH/QZ33vr7zYZs4jf668Y371amSQWktxvak9Qt4ocSr/J4aeTcO6XlvKINZZI8jw==}
+  /@node-dlc/common@1.2.0:
+    resolution: {integrity: sha512-zyX8PNpsfGcsGmGp98EicoclyHK92/KgD8T3CjcIwGQ4T3MPXn6fG9HGYY1pPiH0DbPX4Vt4LUWM2EYuhGh7rg==}
     dependencies:
-      '@node-dlc/bitcoin': 1.1.9
-      '@node-dlc/bufio': 1.1.9
+      '@node-dlc/bitcoin': 1.2.0
+      '@node-dlc/bufio': 1.2.0
 
-  /@node-dlc/core@1.1.9:
-    resolution: {integrity: sha512-cFx7kaZC5bbC7oo8WejQAe7a/CzVqyM+aFUdWw0aNyRQ1N0RyP79zda0agCMq2lh6TCPLvV0i2eLpZiaF8Y6AA==}
+  /@node-dlc/core@1.2.0:
+    resolution: {integrity: sha512-ZaPSsFekMaU6i7LdWwMlWUipOjlno+1OBpjfvchK4s0c4jJOEFUkGgRF+UtzbAtA8SSL83vKyVHtWTtpUq2G9A==}
     dependencies:
-      '@node-dlc/bitcoin': 1.1.9
-      '@node-dlc/bufio': 1.1.9
-      '@node-dlc/common': 1.1.9
-      '@node-dlc/crypto': 1.1.9
-      '@node-dlc/messaging': 1.1.9
+      '@node-dlc/bitcoin': 1.2.0
+      '@node-dlc/bufio': 1.2.0
+      '@node-dlc/common': 1.2.0
+      '@node-dlc/crypto': 1.2.0
+      '@node-dlc/messaging': 1.2.0
       bignumber.js: 9.3.1
       bitcoin-network: 0.1.0
       decimal.js: 10.6.0
 
-  /@node-dlc/crypto@1.1.9:
-    resolution: {integrity: sha512-UmEmHSFdONK05gAvTWcpvMIMmG/ECd+ThhiNsLX0Rh8Yc3Xt0SrU7unuo2szDCWfRthakn6TbaomoLLMiV31Eg==}
+  /@node-dlc/crypto@1.2.0:
+    resolution: {integrity: sha512-mbcf3TKf17lBwBV+bjfeaSKc+tAS9ddrxw2iDt+R+8q2wRnWA+CWyV9m67ZgGhWhzrHEdgoFEGD1k8Okku0JnA==}
     engines: {node: '>=10.17'}
     dependencies:
       secp256k1: 5.0.1
 
-  /@node-dlc/logger@1.1.9:
-    resolution: {integrity: sha512-sUJUEAxkhM39SRcZoxIfKtGG/jvF8QAVY4/mB4LLXSxcrVlMV9oGauWyqESLSueJ0CPmWMJMOLQKcWQ6g/5qhg==}
+  /@node-dlc/logger@1.2.0:
+    resolution: {integrity: sha512-OMZvWhG2V1E6lA6oKh5swYkG4SO0IkCBuXHBj80c70De61tW3LzkH7IGKAi/JFIWQ+PV2GCTrR9+6sNp2N/2Bw==}
 
-  /@node-dlc/messaging@1.1.9:
-    resolution: {integrity: sha512-T41rENz1y3mjg6EiJBYgGm1KBYiHoTipheuf+hBhpp4+KUDP7WTPK92uqbEyMLVyK4NbA9kXlWnguXc36ATzlQ==}
+  /@node-dlc/messaging@1.2.0:
+    resolution: {integrity: sha512-SEcmnA1IRsSQFOXTW/9L4WAsAoqKJERUM0mUwI+IgXdzGMFmEXkbXCScBFTQhDpuLnogE1IUCv5BuveT9r+rDQ==}
     dependencies:
-      '@node-dlc/bitcoin': 1.1.9
-      '@node-dlc/bufio': 1.1.9
-      '@node-dlc/checksum': 1.1.9
-      '@node-dlc/common': 1.1.9
-      '@node-dlc/crypto': 1.1.9
-      '@node-dlc/wire': 1.1.9
+      '@node-dlc/bitcoin': 1.2.0
+      '@node-dlc/bufio': 1.2.0
+      '@node-dlc/checksum': 1.2.0
+      '@node-dlc/common': 1.2.0
+      '@node-dlc/crypto': 1.2.0
+      '@node-dlc/wire': 1.2.0
       '@types/json-bigint': 1.0.4
       bip-schnorr: 0.6.3
       bitcoin-network: 0.1.0
@@ -1740,22 +1740,22 @@ packages:
       json-bigint: 1.0.0
       secp256k1: 5.0.1
 
-  /@node-dlc/noise@1.1.9:
-    resolution: {integrity: sha512-oyU5oadK83zcisboua4s/Mna0cpH7PXJpvA2UcXuY2v+LWA8/sCLQljQUnuKc7moz1Vg62aPHEYcGouGbo+UhA==}
+  /@node-dlc/noise@1.2.0:
+    resolution: {integrity: sha512-hcN708qe7N8sAFUDjVJUpnpBwprVwtclLLTHRlde74iKZRgH566XlMsH5EcF/khuro6iXWXw1Kt6JZMdi8DIOQ==}
     dependencies:
-      '@node-dlc/crypto': 1.1.9
-      '@node-dlc/logger': 1.1.9
+      '@node-dlc/crypto': 1.2.0
+      '@node-dlc/logger': 1.2.0
 
-  /@node-dlc/wire@1.1.9:
-    resolution: {integrity: sha512-sNTAD8Y2/eihUT+AABhJpRPjYalH0mHdoQYgPODLFFrg6e3edlCcfq7TTpxES615Rx1hw6huJO6tl9J4DoTgsg==}
+  /@node-dlc/wire@1.2.0:
+    resolution: {integrity: sha512-2bWe94PNoVR2qZGbXjHo/DFQn3shy+apHNPNa2Ft5JnP8db3aVNoM79Loruy8XCPd0LmhSl4ylSCSU65fnftaw==}
     dependencies:
-      '@node-dlc/bitcoin': 1.1.9
-      '@node-dlc/bufio': 1.1.9
-      '@node-dlc/checksum': 1.1.9
-      '@node-dlc/common': 1.1.9
-      '@node-dlc/crypto': 1.1.9
-      '@node-dlc/logger': 1.1.9
-      '@node-dlc/noise': 1.1.9
+      '@node-dlc/bitcoin': 1.2.0
+      '@node-dlc/bufio': 1.2.0
+      '@node-dlc/checksum': 1.2.0
+      '@node-dlc/common': 1.2.0
+      '@node-dlc/crypto': 1.2.0
+      '@node-dlc/logger': 1.2.0
+      '@node-dlc/noise': 1.2.0
 
   /@node-rs/helper@0.2.1:
     resolution: {integrity: sha512-DEPYwfkkhJlVLFu6hWVGZi96jUCBahi1WoHZAC7gSFoeoJtxwJ+FrJSDx/8c9aIwAf477NnKj8bRJzFm98Me3A==}
