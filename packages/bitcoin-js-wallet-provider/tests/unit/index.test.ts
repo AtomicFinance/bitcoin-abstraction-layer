@@ -78,6 +78,8 @@ describe('Bitcoin Wallet provider', () => {
 
   describe('_buildSweepTransaction', () => {
     const feeRate = 10;
+    const taprootDestination =
+      'bcrt1p7yu5dsly83jg5tkxcljsa30vnpdpl22wr6rty98t6x6p6ekz2gkqcckz99';
 
     const mockSweepInputs = async (values: number[]) => {
       const addresses = await provider.getAddresses(0, values.length);
@@ -128,6 +130,39 @@ describe('Bitcoin Wallet provider', () => {
 
       expect(tx.ins).to.have.length(3);
       expect(tx.outs).to.have.length(1);
+      expect(tx.outs[0].value).to.equal(inputValue - fee);
+      expect(fee).to.be.at.least(Math.ceil(tx.virtualSize() * feeRate));
+    });
+
+    it('sweeps one P2WPKH input to a P2TR output with no change output', async () => {
+      const inputs = await mockSweepInputs([100000]);
+
+      const { hex, fee } = await provider._buildSweepTransaction(
+        taprootDestination,
+        feeRate,
+      );
+      const tx = Transaction.fromHex(hex);
+      const inputValue = inputs.reduce((total, input) => total + input.value, 0);
+
+      expect(tx.outs).to.have.length(1);
+      expect(tx.outs[0].script.length).to.equal(34);
+      expect(tx.outs[0].value).to.equal(inputValue - fee);
+      expect(fee).to.be.at.least(Math.ceil(tx.virtualSize() * feeRate));
+    });
+
+    it('sweeps multiple P2WPKH inputs to a P2TR output with no change output', async () => {
+      const inputs = await mockSweepInputs([100000, 200000, 300000]);
+
+      const { hex, fee } = await provider._buildSweepTransaction(
+        taprootDestination,
+        feeRate,
+      );
+      const tx = Transaction.fromHex(hex);
+      const inputValue = inputs.reduce((total, input) => total + input.value, 0);
+
+      expect(tx.ins).to.have.length(3);
+      expect(tx.outs).to.have.length(1);
+      expect(tx.outs[0].script.length).to.equal(34);
       expect(tx.outs[0].value).to.equal(inputValue - fee);
       expect(fee).to.be.at.least(Math.ceil(tx.virtualSize() * feeRate));
     });

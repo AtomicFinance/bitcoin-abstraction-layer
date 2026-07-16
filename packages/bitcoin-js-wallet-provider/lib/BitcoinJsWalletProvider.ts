@@ -29,6 +29,8 @@ import { signAsync as signBitcoinMessage } from 'bitcoinjs-message';
 import { ECPairInterface } from 'ecpair';
 
 const FEE_PER_BYTE_FALLBACK = 5;
+const P2WPKH_INPUT_VBYTES = 68;
+const TX_OVERHEAD_VBYTES = 10.5;
 
 type WalletProviderConstructor<T = Provider> = new (...args: unknown[]) => T;
 
@@ -606,7 +608,18 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
     }
 
     const inputValue = inputs.reduce((total, input) => total + input.value, 0);
-    let fee = Math.ceil((10.5 + inputs.length * 68 + 31) * _feePerByte);
+    bitcoin.initEccLib(getEcc() as never);
+    const outputScript = bitcoin.address.toOutputScript(
+      externalChangeAddress,
+      this._network,
+    );
+    const outputVbytes = 8 + 1 + outputScript.length;
+    let fee = Math.ceil(
+      (TX_OVERHEAD_VBYTES +
+        inputs.length * P2WPKH_INPUT_VBYTES +
+        outputVbytes) *
+        _feePerByte,
+    );
     let hex = '';
 
     for (let attempt = 0; attempt < 5; attempt++) {
