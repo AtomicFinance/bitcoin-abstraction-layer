@@ -1,8 +1,9 @@
 /* eslint-env mocha */
 
-import { Address } from '@atomicfinance/types/lib';
+import { Address } from '@atomicfinance/types';
 import { generateMnemonic } from 'bip39';
 import { BitcoinNetworks } from 'bitcoin-network';
+import { Transaction } from 'bitcoinjs-lib';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
@@ -72,6 +73,72 @@ describe('Bitcoin Wallet provider', () => {
       await expect(
         newProvider.setDerivationCache(addressesFromDerivationCacheExpected),
       ).to.eventually.be.rejected;
+    });
+  });
+
+  describe('_buildSweepTransaction', () => {
+    const feeRate = 10;
+
+    const mockSweepInputs = async (values: number[]) => {
+      const addresses = await provider.getAddresses(0, values.length);
+      const inputs = addresses.map((address, index) => ({
+        txid: Buffer.alloc(32, index + 1).toString('hex'),
+        vout: 0,
+        value: values[index],
+        address: address.address,
+        derivationPath: address.derivationPath,
+      }));
+
+      provider.getInputsForAmount = async () => ({
+        inputs,
+        outputs: [],
+        change: undefined,
+        fee: 0,
+      });
+
+      return inputs;
+    };
+
+    it('sweeps one P2WPKH input with no change output', async () => {
+      const inputs = await mockSweepInputs([100000]);
+      const [destination] = await provider.getAddresses(10, 1);
+
+      const { hex, fee } = await provider._buildSweepTransaction(
+        destination.address,
+        feeRate,
+      );
+      const tx = Transaction.fromHex(hex);
+      const inputValue = inputs.reduce((total, input) => total + input.value, 0);
+
+      expect(tx.outs).to.have.length(1);
+      expect(tx.outs[0].value).to.equal(inputValue - fee);
+      expect(fee).to.be.at.least(Math.ceil(tx.virtualSize() * feeRate));
+    });
+
+    it('sweeps multiple P2WPKH inputs with no change output', async () => {
+      const inputs = await mockSweepInputs([100000, 200000, 300000]);
+      const [destination] = await provider.getAddresses(10, 1);
+
+      const { hex, fee } = await provider._buildSweepTransaction(
+        destination.address,
+        feeRate,
+      );
+      const tx = Transaction.fromHex(hex);
+      const inputValue = inputs.reduce((total, input) => total + input.value, 0);
+
+      expect(tx.ins).to.have.length(3);
+      expect(tx.outs).to.have.length(1);
+      expect(tx.outs[0].value).to.equal(inputValue - fee);
+      expect(fee).to.be.at.least(Math.ceil(tx.virtualSize() * feeRate));
+    });
+
+    it('rejects P2WPKH sweeps that cannot cover fees', async () => {
+      await mockSweepInputs([100]);
+      const [destination] = await provider.getAddresses(10, 1);
+
+      await expect(
+        provider._buildSweepTransaction(destination.address, feeRate),
+      ).to.eventually.be.rejectedWith('Not enough balance');
     });
   });
 });
