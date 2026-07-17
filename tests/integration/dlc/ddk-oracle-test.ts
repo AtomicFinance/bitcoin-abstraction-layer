@@ -1,6 +1,10 @@
 import 'mocha';
 
 import {
+  DlcAccept,
+  DlcOffer,
+  DlcSign,
+  DlcTransactions,
   EnumeratedDescriptor,
   EnumEventDescriptor,
   OracleAnnouncement,
@@ -132,12 +136,14 @@ describe('DDK Oracle Compatibility', () => {
       eventId,
     );
 
-    // Execute the DLC with the oracle attestation
+    // Execute with messages round-tripped through serialization, as they
+    // arrive over the wire. Deserialization splits adaptor sigs into
+    // encryptedSig + dleqProof, which execute must recombine for DDK.
     const cet = await ddk2.dlc.execute(
-      dlcOffer,
-      dlcAccept,
-      dlcSign,
-      dlcTransactions,
+      DlcOffer.deserialize(dlcOffer.serialize()),
+      DlcAccept.deserialize(dlcAccept.serialize()),
+      DlcSign.deserialize(dlcSign.serialize()),
+      DlcTransactions.deserialize(dlcTransactions.serialize()),
       oracleAttestation,
       false,
     );
