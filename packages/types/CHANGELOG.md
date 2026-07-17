@@ -1,5 +1,11 @@
 # @atomicfinance/types
 
+## 4.3.3
+
+### Patch Changes
+
+- 4ed94d2: Bump @node-dlc to 1.2.1, which estimates taproot witness length in fee calculations
+
 ## 4.3.2
 
 ### Patch Changes

@@ -1,5 +1,16 @@
 # @atomicfinance/client
 
+## 4.3.3
+
+### Patch Changes
+
+- 4ed94d2: Bump @node-dlc to 1.2.1, which estimates taproot witness length in fee calculations
+- Updated dependencies [4ed94d2]
+  - @atomicfinance/types@4.3.3
+  - @atomicfinance/bitcoin-utils@4.3.3
+  - @atomicfinance/errors@4.3.3
+  - @atomicfinance/provider@4.3.3
+
 ## 4.3.2
 
 ### Patch Changes
