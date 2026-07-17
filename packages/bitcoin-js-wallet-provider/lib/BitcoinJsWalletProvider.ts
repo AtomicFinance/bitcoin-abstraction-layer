@@ -29,6 +29,11 @@ import { signAsync as signBitcoinMessage } from 'bitcoinjs-message';
 import { ECPairInterface } from 'ecpair';
 
 const FEE_PER_BYTE_FALLBACK = 5;
+const P2WPKH_INPUT_VBYTES = 68;
+const P2SH_SEGWIT_INPUT_VBYTES = 91;
+const LEGACY_INPUT_VBYTES = 148;
+const TX_OVERHEAD_VBYTES = 10.5;
+const CONSERVATIVE_DUST_THRESHOLD = 546;
 
 type WalletProviderConstructor<T = Provider> = new (...args: unknown[]) => T;
 
@@ -593,7 +598,7 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
     let _feePerByte = feePerByte || null;
     if (!_feePerByte) _feePerByte = await this.getMethod('getFeePerByte')();
 
-    const { inputs, outputs, change } = await this.getInputsForAmount(
+    const { inputs, change } = await this.getInputsForAmount(
       [],
       _feePerByte,
       [],
@@ -601,24 +606,140 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
       true,
     );
 
+    if (!inputs || inputs.length === 0) {
+      throw new Error('Not enough balance');
+    }
+
     if (change) {
       throw new Error(
         'There should not be any change for sweeping transaction',
       );
     }
 
-    const _outputs = [
-      {
-        address: externalChangeAddress,
-        value: outputs[0].value,
-      },
-    ];
-
-    return this._buildTransaction(
-      _outputs,
-      feePerByte,
-      inputs as unknown as bT.Input[],
+    const inputValue = inputs.reduce((total, input) => total + input.value, 0);
+    bitcoin.initEccLib(getEcc() as never);
+    const outputScript = bitcoin.address.toOutputScript(
+      externalChangeAddress,
+      this._network,
     );
+    const outputVbytes = 8 + 1 + outputScript.length;
+    const inputVbytes = this._getSweepInputVbytes();
+    let fee = Math.ceil(
+      (TX_OVERHEAD_VBYTES + inputs.length * inputVbytes + outputVbytes) *
+        _feePerByte,
+    );
+    let hex = '';
+    let tx: BitcoinJsTransaction;
+
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const sendAmount = inputValue - fee;
+      if (sendAmount < CONSERVATIVE_DUST_THRESHOLD) {
+        throw new Error('Not enough balance');
+      }
+
+      hex = await this._buildTransactionWithInputs(
+        [
+          {
+            address: externalChangeAddress,
+            value: sendAmount,
+          },
+        ],
+        inputs as unknown as bT.UTXO[],
+      );
+
+      tx = BitcoinJsTransaction.fromHex(hex);
+      const requiredFee = Math.ceil(tx.virtualSize() * _feePerByte);
+      if (requiredFee <= fee) break;
+      fee = requiredFee;
+    }
+
+    const finalTx = BitcoinJsTransaction.fromHex(hex);
+    return { hex, fee: inputValue - finalTx.outs[0].value };
+  }
+
+  _getSweepInputVbytes() {
+    if (this._addressType === bT.AddressType.LEGACY) {
+      return LEGACY_INPUT_VBYTES;
+    }
+    if (this._addressType === bT.AddressType.P2SH_SEGWIT) {
+      return P2SH_SEGWIT_INPUT_VBYTES;
+    }
+    return P2WPKH_INPUT_VBYTES;
+  }
+
+  async _buildTransactionWithInputs(
+    targets: bT.OutputTarget[],
+    inputs: bT.UTXO[],
+  ) {
+    const network = this._network;
+    const psbt = new Psbt({ network });
+
+    const needsWitness = [
+      bT.AddressType.BECH32,
+      bT.AddressType.P2SH_SEGWIT,
+    ].includes(this._addressType);
+
+    for (let i = 0; i < inputs.length; i++) {
+      const wallet = await this.getWalletAddress(inputs[i].address);
+      const keyPair = await this.keyPair(wallet.derivationPath);
+      const paymentVariant = this.getPaymentVariantFromPublicKey(
+        keyPair.publicKey,
+      );
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const psbtInput: any = {
+        hash: inputs[i].txid,
+        index: inputs[i].vout,
+        sequence: 0,
+      };
+
+      if (needsWitness) {
+        psbtInput.witnessUtxo = {
+          script: paymentVariant.output,
+          value: inputs[i].value,
+        };
+      } else {
+        const inputTxRaw = await this.getMethod('getRawTransactionByHash')(
+          inputs[i].txid,
+        );
+        psbtInput.nonWitnessUtxo = Buffer.from(inputTxRaw, 'hex');
+      }
+
+      if (this._addressType === bT.AddressType.P2SH_SEGWIT) {
+        psbtInput.redeemScript = paymentVariant.redeem.output;
+      }
+
+      psbt.addInput(psbtInput);
+    }
+
+    for (const output of targets) {
+      if (output.script) {
+        psbt.addOutput({
+          value: output.value,
+          script: output.script,
+        });
+      } else {
+        psbt.addOutput({
+          value: output.value,
+          address: output.address,
+        });
+      }
+    }
+
+    for (let i = 0; i < inputs.length; i++) {
+      const wallet = await this.getWalletAddress(inputs[i].address);
+      const keyPair = await this.keyPair(wallet.derivationPath);
+      psbt.signInput(i, keyPair);
+      psbt.validateSignaturesOfInput(
+        i,
+        (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
+          getEcc().verify(msghash, pubkey, signature),
+      );
+    }
+
+    psbt.finalizeAllInputs();
+
+    return psbt.extractTransaction().toHex();
   }
 
   async signPSBT(data: string, inputs: bT.PsbtInputTarget[]) {
