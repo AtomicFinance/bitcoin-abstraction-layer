@@ -81,6 +81,12 @@ describe('Bitcoin Wallet provider', () => {
     const taprootDestination =
       'bcrt1p7yu5dsly83jg5tkxcljsa30vnpdpl22wr6rty98t6x6p6ekz2gkqcckz99';
 
+    const expectFeeWithinEstimate = (fee: number, tx: Transaction) => {
+      const expectedFee = Math.ceil(tx.virtualSize() * feeRate);
+      expect(fee).to.be.at.least(expectedFee);
+      expect(fee).to.be.at.most(expectedFee + feeRate);
+    };
+
     const mockSweepInputs = async (values: number[]) => {
       const addresses = await provider.getAddresses(0, values.length);
       const inputs = addresses.map((address, index) => ({
@@ -114,7 +120,7 @@ describe('Bitcoin Wallet provider', () => {
 
       expect(tx.outs).to.have.length(1);
       expect(tx.outs[0].value).to.equal(inputValue - fee);
-      expect(fee).to.be.at.least(Math.ceil(tx.virtualSize() * feeRate));
+      expectFeeWithinEstimate(fee, tx);
     });
 
     it('sweeps multiple P2WPKH inputs with no change output', async () => {
@@ -131,7 +137,7 @@ describe('Bitcoin Wallet provider', () => {
       expect(tx.ins).to.have.length(3);
       expect(tx.outs).to.have.length(1);
       expect(tx.outs[0].value).to.equal(inputValue - fee);
-      expect(fee).to.be.at.least(Math.ceil(tx.virtualSize() * feeRate));
+      expectFeeWithinEstimate(fee, tx);
     });
 
     it('sweeps one P2WPKH input to a P2TR output with no change output', async () => {
@@ -147,7 +153,7 @@ describe('Bitcoin Wallet provider', () => {
       expect(tx.outs).to.have.length(1);
       expect(tx.outs[0].script.length).to.equal(34);
       expect(tx.outs[0].value).to.equal(inputValue - fee);
-      expect(fee).to.be.at.least(Math.ceil(tx.virtualSize() * feeRate));
+      expectFeeWithinEstimate(fee, tx);
     });
 
     it('sweeps multiple P2WPKH inputs to a P2TR output with no change output', async () => {
@@ -164,7 +170,7 @@ describe('Bitcoin Wallet provider', () => {
       expect(tx.outs).to.have.length(1);
       expect(tx.outs[0].script.length).to.equal(34);
       expect(tx.outs[0].value).to.equal(inputValue - fee);
-      expect(fee).to.be.at.least(Math.ceil(tx.virtualSize() * feeRate));
+      expectFeeWithinEstimate(fee, tx);
     });
 
     it('rejects P2WPKH sweeps that cannot cover fees', async () => {
@@ -174,6 +180,32 @@ describe('Bitcoin Wallet provider', () => {
       await expect(
         provider._buildSweepTransaction(destination.address, feeRate),
       ).to.eventually.be.rejectedWith('Not enough balance');
+    });
+
+    it('rejects P2WPKH sweeps with a dust output', async () => {
+      await mockSweepInputs([1500]);
+      const [destination] = await provider.getAddresses(10, 1);
+
+      await expect(
+        provider._buildSweepTransaction(destination.address, feeRate),
+      ).to.eventually.be.rejectedWith('Not enough balance');
+    });
+
+    it('rejects sweep coin selection that returns change', async () => {
+      const inputs = await mockSweepInputs([100000]);
+      const [destination] = await provider.getAddresses(10, 1);
+      provider.getInputsForAmount = async () => ({
+        inputs,
+        outputs: [],
+        change: { value: 1000 },
+        fee: 0,
+      });
+
+      await expect(
+        provider._buildSweepTransaction(destination.address, feeRate),
+      ).to.eventually.be.rejectedWith(
+        'There should not be any change for sweeping transaction',
+      );
     });
   });
 });

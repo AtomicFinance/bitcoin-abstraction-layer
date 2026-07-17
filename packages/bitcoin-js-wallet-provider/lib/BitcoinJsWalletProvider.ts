@@ -30,7 +30,10 @@ import { ECPairInterface } from 'ecpair';
 
 const FEE_PER_BYTE_FALLBACK = 5;
 const P2WPKH_INPUT_VBYTES = 68;
+const P2SH_SEGWIT_INPUT_VBYTES = 91;
+const LEGACY_INPUT_VBYTES = 148;
 const TX_OVERHEAD_VBYTES = 10.5;
+const CONSERVATIVE_DUST_THRESHOLD = 546;
 
 type WalletProviderConstructor<T = Provider> = new (...args: unknown[]) => T;
 
@@ -595,7 +598,7 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
     let _feePerByte = feePerByte || null;
     if (!_feePerByte) _feePerByte = await this.getMethod('getFeePerByte')();
 
-    const { inputs } = await this.getInputsForAmount(
+    const { inputs, change } = await this.getInputsForAmount(
       [],
       _feePerByte,
       [],
@@ -607,6 +610,12 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
       throw new Error('Not enough balance');
     }
 
+    if (change) {
+      throw new Error(
+        'There should not be any change for sweeping transaction',
+      );
+    }
+
     const inputValue = inputs.reduce((total, input) => total + input.value, 0);
     bitcoin.initEccLib(getEcc() as never);
     const outputScript = bitcoin.address.toOutputScript(
@@ -614,17 +623,21 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
       this._network,
     );
     const outputVbytes = 8 + 1 + outputScript.length;
+    const inputVbytes = this._getSweepInputVbytes();
     let fee = Math.ceil(
       (TX_OVERHEAD_VBYTES +
-        inputs.length * P2WPKH_INPUT_VBYTES +
+        inputs.length * inputVbytes +
         outputVbytes) *
         _feePerByte,
     );
     let hex = '';
+    let tx: BitcoinJsTransaction;
 
     for (let attempt = 0; attempt < 5; attempt++) {
       const sendAmount = inputValue - fee;
-      if (sendAmount <= 0) throw new Error('Not enough balance');
+      if (sendAmount < CONSERVATIVE_DUST_THRESHOLD) {
+        throw new Error('Not enough balance');
+      }
 
       hex = await this._buildTransactionWithInputs(
         [
@@ -636,13 +649,24 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
         inputs as unknown as bT.UTXO[],
       );
 
-      const tx = BitcoinJsTransaction.fromHex(hex);
+      tx = BitcoinJsTransaction.fromHex(hex);
       const requiredFee = Math.ceil(tx.virtualSize() * _feePerByte);
       if (requiredFee <= fee) break;
       fee = requiredFee;
     }
 
-    return { hex, fee };
+    const finalTx = BitcoinJsTransaction.fromHex(hex);
+    return { hex, fee: inputValue - finalTx.outs[0].value };
+  }
+
+  _getSweepInputVbytes() {
+    if (this._addressType === bT.AddressType.LEGACY) {
+      return LEGACY_INPUT_VBYTES;
+    }
+    if (this._addressType === bT.AddressType.P2SH_SEGWIT) {
+      return P2SH_SEGWIT_INPUT_VBYTES;
+    }
+    return P2WPKH_INPUT_VBYTES;
   }
 
   async _buildTransactionWithInputs(
