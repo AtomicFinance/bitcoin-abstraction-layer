@@ -116,7 +116,10 @@ describe('Bitcoin Wallet provider', () => {
         feeRate,
       );
       const tx = Transaction.fromHex(hex);
-      const inputValue = inputs.reduce((total, input) => total + input.value, 0);
+      const inputValue = inputs.reduce(
+        (total, input) => total + input.value,
+        0,
+      );
 
       expect(tx.outs).to.have.length(1);
       expect(tx.outs[0].value).to.equal(inputValue - fee);
@@ -132,7 +135,10 @@ describe('Bitcoin Wallet provider', () => {
         feeRate,
       );
       const tx = Transaction.fromHex(hex);
-      const inputValue = inputs.reduce((total, input) => total + input.value, 0);
+      const inputValue = inputs.reduce(
+        (total, input) => total + input.value,
+        0,
+      );
 
       expect(tx.ins).to.have.length(3);
       expect(tx.outs).to.have.length(1);
@@ -148,7 +154,10 @@ describe('Bitcoin Wallet provider', () => {
         feeRate,
       );
       const tx = Transaction.fromHex(hex);
-      const inputValue = inputs.reduce((total, input) => total + input.value, 0);
+      const inputValue = inputs.reduce(
+        (total, input) => total + input.value,
+        0,
+      );
 
       expect(tx.outs).to.have.length(1);
       expect(tx.outs[0].script.length).to.equal(34);
@@ -164,7 +173,10 @@ describe('Bitcoin Wallet provider', () => {
         feeRate,
       );
       const tx = Transaction.fromHex(hex);
-      const inputValue = inputs.reduce((total, input) => total + input.value, 0);
+      const inputValue = inputs.reduce(
+        (total, input) => total + input.value,
+        0,
+      );
 
       expect(tx.ins).to.have.length(3);
       expect(tx.outs).to.have.length(1);

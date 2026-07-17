@@ -625,9 +625,7 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
     const outputVbytes = 8 + 1 + outputScript.length;
     const inputVbytes = this._getSweepInputVbytes();
     let fee = Math.ceil(
-      (TX_OVERHEAD_VBYTES +
-        inputs.length * inputVbytes +
-        outputVbytes) *
+      (TX_OVERHEAD_VBYTES + inputs.length * inputVbytes + outputVbytes) *
         _feePerByte,
     );
     let hex = '';
