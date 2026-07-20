@@ -408,7 +408,7 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
     inputs: bT.UTXO[];
     outputs: { value: number; id?: string }[];
     fee: number;
-    change: { value: number; id?: string };
+    change?: { value: number; id?: string };
   } {
     const utxoBalance = fixedInputs.reduce((a, b) => a + (b['value'] || 0), 0);
     const outputBalance = _outputs.reduce((a, b) => a + (b['value'] || 0), 0);
@@ -432,16 +432,20 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
       id: 'main',
       value: target.value,
     }));
-    if (amountToSend - outputBalance > 0) {
-      targets.push({ id: 'main', value: amountToSend - outputBalance });
+    const sweepRemainder = amountToSend - outputBalance;
+    if (sweepAddress && sweepRemainder < CONSERVATIVE_DUST_THRESHOLD) {
+      throw new Error('Not enough balance');
     }
 
-    return selectCoins(
-      fixedInputs,
-      targets,
-      Math.ceil(_feePerByte),
-      fixedInputs,
-    );
+    if (sweepRemainder > 0) {
+      targets.push({ id: 'main', value: sweepRemainder });
+    }
+
+    return {
+      inputs: fixedInputs as unknown as bT.UTXO[],
+      outputs: targets,
+      fee: Math.ceil(_feePerByte * transactionVbytes),
+    };
   }
 
   async _buildTransactionWithoutUtxoCheck(
