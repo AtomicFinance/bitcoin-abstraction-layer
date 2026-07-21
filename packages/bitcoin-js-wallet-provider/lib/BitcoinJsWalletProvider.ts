@@ -381,6 +381,7 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
       );
       outputs.push(...(inputsForAmount.outputs || []));
     }
+    // Coin selection preserves target order, so the sweep remainder follows the fixed outputs.
     const sweepOutput = outputs[_outputs.length];
     if (!sweepOutput?.value) {
       throw new Error('Not enough balance');
