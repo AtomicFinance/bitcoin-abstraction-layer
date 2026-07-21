@@ -1,5 +1,11 @@
 # @atomicfinance/provider
 
+## 4.3.5
+
+### Patch Changes
+
+- @atomicfinance/types@4.3.5
+
 ## 4.3.4
 
 ### Patch Changes

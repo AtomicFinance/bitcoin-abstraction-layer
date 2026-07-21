@@ -1,5 +1,16 @@
 # @atomicfinance/bitcoin-esplora-api-provider
 
+## 4.3.5
+
+### Patch Changes
+
+- @atomicfinance/bitcoin-utils@4.3.5
+- @atomicfinance/crypto@4.3.5
+- @atomicfinance/errors@4.3.5
+- @atomicfinance/node-provider@4.3.5
+- @atomicfinance/types@4.3.5
+- @atomicfinance/utils@4.3.5
+
 ## 4.3.4
 
 ### Patch Changes

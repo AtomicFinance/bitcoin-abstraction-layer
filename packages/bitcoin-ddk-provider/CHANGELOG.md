@@ -1,5 +1,15 @@
 # @atomicfinance/bitcoin-ddk-provider
 
+## 4.3.5
+
+### Patch Changes
+
+- 3b4f7b3: Fix execute failing with InvalidSignature after DLC messages are serialized and deserialized. @node-dlc/messaging splits the 162-byte ECDSA adaptor signature into encryptedSig (65) + dleqProof (97) on deserialize, but the signCet call sites passed encryptedSig alone; they now recombine the full adaptor signature.
+  - @atomicfinance/bitcoin-utils@4.3.5
+  - @atomicfinance/provider@4.3.5
+  - @atomicfinance/types@4.3.5
+  - @atomicfinance/utils@4.3.5
+
 ## 4.3.4
 
 ### Patch Changes
