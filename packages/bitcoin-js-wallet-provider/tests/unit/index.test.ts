@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 
-import { Address } from '@atomicfinance/types';
+import { Address, Input, Output } from '@atomicfinance/types';
 import { generateMnemonic } from 'bip39';
 import { BitcoinNetworks } from 'bitcoin-network';
 import { Transaction } from 'bitcoinjs-lib';
@@ -218,6 +218,96 @@ describe('Bitcoin Wallet provider', () => {
       ).to.eventually.be.rejectedWith(
         'There should not be any change for sweeping transaction',
       );
+    });
+  });
+
+  describe('_buildSweepTransactionWithSetOutputs', () => {
+    const feeRate = 10;
+
+    const mockFixedInputs = async (values: number[]) => {
+      const addresses = await provider.getAddresses(0, values.length);
+      return addresses.map(
+        (address, index) =>
+          new Input(
+            Buffer.alloc(32, index + 1).toString('hex'),
+            0,
+            address.address,
+            values[index] / 1e8,
+            values[index],
+            address.derivationPath,
+          ),
+      );
+    };
+
+    beforeEach(() => {
+      provider.getInputsForAmount = async () => {
+        throw new Error('do not rescan');
+      };
+    });
+
+    it('sweeps exactly the provided fixed inputs', async () => {
+      const fixedInputs = await mockFixedInputs([100000, 200000]);
+      const [destination] = await provider.getAddresses(10, 1);
+
+      const { hex, fee } = await provider._buildSweepTransactionWithSetOutputs(
+        destination.address,
+        feeRate,
+        [],
+        fixedInputs,
+      );
+      const tx = Transaction.fromHex(hex);
+      const inputValue = fixedInputs.reduce(
+        (total, input) => total + input.value,
+        0,
+      );
+
+      expect(tx.ins).to.have.length(fixedInputs.length);
+      expect(tx.outs).to.have.length(1);
+      expect(tx.outs[0].value).to.equal(inputValue - fee);
+      expect(fee).to.equal(
+        inputValue - tx.outs.reduce((total, output) => total + output.value, 0),
+      );
+    });
+
+    it('preserves duplicate set output values before adding the sweep output', async () => {
+      const fixedInputs = await mockFixedInputs([100000]);
+      const [firstOutput, secondOutput, destination] =
+        await provider.getAddresses(10, 3);
+      const setOutputs = [
+        new Output(10000, firstOutput.address),
+        new Output(10000, secondOutput.address),
+      ];
+
+      const { hex, fee } = await provider._buildSweepTransactionWithSetOutputs(
+        destination.address,
+        feeRate,
+        setOutputs,
+        fixedInputs,
+      );
+      const tx = Transaction.fromHex(hex);
+      const inputValue = fixedInputs.reduce(
+        (total, input) => total + input.value,
+        0,
+      );
+
+      expect(tx.outs).to.have.length(3);
+      expect(tx.outs[0].value).to.equal(10000);
+      expect(tx.outs[1].value).to.equal(10000);
+      expect(tx.outs[2].value).to.equal(inputValue - 20000 - fee);
+    });
+
+    it('rejects fixed-input sweeps whose remainder would be dust', async () => {
+      const fixedInputs = await mockFixedInputs([1500]);
+      const [destination] = await provider.getAddresses(10, 1);
+
+      await expect(
+        provider._buildSweepTransactionWithSetOutputs(
+          destination.address,
+          feeRate,
+          [],
+          fixedInputs,
+        ),
+      ).to.eventually.be.rejectedWith('Not enough balance');
     });
   });
 });

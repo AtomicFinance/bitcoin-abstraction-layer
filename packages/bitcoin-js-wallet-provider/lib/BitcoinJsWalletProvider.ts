@@ -1,7 +1,6 @@
 import {
   decodeRawTransaction,
   normalizeTransactionObject,
-  selectCoins,
 } from '@atomicfinance/bitcoin-utils';
 import BitcoinWalletProvider from '@atomicfinance/bitcoin-wallet-provider';
 import Provider from '@atomicfinance/provider';
@@ -34,6 +33,13 @@ const P2SH_SEGWIT_INPUT_VBYTES = 91;
 const LEGACY_INPUT_VBYTES = 148;
 const TX_OVERHEAD_VBYTES = 10.5;
 const CONSERVATIVE_DUST_THRESHOLD = 546;
+
+const compactSizeBytes = (count: number) => {
+  if (count < 253) return 1;
+  if (count <= 0xffff) return 3;
+  if (count <= 0xffffffff) return 5;
+  return 9;
+};
 
 type WalletProviderConstructor<T = Provider> = new (...args: unknown[]) => T;
 
@@ -368,21 +374,23 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
         _outputs,
         _feePerByte,
         fixedInputs,
+        externalChangeAddress,
       );
       inputs.push(
         ...(inputsForAmount.inputs.map((utxo) => Input.fromUTXO(utxo)) || []),
       );
       outputs.push(...(inputsForAmount.outputs || []));
     }
-    _outputs.forEach((output) => {
-      const spliceIndex = outputs.findIndex(
-        (sweepOutput: Output) => output.value === sweepOutput.value,
-      );
-      outputs.splice(spliceIndex, 1);
-    });
+    // Coin selection preserves target order, so the sweep remainder follows the fixed outputs.
+    const sweepOutput = outputs[_outputs.length];
+    if (!sweepOutput?.value) {
+      throw new Error('Not enough balance');
+    }
+
+    // TODO: Stop mutating caller-owned outputs in a future breaking cleanup.
     _outputs.push({
       to: externalChangeAddress,
-      value: outputs[0].value,
+      value: sweepOutput.value,
     });
     return this._buildTransactionWithoutUtxoCheck(
       _outputs,
@@ -395,32 +403,50 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
     _outputs: Output[],
     _feePerByte: number,
     fixedInputs: Input[],
+    sweepAddress?: string,
   ): {
     inputs: bT.UTXO[];
     outputs: { value: number; id?: string }[];
     fee: number;
-    change: { value: number; id?: string };
+    change?: { value: number; id?: string };
   } {
     const utxoBalance = fixedInputs.reduce((a, b) => a + (b['value'] || 0), 0);
     const outputBalance = _outputs.reduce((a, b) => a + (b['value'] || 0), 0);
+    const fixedOutputVbytes = _outputs.reduce(
+      (total, output) => total + this._getOutputVbytes(output.to),
+      0,
+    );
+    const sweepOutputVbytes = sweepAddress
+      ? this._getOutputVbytes(sweepAddress)
+      : 0;
+    const outputCount = _outputs.length + (sweepAddress ? 1 : 0);
+    const transactionVbytes = Math.ceil(
+      this._getTxOverheadVbytes(fixedInputs.length, outputCount) +
+        fixedInputs.length * this._getSweepInputVbytes() +
+        fixedOutputVbytes +
+        sweepOutputVbytes,
+    );
     const amountToSend =
-      utxoBalance -
-      _feePerByte * ((_outputs.length + 1) * 39 + fixedInputs.length * 153); // todo better calculation
+      utxoBalance - Math.ceil(_feePerByte * transactionVbytes);
 
     const targets = _outputs.map((target) => ({
       id: 'main',
       value: target.value,
     }));
-    if (amountToSend - outputBalance > 0) {
-      targets.push({ id: 'main', value: amountToSend - outputBalance });
+    const sweepRemainder = amountToSend - outputBalance;
+    if (sweepAddress && sweepRemainder < CONSERVATIVE_DUST_THRESHOLD) {
+      throw new Error('Not enough balance');
     }
 
-    return selectCoins(
-      fixedInputs,
-      targets,
-      Math.ceil(_feePerByte),
-      fixedInputs,
-    );
+    if (sweepRemainder > 0) {
+      targets.push({ id: 'main', value: sweepRemainder });
+    }
+
+    return {
+      inputs: fixedInputs as unknown as bT.UTXO[],
+      outputs: targets,
+      fee: Math.ceil(_feePerByte * transactionVbytes),
+    };
   }
 
   async _buildTransactionWithoutUtxoCheck(
@@ -429,12 +455,6 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
     fixedInputs: Input[],
   ) {
     const network = this._network;
-
-    const { fee } = this._getInputForAmountWithoutUtxoCheck(
-      outputs,
-      feePerByte,
-      fixedInputs,
-    );
     const inputs = fixedInputs;
 
     const psbt = new Psbt({ network });
@@ -497,7 +517,14 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
 
     psbt.finalizeAllInputs();
 
-    return { hex: psbt.extractTransaction().toHex(), fee };
+    const tx = psbt.extractTransaction();
+    const inputValue = inputs.reduce((total, input) => total + input.value, 0);
+    const outputValue = tx.outs.reduce(
+      (total, output) => total + output.value,
+      0,
+    );
+
+    return { hex: tx.toHex(), fee: inputValue - outputValue };
   }
 
   async _buildTransaction(
@@ -622,7 +649,8 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
       externalChangeAddress,
       this._network,
     );
-    const outputVbytes = 8 + 1 + outputScript.length;
+    const outputVbytes =
+      8 + compactSizeBytes(outputScript.length) + outputScript.length;
     const inputVbytes = this._getSweepInputVbytes();
     let fee = Math.ceil(
       (TX_OVERHEAD_VBYTES + inputs.length * inputVbytes + outputVbytes) *
@@ -665,6 +693,19 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
       return P2SH_SEGWIT_INPUT_VBYTES;
     }
     return P2WPKH_INPUT_VBYTES;
+  }
+
+  _getOutputVbytes(address?: string) {
+    if (!address) return 0;
+    bitcoin.initEccLib(getEcc() as never);
+    const outputScript = bitcoin.address.toOutputScript(address, this._network);
+    return 8 + compactSizeBytes(outputScript.length) + outputScript.length;
+  }
+
+  _getTxOverheadVbytes(inputCount: number, outputCount: number) {
+    return (
+      4 + 0.5 + compactSizeBytes(inputCount) + compactSizeBytes(outputCount) + 4
+    );
   }
 
   async _buildTransactionWithInputs(
