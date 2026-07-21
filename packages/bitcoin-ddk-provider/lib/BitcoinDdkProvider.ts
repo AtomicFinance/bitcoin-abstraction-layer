@@ -2536,6 +2536,21 @@ Payout Group not found even with brute force search',
     }
   }
 
+  /**
+   * DDK expects the full 162-byte ECDSA adaptor signature. Live message objects
+   * carry all 162 bytes in encryptedSig, but after a serialize/deserialize
+   * round-trip @node-dlc/messaging splits them into encryptedSig (65) and
+   * dleqProof (97) — recombine when needed.
+   */
+  private getFullAdaptorSig(sig: {
+    encryptedSig: Buffer;
+    dleqProof: Buffer;
+  }): Buffer {
+    return sig.dleqProof && sig.dleqProof.length > 0
+      ? Buffer.concat([sig.encryptedSig, sig.dleqProof])
+      : sig.encryptedSig;
+  }
+
   async FindAndSignCet(
     dlcOffer: DlcOffer,
     dlcAccept: DlcAccept,
@@ -2582,9 +2597,11 @@ Payout Group not found even with brute force search',
       finalCet = this._ddk
         .signCet(
           this.convertTxToDdkTransaction(dlcTxs.cets[outcomeIndex]),
-          isOfferer
-            ? dlcAccept.cetAdaptorSignatures.sigs[outcomeIndex].encryptedSig
-            : dlcSign.cetAdaptorSignatures.sigs[outcomeIndex].encryptedSig,
+          this.getFullAdaptorSig(
+            isOfferer
+              ? dlcAccept.cetAdaptorSignatures.sigs[outcomeIndex]
+              : dlcSign.cetAdaptorSignatures.sigs[outcomeIndex],
+          ),
           oracleAttestation.signatures,
           Buffer.from(fundPrivateKey, 'hex'),
           isOfferer ? dlcAccept.fundingPubkey : dlcOffer.fundingPubkey,
@@ -2608,9 +2625,11 @@ Payout Group not found even with brute force search',
       finalCet = this._ddk
         .signCet(
           this.convertTxToDdkTransaction(dlcTxs.cets[outcomeIndex]),
-          isOfferer
-            ? dlcAccept.cetAdaptorSignatures.sigs[outcomeIndex].encryptedSig
-            : dlcSign.cetAdaptorSignatures.sigs[outcomeIndex].encryptedSig,
+          this.getFullAdaptorSig(
+            isOfferer
+              ? dlcAccept.cetAdaptorSignatures.sigs[outcomeIndex]
+              : dlcSign.cetAdaptorSignatures.sigs[outcomeIndex],
+          ),
           oracleSignatures,
           Buffer.from(fundPrivateKey, 'hex'),
           isOfferer ? dlcAccept.fundingPubkey : dlcOffer.fundingPubkey,
