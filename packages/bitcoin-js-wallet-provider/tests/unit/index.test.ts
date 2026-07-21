@@ -271,10 +271,8 @@ describe('Bitcoin Wallet provider', () => {
 
     it('preserves duplicate set output values before adding the sweep output', async () => {
       const fixedInputs = await mockFixedInputs([100000]);
-      const [firstOutput, secondOutput, destination] = await provider.getAddresses(
-        10,
-        3,
-      );
+      const [firstOutput, secondOutput, destination] =
+        await provider.getAddresses(10, 3);
       const setOutputs = [
         new Output(10000, firstOutput.address),
         new Output(10000, secondOutput.address),

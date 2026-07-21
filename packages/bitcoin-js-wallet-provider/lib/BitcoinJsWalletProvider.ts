@@ -1,7 +1,6 @@
 import {
   decodeRawTransaction,
   normalizeTransactionObject,
-  selectCoins,
 } from '@atomicfinance/bitcoin-utils';
 import BitcoinWalletProvider from '@atomicfinance/bitcoin-wallet-provider';
 import Provider from '@atomicfinance/provider';
@@ -426,7 +425,8 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
         fixedOutputVbytes +
         sweepOutputVbytes,
     );
-    const amountToSend = utxoBalance - Math.ceil(_feePerByte * transactionVbytes);
+    const amountToSend =
+      utxoBalance - Math.ceil(_feePerByte * transactionVbytes);
 
     const targets = _outputs.map((target) => ({
       id: 'main',
@@ -518,7 +518,10 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
 
     const tx = psbt.extractTransaction();
     const inputValue = inputs.reduce((total, input) => total + input.value, 0);
-    const outputValue = tx.outs.reduce((total, output) => total + output.value, 0);
+    const outputValue = tx.outs.reduce(
+      (total, output) => total + output.value,
+      0,
+    );
 
     return { hex: tx.toHex(), fee: inputValue - outputValue };
   }
@@ -645,7 +648,8 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
       externalChangeAddress,
       this._network,
     );
-    const outputVbytes = 8 + compactSizeBytes(outputScript.length) + outputScript.length;
+    const outputVbytes =
+      8 + compactSizeBytes(outputScript.length) + outputScript.length;
     const inputVbytes = this._getSweepInputVbytes();
     let fee = Math.ceil(
       (TX_OVERHEAD_VBYTES + inputs.length * inputVbytes + outputVbytes) *
@@ -698,7 +702,9 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
   }
 
   _getTxOverheadVbytes(inputCount: number, outputCount: number) {
-    return 4 + 0.5 + compactSizeBytes(inputCount) + compactSizeBytes(outputCount) + 4;
+    return (
+      4 + 0.5 + compactSizeBytes(inputCount) + compactSizeBytes(outputCount) + 4
+    );
   }
 
   async _buildTransactionWithInputs(
