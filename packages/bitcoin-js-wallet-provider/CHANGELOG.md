@@ -1,5 +1,16 @@
 # @atomicfinance/bitcoin-js-wallet-provider
 
+## 4.3.4
+
+### Patch Changes
+
+- 0073bb9: Build fixed-input sweep transactions from the supplied inputs with address-aware fee sizing and final transaction fees.
+  - @atomicfinance/bitcoin-utils@4.3.4
+  - @atomicfinance/bitcoin-wallet-provider@4.3.4
+  - @atomicfinance/provider@4.3.4
+  - @atomicfinance/types@4.3.4
+  - @atomicfinance/utils@4.3.4
+
 ## 4.3.3
 
 ### Patch Changes

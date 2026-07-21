@@ -1,5 +1,12 @@
 # @atomicfinance/bitcoin-ddk-address-derivation-provider
 
+## 4.3.4
+
+### Patch Changes
+
+- @atomicfinance/provider@4.3.4
+- @atomicfinance/types@4.3.4
+
 ## 4.3.3
 
 ### Patch Changes

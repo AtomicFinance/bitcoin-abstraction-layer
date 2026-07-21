@@ -1,5 +1,7 @@
 # @atomicfinance/crypto
 
+## 4.3.4
+
 ## 4.3.3
 
 ### Patch Changes
