@@ -350,11 +350,22 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
       FEE_PER_BYTE_FALLBACK;
     const inputs: Input[] = [];
     const outputs: Output[] = [];
-    try {
+    if (fixedInputs.length > 0) {
+      const inputsForAmount = this._getInputForAmountWithoutUtxoCheck(
+        _outputs,
+        _feePerByte,
+        fixedInputs,
+        externalChangeAddress,
+      );
+      inputs.push(
+        ...inputsForAmount.inputs.map((utxo) => Input.fromUTXO(utxo)),
+      );
+      outputs.push(...inputsForAmount.outputs);
+    } else {
       const inputsForAmount = await this.getInputsForAmount(
         _outputs,
         _feePerByte,
-        fixedInputs as unknown as bT.Input[],
+        [],
         100,
         true,
       );
@@ -362,23 +373,6 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
         throw Error('There should not be any change for sweeping transaction');
       }
       inputs.push(...((inputsForAmount.inputs as Input[]) || []));
-      outputs.push(...(inputsForAmount.outputs || []));
-    } catch {
-      if (fixedInputs.length === 0) {
-        throw Error(
-          `Inputs for amount doesn't exist and no fixedInputs provided`,
-        );
-      }
-
-      const inputsForAmount = await this._getInputForAmountWithoutUtxoCheck(
-        _outputs,
-        _feePerByte,
-        fixedInputs,
-        externalChangeAddress,
-      );
-      inputs.push(
-        ...(inputsForAmount.inputs.map((utxo) => Input.fromUTXO(utxo)) || []),
-      );
       outputs.push(...(inputsForAmount.outputs || []));
     }
     // Coin selection preserves target order, so the sweep remainder follows the fixed outputs.
