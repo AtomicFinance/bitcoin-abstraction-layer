@@ -223,6 +223,9 @@ describe('Bitcoin Wallet provider', () => {
 
   describe('_buildSweepTransactionWithSetOutputs', () => {
     const feeRate = 10;
+    const taprootDestination =
+      'bcrt1p7yu5dsly83jg5tkxcljsa30vnpdpl22wr6rty98t6x6p6ekz2gkqcckz99';
+    let getInputsForAmountCalls: number;
 
     const mockFixedInputs = async (values: number[]) => {
       const addresses = await provider.getAddresses(0, values.length);
@@ -240,7 +243,9 @@ describe('Bitcoin Wallet provider', () => {
     };
 
     beforeEach(() => {
+      getInputsForAmountCalls = 0;
       provider.getInputsForAmount = async () => {
+        getInputsForAmountCalls++;
         throw new Error('do not rescan');
       };
     });
@@ -267,6 +272,25 @@ describe('Bitcoin Wallet provider', () => {
       expect(fee).to.equal(
         inputValue - tx.outs.reduce((total, output) => total + output.value, 0),
       );
+      expect(getInputsForAmountCalls).to.equal(0);
+    });
+
+    it('sizes a Taproot recipient without discovering inputs again', async () => {
+      const fixedInputs = await mockFixedInputs([100000]);
+
+      const { hex, fee } = await provider._buildSweepTransactionWithSetOutputs(
+        taprootDestination,
+        feeRate,
+        [],
+        fixedInputs,
+      );
+      const tx = Transaction.fromHex(hex);
+
+      expect(tx.outs).to.have.length(1);
+      expect(tx.outs[0].script.length).to.equal(34);
+      expect(fee).to.equal(1220);
+      expect(tx.outs[0].value).to.equal(fixedInputs[0].value - fee);
+      expect(getInputsForAmountCalls).to.equal(0);
     });
 
     it('preserves duplicate set output values before adding the sweep output', async () => {
