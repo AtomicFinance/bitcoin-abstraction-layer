@@ -1,5 +1,16 @@
 # @atomicfinance/bitcoin-js-wallet-provider
 
+## 4.3.6
+
+### Patch Changes
+
+- 5eedec0: Build fixed-input sweeps without rediscovering UTXOs and size the sweep output from the actual recipient address.
+  - @atomicfinance/bitcoin-utils@4.3.6
+  - @atomicfinance/bitcoin-wallet-provider@4.3.6
+  - @atomicfinance/provider@4.3.6
+  - @atomicfinance/types@4.3.6
+  - @atomicfinance/utils@4.3.6
+
 ## 4.3.5
 
 ### Patch Changes

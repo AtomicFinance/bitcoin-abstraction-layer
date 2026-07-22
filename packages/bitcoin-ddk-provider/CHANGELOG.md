@@ -1,5 +1,14 @@
 # @atomicfinance/bitcoin-ddk-provider
 
+## 4.3.6
+
+### Patch Changes
+
+- @atomicfinance/bitcoin-utils@4.3.6
+- @atomicfinance/provider@4.3.6
+- @atomicfinance/types@4.3.6
+- @atomicfinance/utils@4.3.6
+
 ## 4.3.5
 
 ### Patch Changes

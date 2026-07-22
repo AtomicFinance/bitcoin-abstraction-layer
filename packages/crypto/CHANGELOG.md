@@ -1,5 +1,7 @@
 # @atomicfinance/crypto
 
+## 4.3.6
+
 ## 4.3.5
 
 ## 4.3.4
