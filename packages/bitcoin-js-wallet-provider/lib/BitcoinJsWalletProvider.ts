@@ -350,36 +350,38 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
       FEE_PER_BYTE_FALLBACK;
     const inputs: Input[] = [];
     const outputs: Output[] = [];
-    try {
-      const inputsForAmount = await this.getInputsForAmount(
-        _outputs,
-        _feePerByte,
-        fixedInputs as unknown as bT.Input[],
-        100,
-        true,
-      );
-      if (inputsForAmount.change) {
-        throw Error('There should not be any change for sweeping transaction');
-      }
-      inputs.push(...((inputsForAmount.inputs as Input[]) || []));
-      outputs.push(...(inputsForAmount.outputs || []));
-    } catch {
-      if (fixedInputs.length === 0) {
-        throw Error(
-          `Inputs for amount doesn't exist and no fixedInputs provided`,
-        );
-      }
-
-      const inputsForAmount = await this._getInputForAmountWithoutUtxoCheck(
+    if (fixedInputs.length > 0) {
+      const inputsForAmount = this._getInputForAmountWithoutUtxoCheck(
         _outputs,
         _feePerByte,
         fixedInputs,
         externalChangeAddress,
       );
       inputs.push(
-        ...(inputsForAmount.inputs.map((utxo) => Input.fromUTXO(utxo)) || []),
+        ...inputsForAmount.inputs.map((utxo) => Input.fromUTXO(utxo)),
       );
-      outputs.push(...(inputsForAmount.outputs || []));
+      outputs.push(...inputsForAmount.outputs);
+    } else {
+      try {
+        const inputsForAmount = await this.getInputsForAmount(
+          _outputs,
+          _feePerByte,
+          [],
+          100,
+          true,
+        );
+        if (inputsForAmount.change) {
+          throw Error(
+            'There should not be any change for sweeping transaction',
+          );
+        }
+        inputs.push(...((inputsForAmount.inputs as Input[]) || []));
+        outputs.push(...(inputsForAmount.outputs || []));
+      } catch {
+        throw Error(
+          `Inputs for amount doesn't exist and no fixedInputs provided`,
+        );
+      }
     }
     // Coin selection preserves target order, so the sweep remainder follows the fixed outputs.
     const sweepOutput = outputs[_outputs.length];
