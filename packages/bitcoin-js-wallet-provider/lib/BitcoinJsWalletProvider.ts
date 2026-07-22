@@ -362,26 +362,18 @@ export default class BitcoinJsWalletProvider extends BaseProvider {
       );
       outputs.push(...inputsForAmount.outputs);
     } else {
-      try {
-        const inputsForAmount = await this.getInputsForAmount(
-          _outputs,
-          _feePerByte,
-          [],
-          100,
-          true,
-        );
-        if (inputsForAmount.change) {
-          throw Error(
-            'There should not be any change for sweeping transaction',
-          );
-        }
-        inputs.push(...((inputsForAmount.inputs as Input[]) || []));
-        outputs.push(...(inputsForAmount.outputs || []));
-      } catch {
-        throw Error(
-          `Inputs for amount doesn't exist and no fixedInputs provided`,
-        );
+      const inputsForAmount = await this.getInputsForAmount(
+        _outputs,
+        _feePerByte,
+        [],
+        100,
+        true,
+      );
+      if (inputsForAmount.change) {
+        throw Error('There should not be any change for sweeping transaction');
       }
+      inputs.push(...((inputsForAmount.inputs as Input[]) || []));
+      outputs.push(...(inputsForAmount.outputs || []));
     }
     // Coin selection preserves target order, so the sweep remainder follows the fixed outputs.
     const sweepOutput = outputs[_outputs.length];
