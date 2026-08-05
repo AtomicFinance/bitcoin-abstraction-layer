@@ -1,4 +1,5 @@
 import * as bT from '../bitcoin';
+import { DLC_INPUT_MAX_WITNESS_LEN } from '../ddk';
 import Amount from './Amount';
 import Utxo from './Utxo';
 
@@ -120,7 +121,7 @@ export default class Input {
       amount,
       value,
       undefined, // DLC inputs don't have derivation paths
-      220, // DLC witness length for 2-of-2 multisig P2WSH
+      DLC_INPUT_MAX_WITNESS_LEN,
       undefined, // redeemScript
       inputSerialId,
       undefined, // scriptPubKey

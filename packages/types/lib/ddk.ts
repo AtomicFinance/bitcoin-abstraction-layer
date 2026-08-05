@@ -6,6 +6,17 @@
  * `node_modules/@bennyblader/ddk-ts/dist/index.d.ts` against this file.
  */
 
+/**
+ * The `max_witness_len` a DLC (splice) funding input must declare — the witness
+ * spending a 2-of-2 multisig P2WSH funding output.
+ *
+ * Mirrors `dlcInputMaxWitnessLen()` in ddk-ts. It lives here as a constant
+ * because `@atomicfinance/types` and the CFD-based providers have no ddk
+ * instance to call; `BitcoinDdkProvider.DdkLoaded()` asserts the two agree so
+ * the copy cannot silently drift.
+ */
+export const DLC_INPUT_MAX_WITNESS_LEN = 220;
+
 export interface AdaptorSignature {
   signature: Buffer;
   proof: Buffer;
@@ -251,6 +262,9 @@ export interface DdkInterface {
   ): Buffer;
 
   getTotalInputVsize(inputs: Array<TxInputInfo>): number;
+
+  /** The required `max_witness_len` for a DLC (splice) funding input. */
+  dlcInputMaxWitnessLen(): number;
 
   isDust(output: TxOutput): boolean;
 

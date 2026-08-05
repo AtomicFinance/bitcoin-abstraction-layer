@@ -12,6 +12,7 @@ import {
   DdkInterface,
   DdkOracleInfo,
   DdkTransaction,
+  DLC_INPUT_MAX_WITNESS_LEN,
   DlcInputInfo,
   DlcInputInfoRequest,
   Input,
@@ -114,6 +115,20 @@ export default class BitcoinDdkProvider extends Provider {
   public async DdkLoaded() {
     while (!this._ddk) {
       await sleep(10);
+    }
+
+    // DLC_INPUT_MAX_WITNESS_LEN is duplicated in @atomicfinance/types because
+    // the types package and the CFD providers have no ddk instance to ask.
+    // Fail loudly here rather than let the copy drift into malformed inputs.
+    if (typeof this._ddk.dlcInputMaxWitnessLen === 'function') {
+      const ddkWitnessLen = this._ddk.dlcInputMaxWitnessLen();
+      if (ddkWitnessLen !== DLC_INPUT_MAX_WITNESS_LEN) {
+        throw new Error(
+          `DLC input max witness length mismatch: ddk reports ${ddkWitnessLen}, ` +
+            `@atomicfinance/types has ${DLC_INPUT_MAX_WITNESS_LEN}. ` +
+            'Update DLC_INPUT_MAX_WITNESS_LEN to match ddk.',
+        );
+      }
     }
   }
 
@@ -4657,7 +4672,8 @@ Payout Group not found even with brute force search',
     fundingInput.prevTx = tx;
     fundingInput.prevTxVout = dlcInputInfo.fundVout;
     fundingInput.sequence = Sequence.default();
-    fundingInput.maxWitnessLen = dlcInputInfo.maxWitnessLength || 220;
+    fundingInput.maxWitnessLen =
+      dlcInputInfo.maxWitnessLength || DLC_INPUT_MAX_WITNESS_LEN;
     fundingInput.redeemScript = Buffer.from('', 'hex'); // Empty for P2WSH
     fundingInput.inputSerialId = BigInt(
       dlcInputInfo.inputSerialId || generateSerialId(),
@@ -4706,7 +4722,7 @@ Payout Group not found even with brute force search',
         dlcInputInfo.fundVout,
         Amount.FromSatoshis(Number(dlcInputInfo.fundAmount)),
         multisigAddress,
-        dlcInputInfo.maxWitnessLength || 220,
+        dlcInputInfo.maxWitnessLength || DLC_INPUT_MAX_WITNESS_LEN,
         undefined, // DLC inputs don't have derivation paths
         fundingInput.inputSerialId,
       );
