@@ -4,6 +4,7 @@ import {
   Address,
   Amount,
   CalculateEcSignatureRequest,
+  CetAdaptorSignatureDebugInfo,
   CreateRawTransactionRequest,
   CreateSignatureHashRequest,
   DdkDlcInputInfo,
@@ -1890,6 +1891,141 @@ export default class BitcoinDdkProvider extends Provider {
     }
 
     return details;
+  }
+
+  /**
+   * Resolve a contract's outcome messages, in CET order.
+   *
+   * Mirrors the branching in `createDlcTxs` so that debug output lines up with
+   * the messages that were actually signed.
+   */
+  private GetMessagesList(dlcOffer: DlcOffer): Messages[] {
+    if (
+      dlcOffer.contractInfo.type === MessageType.SingleContractInfo &&
+      (dlcOffer.contractInfo as SingleContractInfo).contractDescriptor.type ===
+        ContractDescriptorType.Enumerated
+    ) {
+      return (
+        (dlcOffer.contractInfo as SingleContractInfo)
+          .contractDescriptor as EnumeratedDescriptor
+      ).outcomes.map((outcome) => ({ messages: [outcome.outcome] }));
+    }
+
+    return this.FlattenPayouts(this.GetPayouts(dlcOffer)).messagesList;
+  }
+
+  /**
+   * Resolve the ddk oracle info for the oracle that owns a given CET, mirroring
+   * the per-oracle slicing in `CreateCetAdaptorAndRefundSigs`.
+   */
+  private GetOracleInfoForCet(
+    dlcOffer: DlcOffer,
+    cetIndex: number,
+  ): DdkOracleInfo {
+    const contractOraclePairs = this.GetContractOraclePairs(
+      dlcOffer.contractInfo,
+    );
+
+    let oracleIndex = 0;
+    if (contractOraclePairs.length > 1) {
+      const indices = this.GetIndicesFromPayouts(this.GetPayouts(dlcOffer));
+      oracleIndex = contractOraclePairs.findIndex(
+        (_, i) =>
+          cetIndex >= indices[i].startingMessagesIndex &&
+          cetIndex < indices[i + 1].startingMessagesIndex,
+      );
+      if (oracleIndex === -1) {
+        throw new Error(
+          `Could not resolve an oracle for CET index ${cetIndex}`,
+        );
+      }
+    }
+
+    const { oracleInfo } = contractOraclePairs[oracleIndex];
+    if (oracleInfo.type !== MessageType.SingleOracleInfo) {
+      throw new Error('Only SingleOracleInfo supported in this context');
+    }
+
+    const announcement = (oracleInfo as SingleOracleInfo).announcement;
+    return {
+      publicKey: announcement.oraclePublicKey,
+      nonces: announcement.oracleEvent.oracleNonces,
+    };
+  }
+
+  private assertCetIndex(dlcTxs: DlcTransactions, cetIndex: number): void {
+    if (cetIndex < 0 || cetIndex >= dlcTxs.cets.length) {
+      throw new Error(
+        `CET index ${cetIndex} out of range. Total CETs: ${dlcTxs.cets.length}`,
+      );
+    }
+  }
+
+  /**
+   * Get every input that feeds a single CET's adaptor signature.
+   *
+   * Intended for debugging an adaptor signature a remote signer (e.g. Fordefi)
+   * produced or rejected: it isolates whether the mismatch is in the sighash,
+   * the adaptor point, or the CET being signed. The values returned are the
+   * exact ones `createCetAdaptorSigsFromOracleInfo` would use for this CET.
+   *
+   * @param cetIndex Index into `dlcTxs.cets`
+   */
+  async getCetAdaptorSignatureDetails(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    dlcTxs: DlcTransactions,
+    cetIndex: number,
+  ): Promise<CetAdaptorSignatureDebugInfo> {
+    this.assertCetIndex(dlcTxs, cetIndex);
+
+    const network = await this.getConnectedNetwork();
+    const fundingSPK = createP2MSMultisig(
+      dlcOffer.fundingPubkey,
+      dlcAccept.fundingPubkey,
+      network,
+    ).output!;
+
+    const msgs = this.convertMessagesForDdk(this.GetMessagesList(dlcOffer));
+
+    return this._ddk.cetAdaptorSignatureInputs(
+      this.convertTxToDdkTransaction(dlcTxs.cets[cetIndex]),
+      [this.GetOracleInfoForCet(dlcOffer, cetIndex)],
+      fundingSPK,
+      this.getFundOutputValueSats(dlcTxs),
+      msgs[cetIndex],
+    );
+  }
+
+  /**
+   * Get the 32-byte sighash for a single CET — the message a remote signer must
+   * reproduce for its adaptor signature to verify.
+   *
+   * @param cetIndex Index into `dlcTxs.cets`
+   * @returns The sighash, hex encoded
+   */
+  async getCetSighash(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    dlcTxs: DlcTransactions,
+    cetIndex: number,
+  ): Promise<string> {
+    this.assertCetIndex(dlcTxs, cetIndex);
+
+    const network = await this.getConnectedNetwork();
+    const fundingSPK = createP2MSMultisig(
+      dlcOffer.fundingPubkey,
+      dlcAccept.fundingPubkey,
+      network,
+    ).output!;
+
+    return this._ddk
+      .cetSighash(
+        this.convertTxToDdkTransaction(dlcTxs.cets[cetIndex]),
+        fundingSPK,
+        this.getFundOutputValueSats(dlcTxs),
+      )
+      .toString('hex');
   }
 
   private async VerifyRefundSignatureAlt(

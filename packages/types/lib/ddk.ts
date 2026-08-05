@@ -17,6 +17,30 @@ export interface ChangeOutputAndFees {
   cetFee: bigint;
 }
 
+/**
+ * Every input that feeds a CET adaptor signature, surfaced for debugging.
+ *
+ * Use this to diff against a remote signer (e.g. Fordefi) when an adaptor
+ * signature is rejected — it isolates whether the mismatch is in the sighash,
+ * the adaptor point, or the transaction being signed.
+ */
+export interface CetAdaptorSignatureDebugInfo {
+  /** The sighash (32 bytes) - this is the message that gets signed */
+  sighash: Buffer;
+  /** The adaptor point (33 bytes compressed public key) */
+  adaptorPoint: Buffer;
+  /** Input index (always 0 for CETs) */
+  inputIndex: number;
+  /** The funding script pubkey used for sighash */
+  scriptPubkey: Buffer;
+  /** The fund output value used for sighash */
+  value: bigint;
+  /** The CET txid */
+  cetTxid: string;
+  /** Raw CET bytes for verification */
+  cetRaw: Buffer;
+}
+
 export interface DdkDlcInputInfo {
   fundTx: DdkTransaction;
   fundVout: number;
@@ -140,6 +164,28 @@ export interface DdkInterface {
     totalCollateral: bigint,
     msgs: Array<Array<Array<Buffer>>>,
   ): boolean;
+
+  /**
+   * Every input that goes into creating a CET adaptor signature.
+   * Use this to compare values with a remote signer to debug signature mismatches.
+   */
+  cetAdaptorSignatureInputs(
+    cet: DdkTransaction,
+    oracleInfo: Array<DdkOracleInfo>,
+    fundingScriptPubkey: Buffer,
+    fundOutputValue: bigint,
+    msgs: Array<Array<Buffer>>,
+  ): CetAdaptorSignatureDebugInfo;
+
+  /**
+   * The sighash for a CET — the actual 32-byte message that gets signed.
+   * Useful for comparing against a remote signer's sighash calculation.
+   */
+  cetSighash(
+    cet: DdkTransaction,
+    fundingScriptPubkey: Buffer,
+    fundOutputValue: bigint,
+  ): Buffer;
 
   createCets(
     fundTxId: string,
