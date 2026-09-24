@@ -4,7 +4,7 @@
   "private": true,
   "packageManager": "pnpm@8.15.0",
   "devDependencies": {
-    "@bennyblader/ddk-ts": "^0.3.42",
+    "@bennyblader/ddk-ts": "1.0.0-rc5",
     "@changesets/cli": "^2.22.0",
     "@node-dlc/bitcoin": "1.2.1",
     "@node-dlc/bufio": "1.2.1",
@@ -69,14 +69,15 @@
     "lint:fix": "turbo run lint:fix",
     "build": "turbo run build",
     "test": "pnpm test:unit && pnpm test:integration",
-    "test:ci": "cross-env NODE_ENV=test CI=true FAST_TEST_MODE=true NODE_OPTIONS=--import=tsx nyc --reporter=text --reporter=lcov mocha --require dotenv/config --require source-map-support/register --extension ts,tsx --timeout 90000 --max-old-space-size=4096 --exit --recursive \"tests/integration/**/*.ts\"",
+    "test:ci": "cross-env NODE_ENV=test CI=true FAST_TEST_MODE=true NODE_OPTIONS=--import=tsx nyc --reporter=text --reporter=lcov mocha --require dotenv/config --require source-map-support/register --require tests/integration/utils/load-ddk.mjs --extension ts,tsx --timeout 90000 --max-old-space-size=4096 --exit --recursive \"tests/integration/**/*.ts\"",
     "test:unit": "turbo run test:unit",
-    "test:integration": "cross-env NODE_ENV=test NODE_OPTIONS=--import=tsx nyc --reporter=text --reporter=lcov mocha --require dotenv/config --require source-map-support/register --extension ts,tsx --timeout 60000 --max-old-space-size=4096 \"tests/integration/**/*.ts\"",
-    "test:integration:sequential": "cross-env NODE_ENV=test NODE_OPTIONS=--import=tsx nyc --reporter=text --reporter=lcov mocha --require dotenv/config --require source-map-support/register --extension ts,tsx --timeout 60000 --max-old-space-size=4096 \"tests/integration/**/*.ts\"",
+    "test:integration": "cross-env NODE_ENV=test NODE_OPTIONS=--import=tsx nyc --reporter=text --reporter=lcov mocha --require dotenv/config --require source-map-support/register --require tests/integration/utils/load-ddk.mjs --extension ts,tsx --timeout 60000 --max-old-space-size=4096 \"tests/integration/**/*.ts\"",
+    "test:integration:sequential": "cross-env NODE_ENV=test NODE_OPTIONS=--import=tsx nyc --reporter=text --reporter=lcov mocha --require dotenv/config --require source-map-support/register --require tests/integration/utils/load-ddk.mjs --extension ts,tsx --timeout 60000 --max-old-space-size=4096 \"tests/integration/**/*.ts\"",
     "prepublishOnly": "pnpm build",
     "changeset": "changeset",
     "version": "pnpm changeset version",
-    "publish": "pnpm build && pnpm changeset publish"
+    "publish": "pnpm build && pnpm changeset publish",
+    "test:legacy-fees": "NODE_OPTIONS=--import=tsx mocha --no-config --require tests/integration/utils/load-ddk.mjs --timeout 30000 packages/bitcoin-ddk-provider/tests/legacy-fees.test.ts"
   },
   "publishConfig": {
     "access": "public"

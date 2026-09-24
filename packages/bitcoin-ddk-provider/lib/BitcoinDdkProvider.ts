@@ -4,6 +4,7 @@ import {
   Address,
   Amount,
   CalculateEcSignatureRequest,
+  CetAdaptorSignatureDebugInfo,
   CreateRawTransactionRequest,
   CreateSignatureHashRequest,
   DdkDlcInputInfo,
@@ -11,6 +12,7 @@ import {
   DdkInterface,
   DdkOracleInfo,
   DdkTransaction,
+  DLC_INPUT_MAX_WITNESS_LEN,
   DlcInputInfo,
   DlcInputInfoRequest,
   Input,
@@ -86,6 +88,12 @@ import crypto from 'crypto';
 import { ECPairInterface } from 'ecpair';
 
 import {
+  ddkPartyFees,
+  MAX_STANDARD_PAYOUT_SPK_LENGTH,
+  P2WPKH_SPK_LENGTH,
+  singleFundedFeeReserve,
+} from './utils/DdkFees';
+import {
   checkTypes,
   computeContractId,
   createP2MSMultisig,
@@ -113,6 +121,20 @@ export default class BitcoinDdkProvider extends Provider {
   public async DdkLoaded() {
     while (!this._ddk) {
       await sleep(10);
+    }
+
+    // DLC_INPUT_MAX_WITNESS_LEN is duplicated in @atomicfinance/types because
+    // the types package and the CFD providers have no ddk instance to ask.
+    // Fail loudly here rather than let the copy drift into malformed inputs.
+    if (typeof this._ddk.dlcInputMaxWitnessLen === 'function') {
+      const ddkWitnessLen = this._ddk.dlcInputMaxWitnessLen();
+      if (ddkWitnessLen !== DLC_INPUT_MAX_WITNESS_LEN) {
+        throw new Error(
+          `DLC input max witness length mismatch: ddk reports ${ddkWitnessLen}, ` +
+            `@atomicfinance/types has ${DLC_INPUT_MAX_WITNESS_LEN}. ` +
+            'Update DLC_INPUT_MAX_WITNESS_LEN to match ddk.',
+        );
+      }
     }
   }
 
@@ -702,9 +724,23 @@ export default class BitcoinDdkProvider extends Provider {
     };
   }
 
+  /**
+   * Build a contract's funding, CET and refund transactions from its offer
+   * and accept messages.
+   *
+   * Pass `dlcSign` when the contract already exists, for example to restore
+   * or splice it. A single-funded contract created before ddk-dlc 2.0.0-rc.4
+   * was built under the old fee rule and rebuilds to a different funding
+   * transaction under the current one. With `dlcSign`, the rebuild must
+   * reproduce the sign message's contract id: when the current rule fails to
+   * build or produces a different id, the old rule is tried. The call throws
+   * if neither rule matches. Without dlcSign, the current rule is used for
+   * a new contract.
+   */
   public async createDlcTxs(
     dlcOffer: DlcOffer,
     dlcAccept: DlcAccept,
+    dlcSign?: DlcSign,
   ): Promise<CreateDlcTxsResponse> {
     const localFundPubkey = dlcOffer.fundingPubkey.toString('hex');
     const remoteFundPubkey = dlcAccept.fundingPubkey.toString('hex');
@@ -827,11 +863,8 @@ export default class BitcoinDdkProvider extends Provider {
     const hasDlcInputs = localDlcInputs.length > 0;
     const contractFlags = dlcOffer.contractFlags[0];
 
-    let dlcTxs: DdkDlcTransactions;
-
-    if (hasDlcInputs) {
-      // Use spliced DLC transactions when DLC inputs are present
-      dlcTxs = await this._ddk.createSplicedDlcTransactions(
+    const buildWithEngine = (feeRule?: number): DdkDlcTransactions => {
+      const args = [
         outcomes,
         localParams,
         remoteParams,
@@ -841,71 +874,115 @@ export default class BitcoinDdkProvider extends Provider {
         dlcOffer.cetLocktime,
         BigInt(dlcOffer.fundOutputSerialId),
         contractFlags,
+      ] as const;
+      if (feeRule === undefined) {
+        // Spliced DLC transactions when DLC inputs are present
+        return hasDlcInputs
+          ? this._ddk.createSplicedDlcTransactions(...args)
+          : this._ddk.createDlcTransactions(...args);
+      }
+      const method = hasDlcInputs
+        ? 'createSplicedDlcTransactionsWithFeeRule'
+        : 'createDlcTransactionsWithFeeRule';
+      const withFeeRule = this._ddk[method];
+      if (!withFeeRule) {
+        throw new Error(
+          'The injected ddk engine cannot rebuild a contract created before ' +
+            `ddk-dlc 2.0.0-rc.4: it has no ${method}.`,
+        );
+      }
+      return withFeeRule.call(this._ddk, ...args, feeRule);
+    };
+
+    const toDlcTransactions = (dlcTxs: DdkDlcTransactions): DlcTransactions => {
+      const dlcTransactions = new DlcTransactions();
+      dlcTransactions.fundTx = Tx.decode(
+        StreamReader.fromBuffer(Buffer.from(dlcTxs.fund.rawBytes)),
       );
-    } else {
-      // Use regular DLC transactions when no DLC inputs
-      dlcTxs = this._ddk.createDlcTransactions(
-        outcomes,
-        localParams,
-        remoteParams,
-        dlcOffer.refundLocktime,
-        BigInt(dlcOffer.feeRatePerVb),
-        0,
-        dlcOffer.cetLocktime,
-        BigInt(dlcOffer.fundOutputSerialId),
-        contractFlags,
+
+      // Build serial IDs based on actual outputs in the transaction
+      const actualOutputs = dlcTransactions.fundTx.outputs;
+      const serialIds: bigint[] = [];
+
+      // Always include the funding output serial ID
+      serialIds.push(BigInt(dlcOffer.fundOutputSerialId));
+
+      // Only include change serial IDs if there are actually change outputs
+      // For exact amount DLCs with no change, there will be only 1 output (the funding output)
+      if (actualOutputs.length > 1) {
+        // Multiple outputs means there are change outputs
+        if (dlcOffer.offerCollateral > 0n) {
+          serialIds.push(BigInt(dlcOffer.changeSerialId));
+        }
+        if (dlcAccept.acceptCollateral > 0n) {
+          serialIds.push(BigInt(dlcAccept.changeSerialId));
+        }
+      }
+
+      dlcTransactions.fundTxVout = serialIds
+        .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+        .findIndex((i) => BigInt(i) === BigInt(dlcOffer.fundOutputSerialId));
+
+      // Validate that the calculated fundTxVout is valid
+      if (
+        dlcTransactions.fundTxVout < 0 ||
+        dlcTransactions.fundTxVout >= dlcTransactions.fundTx.outputs.length
+      ) {
+        throw new Error(
+          `Invalid fundTxVout calculation: calculated=${dlcTransactions.fundTxVout}, ` +
+            `fundTx.outputs.length=${dlcTransactions.fundTx.outputs.length}, ` +
+            `fundOutputSerialId=${dlcOffer.fundOutputSerialId}, ` +
+            `serialIds=[${serialIds.join(', ')}], ` +
+            `offerCollateral=${dlcOffer.offerCollateral}, ` +
+            `acceptCollateral=${dlcAccept.acceptCollateral}`,
+        );
+      }
+
+      dlcTransactions.cets = dlcTxs.cets.map((cetTx) =>
+        Tx.decode(StreamReader.fromBuffer(Buffer.from(cetTx.rawBytes))),
       );
+      dlcTransactions.refundTx = Tx.decode(
+        StreamReader.fromBuffer(Buffer.from(dlcTxs.refund.rawBytes)),
+      );
+
+      return dlcTransactions;
+    };
+
+    const contractIdOf = (dlcTransactions: DlcTransactions): Buffer =>
+      computeContractId(
+        dlcTransactions.fundTx.txId.serialize(),
+        dlcTransactions.fundTxVout,
+        dlcOffer.temporaryContractId,
+      );
+
+    try {
+      const dlcTransactions = toDlcTransactions(buildWithEngine());
+      if (
+        !dlcSign ||
+        contractIdOf(dlcTransactions).equals(dlcSign.contractId)
+      ) {
+        return { dlcTransactions, messagesList };
+      }
+    } catch (error) {
+      // An existing contract may have enough input value for the old fee only.
+      // New contracts must still fail if the current rule cannot build them.
+      if (!dlcSign) throw error;
     }
 
-    const dlcTransactions = new DlcTransactions();
-    dlcTransactions.fundTx = Tx.decode(
-      StreamReader.fromBuffer(Buffer.from(dlcTxs.fund.rawBytes)),
-    );
-
-    // Build serial IDs based on actual outputs in the transaction
-    const actualOutputs = dlcTransactions.fundTx.outputs;
-    const serialIds: bigint[] = [];
-
-    // Always include the funding output serial ID
-    serialIds.push(BigInt(dlcOffer.fundOutputSerialId));
-
-    // Only include change serial IDs if there are actually change outputs
-    // For exact amount DLCs with no change, there will be only 1 output (the funding output)
-    if (actualOutputs.length > 1) {
-      // Multiple outputs means there are change outputs
-      if (dlcOffer.offerCollateral > 0n) {
-        serialIds.push(BigInt(dlcOffer.changeSerialId));
-      }
-      if (dlcAccept.acceptCollateral > 0n) {
-        serialIds.push(BigInt(dlcAccept.changeSerialId));
-      }
-    }
-
-    dlcTransactions.fundTxVout = serialIds
-      .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
-      .findIndex((i) => BigInt(i) === BigInt(dlcOffer.fundOutputSerialId));
-
-    // Validate that the calculated fundTxVout is valid
-    if (
-      dlcTransactions.fundTxVout < 0 ||
-      dlcTransactions.fundTxVout >= dlcTransactions.fundTx.outputs.length
-    ) {
+    const ownPayoutOnly = this._ddk.FeeRule?.OwnPayoutOnly;
+    if (ownPayoutOnly === undefined) {
       throw new Error(
-        `Invalid fundTxVout calculation: calculated=${dlcTransactions.fundTxVout}, ` +
-          `fundTx.outputs.length=${dlcTransactions.fundTx.outputs.length}, ` +
-          `fundOutputSerialId=${dlcOffer.fundOutputSerialId}, ` +
-          `serialIds=[${serialIds.join(', ')}], ` +
-          `offerCollateral=${dlcOffer.offerCollateral}, ` +
-          `acceptCollateral=${dlcAccept.acceptCollateral}`,
+        'The injected ddk engine cannot rebuild a contract created before ' +
+          'ddk-dlc 2.0.0-rc.4: it has no FeeRule.',
       );
     }
-
-    dlcTransactions.cets = dlcTxs.cets.map((cetTx) =>
-      Tx.decode(StreamReader.fromBuffer(Buffer.from(cetTx.rawBytes))),
-    );
-    dlcTransactions.refundTx = Tx.decode(
-      StreamReader.fromBuffer(Buffer.from(dlcTxs.refund.rawBytes)),
-    );
+    const dlcTransactions = toDlcTransactions(buildWithEngine(ownPayoutOnly));
+    if (!contractIdOf(dlcTransactions).equals(dlcSign.contractId)) {
+      throw new Error(
+        `Rebuilt transactions do not match contract ${dlcSign.contractId.toString('hex')} ` +
+          'under either fee rule',
+      );
+    }
 
     return { dlcTransactions, messagesList };
   }
@@ -1158,8 +1235,8 @@ export default class BitcoinDdkProvider extends Provider {
         sigs.push(
           adaptorPairs.map((adaptorPair) => {
             return {
-              encryptedSig: adaptorPair.signature,
-              dleqProof: adaptorPair.proof,
+              encryptedSig: Buffer.from(adaptorPair.signature),
+              dleqProof: Buffer.from(adaptorPair.proof),
             };
           }),
         );
@@ -1223,8 +1300,8 @@ export default class BitcoinDdkProvider extends Provider {
         sigs.push(
           adaptorPairs.map((adaptorPair) => {
             return {
-              encryptedSig: adaptorPair.signature,
-              dleqProof: adaptorPair.proof,
+              encryptedSig: Buffer.from(adaptorPair.signature),
+              dleqProof: Buffer.from(adaptorPair.proof),
             };
           }),
         );
@@ -1890,6 +1967,150 @@ export default class BitcoinDdkProvider extends Provider {
     }
 
     return details;
+  }
+
+  /**
+   * Resolve a contract's outcome messages, in CET order.
+   *
+   * Mirrors the branching in `createDlcTxs` so that debug output lines up with
+   * the messages that were actually signed.
+   */
+  private GetMessagesList(dlcOffer: DlcOffer): Messages[] {
+    if (
+      dlcOffer.contractInfo.type === MessageType.SingleContractInfo &&
+      (dlcOffer.contractInfo as SingleContractInfo).contractDescriptor.type ===
+        ContractDescriptorType.Enumerated
+    ) {
+      return (
+        (dlcOffer.contractInfo as SingleContractInfo)
+          .contractDescriptor as EnumeratedDescriptor
+      ).outcomes.map((outcome) => ({ messages: [outcome.outcome] }));
+    }
+
+    return this.FlattenPayouts(this.GetPayouts(dlcOffer)).messagesList;
+  }
+
+  /**
+   * Resolve the ddk oracle info for the oracle that owns a given CET, mirroring
+   * the per-oracle slicing in `CreateCetAdaptorAndRefundSigs`.
+   */
+  private GetOracleInfoForCet(
+    dlcOffer: DlcOffer,
+    cetIndex: number,
+  ): DdkOracleInfo {
+    const contractOraclePairs = this.GetContractOraclePairs(
+      dlcOffer.contractInfo,
+    );
+
+    let oracleIndex = 0;
+    if (contractOraclePairs.length > 1) {
+      const indices = this.GetIndicesFromPayouts(this.GetPayouts(dlcOffer));
+      oracleIndex = contractOraclePairs.findIndex(
+        (_, i) =>
+          cetIndex >= indices[i].startingMessagesIndex &&
+          cetIndex < indices[i + 1].startingMessagesIndex,
+      );
+      if (oracleIndex === -1) {
+        throw new Error(
+          `Could not resolve an oracle for CET index ${cetIndex}`,
+        );
+      }
+    }
+
+    const { oracleInfo } = contractOraclePairs[oracleIndex];
+    if (oracleInfo.type !== MessageType.SingleOracleInfo) {
+      throw new Error('Only SingleOracleInfo supported in this context');
+    }
+
+    const announcement = (oracleInfo as SingleOracleInfo).announcement;
+    return {
+      publicKey: announcement.oraclePublicKey,
+      nonces: announcement.oracleEvent.oracleNonces,
+    };
+  }
+
+  private assertCetIndex(dlcTxs: DlcTransactions, cetIndex: number): void {
+    if (cetIndex < 0 || cetIndex >= dlcTxs.cets.length) {
+      throw new Error(
+        `CET index ${cetIndex} out of range. Total CETs: ${dlcTxs.cets.length}`,
+      );
+    }
+  }
+
+  /**
+   * Get every input that feeds a single CET's adaptor signature.
+   *
+   * Intended for debugging an adaptor signature a remote signer (e.g. Fordefi)
+   * produced or rejected: it isolates whether the mismatch is in the sighash,
+   * the adaptor point, or the CET being signed. The values returned are the
+   * exact ones `createCetAdaptorSigsFromOracleInfo` would use for this CET.
+   *
+   * @param cetIndex Index into `dlcTxs.cets`
+   */
+  async getCetAdaptorSignatureDetails(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    dlcTxs: DlcTransactions,
+    cetIndex: number,
+  ): Promise<CetAdaptorSignatureDebugInfo> {
+    this.assertCetIndex(dlcTxs, cetIndex);
+
+    const network = await this.getConnectedNetwork();
+    const fundingSPK = createP2MSMultisig(
+      dlcOffer.fundingPubkey,
+      dlcAccept.fundingPubkey,
+      network,
+    ).output!;
+
+    const msgs = this.convertMessagesForDdk(this.GetMessagesList(dlcOffer));
+
+    const inputs = this._ddk.Transaction.cetAdaptorSignatureInputs(
+      this.convertTxToDdkTransaction(dlcTxs.cets[cetIndex]),
+      [this.GetOracleInfoForCet(dlcOffer, cetIndex)],
+      fundingSPK,
+      this.getFundOutputValueSats(dlcTxs),
+      msgs[cetIndex],
+    );
+    // The engine returns Uint8Array; hand callers Buffers so `toString('hex')`
+    // keeps working.
+    return {
+      ...inputs,
+      sighash: Buffer.from(inputs.sighash),
+      adaptorPoint: Buffer.from(inputs.adaptorPoint),
+      scriptPubkey: Buffer.from(inputs.scriptPubkey),
+      cetRaw: Buffer.from(inputs.cetRaw),
+    };
+  }
+
+  /**
+   * Get the 32-byte sighash for a single CET — the message a remote signer must
+   * reproduce for its adaptor signature to verify.
+   *
+   * @param cetIndex Index into `dlcTxs.cets`
+   * @returns The sighash, hex encoded
+   */
+  async getCetSighash(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    dlcTxs: DlcTransactions,
+    cetIndex: number,
+  ): Promise<string> {
+    this.assertCetIndex(dlcTxs, cetIndex);
+
+    const network = await this.getConnectedNetwork();
+    const fundingSPK = createP2MSMultisig(
+      dlcOffer.fundingPubkey,
+      dlcAccept.fundingPubkey,
+      network,
+    ).output!;
+
+    return Buffer.from(
+      this._ddk.Transaction.cetSighash(
+        this.convertTxToDdkTransaction(dlcTxs.cets[cetIndex]),
+        fundingSPK,
+        this.getFundOutputValueSats(dlcTxs),
+      ),
+    ).toString('hex');
   }
 
   private async VerifyRefundSignatureAlt(
@@ -2594,8 +2815,8 @@ Payout Group not found even with brute force search',
         return outcome.outcome === attestedOutcomeHash;
       });
 
-      finalCet = this._ddk
-        .signCet(
+      finalCet = Buffer.from(
+        this._ddk.Transaction.signCet(
           this.convertTxToDdkTransaction(dlcTxs.cets[outcomeIndex]),
           this.getFullAdaptorSig(
             isOfferer
@@ -2607,8 +2828,8 @@ Payout Group not found even with brute force search',
           isOfferer ? dlcAccept.fundingPubkey : dlcOffer.fundingPubkey,
           isOfferer ? dlcOffer.fundingPubkey : dlcAccept.fundingPubkey,
           this.getFundOutputValueSats(dlcTxs),
-        )
-        .rawBytes.toString('hex');
+        ).rawBytes,
+      ).toString('hex');
     } else {
       const { index: outcomeIndex, groupLength } = await this.FindOutcomeIndex(
         dlcOffer,
@@ -2622,8 +2843,8 @@ Payout Group not found even with brute force search',
           ? oracleAttestation.signatures
           : oracleAttestation.signatures.slice(0, sliceIndex);
 
-      finalCet = this._ddk
-        .signCet(
+      finalCet = Buffer.from(
+        this._ddk.Transaction.signCet(
           this.convertTxToDdkTransaction(dlcTxs.cets[outcomeIndex]),
           this.getFullAdaptorSig(
             isOfferer
@@ -2635,8 +2856,8 @@ Payout Group not found even with brute force search',
           isOfferer ? dlcAccept.fundingPubkey : dlcOffer.fundingPubkey,
           isOfferer ? dlcOffer.fundingPubkey : dlcAccept.fundingPubkey,
           this.getFundOutputValueSats(dlcTxs),
-        )
-        .rawBytes.toString('hex');
+        ).rawBytes,
+      ).toString('hex');
     }
 
     // const finalCet = (await this.SignCet(signCetRequest)).hex;
@@ -3048,6 +3269,11 @@ Payout Group not found even with brute force search',
     // Generate a random 32-byte temporary contract ID
     dlcOffer.temporaryContractId = crypto.randomBytes(32);
 
+    // A single-funded offer pays more under the ddk v2 construction than the
+    // @node-dlc estimate coin selection uses; see utils/DdkFees.
+    const singleFunded =
+      offerCollateralSatoshis === contractInfo.totalCollateral;
+
     // Check if we have FundingInput[] (DLC inputs) or Input[] (regular inputs)
     const hasFundingInputs =
       fixedInputs && fixedInputs.length > 0 && 'prevTx' in fixedInputs[0]; // FundingInput has prevTx, Input doesn't
@@ -3085,7 +3311,9 @@ Payout Group not found even with brute force search',
     } else {
       // Handle Input[] through existing Initialize() flow
       const initResult = await this.Initialize(
-        offerCollateralSatoshis,
+        singleFunded
+          ? offerCollateralSatoshis + singleFundedFeeReserve(feeRatePerVb)
+          : offerCollateralSatoshis,
         feeRatePerVb,
         fixedInputs as Input[],
         inputSupplementationMode || InputSupplementationMode.Required,
@@ -3131,12 +3359,30 @@ Payout Group not found even with brute force search',
     dlcOffer.cetLocktime = cetLocktime;
     dlcOffer.refundLocktime = refundLocktime;
 
-    if (offerCollateralSatoshis === dlcOffer.contractInfo.totalCollateral) {
+    if (singleFunded) {
       dlcOffer.markAsSingleFunded();
     }
 
     assert(
       (() => {
+        const funding = fundingInputs.reduce((total, input) => {
+          return total + input.prevTx.outputs[input.prevTxVout].value.sats;
+        }, BigInt(0));
+
+        if (singleFunded) {
+          // The ddk v2 construction: this party also pays for the acceptor's
+          // payout output, whose length is not known yet.
+          const { fundFee, cetFee } = ddkPartyFees({
+            fundingInputs: dlcOffer.fundingInputs,
+            payoutSpkLength: dlcOffer.payoutSpk.length,
+            changeSpkLength: dlcOffer.changeSpk.length,
+            feeRatePerVb: dlcOffer.feeRatePerVb,
+            fundsWholeContract: true,
+            counterpartyPayoutSpkLength: MAX_STANDARD_PAYOUT_SPK_LENGTH,
+          });
+          return funding >= offerCollateralSatoshis + fundFee + cetFee;
+        }
+
         const finalizer = new DualFundingTxFinalizer(
           dlcOffer.fundingInputs,
           dlcOffer.payoutSpk,
@@ -3146,10 +3392,6 @@ Payout Group not found even with brute force search',
           null,
           dlcOffer.feeRatePerVb,
         );
-        const funding = fundingInputs.reduce((total, input) => {
-          return total + input.prevTx.outputs[input.prevTxVout].value.sats;
-        }, BigInt(0));
-
         return funding >= offerCollateralSatoshis + finalizer.offerFees;
       })(),
       'fundingInputs for dlcOffer must be greater than offerCollateralSatoshis plus offerFees',
@@ -4492,13 +4734,34 @@ Payout Group not found even with brute force search',
         inputs.map((input) => this.inputToFundingInput(input)),
       );
 
-      // Use node-dlc's calculateMaxCollateral function
-      // For single-funded DLC, pass only offerer inputs and fee rate
-      return BatchDlcTxBuilder.calculateMaxCollateral(
-        fundingInputs,
-        feeRatePerVb,
-        contractCount,
+      if (contractCount !== 1) {
+        // ddk has no batch construction; keep @node-dlc's estimate.
+        return BatchDlcTxBuilder.calculateMaxCollateral(
+          fundingInputs,
+          feeRatePerVb,
+          contractCount,
+        );
+      }
+
+      // The ddk v2 construction for a single-funded contract, the same rule
+      // createDlcOffer checks: this party pays the full funding and CET base
+      // weights and the acceptor's payout output (reserved at its largest
+      // standard length). The wallet's payout and change outputs are P2WPKH.
+      const totalInputValue = fundingInputs.reduce(
+        (total, input) =>
+          total + input.prevTx.outputs[input.prevTxVout].value.sats,
+        BigInt(0),
       );
+      const { fundFee, cetFee } = ddkPartyFees({
+        fundingInputs,
+        payoutSpkLength: P2WPKH_SPK_LENGTH,
+        changeSpkLength: P2WPKH_SPK_LENGTH,
+        feeRatePerVb,
+        fundsWholeContract: true,
+        counterpartyPayoutSpkLength: MAX_STANDARD_PAYOUT_SPK_LENGTH,
+      });
+      const maxCollateral = totalInputValue - fundFee - cetFee;
+      return maxCollateral > BigInt(0) ? maxCollateral : BigInt(0);
     } catch (error) {
       // If calculation fails, return 0 to indicate insufficient funds
       console.warn('calculateMaxCollateral failed:', error);
@@ -4521,7 +4784,8 @@ Payout Group not found even with brute force search',
     fundingInput.prevTx = tx;
     fundingInput.prevTxVout = dlcInputInfo.fundVout;
     fundingInput.sequence = Sequence.default();
-    fundingInput.maxWitnessLen = dlcInputInfo.maxWitnessLength || 220;
+    fundingInput.maxWitnessLen =
+      dlcInputInfo.maxWitnessLength || DLC_INPUT_MAX_WITNESS_LEN;
     fundingInput.redeemScript = Buffer.from('', 'hex'); // Empty for P2WSH
     fundingInput.inputSerialId = BigInt(
       dlcInputInfo.inputSerialId || generateSerialId(),
@@ -4570,7 +4834,7 @@ Payout Group not found even with brute force search',
         dlcInputInfo.fundVout,
         Amount.FromSatoshis(Number(dlcInputInfo.fundAmount)),
         multisigAddress,
-        dlcInputInfo.maxWitnessLength || 220,
+        dlcInputInfo.maxWitnessLength || DLC_INPUT_MAX_WITNESS_LEN,
         undefined, // DLC inputs don't have derivation paths
         fundingInput.inputSerialId,
       );

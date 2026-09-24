@@ -13,8 +13,8 @@ importers:
   .:
     devDependencies:
       '@bennyblader/ddk-ts':
-        specifier: ^0.3.42
-        version: 0.3.42
+        specifier: 1.0.0-rc5
+        version: 1.0.0-rc5
       '@changesets/cli':
         specifier: ^2.22.0
         version: 2.29.5
@@ -1016,30 +1016,31 @@ packages:
       '@babel/helper-validator-identifier': 7.27.1
     dev: true
 
-  /@bennyblader/ddk-ts-darwin-arm64@0.3.42:
-    resolution: {integrity: sha512-6AXhl8UmU42cfSTyu6aSQTwm3EPhJiHjHE0zTWDv+P1aPZiUsNbFZOY81fnz1t5w0KE9t06IaEYY3Mf0Q0ne9Q==}
-    engines: {node: '>= 6.14.2 < 7 || >= 8.11.2 < 9 || >= 9.11.0 < 10 || >= 10.0.0'}
+  /@bennyblader/ddk-ts-darwin-arm64@1.0.0-rc5:
+    resolution: {integrity: sha512-cFuUMD4gXg2H2Mf39TXHGG+ytTOSyHvZZY8svH4yWTRwmCpTQ+7+s/3IEPusGt+Z4Y5oZSe6UNEvlNQXjOb5vg==}
     cpu: [arm64]
     os: [darwin]
     requiresBuild: true
     dev: true
     optional: true
 
-  /@bennyblader/ddk-ts-linux-x64-gnu@0.3.42:
-    resolution: {integrity: sha512-Q/ZmjiXj3IWDfI4QXyEha9S6b9ZZ+T4NRDhvaY6ShhixdStT6mR43hkFw+5WRWxoWMT2HALjkct54L3VyWUjig==}
-    engines: {node: '>= 6.14.2 < 7 || >= 8.11.2 < 9 || >= 9.11.0 < 10 || >= 10.0.0'}
+  /@bennyblader/ddk-ts-linux-x64-gnu@1.0.0-rc5:
+    resolution: {integrity: sha512-yItgNR0Az98xXccJSQhtXIRXgWYUSZVQy7nS0qnDKhWqm2oenTH6Z4FieLlLsaYU00UyEjqfE7izpZWfgOeFZw==}
     cpu: [x64]
     os: [linux]
     requiresBuild: true
     dev: true
     optional: true
 
-  /@bennyblader/ddk-ts@0.3.42:
-    resolution: {integrity: sha512-fTifJ0bUCQSMxBJGpefTx6VciLdCL1tNWiW9P+gR7295d+2N35VySJhaMupLG+ctU50oNzP8u/YhvwIHMURYUQ==}
-    engines: {node: '>= 6.14.2 < 7 || >= 8.11.2 < 9 || >= 9.11.0 < 10 || >= 10.0.0'}
+  /@bennyblader/ddk-ts@1.0.0-rc5:
+    resolution: {integrity: sha512-QBdCa0JXrAPT3qaTyZsV5K5kZw1nt2NoFnaoRJ0I0a48KgB3VvEq12ZzMdkx/S+7Ud/h8qynDtNeFCAjeBSdUw==}
+    engines: {node: '>= 18'}
+    dependencies:
+      '@ubjs/core': 0.31.0-5
+      '@ubjs/node': 0.31.0-5
     optionalDependencies:
-      '@bennyblader/ddk-ts-darwin-arm64': 0.3.42
-      '@bennyblader/ddk-ts-linux-x64-gnu': 0.3.42
+      '@bennyblader/ddk-ts-darwin-arm64': 1.0.0-rc5
+      '@bennyblader/ddk-ts-linux-x64-gnu': 1.0.0-rc5
     dev: true
 
   /@bitcoin-js/tiny-secp256k1-asmjs@2.2.4:
@@ -2307,6 +2308,87 @@ packages:
     dependencies:
       '@typescript-eslint/types': 8.39.0
       eslint-visitor-keys: 4.2.1
+    dev: true
+
+  /@ubjs/core@0.31.0-5:
+    resolution: {integrity: sha512-oRBRtyYOhaodiOY3rLMZFgAHGFMmD44XefMpsAx4Ja0/rO+45kVdQB1VZsblQMLYxP965i3IHm56eymgo3I5eQ==}
+    dev: true
+
+  /@ubjs/node-darwin-arm64@0.31.0-5:
+    resolution: {integrity: sha512-ZefUcOgW0UkPZe9aav021m1hBfBzzhj75gOS/gc85g2PkmWDctz+D+tKQYs/gwM44vu1We2WTGcitf8yrZJGyA==}
+    cpu: [arm64]
+    os: [darwin]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@ubjs/node-darwin-x64@0.31.0-5:
+    resolution: {integrity: sha512-K4A5k8hsLeOtgG4tT73u/XKfxUUOjWxwjRf3e4v3sggG6b7q3yoSFUwPjf12la6VSgD/E9sRjrTAT7MNdENaww==}
+    cpu: [x64]
+    os: [darwin]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@ubjs/node-linux-arm64-gnu@0.31.0-5:
+    resolution: {integrity: sha512-m4S96owMdh53G6w6hALi7nfsUhB+Y6bAcjVJnRdzVe5WJ+o2dMTbj9u/IxtcJaENtLLEMDPHhLAZmxQS9Licew==}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@ubjs/node-linux-arm64-musl@0.31.0-5:
+    resolution: {integrity: sha512-VVkXe8We9ka8FZqJfsbl4DEkbn4nt4htSCd2Vr39L9kOrBtNZ8SR0s+BiMQ8xBQnP6u+O95TrhOviROCDj2VSw==}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@ubjs/node-linux-x64-gnu@0.31.0-5:
+    resolution: {integrity: sha512-xFvl3iGWBVqghmz9lC4qij+ezLHV5V11O/6G+0rM7a/nAQdweCSCeZ65QsiVoqC/bYJ7fKIyKCXFMy5ldhSQvw==}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@ubjs/node-linux-x64-musl@0.31.0-5:
+    resolution: {integrity: sha512-R3HzFVI+v9G5CVOFOSxhF9SYX1o/6llA9mQbaANYMANuybE6LNJ8fgj51CTRrhobjWmgA24swq24DqbVsqypZg==}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@ubjs/node-win32-arm64-msvc@0.31.0-5:
+    resolution: {integrity: sha512-A7Z6lYqY0QQF4j3ce/3k1iIjgJIMWje3wTU9RfOTDSl0hcKKHDezvwvLiLBbVjagwJQOKWO5zwWLBAw6KTUDHQ==}
+    cpu: [arm64]
+    os: [win32]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@ubjs/node-win32-x64-msvc@0.31.0-5:
+    resolution: {integrity: sha512-rqaH2YZBjUphSV8nFseeTG5vJMToDt8QhoY4wKULGZr2OF/HM52Ggt/9yb+gsuJ1l4ekz2biJrlN/HlhyV3CZw==}
+    cpu: [x64]
+    os: [win32]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@ubjs/node@0.31.0-5:
+    resolution: {integrity: sha512-w1gyA/1H7TiJIQfHD6Zjr673IDfG+1a4hpM0f0krxJr9jlTkrwouFCoNTwpLmSxSWJXtUxkB19Bk0ekxAepOHQ==}
+    optionalDependencies:
+      '@ubjs/node-darwin-arm64': 0.31.0-5
+      '@ubjs/node-darwin-x64': 0.31.0-5
+      '@ubjs/node-linux-arm64-gnu': 0.31.0-5
+      '@ubjs/node-linux-arm64-musl': 0.31.0-5
+      '@ubjs/node-linux-x64-gnu': 0.31.0-5
+      '@ubjs/node-linux-x64-musl': 0.31.0-5
+      '@ubjs/node-win32-arm64-msvc': 0.31.0-5
+      '@ubjs/node-win32-x64-msvc': 0.31.0-5
     dev: true
 
   /@webassemblyjs/ast@1.14.1:

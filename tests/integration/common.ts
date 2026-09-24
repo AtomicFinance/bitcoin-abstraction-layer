@@ -1,5 +1,4 @@
 /* eslint-env mocha */
-import * as ddkJs from '@bennyblader/ddk-ts';
 import BN from 'bignumber.js';
 import { generateMnemonic } from 'bip39';
 import * as cfdJs from 'cfd-js';
@@ -22,6 +21,9 @@ import { Transaction } from '../../packages/types/lib';
 import * as utils from '../../packages/utils';
 import config from './config';
 import { getWrappedCfdDlcJs } from './utils/WrappedCfdDlcJs';
+import { ddkEngine } from './utils/ddk';
+
+const ddkJs = ddkEngine();
 
 const cfdDlcJs = getWrappedCfdDlcJs();
 
