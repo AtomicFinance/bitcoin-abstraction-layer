@@ -5,8 +5,8 @@
  * the module itself can be passed as a `DdkInterface`.
  *
  * The transactions BAL signs are built by this engine, not by BAL. To match the
- * ddk v2 construction (for example the single-funded CET fee rule of
- * `ddk-dlc` 2.0.0-rc.6), inject an engine built on that ddk-dlc release.
+ * ddk v2 construction (for example the single-funded CET fee rule since
+ * `ddk-dlc` 2.0.0-rc.4), inject an engine built on ddk-dlc 2.0.0-rc.4 or later.
  *
  * Differences from the earlier hand-written NAPI surface:
  * - Bytes are `Uint8Array`. A `Buffer` is a `Uint8Array`, so arguments pass
@@ -245,14 +245,30 @@ export interface DdkPartyParamsMethods {
   /**
    * Assumes a dual-funded contract (total collateral = 2 × this party's), and
    * does not price the counterparty's payout output, so it under-reports a
-   * single-funded party's CET fee under ddk-dlc 2.0.0-rc.6.
+   * single-funded party's CET fee under the rule since ddk-dlc 2.0.0-rc.4.
    */
   changeOutputAndFees(self_: PartyParams, feeRate: bigint): ChangeOutputAndFees;
+}
+
+/**
+ * The engine's `FeeRule` enum: the fee rule a contract's transactions are
+ * built with. The two differ only when one party funds the whole contract.
+ */
+export interface DdkFeeRule {
+  /** The rule since ddk-dlc 2.0.0-rc.4; the only one new contracts use. */
+  CounterpartyPayout: number;
+  /** The rule before ddk-dlc 2.0.0-rc.4, to rebuild contracts created then. */
+  OwnPayoutOnly: number;
 }
 
 // Main DDK interface that any implementation must provide
 export interface DdkInterface {
   Transaction: DdkTransactionMethods;
+  /**
+   * Absent from engines older than the fee-rule fallback; without it, BAL
+   * cannot rebuild a single-funded contract created before ddk-dlc 2.0.0-rc.4.
+   */
+  FeeRule?: DdkFeeRule;
   TxOutput: DdkTxOutputMethods;
   AdaptorSignature: DdkAdaptorSignatureMethods;
   PartyParams: DdkPartyParamsMethods;
@@ -307,6 +323,34 @@ export interface DdkInterface {
     cetLockTime: number,
     fundOutputSerialId: bigint,
     contractFlags: number,
+  ): DdkDlcTransactions;
+
+  /** `createDlcTransactions` under an explicit `FeeRule`. */
+  createDlcTransactionsWithFeeRule?(
+    outcomes: Array<Payout>,
+    localParams: PartyParams,
+    remoteParams: PartyParams,
+    refundLocktime: number,
+    feeRate: bigint,
+    fundLockTime: number,
+    cetLockTime: number,
+    fundOutputSerialId: bigint,
+    contractFlags: number,
+    feeRule: number,
+  ): DdkDlcTransactions;
+
+  /** `createSplicedDlcTransactions` under an explicit `FeeRule`. */
+  createSplicedDlcTransactionsWithFeeRule?(
+    outcomes: Array<Payout>,
+    localParams: PartyParams,
+    remoteParams: PartyParams,
+    refundLocktime: number,
+    feeRate: bigint,
+    fundLockTime: number,
+    cetLockTime: number,
+    fundOutputSerialId: bigint,
+    contractFlags: number,
+    feeRule: number,
   ): DdkDlcTransactions;
 
   createFundTxLockingScript(

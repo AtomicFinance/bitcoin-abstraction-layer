@@ -36,11 +36,14 @@ export interface DlcProvider {
    * Create DlcTxs object from DlcOffer and DlcAccept
    * @param dlcOffer Dlc Offer Message
    * @param dlcAccept Dlc Accept Message
-   * @returns {Promise<boolean>}
+   * @param dlcSign Dlc Sign Message of an existing contract; required to
+   *   rebuild a single-funded contract created before ddk-dlc 2.0.0-rc.4
+   * @returns {Promise<CreateDlcTxsResponse>}
    */
   createDlcTxs(
     _dlcOffer: DlcOffer,
     _dlcAccept: DlcAccept,
+    _dlcSign?: DlcSign,
   ): Promise<CreateDlcTxsResponse>;
 
   /**

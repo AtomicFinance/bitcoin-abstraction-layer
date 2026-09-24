@@ -724,9 +724,22 @@ export default class BitcoinDdkProvider extends Provider {
     };
   }
 
+  /**
+   * Build a contract's funding, CET and refund transactions from its offer
+   * and accept messages.
+   *
+   * Pass `dlcSign` when the contract already exists, for example to restore
+   * or splice it. A single-funded contract created before ddk-dlc 2.0.0-rc.4
+   * was built under the old fee rule and rebuilds to a different funding
+   * transaction under the current one. With `dlcSign`, the rebuild must
+   * reproduce the sign message's contract id: when the current rule does
+   * not, the old rule is tried, and the call throws if neither does. Without
+   * it, the current rule is used, which is right for a new contract.
+   */
   public async createDlcTxs(
     dlcOffer: DlcOffer,
     dlcAccept: DlcAccept,
+    dlcSign?: DlcSign,
   ): Promise<CreateDlcTxsResponse> {
     const localFundPubkey = dlcOffer.fundingPubkey.toString('hex');
     const remoteFundPubkey = dlcAccept.fundingPubkey.toString('hex');
@@ -849,11 +862,8 @@ export default class BitcoinDdkProvider extends Provider {
     const hasDlcInputs = localDlcInputs.length > 0;
     const contractFlags = dlcOffer.contractFlags[0];
 
-    let dlcTxs: DdkDlcTransactions;
-
-    if (hasDlcInputs) {
-      // Use spliced DLC transactions when DLC inputs are present
-      dlcTxs = await this._ddk.createSplicedDlcTransactions(
+    const buildWithEngine = (feeRule?: number): DdkDlcTransactions => {
+      const args = [
         outcomes,
         localParams,
         remoteParams,
@@ -863,71 +873,108 @@ export default class BitcoinDdkProvider extends Provider {
         dlcOffer.cetLocktime,
         BigInt(dlcOffer.fundOutputSerialId),
         contractFlags,
-      );
-    } else {
-      // Use regular DLC transactions when no DLC inputs
-      dlcTxs = this._ddk.createDlcTransactions(
-        outcomes,
-        localParams,
-        remoteParams,
-        dlcOffer.refundLocktime,
-        BigInt(dlcOffer.feeRatePerVb),
-        0,
-        dlcOffer.cetLocktime,
-        BigInt(dlcOffer.fundOutputSerialId),
-        contractFlags,
-      );
-    }
-
-    const dlcTransactions = new DlcTransactions();
-    dlcTransactions.fundTx = Tx.decode(
-      StreamReader.fromBuffer(Buffer.from(dlcTxs.fund.rawBytes)),
-    );
-
-    // Build serial IDs based on actual outputs in the transaction
-    const actualOutputs = dlcTransactions.fundTx.outputs;
-    const serialIds: bigint[] = [];
-
-    // Always include the funding output serial ID
-    serialIds.push(BigInt(dlcOffer.fundOutputSerialId));
-
-    // Only include change serial IDs if there are actually change outputs
-    // For exact amount DLCs with no change, there will be only 1 output (the funding output)
-    if (actualOutputs.length > 1) {
-      // Multiple outputs means there are change outputs
-      if (dlcOffer.offerCollateral > 0n) {
-        serialIds.push(BigInt(dlcOffer.changeSerialId));
+      ] as const;
+      if (feeRule === undefined) {
+        // Spliced DLC transactions when DLC inputs are present
+        return hasDlcInputs
+          ? this._ddk.createSplicedDlcTransactions(...args)
+          : this._ddk.createDlcTransactions(...args);
       }
-      if (dlcAccept.acceptCollateral > 0n) {
-        serialIds.push(BigInt(dlcAccept.changeSerialId));
+      const withFeeRule = hasDlcInputs
+        ? this._ddk.createSplicedDlcTransactionsWithFeeRule
+        : this._ddk.createDlcTransactionsWithFeeRule;
+      if (!withFeeRule) {
+        throw new Error(
+          'The injected ddk engine cannot rebuild a contract created before ' +
+            'ddk-dlc 2.0.0-rc.4: it has no createDlcTransactionsWithFeeRule.',
+        );
       }
-    }
+      return withFeeRule(...args, feeRule);
+    };
 
-    dlcTransactions.fundTxVout = serialIds
-      .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
-      .findIndex((i) => BigInt(i) === BigInt(dlcOffer.fundOutputSerialId));
-
-    // Validate that the calculated fundTxVout is valid
-    if (
-      dlcTransactions.fundTxVout < 0 ||
-      dlcTransactions.fundTxVout >= dlcTransactions.fundTx.outputs.length
-    ) {
-      throw new Error(
-        `Invalid fundTxVout calculation: calculated=${dlcTransactions.fundTxVout}, ` +
-          `fundTx.outputs.length=${dlcTransactions.fundTx.outputs.length}, ` +
-          `fundOutputSerialId=${dlcOffer.fundOutputSerialId}, ` +
-          `serialIds=[${serialIds.join(', ')}], ` +
-          `offerCollateral=${dlcOffer.offerCollateral}, ` +
-          `acceptCollateral=${dlcAccept.acceptCollateral}`,
+    const toDlcTransactions = (dlcTxs: DdkDlcTransactions): DlcTransactions => {
+      const dlcTransactions = new DlcTransactions();
+      dlcTransactions.fundTx = Tx.decode(
+        StreamReader.fromBuffer(Buffer.from(dlcTxs.fund.rawBytes)),
       );
-    }
 
-    dlcTransactions.cets = dlcTxs.cets.map((cetTx) =>
-      Tx.decode(StreamReader.fromBuffer(Buffer.from(cetTx.rawBytes))),
-    );
-    dlcTransactions.refundTx = Tx.decode(
-      StreamReader.fromBuffer(Buffer.from(dlcTxs.refund.rawBytes)),
-    );
+      // Build serial IDs based on actual outputs in the transaction
+      const actualOutputs = dlcTransactions.fundTx.outputs;
+      const serialIds: bigint[] = [];
+
+      // Always include the funding output serial ID
+      serialIds.push(BigInt(dlcOffer.fundOutputSerialId));
+
+      // Only include change serial IDs if there are actually change outputs
+      // For exact amount DLCs with no change, there will be only 1 output (the funding output)
+      if (actualOutputs.length > 1) {
+        // Multiple outputs means there are change outputs
+        if (dlcOffer.offerCollateral > 0n) {
+          serialIds.push(BigInt(dlcOffer.changeSerialId));
+        }
+        if (dlcAccept.acceptCollateral > 0n) {
+          serialIds.push(BigInt(dlcAccept.changeSerialId));
+        }
+      }
+
+      dlcTransactions.fundTxVout = serialIds
+        .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+        .findIndex((i) => BigInt(i) === BigInt(dlcOffer.fundOutputSerialId));
+
+      // Validate that the calculated fundTxVout is valid
+      if (
+        dlcTransactions.fundTxVout < 0 ||
+        dlcTransactions.fundTxVout >= dlcTransactions.fundTx.outputs.length
+      ) {
+        throw new Error(
+          `Invalid fundTxVout calculation: calculated=${dlcTransactions.fundTxVout}, ` +
+            `fundTx.outputs.length=${dlcTransactions.fundTx.outputs.length}, ` +
+            `fundOutputSerialId=${dlcOffer.fundOutputSerialId}, ` +
+            `serialIds=[${serialIds.join(', ')}], ` +
+            `offerCollateral=${dlcOffer.offerCollateral}, ` +
+            `acceptCollateral=${dlcAccept.acceptCollateral}`,
+        );
+      }
+
+      dlcTransactions.cets = dlcTxs.cets.map((cetTx) =>
+        Tx.decode(StreamReader.fromBuffer(Buffer.from(cetTx.rawBytes))),
+      );
+      dlcTransactions.refundTx = Tx.decode(
+        StreamReader.fromBuffer(Buffer.from(dlcTxs.refund.rawBytes)),
+      );
+
+      return dlcTransactions;
+    };
+
+    const contractIdOf = (dlcTransactions: DlcTransactions): Buffer =>
+      computeContractId(
+        dlcTransactions.fundTx.txId.serialize(),
+        dlcTransactions.fundTxVout,
+        dlcOffer.temporaryContractId,
+      );
+
+    let dlcTransactions = toDlcTransactions(buildWithEngine());
+
+    if (dlcSign && !contractIdOf(dlcTransactions).equals(dlcSign.contractId)) {
+      // A contract created before ddk-dlc 2.0.0-rc.4: rebuild it under the
+      // fee rule it was created with. Only an exact contract id match is
+      // accepted, so this cannot select transactions the parties never signed.
+      const ownPayoutOnly = this._ddk.FeeRule?.OwnPayoutOnly;
+      if (ownPayoutOnly === undefined) {
+        throw new Error(
+          'The injected ddk engine cannot rebuild a contract created before ' +
+            'ddk-dlc 2.0.0-rc.4: it has no FeeRule.',
+        );
+      }
+      const legacy = toDlcTransactions(buildWithEngine(ownPayoutOnly));
+      if (!contractIdOf(legacy).equals(dlcSign.contractId)) {
+        throw new Error(
+          `Rebuilt transactions do not match contract ${dlcSign.contractId.toString('hex')} ` +
+            'under either fee rule',
+        );
+      }
+      dlcTransactions = legacy;
+    }
 
     return { dlcTransactions, messagesList };
   }

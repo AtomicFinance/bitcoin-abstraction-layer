@@ -27,7 +27,7 @@ hand-written 1.0.0-rc1) no longer satisfies `DdkInterface`.
 `import()`, which TypeScript's CommonJS output rewrites to `require()`; the
 integration tests do this in `tests/integration/utils/load-ddk.mjs`.
 
-**Single-funded offers reserve the ddk v2 fees.** From `ddk-dlc` 2.0.0-rc.6, the
+**Single-funded offers reserve the ddk v2 fees.** From `ddk-dlc` 2.0.0-rc.4, the
 party that funds the whole contract pays the full funding and CET base weights
 and the CET fee for the other party's payout output. `createDlcOffer` now selects
 coins for, and checks its inputs against, that rule, reserving for a 34-byte
@@ -36,7 +36,16 @@ acceptor payout script because the real one is not known yet.
 contracts do not change.
 
 The transactions themselves are built by the injected engine. They match the
-ddk v2 construction when that engine is built on `ddk-dlc` 2.0.0-rc.6 or later.
-Against an earlier engine, a single-funded contract with a ddk v2 counterparty
-fails with an invalid refund signature, because the two sides build different
-funding transactions.
+ddk v2 construction when that engine is built on `ddk-dlc` 2.0.0-rc.4 or later.
+Against an earlier engine, creating a single-funded contract with a ddk v2
+counterparty fails with an invalid refund signature, because the two sides build
+different funding transactions.
+
+**Existing contracts still close.** `createDlcTxs` takes an optional `dlcSign`
+(also on `client.dlc.createDlcTxs`). Pass it whenever the contract already
+exists, for example to restore or splice it: a single-funded contract created
+before `ddk-dlc` 2.0.0-rc.4 is rebuilt under the fee rule whose funding
+transaction reproduces the sign message's contract id, and the call throws if
+neither rule does. This needs an engine with `FeeRule` and
+`createDlcTransactionsWithFeeRule`. `execute`, `refund` and `createDlcClose`
+use the transactions they are given and are unaffected.

@@ -2,8 +2,8 @@ import { FundingInput } from '@node-dlc/messaging';
 
 /*
  * The funding and CET fees one party pays under the ddk v2 construction
- * (`PartyParams::get_change_output_and_fees_with_counterparty` in ddk-dlc
- * 2.0.0-rc.6). The ddk engine builds the transactions; this port exists only so
+ * (`PartyParams::get_change_output_and_fees_with_counterparty`, the rule since
+ * ddk-dlc 2.0.0-rc.4). The ddk engine builds the transactions; this port exists only so
  * BAL can select enough coins and check an offer before handing it to the
  * engine.
  *
