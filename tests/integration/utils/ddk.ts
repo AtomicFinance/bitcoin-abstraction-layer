@@ -10,3 +10,23 @@ export function ddkEngine(): DdkInterface {
   }
   return ddk;
 }
+
+/**
+ * The engine as a counterparty still on ddk-dlc 1.x runs it: new contracts
+ * are built under the fee rule before ddk-dlc 2.0.0-rc.4.
+ */
+export function legacyFeeRuleEngine(engine = ddkEngine()): DdkInterface {
+  return {
+    ...engine,
+    createDlcTransactions: (...args) =>
+      engine.createDlcTransactionsWithFeeRule(
+        ...args,
+        engine.FeeRule.OwnPayoutOnly,
+      ),
+    createSplicedDlcTransactions: (...args) =>
+      engine.createSplicedDlcTransactionsWithFeeRule(
+        ...args,
+        engine.FeeRule.OwnPayoutOnly,
+      ),
+  };
+}

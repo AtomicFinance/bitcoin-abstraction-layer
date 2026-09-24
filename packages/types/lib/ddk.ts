@@ -1,8 +1,8 @@
 /*
  * Structural mirror of the ddk engine BAL is injected with: the generated
- * TypeScript bindings of ddk-ffi, published as `@bennyblader/ddk` (and, before
- * the rename, `@bennyblader/ddk-ts` 1.0.0-rc5). Kept structurally compatible so
- * the module itself can be passed as a `DdkInterface`.
+ * TypeScript bindings of ddk-ffi, published as `@bennyblader/ddk` (Node and
+ * browser) and `@bennyblader/ddk-rn`, 1.0.0-rc7 or later. Kept structurally
+ * compatible so the module itself can be passed as a `DdkInterface`.
  *
  * The transactions BAL signs are built by this engine, not by BAL. To match the
  * ddk v2 construction (for example the single-funded CET fee rule since
@@ -24,8 +24,8 @@
  *
  * Mirrors `dlcInputMaxWitnessLen()` in ddk. It lives here as a constant
  * because `@atomicfinance/types` and the CFD-based providers have no ddk
- * instance to call; `BitcoinDdkProvider.DdkLoaded()` asserts the two agree so
- * the copy cannot silently drift.
+ * instance to call; the `BitcoinDdkProvider` constructor asserts the two agree
+ * so the copy cannot silently drift.
  */
 export const DLC_INPUT_MAX_WITNESS_LEN = 220;
 
@@ -264,11 +264,7 @@ export interface DdkFeeRule {
 // Main DDK interface that any implementation must provide
 export interface DdkInterface {
   Transaction: DdkTransactionMethods;
-  /**
-   * Absent from engines older than the fee-rule fallback; without it, BAL
-   * cannot rebuild a single-funded contract created before ddk-dlc 2.0.0-rc.4.
-   */
-  FeeRule?: DdkFeeRule;
+  FeeRule: DdkFeeRule;
   TxOutput: DdkTxOutputMethods;
   AdaptorSignature: DdkAdaptorSignatureMethods;
   PartyParams: DdkPartyParamsMethods;
@@ -326,7 +322,7 @@ export interface DdkInterface {
   ): DdkDlcTransactions;
 
   /** `createDlcTransactions` under an explicit `FeeRule`. */
-  createDlcTransactionsWithFeeRule?(
+  createDlcTransactionsWithFeeRule(
     outcomes: Array<Payout>,
     localParams: PartyParams,
     remoteParams: PartyParams,
@@ -340,7 +336,7 @@ export interface DdkInterface {
   ): DdkDlcTransactions;
 
   /** `createSplicedDlcTransactions` under an explicit `FeeRule`. */
-  createSplicedDlcTransactionsWithFeeRule?(
+  createSplicedDlcTransactionsWithFeeRule(
     outcomes: Array<Payout>,
     localParams: PartyParams,
     remoteParams: PartyParams,

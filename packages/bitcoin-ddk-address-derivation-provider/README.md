@@ -19,7 +19,7 @@ This provider implements address derivation functionality using the DDK (DLC Dev
 ```typescript
 import BitcoinDdkAddressDerivationProvider from '@atomicfinance/bitcoin-ddk-address-derivation-provider';
 // ESM-only: from CommonJS, load it with a dynamic import().
-import * as ddkJs from '@bennyblader/ddk-ts';
+import * as ddkJs from '@bennyblader/ddk';
 
 const provider = new BitcoinDdkAddressDerivationProvider({
   network: bitcoinNetwork,

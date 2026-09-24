@@ -84,6 +84,9 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Run legacy fee reconstruction tests
+        run: pnpm test:legacy-fees
+
       - name: Ensure Bitcoin wallet is ready
         run: |
           # Wait for Bitcoin to be fully ready

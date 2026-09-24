@@ -5,7 +5,7 @@ A Bitcoin provider that implements DLC (Discreet Log Contract) functionality usi
 ## Features
 
 - **Interface-based design**: Uses a `DdkInterface` that allows different DDK implementations to be injected
-- **Flexible**: Can work with `ddk-ts`, `ddk-rn`, or any custom DDK implementation
+- **Flexible**: Can work with `@bennyblader/ddk`, `@bennyblader/ddk-rn`, or any custom DDK implementation
 - **Type-safe**: Full TypeScript support with proper type definitions
 - **Testable**: Easy to mock for unit testing
 
@@ -17,17 +17,17 @@ npm install @atomicfinance/bitcoin-ddk-provider
 
 ## Usage
 
-### Basic Usage with ddk-ts
+### Basic Usage with @bennyblader/ddk
 
 ```typescript
 import BitcoinDdkProvider from '@atomicfinance/bitcoin-ddk-provider';
 // ESM-only: from CommonJS, load it with a dynamic import().
-import * as ddkTs from '@bennyblader/ddk-ts';
+import * as ddk from '@bennyblader/ddk';
 import { BitcoinNetwork } from 'bitcoin-network';
 
-// Create provider with ddk-ts implementation
+// Create provider with the @bennyblader/ddk implementation
 const network = BitcoinNetwork.MAINNET;
-const provider = new BitcoinDdkProvider(network, ddkTs);
+const provider = new BitcoinDdkProvider(network, ddk);
 
 // Use the provider
 const version = await provider.getVersion();
@@ -141,3 +141,47 @@ The provider implements all the standard DLC methods:
 ## Type Safety
 
 All methods are fully typed using TypeScript interfaces from `@atomicfinance/types`. The provider ensures type safety while maintaining flexibility through the interface-based design.
+
+## Rebuild an existing contract
+
+Pass the stored sign message when rebuilding a funded contract:
+
+```typescript
+const { dlcTransactions } = await client.dlc.createDlcTxs(
+  dlcOffer,
+  dlcAccept,
+  dlcSign,
+);
+```
+
+BAL tries the current fee rule first. If it cannot build the transaction, or
+its contract ID does not match the stored sign message, BAL tries the legacy
+rule. It returns transactions only when the contract ID matches. Supply those
+transactions to `execute`, `refund`, `createDlcClose`, or splice input creation.
+For a new contract, omit `dlcSign` to use only the current rule.
+
+`signDlcAccept` makes the same choice for a new contract. If the acceptor's
+signatures verify only against the legacy rule's transactions, as they do when
+the acceptor still runs `ddk-dlc` 1.x, it signs those transactions.
+
+The engine must expose `FeeRule`, `createDlcTransactionsWithFeeRule`, and
+`createSplicedDlcTransactionsWithFeeRule` (`@bennyblader/ddk` and
+`@bennyblader/ddk-rn` 1.0.0-rc7 or later). The constructor throws if any of
+them is missing, so an older engine fails at startup rather than on a live
+contract.
+
+The legacy fee suite runs against the real engine and tests regular and
+spliced contracts, with and without enough input value for the current fee,
+and rejects a contract ID that matches neither rule. CI runs it on every PR;
+to run it locally, from the BAL root:
+
+```bash
+pnpm test:legacy-fees
+```
+
+To test an unreleased engine build, set `DDK_ENGINE_MODULE` to its Node entry
+file URL:
+
+```bash
+DDK_ENGINE_MODULE=file:///absolute/path/to/ddk-ffi/packages/node-browser/dist/node/index.js pnpm test:legacy-fees
+```

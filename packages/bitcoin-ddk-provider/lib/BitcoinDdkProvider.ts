@@ -108,12 +108,54 @@ import {
   sortFundingInputsBySerialId,
 } from './utils/Utils';
 
+/**
+ * Refuse an engine BAL cannot run on when the provider is constructed, not
+ * the first time a live contract needs it. The fee-rule bindings rebuild
+ * single-funded contracts created before ddk-dlc 2.0.0-rc.4 (see
+ * `createDlcTxs`). DLC_INPUT_MAX_WITNESS_LEN is duplicated in
+ * @atomicfinance/types because the types package and the CFD providers have
+ * no engine to ask, so the copy must match the engine's.
+ */
+function assertEngineSupport(ddk: DdkInterface): void {
+  const missing = [
+    'FeeRule',
+    'createDlcTransactionsWithFeeRule',
+    'createSplicedDlcTransactionsWithFeeRule',
+  ].filter((binding) => !ddk[binding]);
+  if (missing.length > 0) {
+    throw new Error(
+      `The ddk engine has no ${missing.join(', ')}, so it cannot rebuild ` +
+        'contracts created before ddk-dlc 2.0.0-rc.4. Use @bennyblader/ddk ' +
+        'or @bennyblader/ddk-rn 1.0.0-rc7 or later.',
+    );
+  }
+
+  const ddkWitnessLen = ddk.dlcInputMaxWitnessLen();
+  if (ddkWitnessLen !== DLC_INPUT_MAX_WITNESS_LEN) {
+    throw new Error(
+      `DLC input max witness length mismatch: ddk reports ${ddkWitnessLen}, ` +
+        `@atomicfinance/types has ${DLC_INPUT_MAX_WITNESS_LEN}. ` +
+        'Update DLC_INPUT_MAX_WITNESS_LEN to match ddk.',
+    );
+  }
+}
+
+/** A ddk error's `message` is only its variant; the detail is in `inner`. */
+function describeError(error: unknown): string {
+  const { message, inner } = error as {
+    message?: string;
+    inner?: { message?: string };
+  };
+  return inner?.message ? `${message}: ${inner.message}` : String(message);
+}
+
 export default class BitcoinDdkProvider extends Provider {
   private _network: BitcoinNetwork;
   private _ddk: DdkInterface;
 
   constructor(network: BitcoinNetwork, ddkLib: DdkInterface) {
     super();
+    assertEngineSupport(ddkLib);
     this._network = network;
     this._ddk = ddkLib;
   }
@@ -121,20 +163,6 @@ export default class BitcoinDdkProvider extends Provider {
   public async DdkLoaded() {
     while (!this._ddk) {
       await sleep(10);
-    }
-
-    // DLC_INPUT_MAX_WITNESS_LEN is duplicated in @atomicfinance/types because
-    // the types package and the CFD providers have no ddk instance to ask.
-    // Fail loudly here rather than let the copy drift into malformed inputs.
-    if (typeof this._ddk.dlcInputMaxWitnessLen === 'function') {
-      const ddkWitnessLen = this._ddk.dlcInputMaxWitnessLen();
-      if (ddkWitnessLen !== DLC_INPUT_MAX_WITNESS_LEN) {
-        throw new Error(
-          `DLC input max witness length mismatch: ddk reports ${ddkWitnessLen}, ` +
-            `@atomicfinance/types has ${DLC_INPUT_MAX_WITNESS_LEN}. ` +
-            'Update DLC_INPUT_MAX_WITNESS_LEN to match ddk.',
-        );
-      }
     }
   }
 
@@ -732,14 +760,83 @@ export default class BitcoinDdkProvider extends Provider {
    * or splice it. A single-funded contract created before ddk-dlc 2.0.0-rc.4
    * was built under the old fee rule and rebuilds to a different funding
    * transaction under the current one. With `dlcSign`, the rebuild must
-   * reproduce the sign message's contract id: when the current rule does
-   * not, the old rule is tried, and the call throws if neither does. Without
-   * it, the current rule is used, which is right for a new contract.
+   * reproduce the sign message's contract id: when the current rule fails to
+   * build or produces a different id, the old rule is tried. The call throws
+   * if neither rule matches. Without dlcSign, the current rule is used for
+   * a new contract.
    */
   public async createDlcTxs(
     dlcOffer: DlcOffer,
     dlcAccept: DlcAccept,
     dlcSign?: DlcSign,
+  ): Promise<CreateDlcTxsResponse> {
+    if (!dlcSign) return this.buildDlcTxs(dlcOffer, dlcAccept);
+
+    return this.buildDlcTxsUnderEitherFeeRule(
+      dlcOffer,
+      dlcAccept,
+      async ({ dlcTransactions }) => {
+        const contractId = computeContractId(
+          dlcTransactions.fundTx.txId.serialize(),
+          dlcTransactions.fundTxVout,
+          dlcOffer.temporaryContractId,
+        );
+        if (!contractId.equals(dlcSign.contractId)) {
+          throw new Error(
+            `Rebuilt transactions do not match contract ${dlcSign.contractId.toString('hex')}`,
+          );
+        }
+      },
+    );
+  }
+
+  /**
+   * Build a contract's transactions under the fee rule `check` accepts: the
+   * current rule, else the rule before ddk-dlc 2.0.0-rc.4. The two differ only
+   * when one party funds the whole contract. A contract created before
+   * ddk-dlc 2.0.0-rc.4, or signed by a counterparty whose engine still runs
+   * ddk-dlc 1.x, uses the old rule. `check` throws to reject a build.
+   */
+  private async buildDlcTxsUnderEitherFeeRule(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    check: (built: CreateDlcTxsResponse) => Promise<void>,
+  ): Promise<CreateDlcTxsResponse> {
+    let currentRuleError: unknown;
+    try {
+      const built = await this.buildDlcTxs(dlcOffer, dlcAccept);
+      await check(built);
+      return built;
+    } catch (error) {
+      // Includes a contract whose inputs cover the old fee but not the new one.
+      currentRuleError = error;
+    }
+
+    try {
+      const built = await this.buildDlcTxs(
+        dlcOffer,
+        dlcAccept,
+        this._ddk.FeeRule.OwnPayoutOnly,
+      );
+      await check(built);
+      return built;
+    } catch (legacyRuleError) {
+      throw new Error(
+        'The contract matches neither fee rule. ' +
+          `Current rule: ${describeError(currentRuleError)}. ` +
+          `Rule before ddk-dlc 2.0.0-rc.4: ${describeError(legacyRuleError)}`,
+      );
+    }
+  }
+
+  /**
+   * Build a contract's transactions under `feeRule`, or the current rule when
+   * it is omitted.
+   */
+  private async buildDlcTxs(
+    dlcOffer: DlcOffer,
+    dlcAccept: DlcAccept,
+    feeRule?: number,
   ): Promise<CreateDlcTxsResponse> {
     const localFundPubkey = dlcOffer.fundingPubkey.toString('hex');
     const remoteFundPubkey = dlcAccept.fundingPubkey.toString('hex');
@@ -862,7 +959,7 @@ export default class BitcoinDdkProvider extends Provider {
     const hasDlcInputs = localDlcInputs.length > 0;
     const contractFlags = dlcOffer.contractFlags[0];
 
-    const buildWithEngine = (feeRule?: number): DdkDlcTransactions => {
+    const buildWithEngine = (): DdkDlcTransactions => {
       const args = [
         outcomes,
         localParams,
@@ -874,22 +971,15 @@ export default class BitcoinDdkProvider extends Provider {
         BigInt(dlcOffer.fundOutputSerialId),
         contractFlags,
       ] as const;
+      // Spliced DLC transactions when DLC inputs are present
       if (feeRule === undefined) {
-        // Spliced DLC transactions when DLC inputs are present
         return hasDlcInputs
           ? this._ddk.createSplicedDlcTransactions(...args)
           : this._ddk.createDlcTransactions(...args);
       }
-      const withFeeRule = hasDlcInputs
-        ? this._ddk.createSplicedDlcTransactionsWithFeeRule
-        : this._ddk.createDlcTransactionsWithFeeRule;
-      if (!withFeeRule) {
-        throw new Error(
-          'The injected ddk engine cannot rebuild a contract created before ' +
-            'ddk-dlc 2.0.0-rc.4: it has no createDlcTransactionsWithFeeRule.',
-        );
-      }
-      return withFeeRule(...args, feeRule);
+      return hasDlcInputs
+        ? this._ddk.createSplicedDlcTransactionsWithFeeRule(...args, feeRule)
+        : this._ddk.createDlcTransactionsWithFeeRule(...args, feeRule);
     };
 
     const toDlcTransactions = (dlcTxs: DdkDlcTransactions): DlcTransactions => {
@@ -946,37 +1036,10 @@ export default class BitcoinDdkProvider extends Provider {
       return dlcTransactions;
     };
 
-    const contractIdOf = (dlcTransactions: DlcTransactions): Buffer =>
-      computeContractId(
-        dlcTransactions.fundTx.txId.serialize(),
-        dlcTransactions.fundTxVout,
-        dlcOffer.temporaryContractId,
-      );
-
-    let dlcTransactions = toDlcTransactions(buildWithEngine());
-
-    if (dlcSign && !contractIdOf(dlcTransactions).equals(dlcSign.contractId)) {
-      // A contract created before ddk-dlc 2.0.0-rc.4: rebuild it under the
-      // fee rule it was created with. Only an exact contract id match is
-      // accepted, so this cannot select transactions the parties never signed.
-      const ownPayoutOnly = this._ddk.FeeRule?.OwnPayoutOnly;
-      if (ownPayoutOnly === undefined) {
-        throw new Error(
-          'The injected ddk engine cannot rebuild a contract created before ' +
-            'ddk-dlc 2.0.0-rc.4: it has no FeeRule.',
-        );
-      }
-      const legacy = toDlcTransactions(buildWithEngine(ownPayoutOnly));
-      if (!contractIdOf(legacy).equals(dlcSign.contractId)) {
-        throw new Error(
-          `Rebuilt transactions do not match contract ${dlcSign.contractId.toString('hex')} ` +
-            'under either fee rule',
-        );
-      }
-      dlcTransactions = legacy;
-    }
-
-    return { dlcTransactions, messagesList };
+    return {
+      dlcTransactions: toDlcTransactions(buildWithEngine()),
+      messagesList,
+    };
   }
 
   /**
@@ -3649,19 +3712,20 @@ Payout Group not found even with brute force search',
 
     const dlcSign = new DlcSign();
 
-    const { dlcTransactions, messagesList } = await this.createDlcTxs(
-      dlcOffer,
-      dlcAccept,
-    );
-
-    await this.VerifyCetAdaptorAndRefundSigs(
-      dlcOffer,
-      dlcAccept,
-      dlcSign,
-      dlcTransactions,
-      messagesList,
-      true,
-    );
+    // The acceptor signed the transactions its own engine built. One still on
+    // ddk-dlc 1.x builds under the rule before 2.0.0-rc.4, so sign whichever
+    // transactions its signatures verify against.
+    const { dlcTransactions, messagesList } =
+      await this.buildDlcTxsUnderEitherFeeRule(dlcOffer, dlcAccept, (built) =>
+        this.VerifyCetAdaptorAndRefundSigs(
+          dlcOffer,
+          dlcAccept,
+          dlcSign,
+          built.dlcTransactions,
+          built.messagesList,
+          true,
+        ),
+      );
 
     const { cetSignatures, refundSignature } =
       await this.CreateCetAdaptorAndRefundSigs(

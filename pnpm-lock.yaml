@@ -12,9 +12,9 @@ importers:
 
   .:
     devDependencies:
-      '@bennyblader/ddk-ts':
-        specifier: 1.0.0-rc5
-        version: 1.0.0-rc5
+      '@bennyblader/ddk':
+        specifier: 1.0.0-rc7
+        version: 1.0.0-rc7
       '@changesets/cli':
         specifier: ^2.22.0
         version: 2.29.5
@@ -1016,31 +1016,32 @@ packages:
       '@babel/helper-validator-identifier': 7.27.1
     dev: true
 
-  /@bennyblader/ddk-ts-darwin-arm64@1.0.0-rc5:
-    resolution: {integrity: sha512-cFuUMD4gXg2H2Mf39TXHGG+ytTOSyHvZZY8svH4yWTRwmCpTQ+7+s/3IEPusGt+Z4Y5oZSe6UNEvlNQXjOb5vg==}
+  /@bennyblader/ddk-darwin-arm64@1.0.0-rc7:
+    resolution: {integrity: sha512-TE5y8mfTaF4QN3f8prNmJ4imMEVSxukW29JfTBf2pFpTj312S4yOIcysARvUVANtSHEwbjY//cWP6KZnz67FzQ==}
     cpu: [arm64]
     os: [darwin]
     requiresBuild: true
     dev: true
     optional: true
 
-  /@bennyblader/ddk-ts-linux-x64-gnu@1.0.0-rc5:
-    resolution: {integrity: sha512-yItgNR0Az98xXccJSQhtXIRXgWYUSZVQy7nS0qnDKhWqm2oenTH6Z4FieLlLsaYU00UyEjqfE7izpZWfgOeFZw==}
+  /@bennyblader/ddk-linux-x64-gnu@1.0.0-rc7:
+    resolution: {integrity: sha512-cyHE1w9NjlHjcekOPR8i57tWgKGqbwNHSByhPTWM9qabJQ+tPeTN7r2jN1I41Yz3G1oaqV1PQ5ieP7JjtFonYQ==}
     cpu: [x64]
     os: [linux]
     requiresBuild: true
     dev: true
     optional: true
 
-  /@bennyblader/ddk-ts@1.0.0-rc5:
-    resolution: {integrity: sha512-QBdCa0JXrAPT3qaTyZsV5K5kZw1nt2NoFnaoRJ0I0a48KgB3VvEq12ZzMdkx/S+7Ud/h8qynDtNeFCAjeBSdUw==}
+  /@bennyblader/ddk@1.0.0-rc7:
+    resolution: {integrity: sha512-1GtFyLv5VguMwpmlmsEHNsvBcWl3JHtS+fGs9RZXpLiulh1RHjec9baBo9U/QMpHWszMYS8VLDzc4AN3I0/E9A==}
     engines: {node: '>= 18'}
     dependencies:
       '@ubjs/core': 0.31.0-5
       '@ubjs/node': 0.31.0-5
+      '@ubjs/wasm': 0.31.0-5(@ubjs/core@0.31.0-5)
     optionalDependencies:
-      '@bennyblader/ddk-ts-darwin-arm64': 1.0.0-rc5
-      '@bennyblader/ddk-ts-linux-x64-gnu': 1.0.0-rc5
+      '@bennyblader/ddk-darwin-arm64': 1.0.0-rc7
+      '@bennyblader/ddk-linux-x64-gnu': 1.0.0-rc7
     dev: true
 
   /@bitcoin-js/tiny-secp256k1-asmjs@2.2.4:
@@ -2389,6 +2390,14 @@ packages:
       '@ubjs/node-linux-x64-musl': 0.31.0-5
       '@ubjs/node-win32-arm64-msvc': 0.31.0-5
       '@ubjs/node-win32-x64-msvc': 0.31.0-5
+    dev: true
+
+  /@ubjs/wasm@0.31.0-5(@ubjs/core@0.31.0-5):
+    resolution: {integrity: sha512-dO7i67DQ1UKBSegznLVjVrYowmxY7gaXXluBdtJXPYgcR5vzwYf2ZbxAUqj4qL1JkqxRmeTKgXtuesFI+D5dPg==}
+    peerDependencies:
+      '@ubjs/core': ^0.31.0-5
+    dependencies:
+      '@ubjs/core': 0.31.0-5
     dev: true
 
   /@webassemblyjs/ast@1.14.1:
