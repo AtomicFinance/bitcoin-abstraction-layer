@@ -21,6 +21,7 @@ npm install @atomicfinance/bitcoin-ddk-provider
 
 ```typescript
 import BitcoinDdkProvider from '@atomicfinance/bitcoin-ddk-provider';
+// ESM-only: from CommonJS, load it with a dynamic import().
 import * as ddkTs from '@bennyblader/ddk-ts';
 import { BitcoinNetwork } from 'bitcoin-network';
 

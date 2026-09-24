@@ -22,3 +22,7 @@ calls kept its name and signature in `1.0.0-rc1`.
 
 The unused legacy `declare function` block mirroring the same surface has been
 removed from `@atomicfinance/types`; import `DdkInterface` instead.
+
+The generated engine in `ddk-v2-engine` then moves every renamed member that
+operates on one record onto that record's namespace (for example
+`ddk.Transaction.addSignature`); see that changeset.

@@ -88,6 +88,12 @@ import crypto from 'crypto';
 import { ECPairInterface } from 'ecpair';
 
 import {
+  ddkPartyFees,
+  MAX_STANDARD_PAYOUT_SPK_LENGTH,
+  P2WPKH_SPK_LENGTH,
+  singleFundedFeeReserve,
+} from './utils/DdkFees';
+import {
   checkTypes,
   computeContractId,
   createP2MSMultisig,
@@ -1174,8 +1180,8 @@ export default class BitcoinDdkProvider extends Provider {
         sigs.push(
           adaptorPairs.map((adaptorPair) => {
             return {
-              encryptedSig: adaptorPair.signature,
-              dleqProof: adaptorPair.proof,
+              encryptedSig: Buffer.from(adaptorPair.signature),
+              dleqProof: Buffer.from(adaptorPair.proof),
             };
           }),
         );
@@ -1239,8 +1245,8 @@ export default class BitcoinDdkProvider extends Provider {
         sigs.push(
           adaptorPairs.map((adaptorPair) => {
             return {
-              encryptedSig: adaptorPair.signature,
-              dleqProof: adaptorPair.proof,
+              encryptedSig: Buffer.from(adaptorPair.signature),
+              dleqProof: Buffer.from(adaptorPair.proof),
             };
           }),
         );
@@ -2003,13 +2009,22 @@ export default class BitcoinDdkProvider extends Provider {
 
     const msgs = this.convertMessagesForDdk(this.GetMessagesList(dlcOffer));
 
-    return this._ddk.cetAdaptorSignatureInputs(
+    const inputs = this._ddk.Transaction.cetAdaptorSignatureInputs(
       this.convertTxToDdkTransaction(dlcTxs.cets[cetIndex]),
       [this.GetOracleInfoForCet(dlcOffer, cetIndex)],
       fundingSPK,
       this.getFundOutputValueSats(dlcTxs),
       msgs[cetIndex],
     );
+    // The engine returns Uint8Array; hand callers Buffers so `toString('hex')`
+    // keeps working.
+    return {
+      ...inputs,
+      sighash: Buffer.from(inputs.sighash),
+      adaptorPoint: Buffer.from(inputs.adaptorPoint),
+      scriptPubkey: Buffer.from(inputs.scriptPubkey),
+      cetRaw: Buffer.from(inputs.cetRaw),
+    };
   }
 
   /**
@@ -2034,13 +2049,13 @@ export default class BitcoinDdkProvider extends Provider {
       network,
     ).output!;
 
-    return this._ddk
-      .cetSighash(
+    return Buffer.from(
+      this._ddk.Transaction.cetSighash(
         this.convertTxToDdkTransaction(dlcTxs.cets[cetIndex]),
         fundingSPK,
         this.getFundOutputValueSats(dlcTxs),
-      )
-      .toString('hex');
+      ),
+    ).toString('hex');
   }
 
   private async VerifyRefundSignatureAlt(
@@ -2745,8 +2760,8 @@ Payout Group not found even with brute force search',
         return outcome.outcome === attestedOutcomeHash;
       });
 
-      finalCet = this._ddk
-        .signCet(
+      finalCet = Buffer.from(
+        this._ddk.Transaction.signCet(
           this.convertTxToDdkTransaction(dlcTxs.cets[outcomeIndex]),
           this.getFullAdaptorSig(
             isOfferer
@@ -2758,8 +2773,8 @@ Payout Group not found even with brute force search',
           isOfferer ? dlcAccept.fundingPubkey : dlcOffer.fundingPubkey,
           isOfferer ? dlcOffer.fundingPubkey : dlcAccept.fundingPubkey,
           this.getFundOutputValueSats(dlcTxs),
-        )
-        .rawBytes.toString('hex');
+        ).rawBytes,
+      ).toString('hex');
     } else {
       const { index: outcomeIndex, groupLength } = await this.FindOutcomeIndex(
         dlcOffer,
@@ -2773,8 +2788,8 @@ Payout Group not found even with brute force search',
           ? oracleAttestation.signatures
           : oracleAttestation.signatures.slice(0, sliceIndex);
 
-      finalCet = this._ddk
-        .signCet(
+      finalCet = Buffer.from(
+        this._ddk.Transaction.signCet(
           this.convertTxToDdkTransaction(dlcTxs.cets[outcomeIndex]),
           this.getFullAdaptorSig(
             isOfferer
@@ -2786,8 +2801,8 @@ Payout Group not found even with brute force search',
           isOfferer ? dlcAccept.fundingPubkey : dlcOffer.fundingPubkey,
           isOfferer ? dlcOffer.fundingPubkey : dlcAccept.fundingPubkey,
           this.getFundOutputValueSats(dlcTxs),
-        )
-        .rawBytes.toString('hex');
+        ).rawBytes,
+      ).toString('hex');
     }
 
     // const finalCet = (await this.SignCet(signCetRequest)).hex;
@@ -3199,6 +3214,11 @@ Payout Group not found even with brute force search',
     // Generate a random 32-byte temporary contract ID
     dlcOffer.temporaryContractId = crypto.randomBytes(32);
 
+    // A single-funded offer pays more under the ddk v2 construction than the
+    // @node-dlc estimate coin selection uses; see utils/DdkFees.
+    const singleFunded =
+      offerCollateralSatoshis === contractInfo.totalCollateral;
+
     // Check if we have FundingInput[] (DLC inputs) or Input[] (regular inputs)
     const hasFundingInputs =
       fixedInputs && fixedInputs.length > 0 && 'prevTx' in fixedInputs[0]; // FundingInput has prevTx, Input doesn't
@@ -3236,7 +3256,9 @@ Payout Group not found even with brute force search',
     } else {
       // Handle Input[] through existing Initialize() flow
       const initResult = await this.Initialize(
-        offerCollateralSatoshis,
+        singleFunded
+          ? offerCollateralSatoshis + singleFundedFeeReserve(feeRatePerVb)
+          : offerCollateralSatoshis,
         feeRatePerVb,
         fixedInputs as Input[],
         inputSupplementationMode || InputSupplementationMode.Required,
@@ -3282,12 +3304,30 @@ Payout Group not found even with brute force search',
     dlcOffer.cetLocktime = cetLocktime;
     dlcOffer.refundLocktime = refundLocktime;
 
-    if (offerCollateralSatoshis === dlcOffer.contractInfo.totalCollateral) {
+    if (singleFunded) {
       dlcOffer.markAsSingleFunded();
     }
 
     assert(
       (() => {
+        const funding = fundingInputs.reduce((total, input) => {
+          return total + input.prevTx.outputs[input.prevTxVout].value.sats;
+        }, BigInt(0));
+
+        if (singleFunded) {
+          // The ddk v2 construction: this party also pays for the acceptor's
+          // payout output, whose length is not known yet.
+          const { fundFee, cetFee } = ddkPartyFees({
+            fundingInputs: dlcOffer.fundingInputs,
+            payoutSpkLength: dlcOffer.payoutSpk.length,
+            changeSpkLength: dlcOffer.changeSpk.length,
+            feeRatePerVb: dlcOffer.feeRatePerVb,
+            fundsWholeContract: true,
+            counterpartyPayoutSpkLength: MAX_STANDARD_PAYOUT_SPK_LENGTH,
+          });
+          return funding >= offerCollateralSatoshis + fundFee + cetFee;
+        }
+
         const finalizer = new DualFundingTxFinalizer(
           dlcOffer.fundingInputs,
           dlcOffer.payoutSpk,
@@ -3297,10 +3337,6 @@ Payout Group not found even with brute force search',
           null,
           dlcOffer.feeRatePerVb,
         );
-        const funding = fundingInputs.reduce((total, input) => {
-          return total + input.prevTx.outputs[input.prevTxVout].value.sats;
-        }, BigInt(0));
-
         return funding >= offerCollateralSatoshis + finalizer.offerFees;
       })(),
       'fundingInputs for dlcOffer must be greater than offerCollateralSatoshis plus offerFees',
@@ -4643,13 +4679,34 @@ Payout Group not found even with brute force search',
         inputs.map((input) => this.inputToFundingInput(input)),
       );
 
-      // Use node-dlc's calculateMaxCollateral function
-      // For single-funded DLC, pass only offerer inputs and fee rate
-      return BatchDlcTxBuilder.calculateMaxCollateral(
-        fundingInputs,
-        feeRatePerVb,
-        contractCount,
+      if (contractCount !== 1) {
+        // ddk has no batch construction; keep @node-dlc's estimate.
+        return BatchDlcTxBuilder.calculateMaxCollateral(
+          fundingInputs,
+          feeRatePerVb,
+          contractCount,
+        );
+      }
+
+      // The ddk v2 construction for a single-funded contract, the same rule
+      // createDlcOffer checks: this party pays the full funding and CET base
+      // weights and the acceptor's payout output (reserved at its largest
+      // standard length). The wallet's payout and change outputs are P2WPKH.
+      const totalInputValue = fundingInputs.reduce(
+        (total, input) =>
+          total + input.prevTx.outputs[input.prevTxVout].value.sats,
+        BigInt(0),
       );
+      const { fundFee, cetFee } = ddkPartyFees({
+        fundingInputs,
+        payoutSpkLength: P2WPKH_SPK_LENGTH,
+        changeSpkLength: P2WPKH_SPK_LENGTH,
+        feeRatePerVb,
+        fundsWholeContract: true,
+        counterpartyPayoutSpkLength: MAX_STANDARD_PAYOUT_SPK_LENGTH,
+      });
+      const maxCollateral = totalInputValue - fundFee - cetFee;
+      return maxCollateral > BigInt(0) ? maxCollateral : BigInt(0);
     } catch (error) {
       // If calculation fails, return 0 to indicate insufficient funds
       console.warn('calculateMaxCollateral failed:', error);

@@ -13,8 +13,8 @@ importers:
   .:
     devDependencies:
       '@bennyblader/ddk-ts':
-        specifier: 1.0.0-rc1
-        version: 1.0.0-rc1
+        specifier: 1.0.0-rc5
+        version: 1.0.0-rc5
       '@changesets/cli':
         specifier: ^2.22.0
         version: 2.29.5
@@ -1016,43 +1016,31 @@ packages:
       '@babel/helper-validator-identifier': 7.27.1
     dev: true
 
-  /@bennyblader/ddk-ts-darwin-arm64@1.0.0-rc1:
-    resolution: {integrity: sha512-NtbjoN5DIznJVuRblAtSurfZa886R4MYk7KTLEDfPQQIzRXHSODjg2YzOG7VqNwmlwihZCzJxyK7+J6w/DB02Q==}
-    engines: {node: '>= 18'}
+  /@bennyblader/ddk-ts-darwin-arm64@1.0.0-rc5:
+    resolution: {integrity: sha512-cFuUMD4gXg2H2Mf39TXHGG+ytTOSyHvZZY8svH4yWTRwmCpTQ+7+s/3IEPusGt+Z4Y5oZSe6UNEvlNQXjOb5vg==}
     cpu: [arm64]
     os: [darwin]
     requiresBuild: true
     dev: true
     optional: true
 
-  /@bennyblader/ddk-ts-linux-x64-gnu@1.0.0-rc1:
-    resolution: {integrity: sha512-l7kLNgrqJwpEzO9u8czq6qb3qqFaojwCh05eWgpEnCP1NNIx58VrvP55on6AWpCy08x1U46dnM0GZyQ5YE8QBA==}
-    engines: {node: '>= 18'}
+  /@bennyblader/ddk-ts-linux-x64-gnu@1.0.0-rc5:
+    resolution: {integrity: sha512-yItgNR0Az98xXccJSQhtXIRXgWYUSZVQy7nS0qnDKhWqm2oenTH6Z4FieLlLsaYU00UyEjqfE7izpZWfgOeFZw==}
     cpu: [x64]
     os: [linux]
     requiresBuild: true
     dev: true
     optional: true
 
-  /@bennyblader/ddk-ts-wasm32-wasi@1.0.0-rc1:
-    resolution: {integrity: sha512-gDk6EQZ7Iev3qcFQs9Egh+HHLHMla9biFHfbyHUxmLQT5ZdzkTEo6O+GEd+pPK0mhh18DVX8hrm2jfnBg3vsqA==}
+  /@bennyblader/ddk-ts@1.0.0-rc5:
+    resolution: {integrity: sha512-QBdCa0JXrAPT3qaTyZsV5K5kZw1nt2NoFnaoRJ0I0a48KgB3VvEq12ZzMdkx/S+7Ud/h8qynDtNeFCAjeBSdUw==}
     engines: {node: '>= 18'}
-    cpu: [wasm32]
-    requiresBuild: true
     dependencies:
-      '@emnapi/core': 1.11.2
-      '@emnapi/runtime': 1.11.2
-      '@napi-rs/wasm-runtime': 1.2.2(@emnapi/core@1.11.2)(@emnapi/runtime@1.11.2)
-    dev: true
-    optional: true
-
-  /@bennyblader/ddk-ts@1.0.0-rc1:
-    resolution: {integrity: sha512-39eQLP1RXZKTOwLD54xWmZwBOroGjJEGWnxXbr28l6ANy7KX8WtOvtpTz/bMrvaNF0w+QUr5GanQz8aH6ianEQ==}
-    engines: {node: '>= 18'}
+      '@ubjs/core': 0.31.0-5
+      '@ubjs/node': 0.31.0-5
     optionalDependencies:
-      '@bennyblader/ddk-ts-darwin-arm64': 1.0.0-rc1
-      '@bennyblader/ddk-ts-linux-x64-gnu': 1.0.0-rc1
-      '@bennyblader/ddk-ts-wasm32-wasi': 1.0.0-rc1
+      '@bennyblader/ddk-ts-darwin-arm64': 1.0.0-rc5
+      '@bennyblader/ddk-ts-linux-x64-gnu': 1.0.0-rc5
     dev: true
 
   /@bitcoin-js/tiny-secp256k1-asmjs@2.2.4:
@@ -1252,31 +1240,6 @@ packages:
     resolution: {integrity: sha512-4B4OijXeVNOPZlYA2oEwWOTkzyltLao+xbotHQeqN++Rv27Y6s818+n2Qkp8q+Fxhn0t/5lA5X1Mxktud8eayQ==}
     engines: {node: '>=14.17.0'}
     dev: true
-
-  /@emnapi/core@1.11.2:
-    resolution: {integrity: sha512-TC8MkTuZUtcTSiFeuC0ksCh9QIJ5+F21MvZ4Wn4ORfYaFJ/0dsiudv5tVkejgwZlwQ39jL9WWDe2lz8x0WglOA==}
-    requiresBuild: true
-    dependencies:
-      '@emnapi/wasi-threads': 1.2.2
-      tslib: 2.8.1
-    dev: true
-    optional: true
-
-  /@emnapi/runtime@1.11.2:
-    resolution: {integrity: sha512-kyOl3X0DuTiT1h2ft8r2fYO8JYtU9a9Xis/zBSiGArNaagCOWx90N1k2wxp18czFDH+OgcWGb5ZP/XMt3dcyPA==}
-    requiresBuild: true
-    dependencies:
-      tslib: 2.8.1
-    dev: true
-    optional: true
-
-  /@emnapi/wasi-threads@1.2.2:
-    resolution: {integrity: sha512-c95qOXkHdydNKhscBTebqEC1CVAZpyqOfVfBzQ1qgzyl3gfeldUjIggDbIZgDKsHLgnsM+igH7TJ/eAasaVuMA==}
-    requiresBuild: true
-    dependencies:
-      tslib: 2.8.1
-    dev: true
-    optional: true
 
   /@epic-web/invariant@1.0.0:
     resolution: {integrity: sha512-lrTPqgvfFQtR/eY/qkIzp98OGdNJu0m5ji3q/nJI8v3SXkRKEnWiOxMmbvcSoAIzv/cGiuvRy57k4suKQSAdwA==}
@@ -1716,20 +1679,6 @@ packages:
       os-filter-obj: 2.0.0
     dev: true
 
-  /@napi-rs/wasm-runtime@1.2.2(@emnapi/core@1.11.2)(@emnapi/runtime@1.11.2):
-    resolution: {integrity: sha512-JfB4kuJQjaoHuCTseIINHtHWeJnvgEcxjwA5t/Y00ZgaOO1Crz3fjT/p8kT28zA/Caz7oiUMn3d6H2yOVCVwuw==}
-    engines: {node: ^20.19.0 || ^22.13.0 || >=23.5.0}
-    requiresBuild: true
-    peerDependencies:
-      '@emnapi/core': ^1.7.1 || ^2.0.0-alpha.3
-      '@emnapi/runtime': ^1.7.1 || ^2.0.0-alpha.3
-    dependencies:
-      '@emnapi/core': 1.11.2
-      '@emnapi/runtime': 1.11.2
-      '@tybys/wasm-util': 0.10.3
-    dev: true
-    optional: true
-
   /@noble/hashes@1.8.0:
     resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
     engines: {node: ^14.21.3 || >=16}
@@ -2092,14 +2041,6 @@ packages:
     resolution: {integrity: sha512-vxhUy4J8lyeyinH7Azl1pdd43GJhZH/tP2weN8TntQblOY+A0XbT8DJk1/oCPuOOyg/Ja757rG0CgHcWC8OfMA==}
     dev: true
 
-  /@tybys/wasm-util@0.10.3:
-    resolution: {integrity: sha512-F3fo1MYrRJYL3zER0OUOmkutjr1Vp23m7OsSgp7nq4SP6OqX6C/56XFIPAl5bt3zaBRjmW7SGz3u/6LwFpYcOg==}
-    requiresBuild: true
-    dependencies:
-      tslib: 2.8.1
-    dev: true
-    optional: true
-
   /@types/bech32@1.1.8:
     resolution: {integrity: sha512-shvkfjHrDoGPhNHQvLjTESgDOzdcGQuyWgkbc2PQZSUdhwArt+gjfn9ehPyVPKQ1Vnams1deetvZxe0s98bl4g==}
     deprecated: This is a stub types definition. bech32 provides its own type definitions, so you do not need this installed.
@@ -2367,6 +2308,87 @@ packages:
     dependencies:
       '@typescript-eslint/types': 8.39.0
       eslint-visitor-keys: 4.2.1
+    dev: true
+
+  /@ubjs/core@0.31.0-5:
+    resolution: {integrity: sha512-oRBRtyYOhaodiOY3rLMZFgAHGFMmD44XefMpsAx4Ja0/rO+45kVdQB1VZsblQMLYxP965i3IHm56eymgo3I5eQ==}
+    dev: true
+
+  /@ubjs/node-darwin-arm64@0.31.0-5:
+    resolution: {integrity: sha512-ZefUcOgW0UkPZe9aav021m1hBfBzzhj75gOS/gc85g2PkmWDctz+D+tKQYs/gwM44vu1We2WTGcitf8yrZJGyA==}
+    cpu: [arm64]
+    os: [darwin]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@ubjs/node-darwin-x64@0.31.0-5:
+    resolution: {integrity: sha512-K4A5k8hsLeOtgG4tT73u/XKfxUUOjWxwjRf3e4v3sggG6b7q3yoSFUwPjf12la6VSgD/E9sRjrTAT7MNdENaww==}
+    cpu: [x64]
+    os: [darwin]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@ubjs/node-linux-arm64-gnu@0.31.0-5:
+    resolution: {integrity: sha512-m4S96owMdh53G6w6hALi7nfsUhB+Y6bAcjVJnRdzVe5WJ+o2dMTbj9u/IxtcJaENtLLEMDPHhLAZmxQS9Licew==}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@ubjs/node-linux-arm64-musl@0.31.0-5:
+    resolution: {integrity: sha512-VVkXe8We9ka8FZqJfsbl4DEkbn4nt4htSCd2Vr39L9kOrBtNZ8SR0s+BiMQ8xBQnP6u+O95TrhOviROCDj2VSw==}
+    cpu: [arm64]
+    os: [linux]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@ubjs/node-linux-x64-gnu@0.31.0-5:
+    resolution: {integrity: sha512-xFvl3iGWBVqghmz9lC4qij+ezLHV5V11O/6G+0rM7a/nAQdweCSCeZ65QsiVoqC/bYJ7fKIyKCXFMy5ldhSQvw==}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@ubjs/node-linux-x64-musl@0.31.0-5:
+    resolution: {integrity: sha512-R3HzFVI+v9G5CVOFOSxhF9SYX1o/6llA9mQbaANYMANuybE6LNJ8fgj51CTRrhobjWmgA24swq24DqbVsqypZg==}
+    cpu: [x64]
+    os: [linux]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@ubjs/node-win32-arm64-msvc@0.31.0-5:
+    resolution: {integrity: sha512-A7Z6lYqY0QQF4j3ce/3k1iIjgJIMWje3wTU9RfOTDSl0hcKKHDezvwvLiLBbVjagwJQOKWO5zwWLBAw6KTUDHQ==}
+    cpu: [arm64]
+    os: [win32]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@ubjs/node-win32-x64-msvc@0.31.0-5:
+    resolution: {integrity: sha512-rqaH2YZBjUphSV8nFseeTG5vJMToDt8QhoY4wKULGZr2OF/HM52Ggt/9yb+gsuJ1l4ekz2biJrlN/HlhyV3CZw==}
+    cpu: [x64]
+    os: [win32]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /@ubjs/node@0.31.0-5:
+    resolution: {integrity: sha512-w1gyA/1H7TiJIQfHD6Zjr673IDfG+1a4hpM0f0krxJr9jlTkrwouFCoNTwpLmSxSWJXtUxkB19Bk0ekxAepOHQ==}
+    optionalDependencies:
+      '@ubjs/node-darwin-arm64': 0.31.0-5
+      '@ubjs/node-darwin-x64': 0.31.0-5
+      '@ubjs/node-linux-arm64-gnu': 0.31.0-5
+      '@ubjs/node-linux-arm64-musl': 0.31.0-5
+      '@ubjs/node-linux-x64-gnu': 0.31.0-5
+      '@ubjs/node-linux-x64-musl': 0.31.0-5
+      '@ubjs/node-win32-arm64-msvc': 0.31.0-5
+      '@ubjs/node-win32-x64-msvc': 0.31.0-5
     dev: true
 
   /@webassemblyjs/ast@1.14.1:
