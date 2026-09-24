@@ -46,6 +46,8 @@ different funding transactions.
 exists, for example to restore or splice it: a single-funded contract created
 before `ddk-dlc` 2.0.0-rc.4 is rebuilt under the fee rule whose funding
 transaction reproduces the sign message's contract id, and the call throws if
-neither rule does. This needs an engine with `FeeRule` and
-`createDlcTransactionsWithFeeRule`. `execute`, `refund` and `createDlcClose`
+neither rule does. The legacy rule is also tried when the current rule cannot
+build because the old inputs do not cover the new fee. This needs an engine
+with `FeeRule`, `createDlcTransactionsWithFeeRule`, and
+`createSplicedDlcTransactionsWithFeeRule`. `execute`, `refund` and `createDlcClose`
 use the transactions they are given and are unaffected.

@@ -732,9 +732,10 @@ export default class BitcoinDdkProvider extends Provider {
    * or splice it. A single-funded contract created before ddk-dlc 2.0.0-rc.4
    * was built under the old fee rule and rebuilds to a different funding
    * transaction under the current one. With `dlcSign`, the rebuild must
-   * reproduce the sign message's contract id: when the current rule does
-   * not, the old rule is tried, and the call throws if neither does. Without
-   * it, the current rule is used, which is right for a new contract.
+   * reproduce the sign message's contract id: when the current rule fails to
+   * build or produces a different id, the old rule is tried. The call throws
+   * if neither rule matches. Without dlcSign, the current rule is used for
+   * a new contract.
    */
   public async createDlcTxs(
     dlcOffer: DlcOffer,
@@ -880,16 +881,17 @@ export default class BitcoinDdkProvider extends Provider {
           ? this._ddk.createSplicedDlcTransactions(...args)
           : this._ddk.createDlcTransactions(...args);
       }
-      const withFeeRule = hasDlcInputs
-        ? this._ddk.createSplicedDlcTransactionsWithFeeRule
-        : this._ddk.createDlcTransactionsWithFeeRule;
+      const method = hasDlcInputs
+        ? 'createSplicedDlcTransactionsWithFeeRule'
+        : 'createDlcTransactionsWithFeeRule';
+      const withFeeRule = this._ddk[method];
       if (!withFeeRule) {
         throw new Error(
           'The injected ddk engine cannot rebuild a contract created before ' +
-            'ddk-dlc 2.0.0-rc.4: it has no createDlcTransactionsWithFeeRule.',
+            `ddk-dlc 2.0.0-rc.4: it has no ${method}.`,
         );
       }
-      return withFeeRule(...args, feeRule);
+      return withFeeRule.call(this._ddk, ...args, feeRule);
     };
 
     const toDlcTransactions = (dlcTxs: DdkDlcTransactions): DlcTransactions => {
@@ -953,27 +955,33 @@ export default class BitcoinDdkProvider extends Provider {
         dlcOffer.temporaryContractId,
       );
 
-    let dlcTransactions = toDlcTransactions(buildWithEngine());
+    try {
+      const dlcTransactions = toDlcTransactions(buildWithEngine());
+      if (
+        !dlcSign ||
+        contractIdOf(dlcTransactions).equals(dlcSign.contractId)
+      ) {
+        return { dlcTransactions, messagesList };
+      }
+    } catch (error) {
+      // An existing contract may have enough input value for the old fee only.
+      // New contracts must still fail if the current rule cannot build them.
+      if (!dlcSign) throw error;
+    }
 
-    if (dlcSign && !contractIdOf(dlcTransactions).equals(dlcSign.contractId)) {
-      // A contract created before ddk-dlc 2.0.0-rc.4: rebuild it under the
-      // fee rule it was created with. Only an exact contract id match is
-      // accepted, so this cannot select transactions the parties never signed.
-      const ownPayoutOnly = this._ddk.FeeRule?.OwnPayoutOnly;
-      if (ownPayoutOnly === undefined) {
-        throw new Error(
-          'The injected ddk engine cannot rebuild a contract created before ' +
-            'ddk-dlc 2.0.0-rc.4: it has no FeeRule.',
-        );
-      }
-      const legacy = toDlcTransactions(buildWithEngine(ownPayoutOnly));
-      if (!contractIdOf(legacy).equals(dlcSign.contractId)) {
-        throw new Error(
-          `Rebuilt transactions do not match contract ${dlcSign.contractId.toString('hex')} ` +
-            'under either fee rule',
-        );
-      }
-      dlcTransactions = legacy;
+    const ownPayoutOnly = this._ddk.FeeRule?.OwnPayoutOnly;
+    if (ownPayoutOnly === undefined) {
+      throw new Error(
+        'The injected ddk engine cannot rebuild a contract created before ' +
+          'ddk-dlc 2.0.0-rc.4: it has no FeeRule.',
+      );
+    }
+    const dlcTransactions = toDlcTransactions(buildWithEngine(ownPayoutOnly));
+    if (!contractIdOf(dlcTransactions).equals(dlcSign.contractId)) {
+      throw new Error(
+        `Rebuilt transactions do not match contract ${dlcSign.contractId.toString('hex')} ` +
+          'under either fee rule',
+      );
     }
 
     return { dlcTransactions, messagesList };

@@ -141,3 +141,38 @@ The provider implements all the standard DLC methods:
 ## Type Safety
 
 All methods are fully typed using TypeScript interfaces from `@atomicfinance/types`. The provider ensures type safety while maintaining flexibility through the interface-based design.
+
+## Rebuild an existing contract
+
+Pass the stored sign message when rebuilding a funded contract:
+
+```typescript
+const { dlcTransactions } = await client.dlc.createDlcTxs(
+  dlcOffer,
+  dlcAccept,
+  dlcSign,
+);
+```
+
+BAL tries the current fee rule first. If it cannot build the transaction, or
+its contract ID does not match the stored sign message, BAL tries the legacy
+rule. It returns transactions only when the contract ID matches. Supply those
+transactions to `execute`, `refund`, `createDlcClose`, or splice input creation.
+For a new contract, omit `dlcSign` to use only the current rule.
+
+The engine must expose `FeeRule`, `createDlcTransactionsWithFeeRule`, and
+`createSplicedDlcTransactionsWithFeeRule` to rebuild legacy contracts.
+`@bennyblader/ddk-ts@1.0.0-rc5` does not expose them. The local `ddk-ffi`
+branch has these bindings under the renamed `@bennyblader/ddk` package, but
+that package must be released before BAL can pin it as a registry dependency.
+
+To test the bindings before release, build the Node entry in `ddk-ffi`, then
+run this from the BAL root with its absolute file URL:
+
+```bash
+DDK_ENGINE_MODULE=file:///absolute/path/to/ddk-ffi/typescript/dist/node/index.js pnpm test:legacy-fees
+```
+
+The suite uses the real engine and fails if the required bindings are absent.
+It tests regular and spliced contracts, with and without enough input value
+for the current fee, and rejects a contract ID that matches neither rule.
