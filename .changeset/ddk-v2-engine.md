@@ -4,7 +4,8 @@
 '@atomicfinance/bitcoin-ddk-address-derivation-provider': major
 ---
 
-Run on the ddk v2 engine and fund single-funded contracts the way ddk v2 builds them.
+Release 5.0.0: run on the ddk v2 engine and fund single-funded contracts the
+way ddk v2 builds them. Every `@atomicfinance` package moves to 5.0.0 together.
 
 **The engine is now the generated ddk binding**, `@bennyblader/ddk` (formerly
 `@bennyblader/ddk-ts`) or `@bennyblader/ddk-rn`, 1.0.0-rc7 or later.
