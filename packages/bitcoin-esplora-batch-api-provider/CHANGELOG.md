@@ -1,5 +1,18 @@
 # @atomicfinance/bitcoin-esplora-batch-api-provider
 
+## 5.0.0
+
+### Patch Changes
+
+- Updated dependencies [5211f4a]
+- Updated dependencies [5211f4a]
+- Updated dependencies [5211f4a]
+- Updated dependencies [5211f4a]
+  - @atomicfinance/types@5.0.0
+  - @atomicfinance/bitcoin-esplora-api-provider@5.0.0
+  - @atomicfinance/utils@5.0.0
+  - @atomicfinance/node-provider@5.0.0
+
 ## 4.3.6
 
 ### Patch Changes

@@ -1,5 +1,16 @@
 # @atomicfinance/bitcoin-cfd-address-derivation-provider
 
+## 5.0.0
+
+### Patch Changes
+
+- Updated dependencies [5211f4a]
+- Updated dependencies [5211f4a]
+- Updated dependencies [5211f4a]
+- Updated dependencies [5211f4a]
+  - @atomicfinance/types@5.0.0
+  - @atomicfinance/provider@5.0.0
+
 ## 4.3.6
 
 ### Patch Changes
