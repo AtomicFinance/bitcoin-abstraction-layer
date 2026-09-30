@@ -1,5 +1,106 @@
 # @atomicfinance/bitcoin-ddk-provider
 
+## 5.0.0
+
+### Major Changes
+
+- 5211f4a: Release 5.0.0: run on the ddk v2 engine and fund single-funded contracts the
+  way ddk v2 builds them. Every `@atomicfinance` package moves to 5.0.0 together.
+
+  **The engine is now the generated ddk binding**, `@bennyblader/ddk` (formerly
+  `@bennyblader/ddk-ts`) or `@bennyblader/ddk-rn`, 1.0.0-rc7 or later.
+  `DdkInterface` mirrors it:
+  - Bytes are `Uint8Array`. A `Buffer` still passes as an argument; results are
+    wrapped in `Buffer.from()` before BAL calls `Buffer`-only methods.
+  - Functions that operate on one record are methods on that record's namespace:
+    `ddk.Transaction.signCet(tx, ...)`, `ddk.Transaction.cetSighash(...)`,
+    `ddk.Transaction.cetAdaptorSignatureInputs(...)`, `ddk.TxOutput.isDust(...)`,
+    `ddk.AdaptorSignature.verifyFromOracleInfo(...)`,
+    `ddk.PartyParams.changeOutputAndFees(...)`, and so on.
+  - `DdkDlcTransactions.fundingScriptPubkey` is `fundingWitnessScript`; the bytes
+    are the same 2-of-2 witness script.
+  - `contractFlags` and the mnemonic passphrase are required arguments.
+
+  An earlier engine (`@bennyblader/ddk-ts` 0.3.x through 1.0.0-rc5) no longer
+  satisfies `DdkInterface`. The `BitcoinDdkProvider` constructor throws when the
+  engine lacks `FeeRule`, `createDlcTransactionsWithFeeRule` or
+  `createSplicedDlcTransactionsWithFeeRule`, or when its `dlcInputMaxWitnessLen()`
+  differs from `DLC_INPUT_MAX_WITNESS_LEN`, so an unsupported engine fails at
+  startup instead of on a live contract.
+
+  **The engine is ESM-only.** From CommonJS, load it with a real dynamic
+  `import()`, which TypeScript's CommonJS output rewrites to `require()`; the
+  integration tests do this in `tests/integration/utils/load-ddk.mjs`.
+
+  **Single-funded offers reserve the ddk v2 fees.** From `ddk-dlc` 2.0.0-rc.4, the
+  party that funds the whole contract pays the full funding and CET base weights
+  and the CET fee for the other party's payout output. `createDlcOffer` now selects
+  coins for, and checks its inputs against, that rule, reserving for a 34-byte
+  acceptor payout script because the real one is not known yet.
+  `calculateMaxCollateral` uses the same rule for a single contract. Dual-funded
+  contracts do not change.
+
+  **A counterparty still on `ddk-dlc` 1.x can still sign.** It builds a
+  single-funded contract under the old fee rule, so its signatures do not verify
+  against the current rule's transactions. `signDlcAccept` then rebuilds under the
+  old rule and signs those transactions if the acceptor's signatures verify
+  against them. The contract is created under the old rule, and `createDlcTxs`
+  with its `dlcSign` rebuilds it the same way. The reverse is not covered: an
+  offerer on `ddk-dlc` 1.x cannot verify an accept made with this release.
+
+  **Existing contracts still close.** `createDlcTxs` takes an optional `dlcSign`
+  (also on `client.dlc.createDlcTxs`). Pass it whenever the contract already
+  exists, for example to restore or splice it: a single-funded contract created
+  before `ddk-dlc` 2.0.0-rc.4 is rebuilt under the fee rule whose funding
+  transaction reproduces the sign message's contract id, and the call throws if
+  neither rule does, with each rule's failure in the error. The
+  legacy rule is also tried when the current rule cannot build because the old
+  inputs do not cover the new fee. `execute`, `refund` and `createDlcClose` use
+  the transactions they are given and are unaffected.
+
+### Minor Changes
+
+- 5211f4a: Expose the CET adaptor signature debug helpers that `ddk-ts` has always
+  shipped but `DdkInterface` never mirrored.
+
+  `DdkInterface` gains `cetAdaptorSignatureInputs` and `cetSighash`, along with
+  the `CetAdaptorSignatureDebugInfo` type.
+
+  `BitcoinDdkProvider` gains two methods that resolve the funding script, oracle
+  info and outcome messages for a CET and hand them to ddk:
+  - `getCetAdaptorSignatureDetails(dlcOffer, dlcAccept, dlcTxs, cetIndex)` —
+    returns the sighash, adaptor point, funding script, fund output value and raw
+    CET used for that CET's adaptor signature.
+  - `getCetSighash(dlcOffer, dlcAccept, dlcTxs, cetIndex)` — returns just the
+    32-byte sighash, hex encoded.
+
+  These are for diffing against a remote signer (e.g. Fordefi) when an adaptor
+  signature is rejected, isolating whether the mismatch is in the sighash, the
+  adaptor point, or the CET itself. They complement the existing
+  `getFundingTransactionSighashDetails`.
+
+### Patch Changes
+
+- 5211f4a: Replace the hardcoded DLC input witness length with a shared constant.
+
+  `220` was written out at five call sites across three packages. It is now
+  `DLC_INPUT_MAX_WITNESS_LEN`, exported from `@atomicfinance/types`.
+
+  The constant is duplicated from ddk rather than read from it because
+  `@atomicfinance/types` and the CFD-based `BitcoinDlcProvider` have no ddk
+  instance to call. To stop the copy drifting, `DdkInterface` now declares
+  `dlcInputMaxWitnessLen()` and `BitcoinDdkProvider.DdkLoaded()` throws if ddk's
+  value and the constant disagree.
+
+- Updated dependencies [5211f4a]
+- Updated dependencies [5211f4a]
+- Updated dependencies [5211f4a]
+- Updated dependencies [5211f4a]
+  - @atomicfinance/types@5.0.0
+  - @atomicfinance/bitcoin-utils@5.0.0
+  - @atomicfinance/provider@5.0.0
+  - @atomicfinance/utils@5.0.0
+
 ## 4.3.6
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # @atomicfinance/node-provider
 
+## 5.0.0
+
+### Patch Changes
+
+- @atomicfinance/provider@5.0.0
+- @atomicfinance/errors@5.0.0
+
 ## 4.3.6
 
 ### Patch Changes

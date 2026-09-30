@@ -1,5 +1,7 @@
 # @atomicfinance/errors
 
+## 5.0.0
+
 ## 4.3.6
 
 ## 4.3.5
