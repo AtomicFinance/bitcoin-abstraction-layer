@@ -72,6 +72,7 @@ const bob = chains.bitcoinWithJs2.client;
 const carol = chains.bitcoinWithJs3.client;
 const ddk = chains.bitcoinWithDdk.client;
 const ddk2 = chains.bitcoinWithDdk2.client;
+const ddkLegacyFeeRule = chains.bitcoinWithLegacyFeeRuleDdk.client;
 
 describe('bitcoin networks', () => {
   it('have correct genesis block hashes', async () => {
@@ -824,6 +825,74 @@ describe('dlc provider', () => {
 
       const cetTx2 = await ddk.getMethod('getTransactionByHash')(cetTxId2);
       expect(cetTx2._raw.vin.length).to.equal(1);
+    });
+
+    it('should sign a single-funded accept from a counterparty on the fee rule before ddk-dlc 2.0.0-rc.4', async () => {
+      const oracle = new Oracle('olivia');
+      const { contractInfo, totalCollateral } =
+        generateEnumCollateralContractInfo(oracle, BigInt(1e6));
+
+      // The fee rules differ only when one party funds the whole contract.
+      const offer = await ddk.dlc.createDlcOffer(
+        contractInfo,
+        totalCollateral,
+        BigInt(10),
+        1617170572,
+        1617170573,
+        [await getInput(ddk)],
+      );
+      const { dlcAccept: accept, dlcTransactions: acceptorTxs } =
+        await ddkLegacyFeeRule.dlc.acceptDlcOffer(offer);
+
+      const { dlcSign: sign } = await ddk.dlc.signDlcAccept(offer, accept);
+
+      const fundTx = await ddkLegacyFeeRule.dlc.finalizeDlcSign(
+        offer,
+        accept,
+        sign,
+        acceptorTxs,
+      );
+      await ddkLegacyFeeRule.chain.sendRawTransaction(
+        fundTx.serialize().toString('hex'),
+      );
+      const fundTxId = fundTx.txId.serialize().toString('hex');
+
+      // The offerer signed the acceptor's transactions, not the current rule's.
+      const { dlcTransactions: currentRuleTxs } = await ddk.dlc.createDlcTxs(
+        offer,
+        accept,
+      );
+      expect(
+        currentRuleTxs.fundTx.txId.serialize().toString('hex'),
+      ).to.not.equal(fundTxId);
+
+      // The sign message rebuilds them, and the offerer settles with them.
+      const { dlcTransactions: rebuilt } = await ddk.dlc.createDlcTxs(
+        offer,
+        accept,
+        sign,
+      );
+      expect(rebuilt.fundTx.txId.serialize().toString('hex')).to.equal(
+        fundTxId,
+      );
+
+      const cet = await ddk.dlc.execute(
+        offer,
+        accept,
+        sign,
+        rebuilt,
+        generateDdkCompatibleEnumOracleAttestation(
+          'paid',
+          oracle,
+          'collateral',
+        ),
+        true,
+      );
+      const cetTxId = await ddk.chain.sendRawTransaction(
+        cet.serialize().toString('hex'),
+      );
+      const cetTx = await ddk.getMethod('getTransactionByHash')(cetTxId);
+      expect(cetTx._raw.vin[0].txid).to.equal(fundTx.txId.toString());
     });
 
     describe('ddk provider contract id computation', () => {

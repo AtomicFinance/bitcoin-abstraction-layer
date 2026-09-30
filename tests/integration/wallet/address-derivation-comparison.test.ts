@@ -1,5 +1,4 @@
 /* eslint-env mocha */
-import * as ddkJs from '@bennyblader/ddk-ts';
 import { generateMnemonic } from 'bip39';
 import * as cfdJs from 'cfd-js';
 import * as chai from 'chai';
@@ -14,6 +13,9 @@ import { Client } from '../../../packages/client/dist';
 import Provider from '../../../packages/provider/lib';
 import { bitcoin } from '../../../packages/types/dist';
 import config from '../config';
+import { ddkEngine } from '../utils/ddk';
+
+const ddkJs = ddkEngine();
 
 const { expect } = chai;
 chai.use(chaiAsPromised);

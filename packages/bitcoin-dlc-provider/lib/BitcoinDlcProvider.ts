@@ -28,6 +28,7 @@ import {
   CreateSignatureHashRequest,
   CreateSplicedDlcTransactionsRequest,
   CreateSplicedDlcTransactionsResponse,
+  DLC_INPUT_MAX_WITNESS_LEN,
   DlcInputInfo,
   DlcInputInfoRequest,
   DlcProvider,
@@ -4537,7 +4538,8 @@ Payout Group not found even with brute force search',
     fundingInput.prevTx = tx;
     fundingInput.prevTxVout = dlcInputInfo.fundVout;
     fundingInput.sequence = Sequence.default();
-    fundingInput.maxWitnessLen = dlcInputInfo.maxWitnessLength || 220;
+    fundingInput.maxWitnessLen =
+      dlcInputInfo.maxWitnessLength || DLC_INPUT_MAX_WITNESS_LEN;
     fundingInput.redeemScript = Buffer.from('', 'hex'); // Empty for P2WSH
     fundingInput.inputSerialId = BigInt(
       dlcInputInfo.inputSerialId || generateSerialId(),
@@ -4592,7 +4594,7 @@ Payout Group not found even with brute force search',
         dlcInputInfo.fundVout,
         Amount.FromSatoshis(Number(dlcInputInfo.fundAmount)),
         multisigAddress,
-        dlcInputInfo.maxWitnessLength || 220,
+        dlcInputInfo.maxWitnessLength || DLC_INPUT_MAX_WITNESS_LEN,
         undefined, // DLC inputs don't have derivation paths
         fundingInput.inputSerialId,
       );

@@ -61,7 +61,9 @@ export default class BitcoinDdkAddressDerivationProvider extends Provider {
     }
 
     // Use DDK's mnemonic to seed conversion
-    const seed = this._ddk.convertMnemonicToSeed(this._mnemonic);
+    const seed = Buffer.from(
+      this._ddk.convertMnemonicToSeed(this._mnemonic, undefined),
+    );
     this._seed = seed;
     return this._seed;
   }
@@ -105,7 +107,9 @@ export default class BitcoinDdkAddressDerivationProvider extends Provider {
     );
 
     // Step 4: Extract public key directly
-    const publicKey = this._ddk.getPubkeyFromExtkey(derivedXpriv, networkName);
+    const publicKey = Buffer.from(
+      this._ddk.getPubkeyFromExtkey(derivedXpriv, networkName),
+    );
 
     const address = this.getAddressFromPublicKey(publicKey);
 

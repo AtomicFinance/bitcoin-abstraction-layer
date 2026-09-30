@@ -1,5 +1,4 @@
 /* eslint-env mocha */
-import * as ddkJs from '@bennyblader/ddk-ts';
 import BN from 'bignumber.js';
 import { generateMnemonic } from 'bip39';
 import * as cfdJs from 'cfd-js';
@@ -16,12 +15,15 @@ import { decodeRawTransaction } from '../../packages/bitcoin-utils';
 import { Client } from '../../packages/client';
 import * as errors from '../../packages/errors';
 import Provider from '../../packages/provider/lib';
-import { bitcoin } from '../../packages/types';
+import { bitcoin, DdkInterface } from '../../packages/types';
 import { Input } from '../../packages/types/';
 import { Transaction } from '../../packages/types/lib';
 import * as utils from '../../packages/utils';
 import config from './config';
+import { ddkEngine, legacyFeeRuleEngine } from './utils/ddk';
 import { getWrappedCfdDlcJs } from './utils/WrappedCfdDlcJs';
+
+const ddkJs = ddkEngine();
 
 const cfdDlcJs = getWrappedCfdDlcJs();
 
@@ -138,29 +140,25 @@ bitcoinWithJs5.addProvider(
 bitcoinWithJs5.addProvider(new BitcoinCfdProvider(cfdJs));
 bitcoinWithJs5.addProvider(new BitcoinDlcProvider(network, cfdDlcJs));
 
-const bitcoinWithDdk = new Client();
-bitcoinWithDdk.addProvider(mockedBitcoinRpcProvider() as unknown as Provider);
-bitcoinWithDdk.addProvider(
-  new BitcoinJsWalletProvider({
-    network,
-    mnemonic: generateMnemonic(256),
-    baseDerivationPath: `m/84'/${config.bitcoin.network.coinType}'/0'`,
-    addressType: bitcoin.AddressType.BECH32,
-  }) as any,
-);
-bitcoinWithDdk.addProvider(new BitcoinDdkProvider(network, ddkJs));
+function ddkClient(engine: DdkInterface): Client {
+  const client = new Client();
+  client.addProvider(mockedBitcoinRpcProvider() as unknown as Provider);
+  client.addProvider(
+    new BitcoinJsWalletProvider({
+      network,
+      mnemonic: generateMnemonic(256),
+      baseDerivationPath: `m/84'/${config.bitcoin.network.coinType}'/0'`,
+      addressType: bitcoin.AddressType.BECH32,
+    }) as any,
+  );
+  client.addProvider(new BitcoinDdkProvider(network, engine));
+  return client;
+}
 
-const bitcoinWithDdk2 = new Client();
-bitcoinWithDdk2.addProvider(mockedBitcoinRpcProvider() as unknown as Provider);
-bitcoinWithDdk2.addProvider(
-  new BitcoinJsWalletProvider({
-    network,
-    mnemonic: generateMnemonic(256),
-    baseDerivationPath: `m/84'/${config.bitcoin.network.coinType}'/0'`,
-    addressType: bitcoin.AddressType.BECH32,
-  }) as any,
-);
-bitcoinWithDdk2.addProvider(new BitcoinDdkProvider(network, ddkJs));
+const bitcoinWithDdk = ddkClient(ddkJs);
+const bitcoinWithDdk2 = ddkClient(ddkJs);
+// A counterparty whose engine still runs ddk-dlc 1.x.
+const bitcoinWithLegacyFeeRuleDdk = ddkClient(legacyFeeRuleEngine(ddkJs));
 
 const chains = {
   bitcoinWithNode: {
@@ -210,6 +208,12 @@ const chains = {
     id: 'Bitcoin DDK',
     name: 'bitcoin',
     client: bitcoinWithDdk2,
+    network: network,
+  },
+  bitcoinWithLegacyFeeRuleDdk: {
+    id: 'Bitcoin DDK',
+    name: 'bitcoin',
+    client: bitcoinWithLegacyFeeRuleDdk,
     network: network,
   },
 };

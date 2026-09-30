@@ -83,13 +83,16 @@ export default class Dlc implements DlcProvider {
    * Create DlcTxs object from DlcOffer and DlcAccept
    * @param dlcOffer Dlc Offer Message
    * @param dlcAccept Dlc Accept Message
+   * @param dlcSign Dlc Sign Message of an existing contract; required to
+   *   rebuild a single-funded contract created before ddk-dlc 2.0.0-rc.4
    * @returns {Promise<CreateDlcTxsResponse>}
    */
   async createDlcTxs(
     dlcOffer: DlcOffer,
     dlcAccept: DlcAccept,
+    dlcSign?: DlcSign,
   ): Promise<CreateDlcTxsResponse> {
-    return this.client.getMethod('createDlcTxs')(dlcOffer, dlcAccept);
+    return this.client.getMethod('createDlcTxs')(dlcOffer, dlcAccept, dlcSign);
   }
 
   /**
