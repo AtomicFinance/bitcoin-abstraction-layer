@@ -1,5 +1,12 @@
 # @atomicfinance/jsonrpc-provider
 
+## 5.0.0
+
+### Patch Changes
+
+- @atomicfinance/errors@5.0.0
+- @atomicfinance/node-provider@5.0.0
+
 ## 4.3.6
 
 ### Patch Changes
