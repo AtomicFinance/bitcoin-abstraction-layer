@@ -1,3 +1,7 @@
+import {
+  applyPayoutScriptOverrides,
+  PayoutScriptOverride,
+} from '@atomicfinance/bitcoin-utils';
 import Provider from '@atomicfinance/provider';
 import {
   AdaptorSignature,
@@ -148,6 +152,20 @@ function describeError(error: unknown): string {
   };
   return inner?.message ? `${message}: ${inner.message}` : String(message);
 }
+
+/**
+ * The payout script overrides carried on the offer, if any. Read loosely so
+ * this compiles against a @node-dlc/messaging that does not yet type the
+ * field; once it does, the cast goes away.
+ */
+const payoutScriptOverrides = (
+  dlcOffer: DlcOffer,
+): PayoutScriptOverride[] | undefined =>
+  (
+    dlcOffer as DlcOffer & {
+      payoutScriptOverrides?: { overrides: PayoutScriptOverride[] };
+    }
+  ).payoutScriptOverrides?.overrides;
 
 export default class BitcoinDdkProvider extends Provider {
   private _network: BitcoinNetwork;
@@ -1026,9 +1044,12 @@ export default class BitcoinDdkProvider extends Provider {
         );
       }
 
-      dlcTransactions.cets = dlcTxs.cets.map((cetTx) =>
-        Tx.decode(StreamReader.fromBuffer(Buffer.from(cetTx.rawBytes))),
-      );
+      dlcTransactions.cets = applyPayoutScriptOverrides(
+        dlcTxs.cets.map((cetTx) => Buffer.from(cetTx.rawBytes).toString('hex')),
+        messagesList,
+        dlcOffer.payoutSpk,
+        payoutScriptOverrides(dlcOffer),
+      ).map((cetHex) => Tx.decode(StreamReader.fromHex(cetHex)));
       dlcTransactions.refundTx = Tx.decode(
         StreamReader.fromBuffer(Buffer.from(dlcTxs.refund.rawBytes)),
       );
