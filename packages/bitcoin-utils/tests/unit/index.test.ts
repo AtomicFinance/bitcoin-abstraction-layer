@@ -1,6 +1,7 @@
 /* eslint-env mocha */
 
 import { BitcoinNetworks } from 'bitcoin-network';
+import * as bitcoin from 'bitcoinjs-lib';
 import { expect } from 'chai';
 
 import * as BitcoinUtil from '../../lib';
@@ -200,6 +201,49 @@ describe('Bitcoin Util', () => {
         ],
         hex: '02000000000101d91c9f26c7ecf0afb541df576801a6694420a3652c4f5f3c7033a361945ea6be00000000000000000001a45e150300000000160014c42dba1576d9ba619d92b47e26f97f8790a65b8405483045022100afbf55d5991ca4e8a9e423e39d55011f12e99fd8def7cc4a0347d777d1910ed802201aba22c141f34df7dc954dfbf0d1224c6ad05f6df70345c0903c948283532e9201210304bb3f24bd44298d578257e42c61f716f884b4743780eef03c4b1e0a30a35fe420767050193726eb46aa4efb0dc6979a53c515b061d9c4d043871b30fcb99d80220101616382012088a82014f786ddd0b839deec2c27357eb4e5a82ac2030e2b9782f5f05e0945ce5e32918876a914c42dba1576d9ba619d92b47e26f97f8790a65b846704332c3a5fb17576a914128371468880b80dd995b31e5cdef8a5acbd7f936888ac00000000',
       });
+    });
+  });
+  describe('applyPayoutScriptOverrides', () => {
+    const offerSpk = Buffer.from('0014' + 'aa'.repeat(20), 'hex');
+    const acceptSpk = Buffer.from('0014' + 'bb'.repeat(20), 'hex');
+    const liquidator = Buffer.from('0014' + 'cc'.repeat(20), 'hex');
+
+    const cet = (outs: [number, Buffer][]): string => {
+      const tx = new bitcoin.Transaction();
+      tx.addInput(Buffer.alloc(32, 1), 0);
+      outs.forEach(([value, script]) => tx.addOutput(script, value));
+      return tx.toHex();
+    };
+
+    const cets = [cet([[100_000, offerSpk]]), cet([[100_000, acceptSpk]])];
+    const outcomes = [
+      { messages: ['released'] },
+      { messages: ['liquidated-by-0x11'] },
+    ];
+
+    it('pays the named outcome to the override script and leaves the rest', () => {
+      const result = BitcoinUtil.applyPayoutScriptOverrides(
+        cets,
+        outcomes,
+        acceptSpk,
+        [{ outcome: 'liquidated-by-0x11', scriptPubkey: liquidator }],
+      );
+      const second = bitcoin.Transaction.fromHex(result[1]);
+      expect(second.outs).to.have.length(1);
+      expect(second.outs[0].script).to.deep.equal(liquidator);
+      expect(second.outs[0].value).to.equal(100_000);
+      expect(result[0]).to.equal(cets[0]);
+    });
+
+    it('is a no-op without overrides', () => {
+      expect(
+        BitcoinUtil.applyPayoutScriptOverrides(
+          cets,
+          outcomes,
+          acceptSpk,
+          undefined,
+        ),
+      ).to.deep.equal(cets);
     });
   });
 });

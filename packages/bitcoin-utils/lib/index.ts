@@ -390,7 +390,50 @@ const validateAddress = (
   }
 };
 
+/**
+ * One enum outcome whose CET pays `scriptPubkey` in place of the accepter's
+ * payout script. Mirrors the `PayoutScriptOverrides` TLV on a DlcOffer.
+ */
+export interface PayoutScriptOverride {
+  outcome: string;
+  scriptPubkey: Buffer;
+}
+
+/**
+ * Rewrites the accepter's output on each CET whose outcome `overrides` names,
+ * so that outcome pays the override script instead. Amounts are untouched.
+ *
+ * `cetsHex` and `outcomes` are parallel, in payout order, as both DLC
+ * providers build them. Numeric contracts carry digit messages that never
+ * match an outcome string, so they pass through unchanged. Run this before
+ * any adaptor signature is created or verified, since those commit to the
+ * CET bytes, and keep it in step with `ContractInfo::apply_payout_script_overrides`
+ * in dlcdevkit so both stacks build the same transactions.
+ */
+const applyPayoutScriptOverrides = (
+  cetsHex: string[],
+  outcomes: { messages: string[] }[],
+  acceptPayoutSpk: Buffer,
+  overrides: PayoutScriptOverride[] | undefined,
+): string[] => {
+  if (!overrides || overrides.length === 0) return cetsHex;
+  return cetsHex.map((cetHex, i) => {
+    const outcome = outcomes[i]?.messages[0];
+    const override = overrides.find((o) => o.outcome === outcome);
+    if (!override) return cetHex;
+    const tx = bitcoin.Transaction.fromHex(cetHex);
+    // ponytail: the accepter's output is found by script, which is unambiguous
+    // because both parties' payout scripts differ.
+    for (const out of tx.outs) {
+      if (out.script.equals(acceptPayoutSpk))
+        out.script = override.scriptPubkey;
+    }
+    return tx.toHex();
+  });
+};
+
 export {
+  applyPayoutScriptOverrides,
   calculateFee,
   compressPubKey,
   getAddressNetwork,

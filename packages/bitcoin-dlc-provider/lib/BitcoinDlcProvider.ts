@@ -1,3 +1,7 @@
+import {
+  applyPayoutScriptOverrides,
+  PayoutScriptOverride,
+} from '@atomicfinance/bitcoin-utils';
 import Provider from '@atomicfinance/provider';
 import {
   AdaptorPair,
@@ -123,6 +127,20 @@ import {
   generateSerialIds,
   outputsToPayouts,
 } from './utils/Utils';
+
+/**
+ * The payout script overrides carried on the offer, if any. Read loosely so
+ * this compiles against a @node-dlc/messaging that does not yet type the
+ * field; once it does, the cast goes away.
+ */
+const payoutScriptOverrides = (
+  dlcOffer: DlcOffer,
+): PayoutScriptOverride[] | undefined =>
+  (
+    dlcOffer as DlcOffer & {
+      payoutScriptOverrides?: { overrides: PayoutScriptOverride[] };
+    }
+  ).payoutScriptOverrides?.overrides;
 
 export default class BitcoinDlcProvider
   extends Provider
@@ -894,9 +912,12 @@ export default class BitcoinDlcProvider
       );
     }
 
-    dlcTransactions.cets = dlcTxs.cetsHex.map((cetHex) =>
-      Tx.decode(StreamReader.fromHex(cetHex)),
-    );
+    dlcTransactions.cets = applyPayoutScriptOverrides(
+      dlcTxs.cetsHex,
+      messagesList,
+      dlcAccept.payoutSpk,
+      payoutScriptOverrides(dlcOffer),
+    ).map((cetHex) => Tx.decode(StreamReader.fromHex(cetHex)));
     dlcTransactions.refundTx = Tx.decode(
       StreamReader.fromHex(dlcTxs.refundTxHex),
     );
@@ -1031,9 +1052,12 @@ export default class BitcoinDlcProvider
       const end = start + Number(numPayouts[i]);
       const cetsHexList = dlcTxs.cetsHexList.slice(start, end);
       start = end;
-      dlcTransactions.cets = cetsHexList.map((cetHex) => {
-        return Tx.decode(StreamReader.fromHex(cetHex));
-      });
+      dlcTransactions.cets = applyPayoutScriptOverrides(
+        cetsHexList,
+        nestedMessagesList[i],
+        dlcAccepts[i].payoutSpk,
+        payoutScriptOverrides(dlcOffers[i]),
+      ).map((cetHex) => Tx.decode(StreamReader.fromHex(cetHex)));
 
       dlcTransactionsList.push(dlcTransactions);
     }
