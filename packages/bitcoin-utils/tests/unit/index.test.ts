@@ -217,22 +217,22 @@ describe('Bitcoin Util', () => {
 
     const cets = [cet([[100_000, offerSpk]]), cet([[100_000, acceptSpk]])];
     const outcomes = [
-      { messages: ['liquidated-by-0x11'] },
       { messages: ['released'] },
+      { messages: ['liquidated-by-0x11'] },
     ];
 
     it('pays the named outcome to the override script and leaves the rest', () => {
       const result = BitcoinUtil.applyPayoutScriptOverrides(
         cets,
         outcomes,
-        offerSpk,
+        acceptSpk,
         [{ outcome: 'liquidated-by-0x11', scriptPubkey: liquidator }],
       );
-      const first = bitcoin.Transaction.fromHex(result[0]);
-      expect(first.outs).to.have.length(1);
-      expect(first.outs[0].script).to.deep.equal(liquidator);
-      expect(first.outs[0].value).to.equal(100_000);
-      expect(result[1]).to.equal(cets[1]);
+      const second = bitcoin.Transaction.fromHex(result[1]);
+      expect(second.outs).to.have.length(1);
+      expect(second.outs[0].script).to.deep.equal(liquidator);
+      expect(second.outs[0].value).to.equal(100_000);
+      expect(result[0]).to.equal(cets[0]);
     });
 
     it('is a no-op without overrides', () => {
@@ -240,7 +240,7 @@ describe('Bitcoin Util', () => {
         BitcoinUtil.applyPayoutScriptOverrides(
           cets,
           outcomes,
-          offerSpk,
+          acceptSpk,
           undefined,
         ),
       ).to.deep.equal(cets);

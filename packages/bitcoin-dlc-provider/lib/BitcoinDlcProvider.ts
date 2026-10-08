@@ -915,7 +915,7 @@ export default class BitcoinDlcProvider
     dlcTransactions.cets = applyPayoutScriptOverrides(
       dlcTxs.cetsHex,
       messagesList,
-      dlcOffer.payoutSpk,
+      dlcAccept.payoutSpk,
       payoutScriptOverrides(dlcOffer),
     ).map((cetHex) => Tx.decode(StreamReader.fromHex(cetHex)));
     dlcTransactions.refundTx = Tx.decode(
@@ -1055,7 +1055,7 @@ export default class BitcoinDlcProvider
       dlcTransactions.cets = applyPayoutScriptOverrides(
         cetsHexList,
         nestedMessagesList[i],
-        dlcOffers[i].payoutSpk,
+        dlcAccepts[i].payoutSpk,
         payoutScriptOverrides(dlcOffers[i]),
       ).map((cetHex) => Tx.decode(StreamReader.fromHex(cetHex)));
 

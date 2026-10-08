@@ -391,7 +391,7 @@ const validateAddress = (
 };
 
 /**
- * One enum outcome whose CET pays `scriptPubkey` in place of the offerer's
+ * One enum outcome whose CET pays `scriptPubkey` in place of the accepter's
  * payout script. Mirrors the `PayoutScriptOverrides` TLV on a DlcOffer.
  */
 export interface PayoutScriptOverride {
@@ -400,7 +400,7 @@ export interface PayoutScriptOverride {
 }
 
 /**
- * Rewrites the offerer's output on each CET whose outcome `overrides` names,
+ * Rewrites the accepter's output on each CET whose outcome `overrides` names,
  * so that outcome pays the override script instead. Amounts are untouched.
  *
  * `cetsHex` and `outcomes` are parallel, in payout order, as both DLC
@@ -413,7 +413,7 @@ export interface PayoutScriptOverride {
 const applyPayoutScriptOverrides = (
   cetsHex: string[],
   outcomes: { messages: string[] }[],
-  offerPayoutSpk: Buffer,
+  acceptPayoutSpk: Buffer,
   overrides: PayoutScriptOverride[] | undefined,
 ): string[] => {
   if (!overrides || overrides.length === 0) return cetsHex;
@@ -422,10 +422,11 @@ const applyPayoutScriptOverrides = (
     const override = overrides.find((o) => o.outcome === outcome);
     if (!override) return cetHex;
     const tx = bitcoin.Transaction.fromHex(cetHex);
-    // ponytail: the offerer's output is found by script, which is unambiguous
+    // ponytail: the accepter's output is found by script, which is unambiguous
     // because both parties' payout scripts differ.
     for (const out of tx.outs) {
-      if (out.script.equals(offerPayoutSpk)) out.script = override.scriptPubkey;
+      if (out.script.equals(acceptPayoutSpk))
+        out.script = override.scriptPubkey;
     }
     return tx.toHex();
   });

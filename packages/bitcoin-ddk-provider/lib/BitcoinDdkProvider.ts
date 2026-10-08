@@ -1047,7 +1047,7 @@ export default class BitcoinDdkProvider extends Provider {
       dlcTransactions.cets = applyPayoutScriptOverrides(
         dlcTxs.cets.map((cetTx) => Buffer.from(cetTx.rawBytes).toString('hex')),
         messagesList,
-        dlcOffer.payoutSpk,
+        dlcAccept.payoutSpk,
         payoutScriptOverrides(dlcOffer),
       ).map((cetHex) => Tx.decode(StreamReader.fromHex(cetHex)));
       dlcTransactions.refundTx = Tx.decode(
