@@ -84,8 +84,8 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Run legacy fee reconstruction tests
-        run: pnpm test:legacy-fees
+      - name: Run ddk provider tests
+        run: pnpm test:ddk-provider
 
       - name: Ensure Bitcoin wallet is ready
         run: |
