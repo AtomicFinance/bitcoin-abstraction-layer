@@ -149,15 +149,34 @@ function describeError(error: unknown): string {
   return inner?.message ? `${message}: ${inner.message}` : String(message);
 }
 
+export interface BitcoinDdkProviderOptions {
+  /**
+   * The nLockTime of a new spliced contract's funding transaction, one that
+   * spends a DLC funding output. `zero`, the default, is what BAL has always
+   * built. `cetLocktime` sets it to the offer's CET locktime, so a successor
+   * contract can be fully signed in advance and held until that time. The
+   * locktime is not in the offer, so both parties must use the same setting
+   * or they build different funding transactions. Regular contracts always
+   * use 0, and an existing contract is rebuilt under either value.
+   */
+  splicedFundLockTime?: 'zero' | 'cetLocktime';
+}
+
 export default class BitcoinDdkProvider extends Provider {
   private _network: BitcoinNetwork;
   private _ddk: DdkInterface;
+  private _splicedFundLockTime: 'zero' | 'cetLocktime';
 
-  constructor(network: BitcoinNetwork, ddkLib: DdkInterface) {
+  constructor(
+    network: BitcoinNetwork,
+    ddkLib: DdkInterface,
+    options: BitcoinDdkProviderOptions = {},
+  ) {
     super();
     assertEngineSupport(ddkLib);
     this._network = network;
     this._ddk = ddkLib;
+    this._splicedFundLockTime = options.splicedFundLockTime ?? 'zero';
   }
 
   public async DdkLoaded() {
@@ -764,30 +783,77 @@ export default class BitcoinDdkProvider extends Provider {
    * build or produces a different id, the old rule is tried. The call throws
    * if neither rule matches. Without dlcSign, the current rule is used for
    * a new contract.
+   *
+   * A spliced contract's funding locktime follows the provider's
+   * `splicedFundLockTime` option. With `dlcSign`, a spliced contract built
+   * under the other setting is rebuilt too.
    */
   public async createDlcTxs(
     dlcOffer: DlcOffer,
     dlcAccept: DlcAccept,
     dlcSign?: DlcSign,
   ): Promise<CreateDlcTxsResponse> {
-    if (!dlcSign) return this.buildDlcTxs(dlcOffer, dlcAccept);
+    const fundLockTime = this.fundLockTimeFor(dlcOffer);
+    if (!dlcSign) return this.buildDlcTxs(dlcOffer, dlcAccept, fundLockTime);
 
-    return this.buildDlcTxsUnderEitherFeeRule(
-      dlcOffer,
-      dlcAccept,
-      async ({ dlcTransactions }) => {
-        const contractId = computeContractId(
-          dlcTransactions.fundTx.txId.serialize(),
-          dlcTransactions.fundTxVout,
-          dlcOffer.temporaryContractId,
+    const check = async ({ dlcTransactions }: CreateDlcTxsResponse) => {
+      const contractId = computeContractId(
+        dlcTransactions.fundTx.txId.serialize(),
+        dlcTransactions.fundTxVout,
+        dlcOffer.temporaryContractId,
+      );
+      if (!contractId.equals(dlcSign.contractId)) {
+        throw new Error(
+          `Rebuilt transactions do not match contract ${dlcSign.contractId.toString('hex')}`,
         );
-        if (!contractId.equals(dlcSign.contractId)) {
-          throw new Error(
-            `Rebuilt transactions do not match contract ${dlcSign.contractId.toString('hex')}`,
-          );
-        }
-      },
-    );
+      }
+    };
+
+    const spliced = dlcOffer.fundingInputs.some((input) => input.dlcInput);
+    const otherFundLockTime = fundLockTime === 0 ? dlcOffer.cetLocktime : 0;
+    if (!spliced || otherFundLockTime === fundLockTime) {
+      return this.buildDlcTxsUnderEitherFeeRule(
+        dlcOffer,
+        dlcAccept,
+        fundLockTime,
+        check,
+      );
+    }
+
+    let configuredError: unknown;
+    try {
+      return await this.buildDlcTxsUnderEitherFeeRule(
+        dlcOffer,
+        dlcAccept,
+        fundLockTime,
+        check,
+      );
+    } catch (error) {
+      configuredError = error;
+    }
+
+    try {
+      return await this.buildDlcTxsUnderEitherFeeRule(
+        dlcOffer,
+        dlcAccept,
+        otherFundLockTime,
+        check,
+      );
+    } catch (otherError) {
+      throw new Error(
+        'The spliced contract matches neither funding locktime. ' +
+          `Funding locktime ${fundLockTime}: ${describeError(configuredError)} ` +
+          `Funding locktime ${otherFundLockTime}: ${describeError(otherError)}`,
+      );
+    }
+  }
+
+  /** The funding locktime of a new contract under `splicedFundLockTime`. */
+  private fundLockTimeFor(dlcOffer: DlcOffer): number {
+    const spliced = dlcOffer.fundingInputs.some((input) => input.dlcInput);
+    return spliced && this._splicedFundLockTime === 'cetLocktime'
+      ? dlcOffer.cetLocktime
+      : 0;
   }
 
   /**
@@ -800,11 +866,12 @@ export default class BitcoinDdkProvider extends Provider {
   private async buildDlcTxsUnderEitherFeeRule(
     dlcOffer: DlcOffer,
     dlcAccept: DlcAccept,
+    fundLockTime: number,
     check: (built: CreateDlcTxsResponse) => Promise<void>,
   ): Promise<CreateDlcTxsResponse> {
     let currentRuleError: unknown;
     try {
-      const built = await this.buildDlcTxs(dlcOffer, dlcAccept);
+      const built = await this.buildDlcTxs(dlcOffer, dlcAccept, fundLockTime);
       await check(built);
       return built;
     } catch (error) {
@@ -816,6 +883,7 @@ export default class BitcoinDdkProvider extends Provider {
       const built = await this.buildDlcTxs(
         dlcOffer,
         dlcAccept,
+        fundLockTime,
         this._ddk.FeeRule.OwnPayoutOnly,
       );
       await check(built);
@@ -830,12 +898,13 @@ export default class BitcoinDdkProvider extends Provider {
   }
 
   /**
-   * Build a contract's transactions under `feeRule`, or the current rule when
-   * it is omitted.
+   * Build a contract's transactions with funding locktime `fundLockTime`,
+   * under `feeRule`, or the current rule when it is omitted.
    */
   private async buildDlcTxs(
     dlcOffer: DlcOffer,
     dlcAccept: DlcAccept,
+    fundLockTime: number,
     feeRule?: number,
   ): Promise<CreateDlcTxsResponse> {
     const localFundPubkey = dlcOffer.fundingPubkey.toString('hex');
@@ -966,7 +1035,7 @@ export default class BitcoinDdkProvider extends Provider {
         remoteParams,
         dlcOffer.refundLocktime,
         BigInt(dlcOffer.feeRatePerVb),
-        0,
+        fundLockTime,
         dlcOffer.cetLocktime,
         BigInt(dlcOffer.fundOutputSerialId),
         contractFlags,
@@ -1585,6 +1654,8 @@ export default class BitcoinDdkProvider extends Provider {
     );
     const network = await this.getConnectedNetwork();
     const psbt = new Psbt({ network });
+    // A spliced contract's funding transaction can have a nonzero locktime
+    psbt.setLocktime(transaction.locktime);
 
     const allFundingInputs = sortFundingInputsBySerialId([
       ...dlcOffer.fundingInputs,
@@ -1604,7 +1675,7 @@ export default class BitcoinDdkProvider extends Provider {
       // Use sequence from the original transaction to ensure consistency
       const originalInput = transaction.ins.find(
         (input) =>
-          input.hash.reverse().toString('hex') ===
+          Buffer.from(input.hash).reverse().toString('hex') ===
             fundingInput.prevTx.txId.toString() &&
           input.index === fundingInput.prevTxVout,
       );
@@ -1769,6 +1840,7 @@ export default class BitcoinDdkProvider extends Provider {
 
     // Create a PSBT for signature verification
     const psbt = new Psbt({ network });
+    psbt.setLocktime(transaction.locktime);
 
     // Add all inputs (needed for proper sighash calculation)
     for (const input of allFundingInputs) {
@@ -1777,7 +1849,7 @@ export default class BitcoinDdkProvider extends Provider {
       // Use sequence from the original transaction to ensure consistency with CreateFundingTx
       const originalInput = transaction.ins.find(
         (txInput) =>
-          txInput.hash.reverse().toString('hex') ===
+          Buffer.from(txInput.hash).reverse().toString('hex') ===
             input.prevTx.txId.toString() && txInput.index === input.prevTxVout,
       );
       const sequenceValue = originalInput
@@ -1991,7 +2063,7 @@ export default class BitcoinDdkProvider extends Provider {
 
       const originalInput = transaction.ins.find(
         (txInput) =>
-          txInput.hash.reverse().toString('hex') ===
+          Buffer.from(txInput.hash).reverse().toString('hex') ===
             input.prevTx.txId.toString() && txInput.index === input.prevTxVout,
       );
       const sequenceValue = originalInput
@@ -2321,6 +2393,7 @@ export default class BitcoinDdkProvider extends Provider {
     const originalTransaction = btTransaction.fromBuffer(
       Buffer.from(dlcTxs.fundTx.serialize()),
     );
+    psbt.setLocktime(originalTransaction.locktime);
 
     for (const fundingInput of allFundingInputs) {
       const prevOut = fundingInput.prevTx.outputs[fundingInput.prevTxVout];
@@ -2334,7 +2407,7 @@ export default class BitcoinDdkProvider extends Provider {
       // Use sequence from the original transaction (same as CreateFundingSigs)
       const originalInput = originalTransaction.ins.find(
         (input) =>
-          input.hash.reverse().toString('hex') ===
+          Buffer.from(input.hash).reverse().toString('hex') ===
             fundingInput.prevTx.txId.toString() &&
           input.index === fundingInput.prevTxVout,
       );
@@ -3716,15 +3789,19 @@ Payout Group not found even with brute force search',
     // ddk-dlc 1.x builds under the rule before 2.0.0-rc.4, so sign whichever
     // transactions its signatures verify against.
     const { dlcTransactions, messagesList } =
-      await this.buildDlcTxsUnderEitherFeeRule(dlcOffer, dlcAccept, (built) =>
-        this.VerifyCetAdaptorAndRefundSigs(
-          dlcOffer,
-          dlcAccept,
-          dlcSign,
-          built.dlcTransactions,
-          built.messagesList,
-          true,
-        ),
+      await this.buildDlcTxsUnderEitherFeeRule(
+        dlcOffer,
+        dlcAccept,
+        this.fundLockTimeFor(dlcOffer),
+        (built) =>
+          this.VerifyCetAdaptorAndRefundSigs(
+            dlcOffer,
+            dlcAccept,
+            dlcSign,
+            built.dlcTransactions,
+            built.messagesList,
+            true,
+          ),
       );
 
     const { cetSignatures, refundSignature } =

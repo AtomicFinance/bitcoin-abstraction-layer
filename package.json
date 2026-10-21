@@ -77,7 +77,7 @@
     "changeset": "changeset",
     "version": "pnpm changeset version && pnpm install --lockfile-only",
     "publish": "pnpm build && pnpm changeset publish",
-    "test:legacy-fees": "NODE_OPTIONS=--import=tsx mocha --no-config --require tests/integration/utils/load-ddk.mjs --timeout 30000 packages/bitcoin-ddk-provider/tests/legacy-fees.test.ts"
+    "test:ddk-provider": "NODE_OPTIONS=--import=tsx mocha --no-config --require tests/integration/utils/load-ddk.mjs --timeout 30000 \"packages/bitcoin-ddk-provider/tests/*.test.ts\""
   },
   "publishConfig": {
     "access": "public"

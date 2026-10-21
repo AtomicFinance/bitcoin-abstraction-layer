@@ -1,127 +1,12 @@
-import { Sequence, Tx } from '@node-dlc/bitcoin';
-import { StreamReader } from '@node-dlc/bufio';
-import {
-  DlcAccept,
-  DlcInput,
-  DlcOffer,
-  DlcSign,
-  EnumeratedDescriptor,
-  EnumEventDescriptor,
-  FundingInput,
-  OracleAnnouncement,
-  OracleEvent,
-  SingleContractInfo,
-  SingleOracleInfo,
-} from '@node-dlc/messaging';
-import { BitcoinNetworks } from 'bitcoin-network';
-import { payments, Transaction } from 'bitcoinjs-lib';
+import { DlcSign } from '@node-dlc/messaging';
 import assert from 'node:assert/strict';
 
 import {
   ddkEngine,
   legacyFeeRuleEngine,
 } from '../../../tests/integration/utils/ddk';
-import { DdkInterface } from '../../types/lib/ddk';
-import BitcoinDdkProvider from '../lib/BitcoinDdkProvider';
-import { ddkPartyFees } from '../lib/utils/DdkFees';
 import { computeContractId } from '../lib/utils/Utils';
-
-function messages(spliced: boolean, spareValue: bigint) {
-  const offer = new DlcOffer();
-  const accept = new DlcAccept();
-  offer.fundingPubkey = Buffer.from(
-    '02505f234a81fe3af88625ebda259dbaec44c72b181e2f64735f8b8ec8d7cf7377',
-    'hex',
-  );
-  accept.fundingPubkey = Buffer.from(
-    '03187db77a59f1c5f3cfd2296f87ebd7e829226b0f628d9efe4b9f221414e3b967',
-    'hex',
-  );
-  offer.payoutSpk = offer.changeSpk = Buffer.from(
-    '0014' + '11'.repeat(20),
-    'hex',
-  );
-  accept.payoutSpk = accept.changeSpk = Buffer.from(
-    '0014' + '22'.repeat(20),
-    'hex',
-  );
-  offer.payoutSerialId = 1n;
-  accept.payoutSerialId = 2n;
-  offer.changeSerialId = 3n;
-  accept.changeSerialId = 4n;
-  offer.fundOutputSerialId = 5n;
-  offer.offerCollateral = 100_000n;
-  accept.acceptCollateral = 0n;
-  offer.feeRatePerVb = 2n;
-  offer.cetLocktime = 750;
-  offer.refundLocktime = 1000;
-  offer.contractFlags = Buffer.from([0]);
-  offer.temporaryContractId = Buffer.alloc(32, 7);
-  accept.temporaryContractId = offer.temporaryContractId;
-  const descriptor = new EnumeratedDescriptor();
-  descriptor.outcomes = [
-    { outcome: 'up', localPayout: 100_000n },
-    { outcome: 'down', localPayout: 0n },
-  ];
-  const info = new SingleContractInfo();
-  info.totalCollateral = 100_000n;
-  info.contractDescriptor = descriptor;
-  const eventDescriptor = new EnumEventDescriptor();
-  eventDescriptor.outcomes = ['up', 'down'];
-  const event = new OracleEvent();
-  event.eventDescriptor = eventDescriptor;
-  const announcement = new OracleAnnouncement();
-  announcement.oracleEvent = event;
-  const oracle = new SingleOracleInfo();
-  oracle.announcement = announcement;
-  info.oracleInfo = oracle;
-  offer.contractInfo = info;
-
-  const input = new FundingInput();
-  input.inputSerialId = 10n;
-  input.prevTxVout = 0;
-  input.sequence = Sequence.default();
-  input.maxWitnessLen = spliced ? 220 : 108;
-  input.redeemScript = Buffer.alloc(0);
-  if (spliced) {
-    input.dlcInput = new DlcInput();
-    input.dlcInput.localFundPubkey = offer.fundingPubkey;
-    input.dlcInput.remoteFundPubkey = accept.fundingPubkey;
-    input.dlcInput.contractId = Buffer.alloc(32, 8);
-  }
-  const fees = ddkPartyFees({
-    fundingInputs: [input],
-    payoutSpkLength: 22,
-    changeSpkLength: 22,
-    feeRatePerVb: 2n,
-    fundsWholeContract: true,
-    counterpartyPayoutSpkLength: 0,
-  });
-  const previous = new Transaction();
-  previous.addInput(Buffer.alloc(32, 9), 0);
-  const previousScript = spliced
-    ? payments.p2wsh({
-        redeem: payments.p2ms({
-          m: 2,
-          pubkeys: [offer.fundingPubkey, accept.fundingPubkey].sort(
-            Buffer.compare,
-          ),
-        }),
-      }).output
-    : offer.payoutSpk;
-  previous.addOutput(
-    previousScript,
-    Number(100_000n + fees.fundFee + fees.cetFee + spareValue),
-  );
-  input.prevTx = Tx.decode(StreamReader.fromBuffer(previous.toBuffer()));
-  offer.fundingInputs = [input];
-  accept.fundingInputs = [];
-  return { offer, accept };
-}
-
-function provider(engine: DdkInterface) {
-  return new BitcoinDdkProvider(BitcoinNetworks.bitcoin_regtest, engine);
-}
+import { messages, provider } from './contract';
 
 async function legacyContract(spliced: boolean, spareValue: bigint) {
   const { offer, accept } = messages(spliced, spareValue);
