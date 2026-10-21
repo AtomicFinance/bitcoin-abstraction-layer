@@ -75,7 +75,7 @@
     "test:integration:sequential": "cross-env NODE_ENV=test NODE_OPTIONS=--import=tsx nyc --reporter=text --reporter=lcov mocha --require dotenv/config --require source-map-support/register --require tests/integration/utils/load-ddk.mjs --extension ts,tsx --timeout 60000 --max-old-space-size=4096 \"tests/integration/**/*.ts\"",
     "prepublishOnly": "pnpm build",
     "changeset": "changeset",
-    "version": "pnpm changeset version",
+    "version": "pnpm changeset version && pnpm install --lockfile-only",
     "publish": "pnpm build && pnpm changeset publish",
     "test:legacy-fees": "NODE_OPTIONS=--import=tsx mocha --no-config --require tests/integration/utils/load-ddk.mjs --timeout 30000 packages/bitcoin-ddk-provider/tests/legacy-fees.test.ts"
   },
